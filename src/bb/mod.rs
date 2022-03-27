@@ -103,12 +103,17 @@ impl<'a> AppBuilder<'a> {
         let builder = self.builder.expect("Cannot build without builder");
 
         let pkgs = builder.build_inputs();
-        let nix_expression = formatdoc! {"
-          {{ pkgs ? import <nixpkgs> {{ }} }}:
+        // let nix_expression = formatdoc! {"
+        //   {{ pkgs ? import <nixpkgs> {{ }} }}:
 
-          pkgs.mkShell {{ 
-            buildInputs = [ {pkgs} ]; 
-          }}
+        //   pkgs.mkShell {{
+        //     buildInputs = [ {pkgs} ];
+        //   }}
+        // ",
+        // pkgs=pkgs};
+
+        let nix_expression = formatdoc! {"
+          with import <nixpkgs> {{ }}; [ {pkgs} ]
         ",
         pkgs=pkgs};
 
@@ -130,14 +135,17 @@ impl<'a> AppBuilder<'a> {
           COPY . /app
           WORKDIR /app
 
+          # Load Nix environment
+          RUN nix-env -if environment.nix
+
           # Install
-          RUN nix-shell environment.nix --pure --run '{install_cmd}'
+          RUN {install_cmd}
 
           # Build
-          RUN nix-shell environment.nix --pure --run '{build_cmd}'
+          RUN {build_cmd}
 
           # Start
-          CMD nix-shell environment.nix --pure --run '{start_cmd}'
+          CMD {start_cmd}
         ",
         install_cmd=install_cmd,
         build_cmd=build_cmd,
