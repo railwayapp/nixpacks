@@ -14,6 +14,7 @@ pub struct AppBuilder<'a> {
     source: PathBuf,
     custom_build_cmd: Option<String>,
     custom_start_cmd: Option<String>,
+    pkgs: Vec<String>,
     builder: Option<&'a Box<dyn Builder>>,
 }
 
@@ -22,11 +23,13 @@ impl<'a> AppBuilder<'a> {
         source: PathBuf,
         custom_build_cmd: Option<String>,
         custom_start_cmd: Option<String>,
+        pkgs: Vec<String>,
     ) -> AppBuilder<'a> {
         AppBuilder {
             source,
             custom_build_cmd,
             custom_start_cmd,
+            pkgs,
             builder: None,
         }
     }
@@ -49,7 +52,14 @@ impl<'a> AppBuilder<'a> {
 
         match self.builder {
             Some(builder) => println!("  -> Matched builder {}", builder.name()),
-            None => bail!("Failed to match a builder"),
+            None => {
+                // If no builder is found, only fail if there is no start command
+                if self.custom_start_cmd.is_none() {
+                    bail!("Failed to match a builder")
+                }
+
+                println!("  -> No builders matched")
+            }
         }
 
         Ok(())
@@ -108,9 +118,18 @@ impl<'a> AppBuilder<'a> {
         //     .flatten()
         //     .collect::<Vec<String>>();
 
-        let builder = self.builder.expect("Cannot build without builder");
+        let user_pkgs = self
+            .pkgs
+            .iter()
+            .map(|s| format!("pkgs.{}", s))
+            .collect::<Vec<String>>()
+            .join(" ");
 
-        let pkgs = builder.build_inputs();
+        let pkgs = match self.builder {
+            Some(builder) => format!("{} {}", builder.build_inputs(), user_pkgs),
+            None => user_pkgs,
+        };
+
         // let nix_expression = formatdoc! {"
         //   {{ pkgs ? import <nixpkgs> {{ }} }}:
 
@@ -129,14 +148,23 @@ impl<'a> AppBuilder<'a> {
     }
 
     pub fn gen_dockerfile(&self) -> Result<String> {
-        let builder = self.builder.expect("Cannot build without builder");
+        // let builder = self.builder.expect("Cannot build without builder");
 
-        let install_cmd = builder.install_cmd()?.unwrap_or("".to_string());
+        let install_cmd = match self.builder {
+            Some(builder) => builder.install_cmd()?.unwrap_or("".to_string()),
+            None => "".to_string(),
+        };
 
-        let suggested_build_cmd = builder.suggested_build_cmd()?.unwrap_or("".to_string());
+        let suggested_build_cmd = match self.builder {
+            Some(builder) => builder.suggested_build_cmd()?.unwrap_or("".to_string()),
+            None => "".to_string(),
+        };
         let build_cmd = self.custom_build_cmd.clone().unwrap_or(suggested_build_cmd);
 
-        let suggested_start_cmd = builder.suggested_start_command()?.unwrap_or("".to_string());
+        let suggested_start_cmd = match self.builder {
+            Some(builder) => builder.suggested_start_command()?.unwrap_or("".to_string()),
+            None => "".to_string(),
+        };
         let start_cmd = self.custom_start_cmd.clone().unwrap_or(suggested_start_cmd);
 
         let dockerfile = formatdoc! {"

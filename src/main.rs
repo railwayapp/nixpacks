@@ -30,6 +30,14 @@ fn main() -> Result<()> {
                         .takes_value(true),
                 )
                 .arg(
+                    Arg::new("pkgs")
+                        .long("pkgs")
+                        .short('p')
+                        .help("Provide additional nix packages to install in the environment")
+                        .takes_value(true)
+                        .multiple_values(true),
+                )
+                .arg(
                     Arg::new("nix")
                         .long("nix")
                         .help("Show the nix expression that would generated")
@@ -44,21 +52,30 @@ fn main() -> Result<()> {
         .get_matches();
 
     match &matches.subcommand() {
-        Some(("build", query_matches)) => {
-            let path = query_matches.value_of("PATH").expect("required");
+        Some(("build", matches)) => {
+            let path = matches.value_of("PATH").expect("required");
             let source = fs::canonicalize(PathBuf::from(path.to_string()))
                 .context("Invalid app source directory")?;
 
-            let build_cmd = query_matches.value_of("build_cmd").map(|s| s.to_string());
-            let start_cmd = query_matches.value_of("start_cmd").map(|s| s.to_string());
+            let build_cmd = matches.value_of("build_cmd").map(|s| s.to_string());
+            let start_cmd = matches.value_of("start_cmd").map(|s| s.to_string());
+            let pkgs: Vec<_> = match matches.values_of("pkgs") {
+                Some(values) => values.collect(),
+                None => Vec::new(),
+            };
 
-            let show_nix = query_matches.is_present("nix");
-            let show_dockerfile = query_matches.is_present("dockerfile");
+            let show_nix = matches.is_present("nix");
+            let show_dockerfile = matches.is_present("dockerfile");
 
             let builders: Vec<Box<dyn Builder>> =
                 vec![Box::new(YarnBuilder {}), Box::new(NpmBuilder {})];
 
-            let mut app_builder = AppBuilder::new(source, build_cmd, start_cmd);
+            let mut app_builder = AppBuilder::new(
+                source,
+                build_cmd,
+                start_cmd,
+                pkgs.iter().map(|s| s.to_string()).collect(),
+            );
             app_builder.detect(&builders)?;
 
             if show_nix {
