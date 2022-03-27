@@ -32,10 +32,14 @@ OPTIONS:
 
 ## Steps
 
-1. Detect: Return the first matching builder for a source directory
-2. Build
-   1. Generate nix expression based on packages provided by builder
-   2. Generate Dockerfile based on install, build, and start commands
-   3. Copy app source to a temp directory
-   4. Create `environment.nix` and `Dockerfile` files in the temp directory
-   5. Return a Docker build command to run
+**Detect**
+
+Return the first matching builder for a source directory
+
+**Build**
+
+1. Generate nix expression based on packages provided by builder
+2. Generate Dockerfile based on install, build, and start commands
+3. Copy app source to a temp directory
+4. Create `environment.nix` and `Dockerfile` files in the temp directory
+5. Return a Docker build command to run
