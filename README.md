@@ -4,7 +4,7 @@ App source + Nix packages + Docker = Image
 
 ## Usage
 
-Create directory that can be built with Docker based on app source.
+Create a Docker image based on app source.
 
 ```
 cargo run -- build examples/yarn
@@ -26,7 +26,9 @@ OPTIONS:
     -b, --build-cmd <build_cmd>    Specify the build command to use
         --dockerfile               Show the Dockerfile that would be generated
     -h, --help                     Print help information
+    -n, --name <name>              Name for the built image
         --nix                      Show the nix expression that would generated
+    -p, --pkgs <pkgs>...           Provide additional nix packages to install in the environment
     -s, --start-cmd <start_cmd>    Specify the start command to use
 ```
 
@@ -42,4 +44,4 @@ Return the first matching builder for a source directory
 2. Generate Dockerfile based on install, build, and start commands
 3. Copy app source to a temp directory
 4. Create `environment.nix` and `Dockerfile` files in the temp directory
-5. Return a Docker build command to run
+5. Build the temp directory with Docker

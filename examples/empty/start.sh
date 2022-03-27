@@ -1,1 +1,0 @@
-echo 'asdfasdfasdfasdfasdf' | cowsay
