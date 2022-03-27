@@ -97,7 +97,7 @@ impl<'a> AppBuilder<'a> {
         Ok(())
     }
 
-    fn gen_nix(&self) -> Result<String> {
+    pub fn gen_nix(&self) -> Result<String> {
         // let build_inputs = &self
         //     .participating_builders
         //     .iter()
@@ -128,7 +128,7 @@ impl<'a> AppBuilder<'a> {
         Ok(nix_expression)
     }
 
-    fn gen_dockerfile(&self) -> Result<String> {
+    pub fn gen_dockerfile(&self) -> Result<String> {
         let builder = self.builder.expect("Cannot build without builder");
 
         let install_cmd = builder.install_cmd()?.unwrap_or("".to_string());

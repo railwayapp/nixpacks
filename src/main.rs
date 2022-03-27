@@ -28,26 +28,59 @@ fn main() -> Result<()> {
                         .short('s')
                         .help("Specify the start command to use")
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::new("nix")
+                        .long("nix")
+                        .help("Show the nix expression that would generated")
+                        .takes_value(false),
+                )
+                .arg(
+                    Arg::new("dockerfile")
+                        .long("dockerfile")
+                        .help("Show the Dockerfile that would be generated"),
                 ),
+        )
+        .subcommand(
+            Command::new("nix")
+                .about("Generate a nix expression for an app source directory")
+                .arg(arg!(<PATH> "App source")),
         )
         .get_matches();
 
     match &matches.subcommand() {
         Some(("build", query_matches)) => {
             let path = query_matches.value_of("PATH").expect("required");
+            let source = fs::canonicalize(PathBuf::from(path.to_string()))
+                .context("Invalid app source directory")?;
+
             let build_cmd = query_matches.value_of("build_cmd").map(|s| s.to_string());
             let start_cmd = query_matches.value_of("start_cmd").map(|s| s.to_string());
+
+            let show_nix = query_matches.is_present("nix");
+            let show_dockerfile = query_matches.is_present("dockerfile");
 
             let builders: Vec<Box<dyn Builder>> =
                 vec![Box::new(YarnBuilder {}), Box::new(NpmBuilder {})];
 
-            let source = fs::canonicalize(PathBuf::from(path.to_string()))
-                .context("Invalid app source directory")?;
-
             let mut app_builder = AppBuilder::new(source, build_cmd, start_cmd);
             app_builder.detect(&builders)?;
 
-            app_builder.build()?;
+            if show_nix {
+                let nix_expression = app_builder.gen_nix()?;
+                println!("\n=== Nix Expression ===");
+                println!("\n{}", nix_expression);
+            }
+            if show_dockerfile {
+                let dockerfile = app_builder.gen_dockerfile()?;
+
+                println!("\n=== Dockerfile ===");
+                println!("\n{}", dockerfile);
+            }
+
+            if !show_nix && !show_dockerfile {
+                app_builder.build()?;
+            }
         }
         _ => unreachable!(),
     }
