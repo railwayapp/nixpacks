@@ -12,13 +12,21 @@ use crate::builders::Builder;
 
 pub struct AppBuilder<'a> {
     source: PathBuf,
+    custom_build_cmd: Option<String>,
+    custom_start_cmd: Option<String>,
     builder: Option<&'a Box<dyn Builder>>,
 }
 
 impl<'a> AppBuilder<'a> {
-    pub fn new(source: String) -> AppBuilder<'a> {
+    pub fn new(
+        source: String,
+        custom_build_cmd: Option<String>,
+        custom_start_cmd: Option<String>,
+    ) -> AppBuilder<'a> {
         AppBuilder {
             source: fs::canonicalize(PathBuf::from(source)).unwrap(),
+            custom_build_cmd,
+            custom_start_cmd,
             builder: None,
         }
     }
@@ -124,8 +132,12 @@ impl<'a> AppBuilder<'a> {
         let builder = self.builder.expect("Cannot build without builder");
 
         let install_cmd = builder.install_cmd()?.unwrap_or("".to_string());
-        let build_cmd = builder.suggested_build_cmd()?.unwrap_or("".to_string());
-        let start_cmd = builder.suggested_start_command()?.unwrap_or("".to_string());
+
+        let suggested_build_cmd = builder.suggested_build_cmd()?.unwrap_or("".to_string());
+        let build_cmd = self.custom_build_cmd.clone().unwrap_or(suggested_build_cmd);
+
+        let suggested_start_cmd = builder.suggested_start_command()?.unwrap_or("".to_string());
+        let start_cmd = self.custom_start_cmd.clone().unwrap_or(suggested_start_cmd);
 
         let dockerfile = formatdoc! {"
           FROM nixos/nix
