@@ -41,11 +41,6 @@ fn main() -> Result<()> {
                         .help("Show the Dockerfile that would be generated"),
                 ),
         )
-        .subcommand(
-            Command::new("nix")
-                .about("Generate a nix expression for an app source directory")
-                .arg(arg!(<PATH> "App source")),
-        )
         .get_matches();
 
     match &matches.subcommand() {
