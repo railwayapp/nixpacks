@@ -4,7 +4,7 @@ use std::path::PathBuf;
 pub trait Builder {
     fn name(&self) -> &str;
     fn detect(&self, paths: Vec<PathBuf>) -> Result<bool>;
-    fn build_inputs(&self) -> Vec<String>;
+    fn build_inputs(&self) -> String;
     fn install_cmd(&self) -> Result<Option<String>> {
         Ok(None)
     }
@@ -16,25 +16,9 @@ pub trait Builder {
     }
 }
 
-pub struct StdEnvBuilder {}
+pub struct NpmBuilder {}
 
-impl Builder for StdEnvBuilder {
-    fn name(&self) -> &str {
-        "stdenv"
-    }
-
-    fn detect(&self, _paths: Vec<PathBuf>) -> Result<bool> {
-        Ok(true)
-    }
-
-    fn build_inputs(&self) -> Vec<String> {
-        vec!["pkgs.stdenv".to_string()]
-    }
-}
-
-pub struct NodeBuilder {}
-
-impl Builder for NodeBuilder {
+impl Builder for NpmBuilder {
     fn name(&self) -> &str {
         "node"
     }
@@ -49,8 +33,8 @@ impl Builder for NodeBuilder {
         Ok(false)
     }
 
-    fn build_inputs(&self) -> Vec<String> {
-        vec!["pkgs.nodejs".to_string()]
+    fn build_inputs(&self) -> String {
+        "pkgs.stdenv pkgs.nodejs".to_string()
     }
 
     fn install_cmd(&self) -> Result<Option<String>> {
@@ -63,5 +47,39 @@ impl Builder for NodeBuilder {
 
     fn suggested_start_command(&self) -> Result<Option<String>> {
         Ok(Some("npm run start".to_string()))
+    }
+}
+
+pub struct YarnBuilder {}
+
+impl Builder for YarnBuilder {
+    fn name(&self) -> &str {
+        "yarn"
+    }
+
+    fn detect(&self, paths: Vec<PathBuf>) -> Result<bool> {
+        for path in paths {
+            if path.file_name().unwrap() == "yarn.lock" {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
+    }
+
+    fn build_inputs(&self) -> String {
+        "pkgs.stdenv pkgs.yarn".to_string()
+    }
+
+    fn install_cmd(&self) -> Result<Option<String>> {
+        Ok(Some("yarn".to_string()))
+    }
+
+    fn suggested_build_cmd(&self) -> Result<Option<String>> {
+        Ok(Some("yarn build".to_string()))
+    }
+
+    fn suggested_start_command(&self) -> Result<Option<String>> {
+        Ok(Some("yarn start".to_string()))
     }
 }

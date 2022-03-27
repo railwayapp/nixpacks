@@ -1,6 +1,6 @@
 use anyhow::Result;
 use bb::AppBuilder;
-use builders::{Builder, NodeBuilder, StdEnvBuilder};
+use builders::{Builder, NpmBuilder, YarnBuilder};
 use clap::{Parser, Subcommand};
 mod bb;
 mod builders;
@@ -32,8 +32,7 @@ fn main() -> Result<()> {
 }
 
 pub fn build(path: &String) -> Result<()> {
-    let builders: Vec<Box<dyn Builder>> =
-        vec![Box::new(StdEnvBuilder {}), Box::new(NodeBuilder {})];
+    let builders: Vec<Box<dyn Builder>> = vec![Box::new(YarnBuilder {}), Box::new(NpmBuilder {})];
 
     let mut app_builder = AppBuilder::new(path.to_string());
     app_builder.detect(&builders)?;
