@@ -1,27 +1,11 @@
-use anyhow::Result;
+use std::{fs, path::PathBuf};
+
+use anyhow::{Context, Result};
 use bb::AppBuilder;
 use builders::{Builder, NpmBuilder, YarnBuilder};
-use clap::{arg, Arg, Command, Parser, Subcommand};
+use clap::{arg, Arg, Command};
 mod bb;
 mod builders;
-
-#[derive(Parser)]
-#[clap(author, version, about, long_about = None)]
-#[clap(propagate_version = true)]
-struct Cli {
-    #[clap(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    /// Build an app directory into an image
-    Build {
-        /// Directory of app source
-        #[clap(required = true)]
-        path: String,
-    },
-}
 
 fn main() -> Result<()> {
     let matches = Command::new("bb")
@@ -57,7 +41,10 @@ fn main() -> Result<()> {
             let builders: Vec<Box<dyn Builder>> =
                 vec![Box::new(YarnBuilder {}), Box::new(NpmBuilder {})];
 
-            let mut app_builder = AppBuilder::new(path.to_string(), build_cmd, start_cmd);
+            let source = fs::canonicalize(PathBuf::from(path.to_string()))
+                .context("Invalid app source directory")?;
+
+            let mut app_builder = AppBuilder::new(source, build_cmd, start_cmd);
             app_builder.detect(&builders)?;
 
             app_builder.build()?;

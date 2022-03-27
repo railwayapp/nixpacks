@@ -19,12 +19,12 @@ pub struct AppBuilder<'a> {
 
 impl<'a> AppBuilder<'a> {
     pub fn new(
-        source: String,
+        source: PathBuf,
         custom_build_cmd: Option<String>,
         custom_start_cmd: Option<String>,
     ) -> AppBuilder<'a> {
         AppBuilder {
-            source: fs::canonicalize(PathBuf::from(source)).unwrap(),
+            source,
             custom_build_cmd,
             custom_start_cmd,
             builder: None,
