@@ -1,1 +1,1 @@
-echo 'Hey There' | cowsay
+echo 'asdfasdfasdfasdfasdf' | cowsay

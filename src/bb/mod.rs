@@ -11,6 +11,7 @@ use uuid::Uuid;
 use crate::builders::Builder;
 
 pub struct AppBuilder<'a> {
+    name: Option<String>,
     source: PathBuf,
     custom_build_cmd: Option<String>,
     custom_start_cmd: Option<String>,
@@ -20,12 +21,14 @@ pub struct AppBuilder<'a> {
 
 impl<'a> AppBuilder<'a> {
     pub fn new(
+        name: Option<String>,
         source: PathBuf,
         custom_build_cmd: Option<String>,
         custom_start_cmd: Option<String>,
         pkgs: Vec<String>,
     ) -> AppBuilder<'a> {
         AppBuilder {
+            name,
             source,
             custom_build_cmd,
             custom_start_cmd,
@@ -74,7 +77,8 @@ impl<'a> AppBuilder<'a> {
         let dockerfile = self.gen_dockerfile()?;
         println!("  -> Generated Dockerfile");
 
-        let tmp_dir_name = format!("./tmp/{}", Uuid::new_v4());
+        let id = Uuid::new_v4();
+        let tmp_dir_name = format!("./tmp/{}", id);
 
         println!("  -> Copying source to tmp dir");
 
@@ -83,9 +87,8 @@ impl<'a> AppBuilder<'a> {
             .arg("-R")
             .arg(source)
             .arg(tmp_dir_name.clone())
-            .spawn()
-            .context("Copying app source to tmp dir")?;
-        copy_cmd.wait()?;
+            .spawn()?;
+        copy_cmd.wait().context("Copying app source to tmp dir")?;
 
         println!("  -> Writing environment.nix");
 
@@ -102,7 +105,28 @@ impl<'a> AppBuilder<'a> {
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path.clone(), dockerfile).context("Writing Dockerfile")?;
 
-        println!("\nRun:\n  docker build {} -t NAME", tmp_dir_name.as_str());
+        // println!(
+        //     "\nRun:\n  docker build {} -t {}",
+        //     tmp_dir_name.as_str(),
+        //     self.name.clone().unwrap_or(id.to_string())
+        // );
+
+        println!("  -> Building image");
+
+        let name = self.name.clone().unwrap_or(id.to_string());
+
+        let mut docker_build_cmd = Command::new("docker")
+            .arg("build")
+            .arg(tmp_dir_name.as_str())
+            .arg("-t")
+            .arg(name.clone())
+            .spawn()?;
+
+        docker_build_cmd.wait().context("Building image")?;
+
+        println!("  -> Built!");
+
+        println!("\nRun:\n  docker run {}", name.clone());
 
         Ok(())
     }

@@ -30,6 +30,13 @@ fn main() -> Result<()> {
                         .takes_value(true),
                 )
                 .arg(
+                    Arg::new("name")
+                        .long("name")
+                        .short('n')
+                        .help("Name for the built image")
+                        .takes_value(true),
+                )
+                .arg(
                     Arg::new("pkgs")
                         .long("pkgs")
                         .short('p')
@@ -64,6 +71,8 @@ fn main() -> Result<()> {
                 None => Vec::new(),
             };
 
+            let name = matches.value_of("name").map(|n| n.to_string());
+
             let show_nix = matches.is_present("nix");
             let show_dockerfile = matches.is_present("dockerfile");
 
@@ -71,6 +80,7 @@ fn main() -> Result<()> {
                 vec![Box::new(YarnBuilder {}), Box::new(NpmBuilder {})];
 
             let mut app_builder = AppBuilder::new(
+                name,
                 source,
                 build_cmd,
                 start_cmd,
