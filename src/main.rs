@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
 use bb::AppBuilder;
-use builders::{Builder, NpmBuilder, YarnBuilder};
+use builders::{npm::NpmBuilder, yarn::YarnBuilder, Builder};
 use clap::{arg, Arg, Command};
 mod bb;
 mod builders;
