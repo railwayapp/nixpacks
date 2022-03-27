@@ -10,9 +10,27 @@ use uuid::Uuid;
 
 use crate::builders::Builder;
 
+#[derive(Debug, Clone)]
+pub struct AppSource {
+    pub source: PathBuf,
+    pub paths: Vec<PathBuf>,
+}
+
+impl AppSource {
+    pub fn includes_file(&self, name: &str) -> bool {
+        for path in &self.paths {
+            if path.file_name().unwrap() == name {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
 pub struct AppBuilder<'a> {
     name: Option<String>,
-    source: PathBuf,
+    app: AppSource,
     custom_build_cmd: Option<String>,
     custom_start_cmd: Option<String>,
     pkgs: Vec<String>,
@@ -26,27 +44,26 @@ impl<'a> AppBuilder<'a> {
         custom_build_cmd: Option<String>,
         custom_start_cmd: Option<String>,
         pkgs: Vec<String>,
-    ) -> AppBuilder<'a> {
-        AppBuilder {
+    ) -> Result<AppBuilder<'a>> {
+        let dir = fs::read_dir(source.clone()).context("Failed to read app source directory")?;
+
+        let paths: Vec<PathBuf> = dir.map(|path| path.unwrap().path()).collect();
+
+        Ok(AppBuilder {
             name,
-            source,
+            app: AppSource { source, paths },
             custom_build_cmd,
             custom_start_cmd,
             pkgs,
             builder: None,
-        }
+        })
     }
 
     pub fn detect(&mut self, builders: &'a Vec<Box<dyn Builder>>) -> Result<()> {
         println!("=== Detecting ===");
 
-        let dir =
-            fs::read_dir(self.source.clone()).context("Failed to read app source directory")?;
-
-        let paths: Vec<PathBuf> = dir.map(|path| path.unwrap().path()).collect();
-
         for builder in builders {
-            let matches = builder.detect(paths.clone())?;
+            let matches = builder.detect(&self.app)?;
             if matches {
                 self.builder = Some(builder);
                 break;
@@ -82,7 +99,7 @@ impl<'a> AppBuilder<'a> {
 
         println!("  -> Copying source to tmp dir");
 
-        let source = self.source.as_path().to_str().unwrap();
+        let source = self.app.source.as_path().to_str().unwrap();
         let mut copy_cmd = Command::new("cp")
             .arg("-R")
             .arg(source)
@@ -150,7 +167,7 @@ impl<'a> AppBuilder<'a> {
             .join(" ");
 
         let pkgs = match self.builder {
-            Some(builder) => format!("{} {}", builder.build_inputs(), user_pkgs),
+            Some(builder) => format!("{} {}", builder.build_inputs(&self.app), user_pkgs),
             None => user_pkgs,
         };
 
@@ -175,18 +192,22 @@ impl<'a> AppBuilder<'a> {
         // let builder = self.builder.expect("Cannot build without builder");
 
         let install_cmd = match self.builder {
-            Some(builder) => builder.install_cmd()?.unwrap_or("".to_string()),
+            Some(builder) => builder.install_cmd(&self.app)?.unwrap_or("".to_string()),
             None => "".to_string(),
         };
 
         let suggested_build_cmd = match self.builder {
-            Some(builder) => builder.suggested_build_cmd()?.unwrap_or("".to_string()),
+            Some(builder) => builder
+                .suggested_build_cmd(&self.app)?
+                .unwrap_or("".to_string()),
             None => "".to_string(),
         };
         let build_cmd = self.custom_build_cmd.clone().unwrap_or(suggested_build_cmd);
 
         let suggested_start_cmd = match self.builder {
-            Some(builder) => builder.suggested_start_command()?.unwrap_or("".to_string()),
+            Some(builder) => builder
+                .suggested_start_command(&self.app)?
+                .unwrap_or("".to_string()),
             None => "".to_string(),
         };
         let start_cmd = self.custom_start_cmd.clone().unwrap_or(suggested_start_cmd);

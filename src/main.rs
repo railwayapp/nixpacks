@@ -85,7 +85,7 @@ fn main() -> Result<()> {
                 build_cmd,
                 start_cmd,
                 pkgs.iter().map(|s| s.to_string()).collect(),
-            );
+            )?;
             app_builder.detect(&builders)?;
 
             if show_nix {
