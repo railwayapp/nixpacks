@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use std::{
-    fs::{self, File},
+    fs::{self},
     path::PathBuf,
 };
 
@@ -31,6 +31,6 @@ impl App {
     pub fn read_file(&self, name: &str) -> Result<String> {
         let name = self.source.join(name);
         let contents = fs::read_to_string(name)?;
-        return Ok(contents);
+        Ok(contents)
     }
 }

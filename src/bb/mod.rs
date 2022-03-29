@@ -193,8 +193,8 @@ impl<'a> AppBuilder<'a> {
             None => "".to_string(),
         };
         let procfile_cmd = self.parse_procfile()?;
-        let start_cmd =
-            procfile_cmd.unwrap_or(self.custom_start_cmd.clone().unwrap_or(suggested_start_cmd));
+        let start_cmd = procfile_cmd
+            .unwrap_or_else(|| self.custom_start_cmd.clone().unwrap_or(suggested_start_cmd));
 
         let dockerfile = formatdoc! {"
           FROM nixos/nix
