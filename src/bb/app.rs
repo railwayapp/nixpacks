@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use serde::de::DeserializeOwned;
 use std::{env, fs, path::PathBuf};
 
 #[derive(Debug, Clone)]
@@ -36,11 +37,30 @@ impl App {
         let contents = fs::read_to_string(name)?;
         Ok(contents)
     }
+
+    pub fn read_json<T>(&self, name: &str) -> Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        let contents = self.read_file(name)?;
+        let value: T = serde_json::from_str(contents.as_str())?;
+        Ok(value)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use super::*;
+    use serde::{Deserialize, Serialize};
+    use serde_json::{Map, Value};
+
+    #[derive(Serialize, Deserialize)]
+    struct TestPackageJson {
+        name: String,
+        scripts: HashMap<String, String>,
+    }
 
     #[test]
     fn test_creates_app() -> Result<()> {
@@ -56,6 +76,24 @@ mod tests {
             app.read_file("index.ts")?.trim_end(),
             "console.log(\"Hello from NPM\");"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_json_file() -> Result<()> {
+        let app = App::new("./tests/fixtures/npm")?;
+        let value: Map<String, Value> = app.read_json("package.json")?;
+        assert!(value.get("name").is_some());
+        assert_eq!(value.get("name").unwrap(), "npm");
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_structured_json_file() -> Result<()> {
+        let app = App::new("./tests/fixtures/npm")?;
+        let value: TestPackageJson = app.read_json("package.json")?;
+        assert_eq!(value.name, "npm");
+        assert_eq!(value.scripts.get("build").unwrap(), "tsc -p tsconfig.json");
         Ok(())
     }
 }
