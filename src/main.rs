@@ -3,9 +3,13 @@ use std::{fs, path::PathBuf};
 use anyhow::{Context, Result};
 use bb::{app::App, AppBuilder};
 use clap::{arg, Arg, Command};
-use providers::{npm::NpmProvider, yarn::YarnProvider, Provider};
+use providers::{go::GolangProvider, npm::NpmProvider, yarn::YarnProvider, Provider};
 mod bb;
 mod providers;
+
+fn get_providers() -> Vec<&'static dyn Provider> {
+    vec![&YarnProvider {}, &NpmProvider {}, &GolangProvider {}]
+}
 
 fn main() -> Result<()> {
     let matches = Command::new("bb")
@@ -76,7 +80,7 @@ fn main() -> Result<()> {
             let show_nix = matches.is_present("nix");
             let show_dockerfile = matches.is_present("dockerfile");
 
-            let providers: Vec<&dyn Provider> = vec![&YarnProvider {}, &NpmProvider {}];
+            let providers = get_providers();
 
             let app = App::new(source)?;
 
