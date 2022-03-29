@@ -1,10 +1,10 @@
-use super::Builder;
+use super::Provider;
 use crate::bb::app::App;
 use anyhow::Result;
 
-pub struct NpmBuilder {}
+pub struct NpmProvider {}
 
-impl Builder for NpmBuilder {
+impl Provider for NpmProvider {
     fn name(&self) -> &str {
         "node"
     }
@@ -13,7 +13,7 @@ impl Builder for NpmBuilder {
         Ok(app.includes_file("package.json"))
     }
 
-    fn build_inputs(&self, _app: &App) -> String {
+    fn pkgs(&self, _app: &App) -> String {
         "pkgs.stdenv pkgs.nodejs".to_string()
     }
 

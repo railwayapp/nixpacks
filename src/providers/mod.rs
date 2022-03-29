@@ -4,10 +4,10 @@ use anyhow::Result;
 pub mod npm;
 pub mod yarn;
 
-pub trait Builder {
+pub trait Provider {
     fn name(&self) -> &str;
     fn detect(&self, app: &App) -> Result<bool>;
-    fn build_inputs(&self, app: &App) -> String;
+    fn pkgs(&self, app: &App) -> String;
     fn install_cmd(&self, _app: &App) -> Result<Option<String>> {
         Ok(None)
     }

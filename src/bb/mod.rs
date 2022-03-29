@@ -9,7 +9,7 @@ use std::{
 use uuid::Uuid;
 pub mod app;
 
-use crate::builders::Builder;
+use crate::providers::Provider;
 
 use self::app::App;
 
@@ -19,7 +19,7 @@ pub struct AppBuilder<'a> {
     custom_build_cmd: Option<String>,
     custom_start_cmd: Option<String>,
     pkgs: Vec<String>,
-    builder: Option<&'a dyn Builder>,
+    provider: Option<&'a dyn Provider>,
 }
 
 impl<'a> AppBuilder<'a> {
@@ -36,30 +36,30 @@ impl<'a> AppBuilder<'a> {
             custom_build_cmd,
             custom_start_cmd,
             pkgs,
-            builder: None,
+            provider: None,
         })
     }
 
-    pub fn detect(&mut self, builders: Vec<&'a dyn Builder>) -> Result<()> {
+    pub fn detect(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
         println!("=== Detecting ===");
 
-        for builder in builders {
-            let matches = builder.detect(self.app)?;
+        for provider in providers {
+            let matches = provider.detect(self.app)?;
             if matches {
-                self.builder = Some(builder);
+                self.provider = Some(provider);
                 break;
             }
         }
 
-        match self.builder {
-            Some(builder) => println!("  -> Matched builder {}", builder.name()),
+        match self.provider {
+            Some(provider) => println!("  -> Matched provider {}", provider.name()),
             None => {
                 // If no builder is found, only fail if there is no start command
                 if self.custom_start_cmd.is_none() {
-                    bail!("Failed to match a builder")
+                    bail!("Failed to match a provider")
                 }
 
-                println!("  -> No builders matched")
+                println!("  -> No provider matched")
             }
         }
 
@@ -146,8 +146,8 @@ impl<'a> AppBuilder<'a> {
             .collect::<Vec<String>>()
             .join(" ");
 
-        let pkgs = match self.builder {
-            Some(builder) => format!("{} {}", builder.build_inputs(self.app), user_pkgs),
+        let pkgs = match self.provider {
+            Some(provider) => format!("{} {}", provider.pkgs(self.app), user_pkgs),
             None => user_pkgs,
         };
 
@@ -171,23 +171,23 @@ impl<'a> AppBuilder<'a> {
     pub fn gen_dockerfile(&self) -> Result<String> {
         // let builder = self.builder.expect("Cannot build without builder");
 
-        let install_cmd = match self.builder {
-            Some(builder) => builder
+        let install_cmd = match self.provider {
+            Some(provider) => provider
                 .install_cmd(self.app)?
                 .unwrap_or_else(|| "".to_string()),
             None => "".to_string(),
         };
 
-        let suggested_build_cmd = match self.builder {
-            Some(builder) => builder
+        let suggested_build_cmd = match self.provider {
+            Some(provider) => provider
                 .suggested_build_cmd(self.app)?
                 .unwrap_or_else(|| "".to_string()),
             None => "".to_string(),
         };
         let build_cmd = self.custom_build_cmd.clone().unwrap_or(suggested_build_cmd);
 
-        let suggested_start_cmd = match self.builder {
-            Some(builder) => builder
+        let suggested_start_cmd = match self.provider {
+            Some(provider) => provider
                 .suggested_start_command(self.app)?
                 .unwrap_or_else(|| "".to_string()),
             None => "".to_string(),

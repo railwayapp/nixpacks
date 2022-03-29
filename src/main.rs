@@ -2,10 +2,10 @@ use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
 use bb::{app::App, AppBuilder};
-use builders::{npm::NpmBuilder, yarn::YarnBuilder, Builder};
 use clap::{arg, Arg, Command};
+use providers::{npm::NpmProvider, yarn::YarnProvider, Provider};
 mod bb;
-mod builders;
+mod providers;
 
 fn main() -> Result<()> {
     let matches = Command::new("bb")
@@ -76,7 +76,7 @@ fn main() -> Result<()> {
             let show_nix = matches.is_present("nix");
             let show_dockerfile = matches.is_present("dockerfile");
 
-            let builders: Vec<&dyn Builder> = vec![&YarnBuilder {}, &NpmBuilder {}];
+            let providers: Vec<&dyn Provider> = vec![&YarnProvider {}, &NpmProvider {}];
 
             let app = App::new(source)?;
 
@@ -87,7 +87,7 @@ fn main() -> Result<()> {
                 start_cmd,
                 pkgs.iter().map(|s| s.to_string()).collect(),
             )?;
-            app_builder.detect(builders)?;
+            app_builder.detect(providers)?;
 
             if show_nix {
                 let nix_expression = app_builder.gen_nix()?;

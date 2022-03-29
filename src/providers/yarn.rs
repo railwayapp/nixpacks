@@ -1,10 +1,10 @@
-use super::Builder;
+use super::Provider;
 use crate::bb::app::App;
 use anyhow::Result;
 
-pub struct YarnBuilder {}
+pub struct YarnProvider {}
 
-impl Builder for YarnBuilder {
+impl Provider for YarnProvider {
     fn name(&self) -> &str {
         "yarn"
     }
@@ -13,7 +13,7 @@ impl Builder for YarnBuilder {
         Ok(app.includes_file("package.json") && app.includes_file("yarn.lock"))
     }
 
-    fn build_inputs(&self, _app: &App) -> String {
+    fn pkgs(&self, _app: &App) -> String {
         "pkgs.stdenv pkgs.yarn".to_string()
     }
 
