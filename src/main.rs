@@ -13,7 +13,7 @@ fn main() -> Result<()> {
         .arg_required_else_help(true)
         .subcommand(
             Command::new("build")
-                .about("Create a Docker build-able directory from app source")
+                .about("Create a docker image based on app source")
                 .arg(arg!(<PATH> "App source"))
                 .arg(
                     Arg::new("build_cmd")

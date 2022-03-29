@@ -14,7 +14,7 @@ Show help
 
 ```
 > cargo run -- build --help
-Create a Docker build-able directory from app source
+Create a docker image based on app source
 
 USAGE:
     bb build [OPTIONS] <PATH>
