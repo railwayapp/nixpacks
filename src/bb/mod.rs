@@ -192,7 +192,9 @@ impl<'a> AppBuilder<'a> {
                 .unwrap_or_else(|| "".to_string()),
             None => "".to_string(),
         };
-        let start_cmd = self.custom_start_cmd.clone().unwrap_or(suggested_start_cmd);
+        let procfile_cmd = self.parse_procfile()?;
+        let start_cmd =
+            procfile_cmd.unwrap_or(self.custom_start_cmd.clone().unwrap_or(suggested_start_cmd));
 
         let dockerfile = formatdoc! {"
           FROM nixos/nix
@@ -219,5 +221,20 @@ impl<'a> AppBuilder<'a> {
         start_cmd=start_cmd};
 
         Ok(dockerfile)
+    }
+
+    fn parse_procfile(&self) -> Result<Option<String>> {
+        if self.app.includes_file("Procfile") {
+            let contents = self.app.read_file("Procfile")?;
+
+            // Better error handling
+            if contents.starts_with("web: ") {
+                return Ok(Some(contents.replace("web: ", "")));
+            }
+
+            Ok(None)
+        } else {
+            Ok(None)
+        }
     }
 }

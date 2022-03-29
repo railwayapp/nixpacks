@@ -1,5 +1,8 @@
 use anyhow::{Context, Result};
-use std::{fs, path::PathBuf};
+use std::{
+    fs::{self, File},
+    path::PathBuf,
+};
 
 #[derive(Debug, Clone)]
 pub struct App {
@@ -23,5 +26,11 @@ impl App {
         }
 
         false
+    }
+
+    pub fn read_file(&self, name: &str) -> Result<String> {
+        let name = self.source.join(name);
+        let contents = fs::read_to_string(name)?;
+        return Ok(contents);
     }
 }
