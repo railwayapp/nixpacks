@@ -76,8 +76,7 @@ fn main() -> Result<()> {
             let show_nix = matches.is_present("nix");
             let show_dockerfile = matches.is_present("dockerfile");
 
-            let builders: Vec<Box<dyn Builder>> =
-                vec![Box::new(YarnBuilder {}), Box::new(NpmBuilder {})];
+            let builders: Vec<&dyn Builder> = vec![&YarnBuilder {}, &NpmBuilder {}];
 
             let mut app_builder = AppBuilder::new(
                 name,
@@ -86,7 +85,7 @@ fn main() -> Result<()> {
                 start_cmd,
                 pkgs.iter().map(|s| s.to_string()).collect(),
             )?;
-            app_builder.detect(&builders)?;
+            app_builder.detect(builders)?;
 
             if show_nix {
                 let nix_expression = app_builder.gen_nix()?;

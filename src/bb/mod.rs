@@ -34,7 +34,7 @@ pub struct AppBuilder<'a> {
     custom_build_cmd: Option<String>,
     custom_start_cmd: Option<String>,
     pkgs: Vec<String>,
-    builder: Option<&'a Box<dyn Builder>>,
+    builder: Option<&'a dyn Builder>,
 }
 
 impl<'a> AppBuilder<'a> {
@@ -59,7 +59,7 @@ impl<'a> AppBuilder<'a> {
         })
     }
 
-    pub fn detect(&mut self, builders: &'a [Box<dyn Builder>]) -> Result<()> {
+    pub fn detect(&mut self, builders: Vec<&'a dyn Builder>) -> Result<()> {
         println!("=== Detecting ===");
 
         for builder in builders {
