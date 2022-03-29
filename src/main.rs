@@ -1,6 +1,4 @@
-use std::{fs, path::PathBuf};
-
-use anyhow::{Context, Result};
+use anyhow::Result;
 use bb::{app::App, AppBuilder};
 use clap::{arg, Arg, Command};
 use providers::{go::GolangProvider, npm::NpmProvider, yarn::YarnProvider, Provider};
@@ -65,8 +63,6 @@ fn main() -> Result<()> {
     match &matches.subcommand() {
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").expect("required");
-            let source = fs::canonicalize(PathBuf::from(path.to_string()))
-                .context("Invalid app source directory")?;
 
             let build_cmd = matches.value_of("build_cmd").map(|s| s.to_string());
             let start_cmd = matches.value_of("start_cmd").map(|s| s.to_string());
@@ -82,7 +78,7 @@ fn main() -> Result<()> {
 
             let providers = get_providers();
 
-            let app = App::new(source)?;
+            let app = App::new(path)?;
 
             let mut app_builder = AppBuilder::new(
                 name,
