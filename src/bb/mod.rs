@@ -1,7 +1,7 @@
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use std::{
-    fs::{self, File},
+    fs::{self, create_dir, create_dir_all, File},
     io::Write,
     path::PathBuf,
     process::Command,
@@ -96,6 +96,10 @@ impl<'a> AppBuilder<'a> {
 
         let id = Uuid::new_v4();
         let tmp_dir_name = format!("./tmp/{}", id);
+
+        println!("  -> Creating tmp dir");
+
+        create_dir_all(&tmp_dir_name).unwrap();
 
         println!("  -> Copying source to tmp dir");
 
