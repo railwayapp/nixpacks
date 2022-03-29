@@ -59,7 +59,7 @@ impl<'a> AppBuilder<'a> {
         })
     }
 
-    pub fn detect(&mut self, builders: &'a Vec<Box<dyn Builder>>) -> Result<()> {
+    pub fn detect(&mut self, builders: &'a [Box<dyn Builder>]) -> Result<()> {
         println!("=== Detecting ===");
 
         for builder in builders {
@@ -110,8 +110,7 @@ impl<'a> AppBuilder<'a> {
         println!("  -> Writing environment.nix");
 
         let nix_path = PathBuf::from(tmp_dir_name.clone()).join(PathBuf::from("environment.nix"));
-        let mut nix_file =
-            File::create(nix_path.clone()).context("Creating Nix environment file")?;
+        let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
         nix_file
             .write_all(nix_expression.as_bytes())
             .context("Unable to write Nix expression")?;
@@ -120,7 +119,7 @@ impl<'a> AppBuilder<'a> {
 
         let dockerfile_path = PathBuf::from(tmp_dir_name.clone()).join(PathBuf::from("Dockerfile"));
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
-        fs::write(dockerfile_path.clone(), dockerfile).context("Writing Dockerfile")?;
+        fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
 
         // println!(
         //     "\nRun:\n  docker build {} -t {}",
@@ -130,7 +129,7 @@ impl<'a> AppBuilder<'a> {
 
         println!("  -> Building image");
 
-        let name = self.name.clone().unwrap_or(id.to_string());
+        let name = self.name.clone().unwrap_or_else(|| id.to_string());
 
         let mut docker_build_cmd = Command::new("docker")
             .arg("build")
@@ -143,7 +142,7 @@ impl<'a> AppBuilder<'a> {
 
         println!("  -> Built!");
 
-        println!("\nRun:\n  docker run {}", name.clone());
+        println!("\nRun:\n  docker run {}", name);
 
         Ok(())
     }
@@ -192,14 +191,16 @@ impl<'a> AppBuilder<'a> {
         // let builder = self.builder.expect("Cannot build without builder");
 
         let install_cmd = match self.builder {
-            Some(builder) => builder.install_cmd(&self.app)?.unwrap_or("".to_string()),
+            Some(builder) => builder
+                .install_cmd(&self.app)?
+                .unwrap_or_else(|| "".to_string()),
             None => "".to_string(),
         };
 
         let suggested_build_cmd = match self.builder {
             Some(builder) => builder
                 .suggested_build_cmd(&self.app)?
-                .unwrap_or("".to_string()),
+                .unwrap_or_else(|| "".to_string()),
             None => "".to_string(),
         };
         let build_cmd = self.custom_build_cmd.clone().unwrap_or(suggested_build_cmd);
@@ -207,7 +208,7 @@ impl<'a> AppBuilder<'a> {
         let suggested_start_cmd = match self.builder {
             Some(builder) => builder
                 .suggested_start_command(&self.app)?
-                .unwrap_or("".to_string()),
+                .unwrap_or_else(|| "".to_string()),
             None => "".to_string(),
         };
         let start_cmd = self.custom_start_cmd.clone().unwrap_or(suggested_start_cmd);
