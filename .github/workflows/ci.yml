@@ -1,4 +1,4 @@
-on: [push, pull_request]
+on: [push]
 
 name: CI
 
@@ -66,4 +66,3 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings

@@ -1,6 +1,7 @@
 use crate::bb::app::App;
 use anyhow::Result;
 
+pub mod go;
 pub mod npm;
 pub mod yarn;
 
