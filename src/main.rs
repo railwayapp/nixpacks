@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
-use bb::AppBuilder;
+use bb::{app::App, AppBuilder};
 use builders::{npm::NpmBuilder, yarn::YarnBuilder, Builder};
 use clap::{arg, Arg, Command};
 mod bb;
@@ -78,9 +78,11 @@ fn main() -> Result<()> {
 
             let builders: Vec<&dyn Builder> = vec![&YarnBuilder {}, &NpmBuilder {}];
 
+            let app = App::new(source)?;
+
             let mut app_builder = AppBuilder::new(
                 name,
-                source,
+                &app,
                 build_cmd,
                 start_cmd,
                 pkgs.iter().map(|s| s.to_string()).collect(),

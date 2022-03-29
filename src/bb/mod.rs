@@ -7,30 +7,15 @@ use std::{
     process::Command,
 };
 use uuid::Uuid;
+pub mod app;
 
 use crate::builders::Builder;
 
-#[derive(Debug, Clone)]
-pub struct AppSource {
-    pub source: PathBuf,
-    pub paths: Vec<PathBuf>,
-}
-
-impl AppSource {
-    pub fn includes_file(&self, name: &str) -> bool {
-        for path in &self.paths {
-            if path.file_name().unwrap() == name {
-                return true;
-            }
-        }
-
-        false
-    }
-}
+use self::app::App;
 
 pub struct AppBuilder<'a> {
     name: Option<String>,
-    app: AppSource,
+    app: &'a App,
     custom_build_cmd: Option<String>,
     custom_start_cmd: Option<String>,
     pkgs: Vec<String>,
@@ -40,18 +25,14 @@ pub struct AppBuilder<'a> {
 impl<'a> AppBuilder<'a> {
     pub fn new(
         name: Option<String>,
-        source: PathBuf,
+        app: &'a App,
         custom_build_cmd: Option<String>,
         custom_start_cmd: Option<String>,
         pkgs: Vec<String>,
     ) -> Result<AppBuilder<'a>> {
-        let dir = fs::read_dir(source.clone()).context("Failed to read app source directory")?;
-
-        let paths: Vec<PathBuf> = dir.map(|path| path.unwrap().path()).collect();
-
         Ok(AppBuilder {
             name,
-            app: AppSource { source, paths },
+            app,
             custom_build_cmd,
             custom_start_cmd,
             pkgs,
@@ -63,7 +44,7 @@ impl<'a> AppBuilder<'a> {
         println!("=== Detecting ===");
 
         for builder in builders {
-            let matches = builder.detect(&self.app)?;
+            let matches = builder.detect(self.app)?;
             if matches {
                 self.builder = Some(builder);
                 break;
@@ -166,7 +147,7 @@ impl<'a> AppBuilder<'a> {
             .join(" ");
 
         let pkgs = match self.builder {
-            Some(builder) => format!("{} {}", builder.build_inputs(&self.app), user_pkgs),
+            Some(builder) => format!("{} {}", builder.build_inputs(self.app), user_pkgs),
             None => user_pkgs,
         };
 
@@ -192,14 +173,14 @@ impl<'a> AppBuilder<'a> {
 
         let install_cmd = match self.builder {
             Some(builder) => builder
-                .install_cmd(&self.app)?
+                .install_cmd(self.app)?
                 .unwrap_or_else(|| "".to_string()),
             None => "".to_string(),
         };
 
         let suggested_build_cmd = match self.builder {
             Some(builder) => builder
-                .suggested_build_cmd(&self.app)?
+                .suggested_build_cmd(self.app)?
                 .unwrap_or_else(|| "".to_string()),
             None => "".to_string(),
         };
@@ -207,7 +188,7 @@ impl<'a> AppBuilder<'a> {
 
         let suggested_start_cmd = match self.builder {
             Some(builder) => builder
-                .suggested_start_command(&self.app)?
+                .suggested_start_command(self.app)?
                 .unwrap_or_else(|| "".to_string()),
             None => "".to_string(),
         };
