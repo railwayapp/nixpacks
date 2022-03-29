@@ -1,5 +1,7 @@
 # Better Buildpacks
 
+[![CI](https://github.com/railwayapp/bb/actions/workflows/ci.yml/badge.svg)](https://github.com/railwayapp/bb/actions/workflows/ci.yml)
+
 App source + Nix packages + Docker = Image
 
 ## Usage
