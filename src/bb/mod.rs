@@ -66,7 +66,8 @@ impl<'a> AppBuilder<'a> {
                     bail!("Failed to match a provider")
                 }
 
-                println!("  -> No provider matched")
+                self.logger
+                    .log_step("No provider matched. Using start command")
             }
         }
 
