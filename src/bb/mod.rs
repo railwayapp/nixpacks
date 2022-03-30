@@ -1,4 +1,5 @@
 use anyhow::{bail, Context, Ok, Result};
+use colored::Colorize;
 use indoc::formatdoc;
 use std::{
     fs::{self, File},
@@ -8,14 +9,16 @@ use std::{
 };
 use uuid::Uuid;
 pub mod app;
+pub mod logger;
 
 use crate::providers::Provider;
 
-use self::app::App;
+use self::{app::App, logger::Logger};
 
 pub struct AppBuilder<'a> {
     name: Option<String>,
     app: &'a App,
+    logger: &'a Logger,
     custom_build_cmd: Option<String>,
     custom_start_cmd: Option<String>,
     pkgs: Vec<String>,
@@ -26,6 +29,7 @@ impl<'a> AppBuilder<'a> {
     pub fn new(
         name: Option<String>,
         app: &'a App,
+        logger: &'a Logger,
         custom_build_cmd: Option<String>,
         custom_start_cmd: Option<String>,
         pkgs: Vec<String>,
@@ -33,6 +37,7 @@ impl<'a> AppBuilder<'a> {
         Ok(AppBuilder {
             name,
             app,
+            logger,
             custom_build_cmd,
             custom_start_cmd,
             pkgs,
@@ -41,7 +46,7 @@ impl<'a> AppBuilder<'a> {
     }
 
     pub fn detect(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
-        println!("=== Detecting ===");
+        self.logger.log_section("Detecting");
 
         for provider in providers {
             let matches = provider.detect(self.app)?;
@@ -52,7 +57,9 @@ impl<'a> AppBuilder<'a> {
         }
 
         match self.provider {
-            Some(provider) => println!("  -> Matched provider {}", provider.name()),
+            Some(provider) => self
+                .logger
+                .log_step(&format!("Matched provider {}", provider.name()).blue()),
             None => {
                 // If no builder is found, only fail if there is no start command
                 if self.custom_start_cmd.is_none() {
@@ -67,18 +74,18 @@ impl<'a> AppBuilder<'a> {
     }
 
     pub fn build(&self) -> Result<()> {
-        println!("\n=== Building ===");
+        self.logger.log_section("Building");
 
         let nix_expression = self.gen_nix()?;
-        println!("  -> Generated Nix expression");
+        self.logger.log_step("Generated Nix expression");
 
         let dockerfile = self.gen_dockerfile()?;
-        println!("  -> Generated Dockerfile");
+        self.logger.log_step("Generated Dockerfile");
 
         let id = Uuid::new_v4();
         let tmp_dir_name = format!("./tmp/{}", id);
 
-        println!("  -> Copying source to tmp dir");
+        self.logger.log_step("Copying source to tmp dir");
 
         let source = self.app.source.as_path().to_str().unwrap();
         let mut copy_cmd = Command::new("cp")
@@ -88,7 +95,7 @@ impl<'a> AppBuilder<'a> {
             .spawn()?;
         copy_cmd.wait().context("Copying app source to tmp dir")?;
 
-        println!("  -> Writing environment.nix");
+        self.logger.log_step("Writing environment.nix");
 
         let nix_path = PathBuf::from(tmp_dir_name.clone()).join(PathBuf::from("environment.nix"));
         let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
@@ -96,7 +103,7 @@ impl<'a> AppBuilder<'a> {
             .write_all(nix_expression.as_bytes())
             .context("Unable to write Nix expression")?;
 
-        println!("  -> Writing Dockerfile");
+        self.logger.log_step("Writing Dockerfile");
 
         let dockerfile_path = PathBuf::from(tmp_dir_name.clone()).join(PathBuf::from("Dockerfile"));
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
@@ -108,7 +115,7 @@ impl<'a> AppBuilder<'a> {
         //     self.name.clone().unwrap_or(id.to_string())
         // );
 
-        println!("  -> Building image");
+        self.logger.log_step("Building image");
 
         let name = self.name.clone().unwrap_or_else(|| id.to_string());
 
@@ -125,8 +132,10 @@ impl<'a> AppBuilder<'a> {
             bail!("Docker build failed")
         }
 
-        println!("  -> Built!");
-        println!("\nRun:\n  docker run {}", name);
+        self.logger.log_section("Successfully Built!");
+
+        println!("\n{}:", "Run");
+        println!("  docker run {}", name);
 
         Ok(())
     }

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use bb::{app::App, AppBuilder};
+use bb::{app::App, logger::Logger, AppBuilder};
 use clap::{arg, Arg, Command};
 use providers::{go::GolangProvider, npm::NpmProvider, yarn::YarnProvider, Provider};
 mod bb;
@@ -79,10 +79,12 @@ fn main() -> Result<()> {
             let providers = get_providers();
 
             let app = App::new(path)?;
+            let logger = Logger::new();
 
             let mut app_builder = AppBuilder::new(
                 name,
                 &app,
+                &logger,
                 build_cmd,
                 start_cmd,
                 pkgs.iter().map(|s| s.to_string()).collect(),
