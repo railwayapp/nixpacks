@@ -119,10 +119,13 @@ impl<'a> AppBuilder<'a> {
             .arg(name.clone())
             .spawn()?;
 
-        docker_build_cmd.wait().context("Building image")?;
+        let build_result = docker_build_cmd.wait().context("Building image")?;
+
+        if !build_result.success() {
+            bail!("Docker build failed")
+        }
 
         println!("  -> Built!");
-
         println!("\nRun:\n  docker run {}", name);
 
         Ok(())
