@@ -1,4 +1,4 @@
-use super::Provider;
+use super::{npm::PackageJson, Provider};
 use crate::bb::app::App;
 use anyhow::Result;
 
@@ -21,8 +21,13 @@ impl Provider for YarnProvider {
         Ok(Some("yarn".to_string()))
     }
 
-    fn suggested_build_cmd(&self, _app: &App) -> Result<Option<String>> {
-        Ok(Some("yarn build".to_string()))
+    fn suggested_build_cmd(&self, app: &App) -> Result<Option<String>> {
+        let package_json: PackageJson = app.read_json("package.json")?;
+        if package_json.scripts.get("build").is_some() {
+            return Ok(Some("yarn build".to_string()));
+        }
+
+        Ok(None)
     }
 
     fn suggested_start_command(&self, _app: &App) -> Result<Option<String>> {
