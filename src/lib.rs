@@ -38,7 +38,7 @@ pub fn gen_plan(
     Ok(plan)
 }
 
-pub fn run_build_cmd(
+pub fn build(
     path: &str,
     name: Option<String>,
     custom_pkgs: Vec<&str>,

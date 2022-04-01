@@ -1,4 +1,4 @@
-use ::nixpacks::{gen_plan, run_build_cmd};
+use ::nixpacks::{build, gen_plan};
 use anyhow::Result;
 use clap::{arg, Arg, Command};
 
@@ -84,7 +84,7 @@ fn main() -> Result<()> {
             let name = matches.value_of("name").map(|n| n.to_string());
             let plan_path = matches.value_of("plan");
 
-            run_build_cmd(path, name, pkgs, build_cmd, start_cmd, pin_pkgs, plan_path)?;
+            build(path, name, pkgs, build_cmd, start_cmd, pin_pkgs, plan_path)?;
         }
         _ => eprintln!("Invalid command"),
     }
