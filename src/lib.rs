@@ -1,27 +1,26 @@
 use std::fs;
 
 use crate::{
-    nixpacks::{app::App, logger::Logger, AppBuilder, AppBuilderOptions},
+    nixpacks::{app::App, logger::Logger, plan::BuildPlan, AppBuilder, AppBuilderOptions},
     providers::{go::GolangProvider, npm::NpmProvider, yarn::YarnProvider, Pkg},
 };
 use anyhow::{Context, Result};
-use nixpacks::plan::BuildPlan;
 use providers::Provider;
 
 pub mod nixpacks;
 pub mod providers;
 
-fn get_providers() -> Vec<&'static dyn Provider> {
+pub fn get_providers() -> Vec<&'static dyn Provider> {
     vec![&YarnProvider {}, &NpmProvider {}, &GolangProvider {}]
 }
 
-pub fn run_plan_cmd(
+pub fn gen_plan(
     path: &str,
     custom_pkgs: Vec<&str>,
     custom_build_cmd: Option<String>,
     custom_start_cmd: Option<String>,
     pin_pkgs: bool,
-) -> Result<()> {
+) -> Result<BuildPlan> {
     let logger = Logger::new();
     let providers = get_providers();
 
@@ -36,10 +35,7 @@ pub fn run_plan_cmd(
     let mut app_builder = AppBuilder::new(None, &app, &logger, &options)?;
 
     let plan = app_builder.plan(providers)?;
-    let json = serde_json::to_string_pretty(&plan)?;
-    println!("{}", json);
-
-    Ok(())
+    Ok(plan)
 }
 
 pub fn run_build_cmd(

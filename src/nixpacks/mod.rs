@@ -225,7 +225,7 @@ impl<'a> AppBuilder<'a> {
 
             // Better error handling
             if contents.starts_with("web: ") {
-                return Ok(Some(contents.replace("web: ", "")));
+                return Ok(Some(contents.replace("web: ", "").trim().to_string()));
             }
 
             Ok(None)

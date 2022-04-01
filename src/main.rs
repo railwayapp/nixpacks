@@ -1,8 +1,6 @@
-use ::nixpacks::{run_build_cmd, run_plan_cmd};
+use ::nixpacks::{gen_plan, run_build_cmd};
 use anyhow::Result;
 use clap::{arg, Arg, Command};
-pub mod nixpacks;
-pub mod providers;
 
 fn main() -> Result<()> {
     let matches = Command::new("bb")
@@ -76,7 +74,10 @@ fn main() -> Result<()> {
     match &matches.subcommand() {
         Some(("plan", matches)) => {
             let path = matches.value_of("PATH").expect("required");
-            run_plan_cmd(path, pkgs, build_cmd, start_cmd, pin_pkgs)?;
+
+            let plan = gen_plan(path, pkgs, build_cmd, start_cmd, pin_pkgs)?;
+            let json = serde_json::to_string_pretty(&plan)?;
+            println!("{}", json);
         }
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").expect("required");
