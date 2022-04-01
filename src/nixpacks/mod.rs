@@ -104,7 +104,7 @@ impl<'a> AppBuilder<'a> {
         let mut copy_cmd = Command::new("cp")
             .arg("-a")
             .arg(format!("{}/.", source))
-            .arg(tmp_dir.path().clone())
+            .arg(tmp_dir.path())
             .spawn()?;
         let copy_result = copy_cmd.wait().context("Copying app source to tmp dir")?;
         if !copy_result.success() {
@@ -226,7 +226,7 @@ impl<'a> AppBuilder<'a> {
         let nix_expression = AppBuilder::gen_nix(plan).context("Generating Nix expression")?;
         let dockerfile = AppBuilder::gen_dockerfile(plan).context("Generating Dockerfile")?;
 
-        let nix_path = PathBuf::from(dest.clone()).join(PathBuf::from("environment.nix"));
+        let nix_path = PathBuf::from(dest).join(PathBuf::from("environment.nix"));
         let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
         nix_file
             .write_all(nix_expression.as_bytes())
