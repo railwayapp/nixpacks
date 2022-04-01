@@ -1,5 +1,7 @@
-use anyhow::Result;
-use bb::{app::App, logger::Logger, AppBuilder, AppBuilderOptions};
+use std::fs;
+
+use anyhow::{Context, Result};
+use bb::{app::App, logger::Logger, plan::BuildPlan, AppBuilder, AppBuilderOptions};
 use clap::{arg, Arg, Command};
 use providers::{go::GolangProvider, npm::NpmProvider, yarn::YarnProvider, Pkg, Provider};
 mod bb;
@@ -27,6 +29,12 @@ fn main() -> Result<()> {
                         .long("name")
                         .short('n')
                         .help("Name for the built image")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::new("plan")
+                        .long("plan")
+                        .help("Existing build plan file to use")
                         .takes_value(true),
                 ),
         )
@@ -100,9 +108,20 @@ fn main() -> Result<()> {
             let app = App::new(path)?;
             let mut app_builder = AppBuilder::new(name, &app, &logger, &options)?;
 
-            app_builder.build(providers)?;
+            let plan_path = matches.value_of("plan");
+            match plan_path {
+                Some(plan_path) => {
+                    let plan_json = fs::read_to_string(plan_path).context("Reading build plan")?;
+                    let plan: BuildPlan =
+                        serde_json::from_str(&plan_json).context("Deserializing build plan")?;
+                    app_builder.build_from_plan(&plan)?;
+                }
+                None => {
+                    app_builder.build(providers)?;
+                }
+            }
         }
-        _ => unreachable!(),
+        _ => eprintln!("Invalid command"),
     }
 
     Ok(())

@@ -1,12 +1,12 @@
 use crate::bb::app::App;
 use anyhow::Result;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub mod go;
 pub mod npm;
 pub mod yarn;
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Pkg {
     pub name: String,
 }
@@ -19,14 +19,14 @@ impl Pkg {
     }
 }
 
-impl Serialize for Pkg {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(self.name.as_str())
-    }
-}
+// impl Serialize for Pkg {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: serde::Serializer,
+//     {
+//         serializer.serialize_str(self.name.as_str())
+//     }
+// }
 
 pub trait Provider {
     fn name(&self) -> &str;

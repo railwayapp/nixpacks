@@ -80,10 +80,20 @@ impl<'a> AppBuilder<'a> {
 
     pub fn build(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
         self.logger.log_section("Building");
-
         let plan = self.plan(providers).context("Creating build plan")?;
-        self.logger.log_step("Generated build plan");
+        self.logger.log_step("Generated new build plan");
 
+        self.do_build(&plan)
+    }
+
+    pub fn build_from_plan(&mut self, plan: &BuildPlan) -> Result<()> {
+        self.logger.log_section("Building");
+        self.logger.log_step("Building from existing plan");
+
+        self.do_build(plan)
+    }
+
+    pub fn do_build(&mut self, plan: &BuildPlan) -> Result<()> {
         let id = Uuid::new_v4();
         let tmp_dir_name = format!("./tmp/{}", id);
 
@@ -98,7 +108,7 @@ impl<'a> AppBuilder<'a> {
         copy_cmd.wait().context("Copying app source to tmp dir")?;
 
         self.logger.log_step("Writing build plan");
-        AppBuilder::write_build_plan(&plan, tmp_dir_name.clone()).context("Writing build plan")?;
+        AppBuilder::write_build_plan(plan, tmp_dir_name.clone()).context("Writing build plan")?;
 
         self.logger.log_step("Building image");
 
