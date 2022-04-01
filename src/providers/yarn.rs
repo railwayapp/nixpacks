@@ -1,5 +1,5 @@
 use super::{npm::PackageJson, Pkg, Provider};
-use crate::bb::app::App;
+use crate::nixpacks::app::App;
 use anyhow::Result;
 
 pub struct YarnProvider {}

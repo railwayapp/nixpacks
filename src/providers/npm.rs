@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::{Pkg, Provider};
-use crate::bb::app::App;
+use crate::nixpacks::app::App;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
