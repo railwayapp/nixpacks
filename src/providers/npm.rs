@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::Provider;
+use super::{Pkg, Provider};
 use crate::bb::app::App;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -16,8 +16,8 @@ impl Provider for NpmProvider {
         Ok(app.includes_file("package.json"))
     }
 
-    fn pkgs(&self, _app: &App) -> String {
-        "pkgs.stdenv pkgs.nodejs".to_string()
+    fn pkgs(&self, _app: &App) -> Vec<Pkg> {
+        vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.nodejs")]
     }
 
     fn install_cmd(&self, _app: &App) -> Result<Option<String>> {
