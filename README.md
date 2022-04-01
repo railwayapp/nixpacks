@@ -1,49 +1,90 @@
-# Better Buildpacks
+# Nixpacks
 
 [![CI](https://github.com/railwayapp/bb/actions/workflows/ci.yml/badge.svg)](https://github.com/railwayapp/bb/actions/workflows/ci.yml)
 
-App source + Nix packages + Docker = Image
+**App source + Nix packages + Docker = Image**
 
-## Usage
+The goal of this project is to build an app source directory in a reproducible way. Providers analyze the source code and recommend nix packages and suggest install/build/start commands. However, all of these settings can be overriden by the user.
 
-Create a Docker image based on app source.
+Nixpacks currently supports
+
+- Node/NPM
+- Yarn
+- Go
+
+More langauges will be added very soon
+
+## Getting Started
+
+_Note: This is a young project and is in active development_
+
+This project is not yet distributed anywhere and must be built with [Rust](https://www.rust-lang.org/tools/install).
+
+1. Checkout this repo `git clone https://github.com/railwayapp/nixpacks.git`
+2. Build the source `cargo build`
+3. Run the tests `cargo test`
+
+There are two main commands
+
+### `plan`
+
+Generates a build plan and outputs to stdout.
 
 ```
-cargo run -- build examples/yarn
+cargo run -- plan $APP_SRC
 ```
 
-Show help
+![image](https://user-images.githubusercontent.com/3044853/161355091-1eb38fd7-aa59-412e-904d-74e48e2016e7.png)
+
+View the help with `cargo run -- plan --help`
+
+### `build`
+
+Creates a runnable image with Docker
 
 ```
-> cargo run -- build --help
-Create a docker image based on app source
-
-USAGE:
-    bb build [OPTIONS] <PATH>
-
-ARGS:
-    <PATH>    App source
-
-OPTIONS:
-    -b, --build-cmd <build_cmd>    Specify the build command to use
-        --dockerfile               Show the Dockerfile that would be generated
-    -h, --help                     Print help information
-    -n, --name <name>              Name for the built image
-        --nix                      Show the nix expression that would generated
-    -p, --pkgs <pkgs>...           Provide additional nix packages to install in the environment
-    -s, --start-cmd <start_cmd>    Specify the start command to use
+cargo run -- build $APP_SRC --name $NAME
 ```
 
-## Steps
+![image](https://user-images.githubusercontent.com/3044853/161355162-73651b6d-6ee2-41ee-a0f0-abbf581ce8f4.png)
 
-**Detect**
 
-Return the first matching builder for a source directory
+View the help with `cargo run -- build --help`
+
+
+## How this works
+
+Nixpacks works in two phases
+
+**Plan**
+
+Analyze the app source directory and generates a reproducible build plan. This plan can be saved (in JSON format) an re-used at a later date to build the image in the exact same way every time.
+
+Language providers are matched against the app source directory and suggest Nix packages, an install command, build command, and start command. All of these can be overwritten by the user.
 
 **Build**
 
-1. Generate nix expression based on packages provided by builder
-2. Generate Dockerfile based on install, build, and start commands
-3. Copy app source to a temp directory
-4. Create `environment.nix` and `Dockerfile` files in the temp directory
-5. Build the temp directory with Docker
+The build phase takes the build plan and creates an OCI compliant image (with Docker) that can be deployed and run anywhere. This happens in the following steps
+
+1. Create build plan
+2. Copy app source to temp directory
+3. Use the Nix packages in the build plan and generate an `environment.nix` file
+4. Use the install, build, and start commands and generate a `Dockerfile`
+5. Done!
+
+Overall the process is fairy simple.
+
+## Future Steps
+
+This project is still in early development and is just the start.
+
+- Lanauge support
+  * [ ] NPM
+  * [ ] Yarn
+  * [ ] Golang
+  * [ ] Python
+  * [ ] Rust
+  * [ ] Java
+  * [ ] Zip
+  * [ ] Crystal
+  * [ ] Ruby
