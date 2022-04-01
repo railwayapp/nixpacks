@@ -1,5 +1,4 @@
 use anyhow::{bail, Context, Ok, Result};
-use colored::Colorize;
 use indoc::formatdoc;
 use std::{
     fs::{self, File},
@@ -10,21 +9,28 @@ use std::{
 use uuid::Uuid;
 pub mod app;
 pub mod logger;
+pub mod plan;
 
-use crate::providers::Provider;
+use crate::providers::{Pkg, Provider};
 
-use self::{app::App, logger::Logger};
+use self::{app::App, logger::Logger, plan::BuildPlan};
+
+static NIX_PACKS_VERSION: &'static str = "0.0.1";
 
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &'static str = "30d3d79b7d3607d56546dd2a6b49e156ba0ec634";
+
+pub struct AppBuilderOptions {
+    pub custom_build_cmd: Option<String>,
+    pub custom_start_cmd: Option<String>,
+    pub custom_pkgs: Vec<Pkg>,
+}
 
 pub struct AppBuilder<'a> {
     name: Option<String>,
     app: &'a App,
     logger: &'a Logger,
-    custom_build_cmd: Option<String>,
-    custom_start_cmd: Option<String>,
-    pkgs: Vec<String>,
+    options: &'a AppBuilderOptions,
     provider: Option<&'a dyn Provider>,
 }
 
@@ -33,58 +39,45 @@ impl<'a> AppBuilder<'a> {
         name: Option<String>,
         app: &'a App,
         logger: &'a Logger,
-        custom_build_cmd: Option<String>,
-        custom_start_cmd: Option<String>,
-        pkgs: Vec<String>,
+        options: &'a AppBuilderOptions,
     ) -> Result<AppBuilder<'a>> {
         Ok(AppBuilder {
             name,
             app,
             logger,
-            custom_build_cmd,
-            custom_start_cmd,
-            pkgs,
+            options,
             provider: None,
         })
     }
 
-    pub fn detect(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
-        self.logger.log_section("Detecting");
+    pub fn plan(&mut self, providers: Vec<&'a dyn Provider>) -> Result<BuildPlan> {
+        // Load options from the best matching provider
+        self.detect(providers).context("Detecting provider")?;
 
-        for provider in providers {
-            let matches = provider.detect(self.app)?;
-            if matches {
-                self.provider = Some(provider);
-                break;
-            }
-        }
+        let pkgs = self.get_pkgs().context("Getting packages")?;
+        let install_cmd = self
+            .get_install_cmd()
+            .context("Generating install command")?;
+        let build_cmd = self.get_build_cmd().context("Generating build command")?;
+        let start_cmd = self.get_start_cmd().context("Generating start command")?;
 
-        match self.provider {
-            Some(provider) => self
-                .logger
-                .log_step(&format!("Matched provider {}", provider.name()).blue()),
-            None => {
-                // If no builder is found, only fail if there is no start command
-                if self.custom_start_cmd.is_none() {
-                    bail!("Failed to match a provider")
-                }
+        let plan = BuildPlan {
+            version: NIX_PACKS_VERSION.to_string(),
+            nixpkgs_archive: NIXPKGS_ARCHIVE.to_string(),
+            pkgs,
+            install_cmd,
+            start_cmd,
+            build_cmd,
+        };
 
-                self.logger
-                    .log_step("No provider matched. Using start command")
-            }
-        }
-
-        Ok(())
+        Ok(plan)
     }
 
-    pub fn build(&self) -> Result<()> {
+    pub fn build(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
         self.logger.log_section("Building");
 
-        let nix_expression = self.gen_nix()?;
-        self.logger.log_step("Generated Nix expression");
-
-        let dockerfile = self.gen_dockerfile()?;
-        self.logger.log_step("Generated Dockerfile");
+        let plan = self.plan(providers).context("Creating build plan")?;
+        self.logger.log_step("Generated build plan");
 
         let id = Uuid::new_v4();
         let tmp_dir_name = format!("./tmp/{}", id);
@@ -99,25 +92,8 @@ impl<'a> AppBuilder<'a> {
             .spawn()?;
         copy_cmd.wait().context("Copying app source to tmp dir")?;
 
-        self.logger.log_step("Writing environment.nix");
-
-        let nix_path = PathBuf::from(tmp_dir_name.clone()).join(PathBuf::from("environment.nix"));
-        let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
-        nix_file
-            .write_all(nix_expression.as_bytes())
-            .context("Unable to write Nix expression")?;
-
-        self.logger.log_step("Writing Dockerfile");
-
-        let dockerfile_path = PathBuf::from(tmp_dir_name.clone()).join(PathBuf::from("Dockerfile"));
-        File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
-        fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
-
-        // println!(
-        //     "\nRun:\n  docker build {} -t {}",
-        //     tmp_dir_name.as_str(),
-        //     self.name.clone().unwrap_or(id.to_string())
-        // );
+        self.logger.log_step("Writing build plan");
+        AppBuilder::write_build_plan(&plan, tmp_dir_name.clone()).context("Writing build plan")?;
 
         self.logger.log_step("Building image");
 
@@ -144,100 +120,72 @@ impl<'a> AppBuilder<'a> {
         Ok(())
     }
 
-    pub fn gen_nix(&self) -> Result<String> {
-        // let build_inputs = &self
-        //     .participating_builders
-        //     .iter()
-        //     .map(|builder| {
-        //         let inputs = builder.build_inputs();
-        //         inputs
-        //     })
-        //     .flatten()
-        //     .collect::<Vec<String>>();
-
-        let user_pkgs = self
-            .pkgs
-            .iter()
-            .map(|s| format!("pkgs.{}", s))
-            .collect::<Vec<String>>()
-            .join(" ");
-
-        let pkgs = match self.provider {
-            Some(provider) => format!("{} {}", provider.pkgs(self.app), user_pkgs),
-            None => user_pkgs,
+    fn get_pkgs(&self) -> Result<Vec<Pkg>> {
+        let pkgs: Vec<Pkg> = match self.provider {
+            Some(provider) => {
+                let mut provider_pkgs = provider.pkgs(self.app);
+                let mut pkgs = self.options.custom_pkgs.clone();
+                pkgs.append(&mut provider_pkgs);
+                pkgs
+            }
+            None => self.options.custom_pkgs.clone(),
         };
 
-        // let nix_expression = formatdoc! {"
-        //   {{ pkgs ? import <nixpkgs> {{ }} }}:
-
-        //   pkgs.mkShell {{
-        //     buildInputs = [ {pkgs} ];
-        //   }}
-        // ",
-        // pkgs=pkgs};
-
-        let nix_expression = formatdoc! {"
-          with import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{nixpkgs}.tar.gz\") {{ }}; [ {pkgs} ]
-        ",
-        nixpkgs=NIXPKGS_ARCHIVE,
-        pkgs=pkgs};
-
-        Ok(nix_expression)
+        Ok(pkgs)
     }
 
-    pub fn gen_dockerfile(&self) -> Result<String> {
-        // let builder = self.builder.expect("Cannot build without builder");
-
+    fn get_install_cmd(&self) -> Result<Option<String>> {
         let install_cmd = match self.provider {
-            Some(provider) => provider
-                .install_cmd(self.app)?
-                .unwrap_or_else(|| "".to_string()),
-            None => "".to_string(),
+            Some(provider) => provider.install_cmd(self.app)?,
+            None => None,
         };
 
+        Ok(install_cmd)
+    }
+
+    fn get_build_cmd(&self) -> Result<Option<String>> {
         let suggested_build_cmd = match self.provider {
-            Some(provider) => provider
-                .suggested_build_cmd(self.app)?
-                .unwrap_or_else(|| "".to_string()),
-            None => "".to_string(),
+            Some(provider) => provider.suggested_build_cmd(self.app)?,
+            None => None,
         };
-        let build_cmd = self.custom_build_cmd.clone().unwrap_or(suggested_build_cmd);
+
+        let build_cmd = self
+            .options
+            .custom_build_cmd
+            .clone()
+            .or(suggested_build_cmd);
+
+        Ok(build_cmd)
+    }
+
+    fn get_start_cmd(&self) -> Result<Option<String>> {
+        let procfile_cmd = self.parse_procfile()?;
 
         let suggested_start_cmd = match self.provider {
-            Some(provider) => provider
-                .suggested_start_command(self.app)?
-                .unwrap_or_else(|| "".to_string()),
-            None => "".to_string(),
+            Some(provider) => provider.suggested_start_command(self.app)?,
+            None => None,
         };
-        let procfile_cmd = self.parse_procfile()?;
-        let start_cmd = procfile_cmd
-            .unwrap_or_else(|| self.custom_start_cmd.clone().unwrap_or(suggested_start_cmd));
 
-        let dockerfile = formatdoc! {"
-          FROM nixos/nix
+        let start_cmd = self
+            .options
+            .custom_start_cmd
+            .clone()
+            .or(procfile_cmd.clone())
+            .or(suggested_start_cmd.clone());
 
-          RUN nix-channel --update
+        Ok(start_cmd)
+    }
 
-          COPY . /app
-          WORKDIR /app
+    fn detect(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
+        for provider in providers {
+            let matches = provider.detect(self.app)?;
+            if matches {
+                self.provider = Some(provider);
+                break;
+            }
+        }
 
-          # Load Nix environment
-          RUN nix-env -if environment.nix
-
-          # Install
-          RUN {install_cmd}
-
-          # Build
-          RUN {build_cmd}
-
-          # Start
-          CMD {start_cmd}
-        ",
-        install_cmd=install_cmd,
-        build_cmd=build_cmd,
-        start_cmd=start_cmd};
-
-        Ok(dockerfile)
+        Ok(())
     }
 
     fn parse_procfile(&self) -> Result<Option<String>> {
@@ -253,5 +201,85 @@ impl<'a> AppBuilder<'a> {
         } else {
             Ok(None)
         }
+    }
+
+    pub fn write_build_plan(plan: &BuildPlan, dest: String) -> Result<()> {
+        let nix_expression = AppBuilder::gen_nix(plan).context("Generating Nix expression")?;
+        let dockerfile = AppBuilder::gen_dockerfile(plan).context("Generating Dockerfile")?;
+
+        let nix_path = PathBuf::from(dest.clone()).join(PathBuf::from("environment.nix"));
+        let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
+        nix_file
+            .write_all(nix_expression.as_bytes())
+            .context("Unable to write Nix expression")?;
+
+        let dockerfile_path = PathBuf::from(dest.clone()).join(PathBuf::from("Dockerfile"));
+        File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
+        fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
+
+        Ok(())
+    }
+
+    pub fn gen_nix(plan: &BuildPlan) -> Result<String> {
+        let nixpkgs = plan
+            .pkgs
+            .iter()
+            .map(|p| p.name.clone())
+            .collect::<Vec<String>>()
+            .join(" ");
+
+        let nix_archive = plan.nixpkgs_archive.clone();
+
+        let nix_expression = formatdoc! {"
+          with import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{nix_archive}.tar.gz\") {{ }}; [ {pkgs} ]
+        ",
+        nix_archive=nix_archive,
+        pkgs=nixpkgs};
+
+        Ok(nix_expression)
+    }
+
+    pub fn gen_dockerfile(plan: &BuildPlan) -> Result<String> {
+        let install_cmd = plan
+            .install_cmd
+            .as_ref()
+            .map(|cmd| format!("RUN {}", cmd))
+            .unwrap_or_else(|| "".to_string());
+        let build_cmd = plan
+            .build_cmd
+            .as_ref()
+            .map(|cmd| format!("RUN {}", cmd))
+            .unwrap_or_else(|| "".to_string());
+        let start_cmd = plan
+            .start_cmd
+            .as_ref()
+            .map(|cmd| format!("CMD {}", cmd))
+            .unwrap_or_else(|| "".to_string());
+
+        let dockerfile = formatdoc! {"
+          FROM nixos/nix
+
+          RUN nix-channel --update
+
+          COPY . /app
+          WORKDIR /app
+
+          # Load Nix environment
+          RUN nix-env -if environment.nix
+
+          # Install
+          {install_cmd}
+
+          # Build
+          {build_cmd}
+
+          # Start
+          {start_cmd}
+        ",
+        install_cmd=install_cmd,
+        build_cmd=build_cmd,
+        start_cmd=start_cmd};
+
+        Ok(dockerfile)
     }
 }

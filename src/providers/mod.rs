@@ -1,14 +1,37 @@
 use crate::bb::app::App;
 use anyhow::Result;
+use serde::Serialize;
 
 pub mod go;
 pub mod npm;
 pub mod yarn;
 
+#[derive(Clone, Debug)]
+pub struct Pkg {
+    pub name: String,
+}
+
+impl Pkg {
+    pub fn new(name: &str) -> Pkg {
+        Pkg {
+            name: name.to_string(),
+        }
+    }
+}
+
+impl Serialize for Pkg {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.name.as_str())
+    }
+}
+
 pub trait Provider {
     fn name(&self) -> &str;
     fn detect(&self, app: &App) -> Result<bool>;
-    fn pkgs(&self, app: &App) -> String;
+    fn pkgs(&self, app: &App) -> Vec<Pkg>;
     fn install_cmd(&self, _app: &App) -> Result<Option<String>> {
         Ok(None)
     }

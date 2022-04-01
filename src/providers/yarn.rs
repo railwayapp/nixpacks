@@ -1,4 +1,4 @@
-use super::{npm::PackageJson, Provider};
+use super::{npm::PackageJson, Pkg, Provider};
 use crate::bb::app::App;
 use anyhow::Result;
 
@@ -13,8 +13,8 @@ impl Provider for YarnProvider {
         Ok(app.includes_file("package.json") && app.includes_file("yarn.lock"))
     }
 
-    fn pkgs(&self, _app: &App) -> String {
-        "pkgs.stdenv pkgs.yarn".to_string()
+    fn pkgs(&self, _app: &App) -> Vec<Pkg> {
+        vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.yarn")]
     }
 
     fn install_cmd(&self, _app: &App) -> Result<Option<String>> {

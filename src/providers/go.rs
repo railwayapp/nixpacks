@@ -1,5 +1,5 @@
 use super::Provider;
-use crate::bb::app::App;
+use crate::{bb::app::App, providers::Pkg};
 use anyhow::Result;
 
 pub struct GolangProvider {}
@@ -13,8 +13,8 @@ impl Provider for GolangProvider {
         Ok(app.includes_file("main.go"))
     }
 
-    fn pkgs(&self, _app: &App) -> String {
-        "pkgs.stdenv pkgs.go".to_string()
+    fn pkgs(&self, _app: &App) -> Vec<Pkg> {
+        vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.go")]
     }
 
     fn install_cmd(&self, _app: &App) -> Result<Option<String>> {
