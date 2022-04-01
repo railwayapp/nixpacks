@@ -6,7 +6,7 @@ pub mod go;
 pub mod npm;
 pub mod yarn;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct Pkg {
     pub name: String,
 }

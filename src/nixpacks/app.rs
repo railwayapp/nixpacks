@@ -64,14 +64,14 @@ mod tests {
 
     #[test]
     fn test_creates_app() -> Result<()> {
-        let app = App::new("./tests/fixtures/npm")?;
-        assert_eq!(app.paths.len(), 4);
+        let app = App::new("./examples/npm")?;
+        assert_eq!(app.paths.len(), 5);
         Ok(())
     }
 
     #[test]
     fn test_read_file() -> Result<()> {
-        let app = App::new("./tests/fixtures/npm")?;
+        let app = App::new("./examples/npm")?;
         assert_eq!(
             app.read_file("index.ts")?.trim_end(),
             "console.log(\"Hello from NPM\");"
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_read_json_file() -> Result<()> {
-        let app = App::new("./tests/fixtures/npm")?;
+        let app = App::new("./examples/npm")?;
         let value: Map<String, Value> = app.read_json("package.json")?;
         assert!(value.get("name").is_some());
         assert_eq!(value.get("name").unwrap(), "npm");
@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn test_read_structured_json_file() -> Result<()> {
-        let app = App::new("./tests/fixtures/npm")?;
+        let app = App::new("./examples/npm")?;
         let value: TestPackageJson = app.read_json("package.json")?;
         assert_eq!(value.name, "npm");
         assert_eq!(value.scripts.get("build").unwrap(), "tsc -p tsconfig.json");

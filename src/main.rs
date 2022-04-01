@@ -1,15 +1,6 @@
-use std::fs;
-
-use anyhow::{Context, Result};
+use ::nixpacks::{build, gen_plan};
+use anyhow::Result;
 use clap::{arg, Arg, Command};
-use nixpacks::{app::App, logger::Logger, plan::BuildPlan, AppBuilder, AppBuilderOptions};
-use providers::{go::GolangProvider, npm::NpmProvider, yarn::YarnProvider, Pkg, Provider};
-mod nixpacks;
-mod providers;
-
-fn get_providers() -> Vec<&'static dyn Provider> {
-    vec![&YarnProvider {}, &NpmProvider {}, &GolangProvider {}]
-}
 
 fn main() -> Result<()> {
     let matches = Command::new("bb")
@@ -80,46 +71,20 @@ fn main() -> Result<()> {
     };
     let pin_pkgs = matches.is_present("pin");
 
-    let options = AppBuilderOptions {
-        custom_pkgs: pkgs.iter().map(|p| Pkg::new(p)).collect(),
-        custom_build_cmd: build_cmd,
-        custom_start_cmd: start_cmd,
-        pin_pkgs,
-    };
-
-    let logger = Logger::new();
-    let providers = get_providers();
-
     match &matches.subcommand() {
         Some(("plan", matches)) => {
             let path = matches.value_of("PATH").expect("required");
 
-            let app = App::new(path)?;
-            let mut app_builder = AppBuilder::new(None, &app, &logger, &options)?;
-
-            let plan = app_builder.plan(providers)?;
+            let plan = gen_plan(path, pkgs, build_cmd, start_cmd, pin_pkgs)?;
             let json = serde_json::to_string_pretty(&plan)?;
             println!("{}", json);
         }
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").expect("required");
             let name = matches.value_of("name").map(|n| n.to_string());
-
-            let app = App::new(path)?;
-            let mut app_builder = AppBuilder::new(name, &app, &logger, &options)?;
-
             let plan_path = matches.value_of("plan");
-            match plan_path {
-                Some(plan_path) => {
-                    let plan_json = fs::read_to_string(plan_path).context("Reading build plan")?;
-                    let plan: BuildPlan =
-                        serde_json::from_str(&plan_json).context("Deserializing build plan")?;
-                    app_builder.build_from_plan(&plan)?;
-                }
-                None => {
-                    app_builder.build(providers)?;
-                }
-            }
+
+            build(path, name, pkgs, build_cmd, start_cmd, pin_pkgs, plan_path)?;
         }
         _ => eprintln!("Invalid command"),
     }

@@ -3,6 +3,14 @@ name = "nixpacks"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "nixpacks"
+path = "src/main.rs"
+
+[lib]
+name = "nixpacks"
+path = "src/lib.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

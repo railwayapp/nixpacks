@@ -21,11 +21,23 @@ static NIX_PACKS_VERSION: &str = "0.0.1";
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "30d3d79b7d3607d56546dd2a6b49e156ba0ec634";
 
+#[derive(Debug)]
 pub struct AppBuilderOptions {
     pub custom_build_cmd: Option<String>,
     pub custom_start_cmd: Option<String>,
     pub custom_pkgs: Vec<Pkg>,
     pub pin_pkgs: bool,
+}
+
+impl AppBuilderOptions {
+    pub fn empty() -> AppBuilderOptions {
+        AppBuilderOptions {
+            custom_build_cmd: None,
+            custom_start_cmd: None,
+            custom_pkgs: Vec::new(),
+            pin_pkgs: false,
+        }
+    }
 }
 
 pub struct AppBuilder<'a> {
@@ -213,7 +225,7 @@ impl<'a> AppBuilder<'a> {
 
             // Better error handling
             if contents.starts_with("web: ") {
-                return Ok(Some(contents.replace("web: ", "")));
+                return Ok(Some(contents.replace("web: ", "").trim().to_string()));
             }
 
             Ok(None)
