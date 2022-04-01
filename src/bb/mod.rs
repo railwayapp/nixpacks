@@ -15,15 +15,16 @@ use crate::providers::{Pkg, Provider};
 
 use self::{app::App, logger::Logger, plan::BuildPlan};
 
-static NIX_PACKS_VERSION: &'static str = "0.0.1";
+static NIX_PACKS_VERSION: &str = "0.0.1";
 
 // https://status.nixos.org/
-static NIXPKGS_ARCHIVE: &'static str = "30d3d79b7d3607d56546dd2a6b49e156ba0ec634";
+static NIXPKGS_ARCHIVE: &str = "30d3d79b7d3607d56546dd2a6b49e156ba0ec634";
 
 pub struct AppBuilderOptions {
     pub custom_build_cmd: Option<String>,
     pub custom_start_cmd: Option<String>,
     pub custom_pkgs: Vec<Pkg>,
+    pub pin_pkgs: bool,
 }
 
 pub struct AppBuilder<'a> {
@@ -63,7 +64,11 @@ impl<'a> AppBuilder<'a> {
 
         let plan = BuildPlan {
             version: NIX_PACKS_VERSION.to_string(),
-            nixpkgs_archive: NIXPKGS_ARCHIVE.to_string(),
+            nixpkgs_archive: if self.options.pin_pkgs {
+                Some(NIXPKGS_ARCHIVE.to_string())
+            } else {
+                None
+            },
             pkgs,
             install_cmd,
             start_cmd,
@@ -170,8 +175,8 @@ impl<'a> AppBuilder<'a> {
             .options
             .custom_start_cmd
             .clone()
-            .or(procfile_cmd.clone())
-            .or(suggested_start_cmd.clone());
+            .or(procfile_cmd)
+            .or(suggested_start_cmd);
 
         Ok(start_cmd)
     }
@@ -213,7 +218,7 @@ impl<'a> AppBuilder<'a> {
             .write_all(nix_expression.as_bytes())
             .context("Unable to write Nix expression")?;
 
-        let dockerfile_path = PathBuf::from(dest.clone()).join(PathBuf::from("Dockerfile"));
+        let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
 
@@ -229,11 +234,18 @@ impl<'a> AppBuilder<'a> {
             .join(" ");
 
         let nix_archive = plan.nixpkgs_archive.clone();
+        let pkg_import = match nix_archive {
+            Some(archive) => format!(
+                "with import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
+                archive
+            ),
+            None => "with import <nixpkgs>".to_string(),
+        };
 
         let nix_expression = formatdoc! {"
-          with import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{nix_archive}.tar.gz\") {{ }}; [ {pkgs} ]
+           {pkg_import} {{ }}; [ {pkgs} ]
         ",
-        nix_archive=nix_archive,
+        pkg_import=pkg_import,
         pkgs=nixpkgs};
 
         Ok(nix_expression)

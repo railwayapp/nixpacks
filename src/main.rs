@@ -52,6 +52,12 @@ fn main() -> Result<()> {
                 .takes_value(true)
                 .multiple_values(true),
         )
+        .arg(
+            Arg::new("pin")
+                .long("pin")
+                .help("Pin the nixpkgs")
+                .takes_value(false),
+        )
         .get_matches();
 
     let build_cmd = matches.value_of("build_cmd").map(|s| s.to_string());
@@ -60,11 +66,13 @@ fn main() -> Result<()> {
         Some(values) => values.collect(),
         None => Vec::new(),
     };
+    let pin_pkgs = matches.is_present("pin");
 
     let options = AppBuilderOptions {
         custom_pkgs: pkgs.iter().map(|p| Pkg::new(p)).collect(),
         custom_build_cmd: build_cmd,
         custom_start_cmd: start_cmd,
+        pin_pkgs,
     };
 
     let logger = Logger::new();
