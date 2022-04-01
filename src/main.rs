@@ -35,14 +35,16 @@ fn main() -> Result<()> {
                 .long("build-cmd")
                 .short('b')
                 .help("Specify the build command to use")
-                .takes_value(true),
+                .takes_value(true)
+                .global(true),
         )
         .arg(
             Arg::new("start_cmd")
                 .long("start-cmd")
                 .short('s')
                 .help("Specify the start command to use")
-                .takes_value(true),
+                .takes_value(true)
+                .global(true),
         )
         .arg(
             Arg::new("pkgs")
@@ -50,13 +52,15 @@ fn main() -> Result<()> {
                 .short('p')
                 .help("Provide additional nix packages to install in the environment")
                 .takes_value(true)
-                .multiple_values(true),
+                .multiple_values(true)
+                .global(true),
         )
         .arg(
             Arg::new("pin")
                 .long("pin")
                 .help("Pin the nixpkgs")
-                .takes_value(false),
+                .takes_value(false)
+                .global(true),
         )
         .get_matches();
 
