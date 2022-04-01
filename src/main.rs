@@ -1,10 +1,10 @@
 use std::fs;
 
 use anyhow::{Context, Result};
-use bb::{app::App, logger::Logger, plan::BuildPlan, AppBuilder, AppBuilderOptions};
 use clap::{arg, Arg, Command};
+use nixpacks::{app::App, logger::Logger, plan::BuildPlan, AppBuilder, AppBuilderOptions};
 use providers::{go::GolangProvider, npm::NpmProvider, yarn::YarnProvider, Pkg, Provider};
-mod bb;
+mod nixpacks;
 mod providers;
 
 fn get_providers() -> Vec<&'static dyn Provider> {
