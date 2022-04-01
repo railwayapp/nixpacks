@@ -3,9 +3,10 @@ use indoc::formatdoc;
 use std::{
     fs::{self, File},
     io::Write,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Command,
 };
+use tempdir::TempDir;
 use uuid::Uuid;
 pub mod app;
 pub mod logger;
@@ -95,20 +96,23 @@ impl<'a> AppBuilder<'a> {
 
     pub fn do_build(&mut self, plan: &BuildPlan) -> Result<()> {
         let id = Uuid::new_v4();
-        let tmp_dir_name = format!("./tmp/{}", id);
+        let tmp_dir = TempDir::new("nixpacks").context("Creating a temp directory")?;
 
         self.logger.log_step("Copying source to tmp dir");
 
         let source = self.app.source.as_path().to_str().unwrap();
         let mut copy_cmd = Command::new("cp")
-            .arg("-R")
-            .arg(source)
-            .arg(tmp_dir_name.clone())
+            .arg("-a")
+            .arg(format!("{}/.", source))
+            .arg(tmp_dir.path().clone())
             .spawn()?;
-        copy_cmd.wait().context("Copying app source to tmp dir")?;
+        let copy_result = copy_cmd.wait().context("Copying app source to tmp dir")?;
+        if !copy_result.success() {
+            bail!("Copy failed")
+        }
 
         self.logger.log_step("Writing build plan");
-        AppBuilder::write_build_plan(plan, tmp_dir_name.clone()).context("Writing build plan")?;
+        AppBuilder::write_build_plan(plan, tmp_dir.path()).context("Writing build plan")?;
 
         self.logger.log_step("Building image");
 
@@ -116,7 +120,7 @@ impl<'a> AppBuilder<'a> {
 
         let mut docker_build_cmd = Command::new("docker")
             .arg("build")
-            .arg(tmp_dir_name.as_str())
+            .arg(tmp_dir.path())
             .arg("-t")
             .arg(name.clone())
             .spawn()?;
@@ -218,7 +222,7 @@ impl<'a> AppBuilder<'a> {
         }
     }
 
-    pub fn write_build_plan(plan: &BuildPlan, dest: String) -> Result<()> {
+    pub fn write_build_plan(plan: &BuildPlan, dest: &Path) -> Result<()> {
         let nix_expression = AppBuilder::gen_nix(plan).context("Generating Nix expression")?;
         let dockerfile = AppBuilder::gen_dockerfile(plan).context("Generating Dockerfile")?;
 
