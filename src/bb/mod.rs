@@ -15,6 +15,9 @@ use crate::providers::Provider;
 
 use self::{app::App, logger::Logger};
 
+static NIXPKGS_ARCHIVE: &'static str =
+    "https://github.com/NixOS/nixpkgs/archive/30d3d79b7d3607d56546dd2a6b49e156ba0ec634.tar.gz";
+
 pub struct AppBuilder<'a> {
     name: Option<String>,
     app: &'a App,
@@ -174,8 +177,9 @@ impl<'a> AppBuilder<'a> {
         // pkgs=pkgs};
 
         let nix_expression = formatdoc! {"
-          with import <nixpkgs> {{ }}; [ {pkgs} ]
+          with import (fetchTarball \"{nixpkgs}\") {{ }}; [ {pkgs} ]
         ",
+        nixpkgs=NIXPKGS_ARCHIVE,
         pkgs=pkgs};
 
         Ok(nix_expression)
