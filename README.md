@@ -79,8 +79,8 @@ Overall the process is fairy simple.
 This project is still in early development and is just the start.
 
 - Lanauge support
-  * [ ] NPM
-  * [ ] Yarn
+  * [x] NPM
+  * [x] Yarn
   * [ ] Golang
   * [ ] Python
   * [ ] Rust
