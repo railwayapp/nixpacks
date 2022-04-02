@@ -20,6 +20,15 @@ fn test_npm() -> Result<()> {
 }
 
 #[test]
+fn test_node_no_scripts() -> Result<()> {
+    let plan = gen_plan("./examples/node-no-scripts", Vec::new(), None, None, false)?;
+    assert_eq!(plan.build_cmd, None);
+    assert_eq!(plan.start_cmd, Some("node index.js".to_string()));
+
+    Ok(())
+}
+
+#[test]
 fn test_yarn() -> Result<()> {
     let plan = gen_plan("./examples/yarn", Vec::new(), None, None, false)?;
     assert_eq!(plan.build_cmd, Some("yarn build".to_string()));

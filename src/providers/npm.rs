@@ -33,8 +33,17 @@ impl Provider for NpmProvider {
         Ok(None)
     }
 
-    fn suggested_start_command(&self, _app: &App) -> Result<Option<String>> {
-        Ok(Some("npm run start".to_string()))
+    fn suggested_start_command(&self, app: &App) -> Result<Option<String>> {
+        let package_json: PackageJson = app.read_json("package.json")?;
+        if package_json.scripts.get("start").is_some() {
+            return Ok(Some("npm run start".to_string()));
+        }
+
+        if app.includes_file("index.js") {
+            return Ok(Some("node index.js".to_string()));
+        }
+
+        Ok(None)
     }
 }
 
