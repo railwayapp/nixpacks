@@ -105,4 +105,22 @@ mod tests {
         assert_eq!(value.scripts.get("build").unwrap(), "tsc -p tsconfig.json");
         Ok(())
     }
+
+    #[test]
+    fn test_read_toml_file() -> Result<()> {
+        let app = App::new("./examples/rust-rocket")?;
+        let toml_file: toml::Value = app.read_toml("Cargo.toml")?;
+        assert!(toml_file.get("package").is_some());
+        assert_eq!(
+            toml_file
+                .get("package")
+                .unwrap()
+                .get("name")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "rocket"
+        );
+        Ok(())
+    }
 }
