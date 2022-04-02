@@ -89,3 +89,6 @@ This project is still in early development and is just the start.
   * [ ] Zip
   * [ ] Crystal
   * [ ] Ruby
+- [ ] Environment variables
+- [ ] Nix package version overriding
+- [ ] NodeJS package.json engines parsing
