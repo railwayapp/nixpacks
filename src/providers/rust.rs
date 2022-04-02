@@ -1,7 +1,6 @@
 use super::Provider;
 use crate::{nixpacks::app::App, providers::Pkg};
 use anyhow::{Context, Result};
-use toml::Value;
 
 pub struct RustProvider {}
 
@@ -34,11 +33,8 @@ impl Provider for RustProvider {
     fn suggested_start_command(&self, app: &App) -> Result<Option<String>> {
         if app.includes_file("Cargo.toml") {
             // Parse name from Cargo.toml so we can run ./target/release/{name}
-            let contents = app.read_file("Cargo.toml").context("Reading Cargo.toml")?;
-            let toml_file = contents
-                .parse::<Value>()
-                .context("Parsing Cargo.toml file")?;
-
+            let toml_file: toml::Value =
+                app.read_toml("Cargo.toml").context("Reading Cargo.toml")?;
             let name = toml_file
                 .get("package")
                 .and_then(|package| package.get("name"))

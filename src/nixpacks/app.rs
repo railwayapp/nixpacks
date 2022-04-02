@@ -46,6 +46,15 @@ impl App {
         let value: T = serde_json::from_str(contents.as_str())?;
         Ok(value)
     }
+
+    pub fn read_toml<T>(&self, name: &str) -> Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        let contents = self.read_file(name)?;
+        let toml_file = toml::from_str(contents.as_str())?;
+        Ok(toml_file)
+    }
 }
 
 #[cfg(test)]
