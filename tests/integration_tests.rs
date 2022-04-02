@@ -76,3 +76,16 @@ fn test_pin_archive() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_rust_rocket() -> Result<()> {
+    let plan = gen_plan("./examples/rust-rocket", Vec::new(), None, None, true)?;
+    assert_eq!(plan.build_cmd, Some("cargo build --release".to_string()));
+    assert!(plan.start_cmd.is_some());
+
+    if let Some(start_cmd) = plan.start_cmd {
+        assert!(start_cmd.contains("./target/release/rocket"));
+    }
+
+    Ok(())
+}

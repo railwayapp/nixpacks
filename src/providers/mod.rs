@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod go;
 pub mod npm;
+pub mod rust;
 pub mod yarn;
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]

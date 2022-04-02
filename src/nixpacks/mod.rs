@@ -299,11 +299,14 @@ impl<'a> AppBuilder<'a> {
 
           RUN nix-channel --update
 
-          COPY . /app
+          RUN mkdir /app
+          COPY environment.nix /app
           WORKDIR /app
 
           # Load Nix environment
           RUN nix-env -if environment.nix
+
+          COPY . /app
 
           # Install
           {install_cmd}
