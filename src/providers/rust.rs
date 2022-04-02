@@ -42,11 +42,10 @@ impl Provider for RustProvider {
 
             let name = toml_file
                 .get("package")
-                .and_then(|package| package.get("name"));
+                .and_then(|package| package.get("name"))
+                .and_then(|v| v.as_str());
 
-            let package_name = name.and_then(|v| v.as_str());
-
-            if let Some(name) = package_name {
+            if let Some(name) = name {
                 return Ok(Some(format!(
                     "ROCKET_ADDRESS=0.0.0.0 ./target/release/{}",
                     name
