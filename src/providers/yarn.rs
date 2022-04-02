@@ -44,7 +44,8 @@ impl Provider for YarnProvider {
             if app.includes_file(&main) {
                 return Ok(Some(format!("node {}", main)));
             }
-        } else if app.includes_file("index.js") {
+        }
+        if app.includes_file("index.js") {
             return Ok(Some(String::from("node index.js")));
         }
 

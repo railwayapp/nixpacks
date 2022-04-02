@@ -89,3 +89,27 @@ fn test_rust_rocket() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_node_main_file() -> Result<()> {
+    let plan = gen_plan("./examples/node-main-file", Vec::new(), None, None, false)?;
+    assert_eq!(plan.build_cmd, None);
+    assert_eq!(plan.start_cmd, Some("node src/index.js".to_string()));
+
+    Ok(())
+}
+
+#[test]
+fn test_node_main_file_doesnt_exist() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/node-main-file-not-exist",
+        Vec::new(),
+        None,
+        None,
+        false,
+    )?;
+    assert_eq!(plan.build_cmd, None);
+    assert_eq!(plan.start_cmd, Some("node index.js".to_string()));
+
+    Ok(())
+}
