@@ -2,7 +2,9 @@ use std::fs;
 
 use crate::{
     nixpacks::{app::App, logger::Logger, plan::BuildPlan, AppBuilder, AppBuilderOptions},
-    providers::{go::GolangProvider, npm::NpmProvider, yarn::YarnProvider, Pkg},
+    providers::{
+        go::GolangProvider, npm::NpmProvider, rust::RustProvider, yarn::YarnProvider, Pkg,
+    },
 };
 use anyhow::{Context, Result};
 use providers::Provider;
@@ -11,7 +13,12 @@ pub mod nixpacks;
 pub mod providers;
 
 pub fn get_providers() -> Vec<&'static dyn Provider> {
-    vec![&YarnProvider {}, &NpmProvider {}, &GolangProvider {}]
+    vec![
+        &YarnProvider {},
+        &NpmProvider {},
+        &GolangProvider {},
+        &RustProvider {},
+    ]
 }
 
 pub fn gen_plan(
