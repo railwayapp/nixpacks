@@ -43,8 +43,12 @@ impl Provider for NpmProvider {
             }
         }
 
-        if app.includes_file("index.js") {
-            return Ok(Some("node index.js".to_string()));
+        if let Some(main) = package_json.main {
+            if app.includes_file(&main) {
+                return Ok(Some(format!("node {}", main)));
+            }
+        } else if app.includes_file("index.js") {
+            return Ok(Some(String::from("node index.js")));
         }
 
         Ok(None)

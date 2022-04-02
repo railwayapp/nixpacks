@@ -45,7 +45,7 @@ impl Provider for YarnProvider {
                 return Ok(Some(format!("node {}", main)));
             }
         } else if app.includes_file("index.js") {
-            return Ok(Some(String::from("node index.js")))
+            return Ok(Some(String::from("node index.js")));
         }
 
         Ok(None)
