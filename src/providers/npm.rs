@@ -55,4 +55,5 @@ impl Provider for NpmProvider {
 pub struct PackageJson {
     pub name: String,
     pub scripts: Option<HashMap<String, String>>,
+    pub main: Option<String>,
 }
