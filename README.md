@@ -11,6 +11,7 @@ Nixpacks currently supports
 - Node/NPM
 - Yarn
 - Go
+- Rust
 
 More langauges will be added very soon
 
@@ -81,9 +82,9 @@ This project is still in early development and is just the start.
 - Lanauge support
   * [x] NPM
   * [x] Yarn
-  * [ ] Golang
+  * [x] Golang
   * [ ] Python
-  * [ ] Rust
+  * [x] Rust
   * [ ] Java
   * [ ] Zip
   * [ ] Crystal
