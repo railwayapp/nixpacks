@@ -23,7 +23,7 @@ impl App {
     }
 
     pub fn includes_file(&self, name: &str) -> bool {
-        fs::read_to_string(self.source.join(name)).is_ok()
+        fs::canonicalize(self.source.join(name)).is_ok()
     }
 
     pub fn read_file(&self, name: &str) -> Result<String> {
