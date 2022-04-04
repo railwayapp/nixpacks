@@ -43,8 +43,13 @@ impl Provider for NpmProvider {
             }
         }
 
+        if let Some(main) = package_json.main {
+            if app.includes_file(&main) {
+                return Ok(Some(format!("node {}", main)));
+            }
+        }
         if app.includes_file("index.js") {
-            return Ok(Some("node index.js".to_string()));
+            return Ok(Some(String::from("node index.js")));
         }
 
         Ok(None)
@@ -55,4 +60,5 @@ impl Provider for NpmProvider {
 pub struct PackageJson {
     pub name: String,
     pub scripts: Option<HashMap<String, String>>,
+    pub main: Option<String>,
 }
