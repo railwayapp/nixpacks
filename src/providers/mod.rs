@@ -6,6 +6,7 @@ pub mod go;
 pub mod npm;
 pub mod rust;
 pub mod yarn;
+pub mod python;
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct Pkg {
