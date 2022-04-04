@@ -47,6 +47,15 @@ fn test_go() -> Result<()> {
 }
 
 #[test]
+fn test_deno() -> Result<()> {
+    let plan = gen_plan("./examples/deno", Vec::new(), None, None, false)?;
+    assert_eq!(plan.build_cmd, None);
+    assert_eq!(plan.start_cmd, Some("deno run src/index.ts".to_string()));
+
+    Ok(())
+}
+
+#[test]
 fn test_procfile() -> Result<()> {
     let plan = gen_plan("./examples/procfile", Vec::new(), None, None, false)?;
     assert_eq!(plan.start_cmd, Some("node index.js".to_string()));

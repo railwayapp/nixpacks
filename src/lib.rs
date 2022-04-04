@@ -3,7 +3,7 @@ use std::fs;
 use crate::{
     nixpacks::{app::App, logger::Logger, plan::BuildPlan, AppBuilder, AppBuilderOptions},
     providers::{
-        go::GolangProvider, npm::NpmProvider, rust::RustProvider, yarn::YarnProvider, Pkg,
+        go::GolangProvider, npm::NpmProvider, rust::RustProvider, yarn::YarnProvider, deno::DenoProvider, Pkg,
     },
 };
 use anyhow::{Context, Result};
@@ -18,6 +18,7 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &NpmProvider {},
         &GolangProvider {},
         &RustProvider {},
+        &DenoProvider {},
     ]
 }
 

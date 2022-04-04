@@ -1,6 +1,9 @@
-use anyhow::{Context, Result};
-use serde::de::DeserializeOwned;
 use std::{env, fs, path::PathBuf};
+
+use anyhow::{Context, Result};
+use glob::glob;
+use regex::Regex;
+use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone)]
 pub struct App {
@@ -32,9 +35,25 @@ impl App {
         Ok(contents)
     }
 
+    pub fn find_match(&self, re: &Regex, pattern: &str) -> bool {
+        let full_pattern = self.source.join(pattern);
+        let entries = glob(full_pattern.to_str().unwrap()).expect("Failed to read glob pattern");
+
+        let mut matched = false;
+        for entry in entries {
+            let path_buf = fs::canonicalize(entry.unwrap()).unwrap();
+            let f = self.read_file(path_buf.to_str().unwrap()).unwrap();
+            if re.find(f.as_str()).is_some() {
+                matched = true;
+                break;
+            }
+        }
+        matched
+    }
+
     pub fn read_json<T>(&self, name: &str) -> Result<T>
-    where
-        T: DeserializeOwned,
+        where
+            T: DeserializeOwned,
     {
         let contents = self.read_file(name)?;
         let value: T = serde_json::from_str(contents.as_str())?;
@@ -42,8 +61,8 @@ impl App {
     }
 
     pub fn read_toml<T>(&self, name: &str) -> Result<T>
-    where
-        T: DeserializeOwned,
+        where
+            T: DeserializeOwned,
     {
         let contents = self.read_file(name)?;
         let toml_file = toml::from_str(contents.as_str())?;
@@ -55,9 +74,10 @@ impl App {
 mod tests {
     use std::collections::HashMap;
 
-    use super::*;
     use serde::{Deserialize, Serialize};
     use serde_json::{Map, Value};
+
+    use super::*;
 
     #[derive(Serialize, Deserialize)]
     struct TestPackageJson {
