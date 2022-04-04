@@ -13,7 +13,7 @@ Nixpacks currently supports
 - Go
 - Rust
 
-More langauges will be added very soon
+More languages will be added very soon
 
 ## Getting Started
 
@@ -79,6 +79,7 @@ Overall the process is fairy simple.
 
 This project is still in early development and is just the start.
 
+- [ ] Build and support Nix flakes
 - Lanauge support
   * [x] NPM
   * [x] Yarn
