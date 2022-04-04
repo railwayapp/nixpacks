@@ -69,4 +69,5 @@ jobs:
       - name: Run cargo clippy
         uses: actions-rs/cargo@v1
         with:
-          command: clippy --all-targets --all-features
+          command: clippy
+          args: --all-targets --all-features
