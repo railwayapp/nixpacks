@@ -2,11 +2,11 @@ use crate::nixpacks::app::App;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
+pub mod deno;
 pub mod go;
 pub mod npm;
 pub mod rust;
 pub mod yarn;
-pub mod deno;
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct Pkg {

@@ -3,7 +3,8 @@ use std::fs;
 use crate::{
     nixpacks::{app::App, logger::Logger, plan::BuildPlan, AppBuilder, AppBuilderOptions},
     providers::{
-        go::GolangProvider, npm::NpmProvider, rust::RustProvider, yarn::YarnProvider, deno::DenoProvider, Pkg,
+        deno::DenoProvider, go::GolangProvider, npm::NpmProvider, rust::RustProvider,
+        yarn::YarnProvider, Pkg,
     },
 };
 use anyhow::{Context, Result};

@@ -1,6 +1,6 @@
 use super::Provider;
 use crate::{nixpacks::app::App, providers::Pkg};
-use anyhow::{Result};
+use anyhow::Result;
 use regex::Regex;
 
 pub struct DenoProvider {}
