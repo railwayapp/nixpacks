@@ -146,7 +146,7 @@ impl<'a> AppBuilder<'a> {
         self.logger.log_section("Successfully Built!");
 
         println!("\nRun:");
-        println!("  docker run -i -t {}", name);
+        println!("  docker run -it {}", name);
 
         Ok(())
     }
