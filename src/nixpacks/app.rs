@@ -39,8 +39,7 @@ impl App {
 
         let relative_paths = glob(pattern_str)?
             .filter_map(|p| p.ok()) // Remove bad ones
-            .filter_map(|p| self.strip_source_path(p).ok()) // Make relative
-            .filter_map(|p| p.to_str().map(|p| p.to_string()))
+            .filter_map(|p| p.to_str().map(|p| p.to_string())) // convert to string
             .collect();
 
         Ok(relative_paths)
@@ -92,7 +91,7 @@ impl App {
         Ok(toml_file)
     }
 
-    fn strip_source_path(&self, abs: PathBuf) -> Result<PathBuf> {
+    pub fn strip_source_path(&self, abs: &str) -> Result<String> {
         let source_str = match self.source.to_str() {
             Some(s) => s,
             None => return Err(anyhow::Error::msg("Failed to parse source path")),
@@ -100,11 +99,11 @@ impl App {
 
         // Strip source path from absolute path
         let stripped = match abs.strip_prefix(source_str) {
-            Ok(p) => p.to_path_buf(),
-            Err(_e) => abs,
+            Some(p) => p,
+            None => abs,
         };
 
-        Ok(stripped)
+        Ok(stripped.to_string())
     }
 }
 
@@ -172,6 +171,48 @@ mod tests {
                 .unwrap(),
             "rocket"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_files() -> Result<()> {
+        let app = App::new("./examples/monorepo")?;
+        let m = app.find_files("**/*.tsx").unwrap();
+        assert_eq!(
+            m,
+            vec![
+                "packages/client/pages/_app.tsx",
+                "packages/client/pages/index.tsx"
+            ]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_match() -> Result<()> {
+        let app = App::new("./examples/monorepo")?;
+        let re = Regex::new(r"className")?;
+        let m = app.find_match(&re, "**/*.tsx").unwrap();
+        assert!(m);
+        Ok(())
+    }
+
+    #[test]
+    fn test_strip_source_path() -> Result<()> {
+        let app = App::new("./examples/npm")?;
+        let path_to_strip = app.source.join("foo/bar.txt");
+        assert_eq!(
+            app.strip_source_path(path_to_strip.to_str().unwrap())
+                .unwrap(),
+            "foo/bar.txt"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_strip_source_path_no_source_prefix() -> Result<()> {
+        let app = App::new("./examples/npm")?;
+        assert_eq!(app.strip_source_path("no/prefix.txt")?, "no/prefix.txt");
         Ok(())
     }
 }

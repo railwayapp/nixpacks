@@ -35,6 +35,10 @@ impl Provider for DenoProvider {
             None => return Ok(None),
         };
 
-        return Ok(Some(format!("deno run --allow-all {}", path_to_index)));
+        let relative_path_to_index = app.strip_source_path(&path_to_index)?;
+        return Ok(Some(format!(
+            "deno run --allow-all {}",
+            relative_path_to_index
+        )));
     }
 }
