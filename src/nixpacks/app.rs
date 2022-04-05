@@ -39,8 +39,8 @@ impl App {
         };
 
         let relative_paths = glob(pattern_str)?
-            .filter_map(|p| p.ok()) // Remove bad ones
-            .filter_map(|p| p.to_str().map(|p| p.to_string())) // convert to string
+            .filter_map(|result| result.ok()) // Remove bad ones
+            .filter_map(|path| path.to_str().map(|p| p.to_string())) // convert to string
             .collect();
 
         Ok(relative_paths)
