@@ -8,10 +8,11 @@ The goal of this project is to build an app source directory in a reproducible w
 
 Nixpacks currently supports
 
-- Node/NPM
-- Yarn
-- Go
-- Rust
+- [Node via NPM](https://www.npmjs.com/)
+- [Node via Yarn](https://yarnpkg.com/)
+- [Go](https://golang.org)
+- [Rust](https://www.rust-lang.org/)
+- [Deno](https://deno.land)
 
 More languages will be added very soon
 
@@ -86,6 +87,7 @@ This project is still in early development and is just the start.
   * [x] Golang
   * [ ] Python
   * [x] Rust
+  * [x] Deno
   * [ ] Java
   * [ ] Zip
   * [ ] Crystal
