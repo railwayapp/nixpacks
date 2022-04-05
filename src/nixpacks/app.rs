@@ -183,11 +183,16 @@ mod tests {
     fn test_find_files() -> Result<()> {
         let app = App::new("./examples/monorepo")?;
         let m = app.find_files("**/*.tsx").unwrap();
+        let dir = env::current_dir().unwrap();
         assert_eq!(
             m,
             vec![
-                "packages/client/pages/_app.tsx",
-                "packages/client/pages/index.tsx"
+                dir.join("examples/monorepo/packages/client/pages/_app.tsx")
+                    .to_str()
+                    .unwrap(),
+                dir.join("examples/monorepo/packages/client/pages/index.tsx")
+                    .to_str()
+                    .unwrap(),
             ]
         );
         Ok(())
