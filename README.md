@@ -4,7 +4,7 @@
 
 **App source + Nix packages + Docker = Image**
 
-Nixpacks takes a source directory and produces an OCI compliant image that can be deployed anywhere. The project was started by the [Railway](https://railway.app) team as an alternative to [Buildpacks](https://buildpacks.io/) and attempts to address a lot of the shortcomings and issues that occurred when deploying thousands of user apps to the Railway platform. The biggest change is that system level and language dependencies are pulled from the Nix ecosystem, which provides a bunch of benifits.
+Nixpacks takes a source directory and produces an OCI compliant image that can be deployed anywhere. The project was started by the [Railway](https://railway.app) team as an alternative to [Buildpacks](https://buildpacks.io/) and attempts to address a lot of the shortcomings and issues that occurred when deploying thousands of user apps to the Railway platform. The biggest change is that system and language dependencies are pulled from the Nix ecosystem, which provides a bunch of benifits.
 
 You can follow along with the roadmap in the [GitHub project](https://github.com/railwayapp/nixpacks/projects/1).
 
