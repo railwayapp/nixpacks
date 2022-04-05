@@ -63,8 +63,7 @@ impl App {
 
             if let Some(p) = path_buf.to_str() {
                 let f = self.read_file(p)?;
-                let matches = re.find(f.as_str());
-                if matches.is_some() {
+                if re.find(f.as_str()).is_some() {
                     return Ok(true);
                 }
             }
