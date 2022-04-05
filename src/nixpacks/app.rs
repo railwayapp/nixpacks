@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::{env, fs, path::PathBuf};
 
 use anyhow::{Context, Result};
@@ -52,14 +53,13 @@ impl App {
     }
 
     pub fn find_match(&self, re: &Regex, pattern: &str) -> Result<bool> {
-        let full_pattern = self.source.join(pattern);
-        let entries = match full_pattern.to_str() {
-            Some(pattern) => glob(pattern).context("Failed to parse glob")?,
-            None => return Ok(false),
+        let paths = match self.find_files(pattern) {
+            Ok(v) => v,
+            Err(_e) => return Ok(false),
         };
 
-        for entry in entries {
-            let path_buf = fs::canonicalize(entry?)?;
+        for path in paths {
+            let path_buf = fs::canonicalize(path)?;
 
             if let Some(p) = path_buf.to_str() {
                 let f = self.read_file(p)?;
@@ -96,14 +96,19 @@ impl App {
             Some(s) => s,
             None => return Err(anyhow::Error::msg("Failed to parse source path")),
         };
+        let abs_path = Path::new(abs);
 
         // Strip source path from absolute path
-        let stripped = match abs.strip_prefix(source_str) {
-            Some(p) => p,
-            None => abs,
+        let stripped = match abs_path.strip_prefix(source_str) {
+            Ok(p) => p,
+            Err(_e) => abs_path,
         };
 
-        Ok(stripped.to_string())
+        // Convert path to string
+        return match stripped.to_str() {
+            Some(v) => Ok(v.to_string()),
+            None => Err(anyhow::Error::msg("Failed to convert path to string")),
+        };
     }
 }
 
