@@ -50,7 +50,10 @@ fn test_go() -> Result<()> {
 fn test_deno() -> Result<()> {
     let plan = gen_plan("./examples/deno", Vec::new(), None, None, false)?;
     assert_eq!(plan.build_cmd, None);
-    assert_eq!(plan.start_cmd, Some("deno run src/index.ts".to_string()));
+    assert_eq!(
+        plan.start_cmd,
+        Some("deno run --allow-all src/index.ts".to_string())
+    );
 
     Ok(())
 }

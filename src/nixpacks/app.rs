@@ -29,26 +29,52 @@ impl App {
         fs::canonicalize(self.source.join(name)).is_ok()
     }
 
+    pub fn find_files(&self, pattern: &str) -> Result<Vec<String>> {
+        let full_pattern = self.source.join(pattern);
+
+        let pattern_str = match full_pattern.to_str() {
+            Some(s) => s,
+            None => return Ok(Vec::new()),
+        };
+
+        let relative_paths = glob(pattern_str)?
+            .filter_map(|p| p.ok()) // Remove bad ones
+            .filter_map(|p| self.strip_source_path(p).ok()) // Make relative
+            .filter_map(|p| match p.to_str() {
+                Some(p) => Some(p.to_string()),
+                None => None,
+            })
+            .collect();
+
+        Ok(relative_paths)
+    }
+
     pub fn read_file(&self, name: &str) -> Result<String> {
         let name = self.source.join(name);
         let contents = fs::read_to_string(name)?;
         Ok(contents)
     }
 
-    pub fn find_match(&self, re: &Regex, pattern: &str) -> bool {
+    pub fn find_match(&self, re: &Regex, pattern: &str) -> Result<bool> {
         let full_pattern = self.source.join(pattern);
-        let entries = glob(full_pattern.to_str().unwrap()).expect("Failed to read glob pattern");
+        let entries = match full_pattern.to_str() {
+            Some(pattern) => glob(pattern).context("Failed to parse glob")?,
+            None => return Ok(false),
+        };
 
-        let mut matched = false;
         for entry in entries {
-            let path_buf = fs::canonicalize(entry.unwrap()).unwrap();
-            let f = self.read_file(path_buf.to_str().unwrap()).unwrap();
-            if re.find(f.as_str()).is_some() {
-                matched = true;
-                break;
+            let path_buf = fs::canonicalize(entry?)?;
+
+            if let Some(p) = path_buf.to_str() {
+                let f = self.read_file(p)?;
+                let matches = re.find(f.as_str());
+                if matches.is_some() {
+                    return Ok(true);
+                }
             }
         }
-        matched
+
+        Ok(false)
     }
 
     pub fn read_json<T>(&self, name: &str) -> Result<T>
@@ -67,6 +93,21 @@ impl App {
         let contents = self.read_file(name)?;
         let toml_file = toml::from_str(contents.as_str())?;
         Ok(toml_file)
+    }
+
+    fn strip_source_path(&self, abs: PathBuf) -> Result<PathBuf> {
+        let source_str = match self.source.to_str() {
+            Some(s) => s,
+            None => return Err(anyhow::Error::msg("Failed to parse source path")),
+        };
+
+        // Strip source path from absolute path
+        let stripped = match abs.strip_prefix(source_str) {
+            Ok(p) => p.to_path_buf(),
+            Err(_e) => abs,
+        };
+
+        Ok(stripped)
     }
 }
 

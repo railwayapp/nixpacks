@@ -11,12 +11,8 @@ impl Provider for DenoProvider {
     }
 
     fn detect(&self, app: &App) -> Result<bool> {
-        if !app.includes_file("src/index.ts") {
-            false;
-        }
-
         let re = Regex::new(r##"(?m)^import .+ from "https://deno.land/[^"]+\.ts";?$"##).unwrap();
-        Ok(app.find_match(&re, "**/*.ts"))
+        app.find_match(&re, "**/*.ts")
     }
 
     fn pkgs(&self, _app: &App) -> Vec<Pkg> {
@@ -31,7 +27,14 @@ impl Provider for DenoProvider {
         Ok(None)
     }
 
-    fn suggested_start_command(&self, _app: &App) -> Result<Option<String>> {
-        Ok(Some("deno run src/index.ts".to_string()))
+    fn suggested_start_command(&self, app: &App) -> Result<Option<String>> {
+        // Find the first index.ts or index.js file to run
+        let matches = app.find_files("**/index.[tj]s")?;
+        let path_to_index = match matches.first() {
+            Some(m) => m.to_string(),
+            None => return Ok(None),
+        };
+
+        return Ok(Some(format!("deno run --allow-all {}", path_to_index)));
     }
 }
