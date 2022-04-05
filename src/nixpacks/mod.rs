@@ -21,6 +21,9 @@ static NIX_PACKS_VERSION: &str = "0.0.1";
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "30d3d79b7d3607d56546dd2a6b49e156ba0ec634";
 
+#[derive(PartialEq, Clone, Debug)]
+pub struct EnvironmentVariable(pub String, pub String);
+
 #[derive(Debug)]
 pub struct AppBuilderOptions {
     pub custom_build_cmd: Option<String>,
@@ -44,6 +47,7 @@ pub struct AppBuilder<'a> {
     name: Option<String>,
     app: &'a App,
     logger: &'a Logger,
+    variables: Vec<EnvironmentVariable>,
     options: &'a AppBuilderOptions,
     provider: Option<&'a dyn Provider>,
 }
@@ -53,12 +57,14 @@ impl<'a> AppBuilder<'a> {
         name: Option<String>,
         app: &'a App,
         logger: &'a Logger,
+        variables: Vec<EnvironmentVariable>,
         options: &'a AppBuilderOptions,
     ) -> Result<AppBuilder<'a>> {
         Ok(AppBuilder {
             name,
             app,
             logger,
+            variables,
             options,
             provider: None,
         })
@@ -124,7 +130,8 @@ impl<'a> AppBuilder<'a> {
         }
 
         self.logger.log_step("Writing build plan");
-        AppBuilder::write_build_plan(plan, tmp_dir.path()).context("Writing build plan")?;
+        AppBuilder::write_build_plan(plan, tmp_dir.path(), self.variables.clone())
+            .context("Writing build plan")?;
 
         self.logger.log_step("Building image");
 
@@ -234,9 +241,14 @@ impl<'a> AppBuilder<'a> {
         }
     }
 
-    pub fn write_build_plan(plan: &BuildPlan, dest: &Path) -> Result<()> {
+    pub fn write_build_plan(
+        plan: &BuildPlan,
+        dest: &Path,
+        variables: Vec<EnvironmentVariable>,
+    ) -> Result<()> {
         let nix_expression = AppBuilder::gen_nix(plan).context("Generating Nix expression")?;
-        let dockerfile = AppBuilder::gen_dockerfile(plan).context("Generating Dockerfile")?;
+        let dockerfile =
+            AppBuilder::gen_dockerfile(plan, variables).context("Generating Dockerfile")?;
 
         let nix_path = PathBuf::from(dest).join(PathBuf::from("environment.nix"));
         let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
@@ -277,7 +289,13 @@ impl<'a> AppBuilder<'a> {
         Ok(nix_expression)
     }
 
-    pub fn gen_dockerfile(plan: &BuildPlan) -> Result<String> {
+    pub fn gen_dockerfile(plan: &BuildPlan, variables: Vec<EnvironmentVariable>) -> Result<String> {
+        let args_string = variables
+            .iter()
+            .map(|var| format!("ARG {}", var.0))
+            .collect::<Vec<String>>()
+            .join("\n");
+
         let install_cmd = plan
             .install_cmd
             .as_ref()
@@ -306,6 +324,9 @@ impl<'a> AppBuilder<'a> {
           # Load Nix environment
           RUN nix-env -if environment.nix
 
+          # Load args
+          {args_string}
+
           COPY . /app
 
           # Install
@@ -317,9 +338,12 @@ impl<'a> AppBuilder<'a> {
           # Start
           {start_cmd}
         ",
+        args_string=args_string,
         install_cmd=install_cmd,
         build_cmd=build_cmd,
         start_cmd=start_cmd};
+
+        println!("{}", dockerfile);
 
         Ok(dockerfile)
     }
