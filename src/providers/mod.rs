@@ -2,6 +2,7 @@ use crate::nixpacks::app::App;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
+pub mod deno;
 pub mod go;
 pub mod npm;
 pub mod rust;

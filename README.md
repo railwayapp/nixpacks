@@ -10,6 +10,12 @@ You can follow along with the roadmap in the [GitHub project](https://github.com
 
 ## Core Ideas
 
+- [Node via NPM](https://www.npmjs.com/)
+- [Node via Yarn](https://yarnpkg.com/)
+- [Go](https://golang.org)
+- [Rust](https://www.rust-lang.org/)
+- [Deno](https://deno.land)
+
 - ✨ **Intutive defaults**: In most cases, building and deploying and app with nixpacks should _just work_ with no configuration needed.
 - ⚙️ **Customization where necessary**: Everypart of the pipeline should be customizable. These include the [Nix packages](https://search.nixos.org/packages) to add to the environment and build/start commands.
 - 🚀 **Easily extendible**: New providers (langauges) should be able to be easily added to nixpacks with minimal knowledge of Nix and Docker.
@@ -82,16 +88,12 @@ Overall the process is fairy simple.
 
 At the moment nixpacks supports the following languages out of the box
 
-- [x] NPM
-- [x] Yarn
-- [x] Golang
-- [x] Rust
-- [x] Deno
-- [ ] Python
-- [ ] Java
-- [ ] Zip
-- [ ] Crystal
-- [ ] Ruby
+- [Node via NPM](https://www.npmjs.com/)
+- [Node via Yarn](https://yarnpkg.com/)
+- [Go](https://golang.org)
+- [Rust](https://www.rust-lang.org/)
+- [Deno](https://deno.land)
+
 
 ## Contributing
 
