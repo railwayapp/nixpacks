@@ -40,10 +40,7 @@ impl App {
         let relative_paths = glob(pattern_str)?
             .filter_map(|p| p.ok()) // Remove bad ones
             .filter_map(|p| self.strip_source_path(p).ok()) // Make relative
-            .filter_map(|p| match p.to_str() {
-                Some(p) => Some(p.to_string()),
-                None => None,
-            })
+            .filter_map(|p| p.to_str().map(|p| p.to_string()))
             .collect();
 
         Ok(relative_paths)
@@ -115,10 +112,9 @@ impl App {
 mod tests {
     use std::collections::HashMap;
 
+    use super::*;
     use serde::{Deserialize, Serialize};
     use serde_json::{Map, Value};
-
-    use super::*;
 
     #[derive(Serialize, Deserialize)]
     struct TestPackageJson {
