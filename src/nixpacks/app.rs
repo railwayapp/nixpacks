@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::{env, fs, path::PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use glob::glob;
 use regex::Regex;
 use serde::de::DeserializeOwned;
@@ -93,7 +93,7 @@ impl App {
     pub fn strip_source_path(&self, abs: &str) -> Result<String> {
         let source_str = match self.source.to_str() {
             Some(s) => s,
-            None => return Err(anyhow::Error::msg("Failed to parse source path")),
+            None => bail!("Failed to parse source path"),
         };
         let abs_path = Path::new(abs);
 
@@ -106,7 +106,7 @@ impl App {
         // Convert path to string
         return match stripped.to_str() {
             Some(v) => Ok(v.to_string()),
-            None => Err(anyhow::Error::msg("Failed to convert path to string")),
+            None => bail!("Failed to convert path to string"),
         };
     }
 }
