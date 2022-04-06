@@ -5,7 +5,6 @@ use crate::nixpacks::{
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-pub mod cowsay;
 pub mod deno;
 pub mod go;
 pub mod npm;

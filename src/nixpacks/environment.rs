@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 pub type EnvironmentVariables = HashMap<String, String>;
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct Environment {
     variables: EnvironmentVariables,
 }
@@ -26,14 +26,6 @@ impl Environment {
 
     pub fn clone_variables(env: &Environment) -> EnvironmentVariables {
         env.variables.clone()
-    }
-}
-
-impl Default for Environment {
-    fn default() -> Self {
-        Self {
-            variables: Default::default(),
-        }
     }
 }
 
