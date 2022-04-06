@@ -310,7 +310,7 @@ impl<'a> AppBuilder<'a> {
         let args_string = plan
             .variables
             .iter()
-            .map(|var| format!("ENV {}={}", var.0, var.1))
+            .map(|var| format!("ENV {}='{}'", var.0, var.1))
             .collect::<Vec<String>>()
             .join("\n");
 

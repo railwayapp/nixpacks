@@ -6,8 +6,8 @@ use crate::{
         AppBuilderOptions,
     },
     providers::{
-        deno::DenoProvider, go::GolangProvider, npm::NpmProvider, rust::RustProvider,
-        yarn::YarnProvider, Pkg,
+        cowsay::CowsayProvider, deno::DenoProvider, go::GolangProvider, npm::NpmProvider,
+        rust::RustProvider, yarn::YarnProvider, Pkg,
     },
 };
 use anyhow::{bail, Context, Result};
@@ -23,6 +23,7 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &GolangProvider {},
         &RustProvider {},
         &DenoProvider {},
+        &CowsayProvider {},
     ]
 }
 
