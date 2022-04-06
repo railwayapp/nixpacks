@@ -6,10 +6,6 @@ fn test_node() -> Result<()> {
     let plan = gen_plan("./examples/node", Vec::new(), None, None, Vec::new(), false)?;
     assert_eq!(plan.build_cmd, None);
     assert_eq!(plan.start_cmd, Some("npm run start".to_string()));
-    assert_eq!(
-        plan.variables.get("NODE_ENV"),
-        Some(&"production".to_string())
-    );
 
     Ok(())
 }
@@ -22,6 +18,10 @@ fn test_npm() -> Result<()> {
     assert_eq!(
         plan.variables.get("NODE_ENV"),
         Some(&"production".to_string())
+    );
+    assert_eq!(
+        plan.variables.get("NPM_CONFIG_PRODUCTION"),
+        Some(&"false".to_string())
     );
 
     Ok(())
@@ -51,6 +51,10 @@ fn test_yarn() -> Result<()> {
     assert_eq!(
         plan.variables.get("NODE_ENV"),
         Some(&"production".to_string())
+    );
+    assert_eq!(
+        plan.variables.get("NPM_CONFIG_PRODUCTION"),
+        Some(&"false".to_string())
     );
 
     Ok(())
