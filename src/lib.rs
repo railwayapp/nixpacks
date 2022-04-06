@@ -2,8 +2,8 @@ use std::{env, fs};
 
 use crate::{
     nixpacks::{
-        app::App, logger::Logger, plan::BuildPlan, AppBuilder, AppBuilderOptions,
-        EnvironmentVariable,
+        app::App, environment::Environment, logger::Logger, plan::BuildPlan, AppBuilder,
+        AppBuilderOptions,
     },
     providers::{
         deno::DenoProvider, go::GolangProvider, npm::NpmProvider, rust::RustProvider,
@@ -31,7 +31,7 @@ pub fn gen_plan(
     custom_pkgs: Vec<&str>,
     custom_build_cmd: Option<String>,
     custom_start_cmd: Option<String>,
-    variables: Vec<EnvironmentVariable>,
+    envs: Vec<&str>,
     pin_pkgs: bool,
 ) -> Result<BuildPlan> {
     let logger = Logger::new();
@@ -45,12 +45,14 @@ pub fn gen_plan(
     };
 
     let app = App::new(path)?;
-    let mut app_builder = AppBuilder::new(None, &app, &logger, variables, &options)?;
+    let environment = create_environment(envs)?;
+    let mut app_builder = AppBuilder::new(None, &app, &environment, &logger, &options)?;
 
     let plan = app_builder.plan(providers)?;
     Ok(plan)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn build(
     path: &str,
     name: Option<String>,
@@ -58,7 +60,7 @@ pub fn build(
     custom_build_cmd: Option<String>,
     custom_start_cmd: Option<String>,
     pin_pkgs: bool,
-    variables: Vec<EnvironmentVariable>,
+    envs: Vec<&str>,
     plan_path: Option<&str>,
 ) -> Result<()> {
     let logger = Logger::new();
@@ -72,7 +74,8 @@ pub fn build(
     };
 
     let app = App::new(path)?;
-    let mut app_builder = AppBuilder::new(name, &app, &logger, variables, &options)?;
+    let environment = create_environment(envs)?;
+    let mut app_builder = AppBuilder::new(name, &app, &environment, &logger, &options)?;
 
     match plan_path {
         Some(plan_path) => {
@@ -89,45 +92,49 @@ pub fn build(
     Ok(())
 }
 
-pub fn get_environment_variables(envs: Vec<&str>) -> Result<Vec<EnvironmentVariable>> {
-    let mut variables: Vec<EnvironmentVariable> = Vec::new();
+pub fn create_environment(envs: Vec<&str>) -> Result<Environment> {
+    let mut environment = Environment::default();
     for env in envs {
-        let v: Vec<&str> = env.split("=").collect();
+        let v: Vec<&str> = env.split('=').collect();
         if v.len() == 1 {
             // Pull the variable from the current environment
             let name = v[0];
             if let Ok(value) = env::var(name) {
                 // Variable is set
-                variables.push(EnvironmentVariable(name.to_string(), value));
+                environment.set_variable(name.to_string(), value);
             }
         } else if v.len() > 2 {
             bail!("Unable to parse variable string");
         } else {
             // Use provided name, value pair
-            variables.push(EnvironmentVariable(v[0].to_string(), v[1].to_string()));
+            environment.set_variable(v[0].to_string(), v[1].to_string());
         }
     }
 
-    return Ok(variables);
+    Ok(environment)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{get_environment_variables, nixpacks::EnvironmentVariable};
+    use crate::create_environment;
 
     #[test]
     fn test_environment_variable_parsing() {
-        let variables =
-            get_environment_variables(vec!["HELLO=world", "CARGO_PKG_NAME", "NON_EXISTANT"])
-                .unwrap();
+        let environment =
+            create_environment(vec!["HELLO=world", "CARGO_PKG_NAME", "NON_EXISTANT"]).unwrap();
         assert_eq!(
-            variables,
-            vec![
-                EnvironmentVariable("HELLO".to_string(), "world".to_string()),
-                EnvironmentVariable("CARGO_PKG_NAME".to_string(), "nixpacks".to_string())
-            ]
+            environment.get_variable("HELLO"),
+            Some(&"world".to_string())
         );
+        assert_eq!(
+            environment.get_variable("CARGO_PKG_NAME"),
+            Some(&"nixpacks".to_string())
+        );
+        assert!(environment.get_variable("NON_EXISTANT").is_none());
+    }
 
-        assert!(get_environment_variables(vec!["INVALID=ENV=CONFIG"]).is_err());
+    #[test]
+    fn test_create_invalid_environment() {
+        assert!(create_environment(vec!["INVALID=ENV=CONFIG"]).is_err());
     }
 }

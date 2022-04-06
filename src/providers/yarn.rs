@@ -1,5 +1,5 @@
 use super::{npm::PackageJson, Pkg, Provider};
-use crate::nixpacks::app::App;
+use crate::nixpacks::{app::App, environment::Environment};
 use anyhow::Result;
 
 pub struct YarnProvider {}
@@ -9,19 +9,19 @@ impl Provider for YarnProvider {
         "yarn"
     }
 
-    fn detect(&self, app: &App) -> Result<bool> {
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
         Ok(app.includes_file("package.json") && app.includes_file("yarn.lock"))
     }
 
-    fn pkgs(&self, _app: &App) -> Vec<Pkg> {
+    fn pkgs(&self, _app: &App, _env: &Environment) -> Vec<Pkg> {
         vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.yarn")]
     }
 
-    fn install_cmd(&self, _app: &App) -> Result<Option<String>> {
+    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
         Ok(Some("yarn".to_string()))
     }
 
-    fn suggested_build_cmd(&self, app: &App) -> Result<Option<String>> {
+    fn suggested_build_cmd(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         if let Some(scripts) = package_json.scripts {
             if scripts.get("build").is_some() {
@@ -32,7 +32,7 @@ impl Provider for YarnProvider {
         Ok(None)
     }
 
-    fn suggested_start_command(&self, app: &App) -> Result<Option<String>> {
+    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         if let Some(scripts) = package_json.scripts {
             if scripts.get("start").is_some() {

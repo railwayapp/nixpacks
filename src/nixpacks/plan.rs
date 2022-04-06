@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::providers::Pkg;
 
+use super::environment::EnvironmentVariables;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BuildPlan {
     pub version: String,
@@ -10,4 +12,5 @@ pub struct BuildPlan {
     pub install_cmd: Option<String>,
     pub build_cmd: Option<String>,
     pub start_cmd: Option<String>,
+    pub variables: EnvironmentVariables,
 }

@@ -9,20 +9,23 @@ use std::{
 use tempdir::TempDir;
 use uuid::Uuid;
 pub mod app;
+pub mod environment;
 pub mod logger;
 pub mod plan;
 
 use crate::providers::{Pkg, Provider};
 
-use self::{app::App, logger::Logger, plan::BuildPlan};
+use self::{
+    app::App,
+    environment::{Environment, EnvironmentVariables},
+    logger::Logger,
+    plan::BuildPlan,
+};
 
 static NIX_PACKS_VERSION: &str = "0.0.1";
 
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "30d3d79b7d3607d56546dd2a6b49e156ba0ec634";
-
-#[derive(PartialEq, Clone, Debug)]
-pub struct EnvironmentVariable(pub String, pub String);
 
 #[derive(Debug)]
 pub struct AppBuilderOptions {
@@ -46,8 +49,8 @@ impl AppBuilderOptions {
 pub struct AppBuilder<'a> {
     name: Option<String>,
     app: &'a App,
+    environment: &'a Environment,
     logger: &'a Logger,
-    variables: Vec<EnvironmentVariable>,
     options: &'a AppBuilderOptions,
     provider: Option<&'a dyn Provider>,
 }
@@ -56,15 +59,15 @@ impl<'a> AppBuilder<'a> {
     pub fn new(
         name: Option<String>,
         app: &'a App,
+        environment: &'a Environment,
         logger: &'a Logger,
-        variables: Vec<EnvironmentVariable>,
         options: &'a AppBuilderOptions,
     ) -> Result<AppBuilder<'a>> {
         Ok(AppBuilder {
             name,
             app,
+            environment,
             logger,
-            variables,
             options,
             provider: None,
         })
@@ -81,6 +84,8 @@ impl<'a> AppBuilder<'a> {
         let build_cmd = self.get_build_cmd().context("Generating build command")?;
         let start_cmd = self.get_start_cmd().context("Generating start command")?;
 
+        let variables = self.get_variables().context("Getting plan variables")?;
+
         let plan = BuildPlan {
             version: NIX_PACKS_VERSION.to_string(),
             nixpkgs_archive: if self.options.pin_pkgs {
@@ -92,6 +97,7 @@ impl<'a> AppBuilder<'a> {
             install_cmd,
             start_cmd,
             build_cmd,
+            variables,
         };
 
         Ok(plan)
@@ -130,8 +136,7 @@ impl<'a> AppBuilder<'a> {
         }
 
         self.logger.log_step("Writing build plan");
-        AppBuilder::write_build_plan(plan, tmp_dir.path(), self.variables.clone())
-            .context("Writing build plan")?;
+        AppBuilder::write_build_plan(plan, tmp_dir.path()).context("Writing build plan")?;
 
         self.logger.log_step("Building image");
 
@@ -161,7 +166,7 @@ impl<'a> AppBuilder<'a> {
     fn get_pkgs(&self) -> Result<Vec<Pkg>> {
         let pkgs: Vec<Pkg> = match self.provider {
             Some(provider) => {
-                let mut provider_pkgs = provider.pkgs(self.app);
+                let mut provider_pkgs = provider.pkgs(self.app, self.environment);
                 let mut pkgs = self.options.custom_pkgs.clone();
                 pkgs.append(&mut provider_pkgs);
                 pkgs
@@ -172,9 +177,26 @@ impl<'a> AppBuilder<'a> {
         Ok(pkgs)
     }
 
+    fn get_variables(&self) -> Result<EnvironmentVariables> {
+        // Get a copy of the variables in the environment
+        let variables = Environment::clone_variables(self.environment);
+
+        let new_variables = match self.provider {
+            Some(provider) => {
+                // Merge provider variables
+                let provider_variables =
+                    provider.get_environment_variables(self.app, self.environment)?;
+                variables.into_iter().chain(provider_variables).collect()
+            }
+            None => variables,
+        };
+
+        Ok(new_variables)
+    }
+
     fn get_install_cmd(&self) -> Result<Option<String>> {
         let install_cmd = match self.provider {
-            Some(provider) => provider.install_cmd(self.app)?,
+            Some(provider) => provider.install_cmd(self.app, self.environment)?,
             None => None,
         };
 
@@ -183,7 +205,7 @@ impl<'a> AppBuilder<'a> {
 
     fn get_build_cmd(&self) -> Result<Option<String>> {
         let suggested_build_cmd = match self.provider {
-            Some(provider) => provider.suggested_build_cmd(self.app)?,
+            Some(provider) => provider.suggested_build_cmd(self.app, self.environment)?,
             None => None,
         };
 
@@ -200,7 +222,7 @@ impl<'a> AppBuilder<'a> {
         let procfile_cmd = self.parse_procfile()?;
 
         let suggested_start_cmd = match self.provider {
-            Some(provider) => provider.suggested_start_command(self.app)?,
+            Some(provider) => provider.suggested_start_command(self.app, self.environment)?,
             None => None,
         };
 
@@ -216,7 +238,7 @@ impl<'a> AppBuilder<'a> {
 
     fn detect(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
         for provider in providers {
-            let matches = provider.detect(self.app)?;
+            let matches = provider.detect(self.app, self.environment)?;
             if matches {
                 self.provider = Some(provider);
                 break;
@@ -241,14 +263,9 @@ impl<'a> AppBuilder<'a> {
         }
     }
 
-    pub fn write_build_plan(
-        plan: &BuildPlan,
-        dest: &Path,
-        variables: Vec<EnvironmentVariable>,
-    ) -> Result<()> {
+    pub fn write_build_plan(plan: &BuildPlan, dest: &Path) -> Result<()> {
         let nix_expression = AppBuilder::gen_nix(plan).context("Generating Nix expression")?;
-        let dockerfile =
-            AppBuilder::gen_dockerfile(plan, variables).context("Generating Dockerfile")?;
+        let dockerfile = AppBuilder::gen_dockerfile(plan).context("Generating Dockerfile")?;
 
         let nix_path = PathBuf::from(dest).join(PathBuf::from("environment.nix"));
         let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
@@ -289,10 +306,11 @@ impl<'a> AppBuilder<'a> {
         Ok(nix_expression)
     }
 
-    pub fn gen_dockerfile(plan: &BuildPlan, variables: Vec<EnvironmentVariable>) -> Result<String> {
-        let args_string = variables
+    pub fn gen_dockerfile(plan: &BuildPlan) -> Result<String> {
+        let args_string = plan
+            .variables
             .iter()
-            .map(|var| format!("ARG {}", var.0))
+            .map(|var| format!("ENV {}={}", var.0, var.1))
             .collect::<Vec<String>>()
             .join("\n");
 

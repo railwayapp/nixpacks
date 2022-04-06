@@ -1,7 +1,6 @@
 use ::nixpacks::{build, gen_plan};
 use anyhow::Result;
 use clap::{arg, Arg, Command};
-use nixpacks::get_environment_variables;
 
 fn main() -> Result<()> {
     let matches = Command::new("bb")
@@ -85,13 +84,11 @@ fn main() -> Result<()> {
         None => Vec::new(),
     };
 
-    let variables = get_environment_variables(envs)?;
-
     match &matches.subcommand() {
         Some(("plan", matches)) => {
             let path = matches.value_of("PATH").expect("required");
 
-            let plan = gen_plan(path, pkgs, build_cmd, start_cmd, variables, pin_pkgs)?;
+            let plan = gen_plan(path, pkgs, build_cmd, start_cmd, envs, pin_pkgs)?;
             let json = serde_json::to_string_pretty(&plan)?;
             println!("{}", json);
         }
@@ -101,7 +98,7 @@ fn main() -> Result<()> {
             let plan_path = matches.value_of("plan");
 
             build(
-                path, name, pkgs, build_cmd, start_cmd, pin_pkgs, variables, plan_path,
+                path, name, pkgs, build_cmd, start_cmd, pin_pkgs, envs, plan_path,
             )?;
         }
         _ => eprintln!("Invalid command"),
