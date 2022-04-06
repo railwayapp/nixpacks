@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use super::{Pkg, Provider};
-use crate::nixpacks::app::App;
+use crate::nixpacks::{
+    app::App,
+    environment::{Environment, EnvironmentVariables},
+};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -12,19 +15,19 @@ impl Provider for NpmProvider {
         "node"
     }
 
-    fn detect(&self, app: &App) -> Result<bool> {
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
         Ok(app.includes_file("package.json"))
     }
 
-    fn pkgs(&self, _app: &App) -> Vec<Pkg> {
+    fn pkgs(&self, _app: &App, _env: &Environment) -> Vec<Pkg> {
         vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.nodejs")]
     }
 
-    fn install_cmd(&self, _app: &App) -> Result<Option<String>> {
+    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
         Ok(Some("npm install".to_string()))
     }
 
-    fn suggested_build_cmd(&self, app: &App) -> Result<Option<String>> {
+    fn suggested_build_cmd(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         if let Some(scripts) = package_json.scripts {
             if scripts.get("build").is_some() {
@@ -35,7 +38,7 @@ impl Provider for NpmProvider {
         Ok(None)
     }
 
-    fn suggested_start_command(&self, app: &App) -> Result<Option<String>> {
+    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         if let Some(scripts) = package_json.scripts {
             if scripts.get("start").is_some() {
@@ -53,6 +56,18 @@ impl Provider for NpmProvider {
         }
 
         Ok(None)
+    }
+
+    fn get_environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<EnvironmentVariables> {
+        let mut variables = EnvironmentVariables::default();
+        variables.insert("NODE_ENV".to_string(), "production".to_string());
+        variables.insert("NPM_CONFIG_PRODUCTION".to_string(), "false".to_string());
+
+        Ok(variables)
     }
 }
 
