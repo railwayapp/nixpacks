@@ -1,5 +1,8 @@
 use super::{npm::PackageJson, Pkg, Provider};
-use crate::nixpacks::{app::App, environment::Environment};
+use crate::nixpacks::{
+    app::App,
+    environment::{Environment, EnvironmentVariables},
+};
 use anyhow::Result;
 
 pub struct YarnProvider {}
@@ -50,5 +53,16 @@ impl Provider for YarnProvider {
         }
 
         Ok(None)
+    }
+
+    fn get_environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<EnvironmentVariables> {
+        let mut variables = EnvironmentVariables::default();
+        variables.insert("NODE_ENV".to_string(), "production".to_string());
+
+        Ok(variables)
     }
 }

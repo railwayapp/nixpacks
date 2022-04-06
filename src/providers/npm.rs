@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use super::{Pkg, Provider};
-use crate::nixpacks::{app::App, environment::Environment};
+use crate::nixpacks::{
+    app::App,
+    environment::{Environment, EnvironmentVariables},
+};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -53,6 +56,17 @@ impl Provider for NpmProvider {
         }
 
         Ok(None)
+    }
+
+    fn get_environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<EnvironmentVariables> {
+        let mut variables = EnvironmentVariables::default();
+        variables.insert("NODE_ENV".to_string(), "production".to_string());
+
+        Ok(variables)
     }
 }
 

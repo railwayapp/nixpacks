@@ -6,6 +6,10 @@ fn test_node() -> Result<()> {
     let plan = gen_plan("./examples/node", Vec::new(), None, None, Vec::new(), false)?;
     assert_eq!(plan.build_cmd, None);
     assert_eq!(plan.start_cmd, Some("npm run start".to_string()));
+    assert_eq!(
+        plan.variables.get("NODE_ENV"),
+        Some(&"production".to_string())
+    );
 
     Ok(())
 }
@@ -15,6 +19,10 @@ fn test_npm() -> Result<()> {
     let plan = gen_plan("./examples/npm", Vec::new(), None, None, Vec::new(), false)?;
     assert_eq!(plan.build_cmd, Some("npm run build".to_string()));
     assert_eq!(plan.start_cmd, Some("npm run start".to_string()));
+    assert_eq!(
+        plan.variables.get("NODE_ENV"),
+        Some(&"production".to_string())
+    );
 
     Ok(())
 }
@@ -40,6 +48,10 @@ fn test_yarn() -> Result<()> {
     let plan = gen_plan("./examples/yarn", Vec::new(), None, None, Vec::new(), false)?;
     assert_eq!(plan.build_cmd, Some("yarn build".to_string()));
     assert_eq!(plan.start_cmd, Some("yarn start".to_string()));
+    assert_eq!(
+        plan.variables.get("NODE_ENV"),
+        Some(&"production".to_string())
+    );
 
     Ok(())
 }
@@ -152,6 +164,21 @@ fn test_node_main_file_doesnt_exist() -> Result<()> {
     )?;
     assert_eq!(plan.build_cmd, None);
     assert_eq!(plan.start_cmd, Some("node index.js".to_string()));
+
+    Ok(())
+}
+
+#[test]
+fn test_overriding_environment_variables() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/variables",
+        Vec::new(),
+        None,
+        None,
+        vec!["NODE_ENV=test"],
+        false,
+    )?;
+    assert_eq!(plan.variables.get("NODE_ENV"), Some(&"test".to_string()));
 
     Ok(())
 }

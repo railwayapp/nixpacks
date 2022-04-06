@@ -186,7 +186,7 @@ impl<'a> AppBuilder<'a> {
                 // Merge provider variables
                 let provider_variables =
                     provider.get_environment_variables(self.app, self.environment)?;
-                variables.into_iter().chain(provider_variables).collect()
+                provider_variables.into_iter().chain(variables).collect()
             }
             None => variables,
         };
@@ -360,8 +360,6 @@ impl<'a> AppBuilder<'a> {
         install_cmd=install_cmd,
         build_cmd=build_cmd,
         start_cmd=start_cmd};
-
-        println!("{}", dockerfile);
 
         Ok(dockerfile)
     }
