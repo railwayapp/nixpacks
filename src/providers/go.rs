@@ -16,8 +16,8 @@ impl Provider for GolangProvider {
         Ok(app.includes_file("main.go"))
     }
 
-    fn pkgs(&self, _app: &App, _env: &Environment) -> Vec<Pkg> {
-        vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.go")]
+    fn pkgs(&self, _app: &App, _env: &Environment) -> Result<Vec<Pkg>> {
+        Ok(vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.go")])
     }
 
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {

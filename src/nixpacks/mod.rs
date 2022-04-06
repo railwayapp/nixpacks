@@ -165,7 +165,7 @@ impl<'a> AppBuilder<'a> {
     fn get_pkgs(&self) -> Result<Vec<Pkg>> {
         let pkgs: Vec<Pkg> = match self.provider {
             Some(provider) => {
-                let mut provider_pkgs = provider.pkgs(self.app, self.environment);
+                let mut provider_pkgs = provider.pkgs(self.app, self.environment)?;
                 let mut pkgs = self.options.custom_pkgs.clone();
                 pkgs.append(&mut provider_pkgs);
                 pkgs

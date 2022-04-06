@@ -16,8 +16,8 @@ impl Provider for YarnProvider {
         Ok(app.includes_file("package.json") && app.includes_file("yarn.lock"))
     }
 
-    fn pkgs(&self, _app: &App, _env: &Environment) -> Vec<Pkg> {
-        vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.yarn")]
+    fn pkgs(&self, _app: &App, _env: &Environment) -> Result<Vec<Pkg>> {
+        Ok(vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.yarn")])
     }
 
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
