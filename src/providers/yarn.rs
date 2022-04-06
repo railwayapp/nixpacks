@@ -21,7 +21,7 @@ impl Provider for YarnProvider {
     }
 
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(Some("yarn".to_string()))
+        Ok(Some("yarn install --frozen-lockfile".to_string()))
     }
 
     fn suggested_build_cmd(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
