@@ -1,6 +1,9 @@
 use super::Provider;
 use crate::{
-    nixpacks::{app::App, environment::Environment},
+    nixpacks::{
+        app::App,
+        environment::{Environment, EnvironmentVariables},
+    },
     providers::Pkg,
 };
 use anyhow::{Context, Result};
@@ -44,13 +47,20 @@ impl Provider for RustProvider {
                 .and_then(|v| v.as_str());
 
             if let Some(name) = name {
-                return Ok(Some(format!(
-                    "ROCKET_ADDRESS=0.0.0.0 ./target/release/{}",
-                    name
-                )));
+                return Ok(Some(format!("./target/release/{}", name)));
             }
         }
 
         Ok(None)
+    }
+
+    fn get_environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<EnvironmentVariables> {
+        let mut variables = EnvironmentVariables::default();
+        variables.insert("ROCKET_ADDRESS".to_string(), "0.0.0.0".to_string());
+        Ok(variables)
     }
 }
