@@ -83,7 +83,6 @@ impl<'a> AppBuilder<'a> {
             .context("Generating install command")?;
         let build_cmd = self.get_build_cmd().context("Generating build command")?;
         let start_cmd = self.get_start_cmd().context("Generating start command")?;
-
         let variables = self.get_variables().context("Getting plan variables")?;
 
         let plan = BuildPlan {
@@ -342,7 +341,7 @@ impl<'a> AppBuilder<'a> {
           # Load Nix environment
           RUN nix-env -if environment.nix
 
-          # Load args
+          # Load environment variables
           {args_string}
 
           COPY . /app
