@@ -62,6 +62,7 @@ impl Provider for YarnProvider {
     ) -> Result<EnvironmentVariables> {
         let mut variables = EnvironmentVariables::default();
         variables.insert("NODE_ENV".to_string(), "production".to_string());
+        variables.insert("NPM_CONFIG_PRODUCTION".to_string(), "false".to_string());
 
         Ok(variables)
     }
