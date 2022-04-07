@@ -1,10 +1,8 @@
 use super::Provider;
-use crate::{
-    nixpacks::{
-        app::App,
-        environment::{Environment, EnvironmentVariables},
-    },
-    providers::Pkg,
+use crate::nixpacks::{
+    app::App,
+    environment::{Environment, EnvironmentVariables},
+    pkg::Pkg,
 };
 use anyhow::{Context, Result};
 

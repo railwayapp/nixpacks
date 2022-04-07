@@ -1,8 +1,5 @@
 use super::Provider;
-use crate::{
-    nixpacks::{app::App, environment::Environment},
-    providers::Pkg,
-};
+use crate::nixpacks::{app::App, environment::Environment, pkg::Pkg};
 use anyhow::Result;
 
 pub struct GolangProvider {}

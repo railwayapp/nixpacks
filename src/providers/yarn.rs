@@ -1,7 +1,11 @@
-use super::{npm::PackageJson, Pkg, Provider};
+use super::{
+    npm::{NpmProvider, PackageJson},
+    Provider,
+};
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
+    pkg::Pkg,
 };
 use anyhow::Result;
 
@@ -16,8 +20,12 @@ impl Provider for YarnProvider {
         Ok(app.includes_file("package.json") && app.includes_file("yarn.lock"))
     }
 
-    fn pkgs(&self, _app: &App, _env: &Environment) -> Result<Vec<Pkg>> {
-        Ok(vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.yarn")])
+    fn pkgs(&self, app: &App, _env: &Environment) -> Result<Vec<Pkg>> {
+        let node_pkg = NpmProvider::get_nix_node_pkg(&app.read_json("package.json")?)?;
+        Ok(vec![
+            Pkg::new("pkgs.stdenv"),
+            Pkg::new("pkgs.yarn").set_override("nodejs", node_pkg.name.as_str()),
+        ])
     }
 
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
@@ -60,10 +68,6 @@ impl Provider for YarnProvider {
         _app: &App,
         _env: &Environment,
     ) -> Result<EnvironmentVariables> {
-        let mut variables = EnvironmentVariables::default();
-        variables.insert("NODE_ENV".to_string(), "production".to_string());
-        variables.insert("NPM_CONFIG_PRODUCTION".to_string(), "false".to_string());
-
-        Ok(variables)
+        Ok(NpmProvider::get_node_environment_variables())
     }
 }

@@ -1,28 +1,18 @@
+
+
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
+    pkg::Pkg,
 };
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
+
 
 pub mod deno;
 pub mod go;
 pub mod npm;
 pub mod rust;
 pub mod yarn;
-
-#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
-pub struct Pkg {
-    pub name: String,
-}
-
-impl Pkg {
-    pub fn new(name: &str) -> Pkg {
-        Pkg {
-            name: name.to_string(),
-        }
-    }
-}
 
 pub trait Provider {
     fn name(&self) -> &str;

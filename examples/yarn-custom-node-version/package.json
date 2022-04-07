@@ -6,6 +6,6 @@
     "start": "./start.sh"
   },
   "engines": {
-    "node": ">=12 <14"
+    "node": ">=14.2 <16"
   }
 }

@@ -2,12 +2,12 @@ use std::{env, fs};
 
 use crate::{
     nixpacks::{
-        app::App, environment::Environment, logger::Logger, plan::BuildPlan, AppBuilder,
+        app::App, environment::Environment, logger::Logger, pkg::Pkg, plan::BuildPlan, AppBuilder,
         AppBuilderOptions,
     },
     providers::{
         deno::DenoProvider, go::GolangProvider, npm::NpmProvider, rust::RustProvider,
-        yarn::YarnProvider, Pkg,
+        yarn::YarnProvider,
     },
 };
 use anyhow::{bail, Context, Result};
