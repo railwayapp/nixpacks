@@ -304,8 +304,6 @@ impl<'a> AppBuilder<'a> {
         pkg_import=pkg_import,
         pkgs=nixpkgs};
 
-        println!("{}", nix_expression);
-
         Ok(nix_expression)
     }
 
