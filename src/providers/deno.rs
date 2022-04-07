@@ -1,8 +1,5 @@
 use super::Provider;
-use crate::{
-    nixpacks::{app::App, environment::Environment},
-    providers::Pkg,
-};
+use crate::nixpacks::{app::App, environment::Environment, pkg::Pkg};
 use anyhow::Result;
 use regex::Regex;
 
@@ -18,8 +15,8 @@ impl Provider for DenoProvider {
         app.find_match(&re, "**/*.ts")
     }
 
-    fn pkgs(&self, _app: &App, _env: &Environment) -> Vec<Pkg> {
-        vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.deno")]
+    fn pkgs(&self, _app: &App, _env: &Environment) -> Result<Vec<Pkg>> {
+        Ok(vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.deno")])
     }
 
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {

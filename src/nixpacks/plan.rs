@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::providers::Pkg;
-
-use super::environment::EnvironmentVariables;
+use super::{environment::EnvironmentVariables, pkg::Pkg};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BuildPlan {

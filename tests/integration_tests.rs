@@ -1,5 +1,5 @@
 use anyhow::Result;
-use nixpacks::{gen_plan, providers::Pkg};
+use nixpacks::{gen_plan, nixpacks::pkg::Pkg};
 
 #[test]
 fn test_node() -> Result<()> {
@@ -44,6 +44,24 @@ fn test_node_no_scripts() -> Result<()> {
 }
 
 #[test]
+fn test_node_custom_version() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/node-custom-version",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(
+        plan.pkgs,
+        vec![Pkg::new("pkgs.stdenv"), Pkg::new("nodejs-12_x")]
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_yarn() -> Result<()> {
     let plan = gen_plan("./examples/yarn", Vec::new(), None, None, Vec::new(), false)?;
     assert_eq!(plan.build_cmd, Some("yarn build".to_string()));
@@ -55,6 +73,27 @@ fn test_yarn() -> Result<()> {
     assert_eq!(
         plan.variables.get("NPM_CONFIG_PRODUCTION"),
         Some(&"false".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_yarn_custom_version() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/yarn-custom-node-version",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(
+        plan.pkgs,
+        vec![
+            Pkg::new("pkgs.stdenv"),
+            Pkg::new("pkgs.yarn").set_override("nodejs", "nodejs-14_x")
+        ]
     );
 
     Ok(())

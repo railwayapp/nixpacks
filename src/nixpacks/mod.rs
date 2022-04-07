@@ -11,14 +11,16 @@ use uuid::Uuid;
 pub mod app;
 pub mod environment;
 pub mod logger;
+pub mod pkg;
 pub mod plan;
 
-use crate::providers::{Pkg, Provider};
+use crate::providers::Provider;
 
 use self::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     logger::Logger,
+    pkg::Pkg,
     plan::BuildPlan,
 };
 
@@ -165,7 +167,7 @@ impl<'a> AppBuilder<'a> {
     fn get_pkgs(&self) -> Result<Vec<Pkg>> {
         let pkgs: Vec<Pkg> = match self.provider {
             Some(provider) => {
-                let mut provider_pkgs = provider.pkgs(self.app, self.environment);
+                let mut provider_pkgs = provider.pkgs(self.app, self.environment)?;
                 let mut pkgs = self.options.custom_pkgs.clone();
                 pkgs.append(&mut provider_pkgs);
                 pkgs
@@ -283,7 +285,7 @@ impl<'a> AppBuilder<'a> {
         let nixpkgs = plan
             .pkgs
             .iter()
-            .map(|p| p.name.clone())
+            .map(|p| p.to_nix_string())
             .collect::<Vec<String>>()
             .join(" ");
 

@@ -1,10 +1,8 @@
 use super::Provider;
-use crate::{
-    nixpacks::{
-        app::App,
-        environment::{Environment, EnvironmentVariables},
-    },
-    providers::Pkg,
+use crate::nixpacks::{
+    app::App,
+    environment::{Environment, EnvironmentVariables},
+    pkg::Pkg,
 };
 use anyhow::{Context, Result};
 
@@ -19,13 +17,13 @@ impl Provider for RustProvider {
         Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn pkgs(&self, _app: &App, _env: &Environment) -> Vec<Pkg> {
-        vec![
+    fn pkgs(&self, _app: &App, _env: &Environment) -> Result<Vec<Pkg>> {
+        Ok(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.gcc"),
             Pkg::new("pkgs.rustc"),
             Pkg::new("pkgs.cargo"),
-        ]
+        ])
     }
 
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
