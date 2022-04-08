@@ -1,12 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use super::{environment::EnvironmentVariables, pkg::Pkg};
+use super::{environment::EnvironmentVariables, nix::NixConfig};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BuildPlan {
     pub version: String,
-    pub nixpkgs_archive: Option<String>,
-    pub pkgs: Vec<Pkg>,
+    pub nix_config: NixConfig,
     pub install_cmd: Option<String>,
     pub build_cmd: Option<String>,
     pub start_cmd: Option<String>,

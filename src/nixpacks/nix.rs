@@ -8,6 +8,13 @@ pub struct Pkg {
     pub overrides: HashMap<String, String>,
 }
 
+#[derive(Serialize, Deserialize, PartialEq, Clone, Default, Debug)]
+pub struct NixConfig {
+    pub pkgs: Vec<Pkg>,
+    pub overlays: Vec<String>,
+    pub nixpkgs_archive: Option<String>,
+}
+
 impl Pkg {
     pub fn new(name: &str) -> Pkg {
         Pkg {
@@ -32,6 +39,31 @@ impl Pkg {
 
     pub fn set_override(mut self, name: &str, pkg: &str) -> Self {
         self.overrides.insert(name.to_string(), pkg.to_string());
+        self
+    }
+}
+
+impl NixConfig {
+    pub fn new(pkgs: Vec<Pkg>) -> Self {
+        NixConfig {
+            pkgs,
+            overlays: Vec::new(),
+            nixpkgs_archive: None,
+        }
+    }
+
+    pub fn add_pkgs(mut self, new_pkgs: &mut Vec<Pkg>) -> Self {
+        self.pkgs.append(new_pkgs);
+        self
+    }
+
+    pub fn add_overlay(mut self, overlay: String) -> Self {
+        self.overlays.push(overlay);
+        self
+    }
+
+    pub fn set_archive(mut self, archive: String) -> Self {
+        self.nixpkgs_archive = Some(archive);
         self
     }
 }

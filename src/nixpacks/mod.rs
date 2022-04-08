@@ -3,7 +3,7 @@ use indoc::formatdoc;
 use std::{
     fs::{self, File},
     io::Write,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::Command,
 };
 use tempdir::TempDir;
@@ -11,7 +11,7 @@ use uuid::Uuid;
 pub mod app;
 pub mod environment;
 pub mod logger;
-pub mod pkg;
+pub mod nix;
 pub mod plan;
 
 use crate::providers::Provider;
@@ -20,7 +20,7 @@ use self::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     logger::Logger,
-    pkg::Pkg,
+    nix::{NixConfig, Pkg},
     plan::BuildPlan,
 };
 
@@ -35,6 +35,8 @@ pub struct AppBuilderOptions {
     pub custom_start_cmd: Option<String>,
     pub custom_pkgs: Vec<Pkg>,
     pub pin_pkgs: bool,
+    pub out_dir: Option<String>,
+    pub plan_path: Option<String>,
 }
 
 impl AppBuilderOptions {
@@ -44,6 +46,8 @@ impl AppBuilderOptions {
             custom_start_cmd: None,
             custom_pkgs: Vec::new(),
             pin_pkgs: false,
+            out_dir: None,
+            plan_path: None,
         }
     }
 }
@@ -79,7 +83,7 @@ impl<'a> AppBuilder<'a> {
         // Load options from the best matching provider
         self.detect(providers).context("Detecting provider")?;
 
-        let pkgs = self.get_pkgs().context("Getting packages")?;
+        let nix_config = self.get_nix_config().context("Getting packages")?;
         let install_cmd = self
             .get_install_cmd()
             .context("Generating install command")?;
@@ -89,12 +93,7 @@ impl<'a> AppBuilder<'a> {
 
         let plan = BuildPlan {
             version: NIX_PACKS_VERSION.to_string(),
-            nixpkgs_archive: if self.options.pin_pkgs {
-                Some(NIXPKGS_ARCHIVE.to_string())
-            } else {
-                None
-            },
-            pkgs,
+            nix_config,
             install_cmd,
             start_cmd,
             build_cmd,
@@ -106,22 +105,36 @@ impl<'a> AppBuilder<'a> {
 
     pub fn build(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
         self.logger.log_section("Building");
-        let plan = self.plan(providers).context("Creating build plan")?;
-        self.logger.log_step("Generated new build plan");
+
+        let plan = match &self.options.plan_path {
+            Some(plan_path) => {
+                self.logger.log_step("Building from existing plan");
+                let plan_json = fs::read_to_string(plan_path).context("Reading build plan")?;
+                let plan: BuildPlan =
+                    serde_json::from_str(&plan_json).context("Deserializing build plan")?;
+                plan
+            }
+            None => {
+                self.logger.log_step("Generated new build plan");
+
+                self.plan(providers).context("Creating build plan")?
+            }
+        };
 
         self.do_build(&plan)
     }
 
-    pub fn build_from_plan(&mut self, plan: &BuildPlan) -> Result<()> {
-        self.logger.log_section("Building");
-        self.logger.log_step("Building from existing plan");
-
-        self.do_build(plan)
-    }
-
     pub fn do_build(&mut self, plan: &BuildPlan) -> Result<()> {
         let id = Uuid::new_v4();
-        let tmp_dir = TempDir::new("nixpacks").context("Creating a temp directory")?;
+
+        let dir: String = match &self.options.out_dir {
+            Some(dir) => dir.clone(),
+            None => {
+                let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
+                let path = tmp.path().to_str().unwrap();
+                path.to_string()
+            }
+        };
 
         self.logger.log_step("Copying source to tmp dir");
 
@@ -129,7 +142,7 @@ impl<'a> AppBuilder<'a> {
         let mut copy_cmd = Command::new("cp")
             .arg("-a")
             .arg(format!("{}/.", source))
-            .arg(tmp_dir.path())
+            .arg(dir.clone())
             .spawn()?;
         let copy_result = copy_cmd.wait().context("Copying app source to tmp dir")?;
         if !copy_result.success() {
@@ -137,45 +150,53 @@ impl<'a> AppBuilder<'a> {
         }
 
         self.logger.log_step("Writing build plan");
-        AppBuilder::write_build_plan(plan, tmp_dir.path()).context("Writing build plan")?;
+        AppBuilder::write_build_plan(plan, dir.as_str()).context("Writing build plan")?;
 
         self.logger.log_step("Building image");
 
         let name = self.name.clone().unwrap_or_else(|| id.to_string());
 
-        let mut docker_build_cmd = Command::new("docker")
-            .arg("build")
-            .arg(tmp_dir.path())
-            .arg("-t")
-            .arg(name.clone())
-            .spawn()?;
+        if self.options.out_dir.is_none() {
+            let mut docker_build_cmd = Command::new("docker")
+                .arg("build")
+                .arg(dir)
+                .arg("-t")
+                .arg(name.clone())
+                .spawn()?;
 
-        let build_result = docker_build_cmd.wait().context("Building image")?;
+            let build_result = docker_build_cmd.wait().context("Building image")?;
 
-        if !build_result.success() {
-            bail!("Docker build failed")
-        }
+            if !build_result.success() {
+                bail!("Docker build failed")
+            }
 
-        self.logger.log_section("Successfully Built!");
+            self.logger.log_section("Successfully Built!");
 
-        println!("\nRun:");
-        println!("  docker run -it {}", name);
+            println!("\nRun:");
+            println!("  docker run -it {}", name);
+        } else {
+            println!("\nSaved output to:");
+            println!("  {}", dir);
+        };
 
         Ok(())
     }
 
-    fn get_pkgs(&self) -> Result<Vec<Pkg>> {
-        let pkgs: Vec<Pkg> = match self.provider {
+    fn get_nix_config(&self) -> Result<NixConfig> {
+        let config: NixConfig = match self.provider {
             Some(provider) => {
-                let mut provider_pkgs = provider.pkgs(self.app, self.environment)?;
+                let config = provider.nix_config(self.app, self.environment)?;
                 let mut pkgs = self.options.custom_pkgs.clone();
-                pkgs.append(&mut provider_pkgs);
-                pkgs
+                config.add_pkgs(&mut pkgs)
             }
-            None => self.options.custom_pkgs.clone(),
+            None => NixConfig::new(self.options.custom_pkgs.clone()),
         };
 
-        Ok(pkgs)
+        if self.options.pin_pkgs {
+            Ok(config.set_archive(NIXPKGS_ARCHIVE.to_string()))
+        } else {
+            Ok(config)
+        }
     }
 
     fn get_variables(&self) -> Result<EnvironmentVariables> {
@@ -264,7 +285,7 @@ impl<'a> AppBuilder<'a> {
         }
     }
 
-    pub fn write_build_plan(plan: &BuildPlan, dest: &Path) -> Result<()> {
+    pub fn write_build_plan(plan: &BuildPlan, dest: &str) -> Result<()> {
         let nix_expression = AppBuilder::gen_nix(plan).context("Generating Nix expression")?;
         let dockerfile = AppBuilder::gen_dockerfile(plan).context("Generating Dockerfile")?;
 
@@ -283,26 +304,50 @@ impl<'a> AppBuilder<'a> {
 
     pub fn gen_nix(plan: &BuildPlan) -> Result<String> {
         let nixpkgs = plan
+            .nix_config
             .pkgs
             .iter()
             .map(|p| p.to_nix_string())
             .collect::<Vec<String>>()
             .join(" ");
 
-        let nix_archive = plan.nixpkgs_archive.clone();
+        let nix_archive = plan.nix_config.nixpkgs_archive.clone();
         let pkg_import = match nix_archive {
             Some(archive) => format!(
-                "with import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
+                "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
                 archive
             ),
-            None => "with import <nixpkgs>".to_string(),
+            None => "import <nixpkgs>".to_string(),
         };
 
+        let overlays = plan
+            .nix_config
+            .overlays
+            .iter()
+            .map(|url| format!("(import (builtins.fetchTarball \"{}\"))", url))
+            .collect::<Vec<String>>()
+            .join("\n");
+
         let nix_expression = formatdoc! {"
-           {pkg_import} {{ }}; [ {pkgs} ]
+            {{ }}:
+
+            let
+              pkgs = {pkg_import} {{ 
+                overlays = [
+                  {overlays}
+                ];
+              }};
+            in with pkgs;
+            buildEnv {{
+              name = \"env\";
+              paths = [
+                {pkgs}
+              ];
+            }}
         ",
         pkg_import=pkg_import,
-        pkgs=nixpkgs};
+        pkgs=nixpkgs,
+        overlays=overlays};
 
         Ok(nix_expression)
     }

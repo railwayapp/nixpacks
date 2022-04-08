@@ -1,7 +1,7 @@
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    pkg::Pkg,
+    nix::NixConfig,
 };
 use anyhow::Result;
 
@@ -14,7 +14,7 @@ pub mod yarn;
 pub trait Provider {
     fn name(&self) -> &str;
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
-    fn pkgs(&self, app: &App, _env: &Environment) -> Result<Vec<Pkg>>;
+    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig>;
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
         Ok(None)
     }
