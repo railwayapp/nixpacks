@@ -90,11 +90,11 @@ impl RustProvider {
             Some(toml_file) => {
                 println!("{:?}", toml_file);
                 let version = toml_file.package.rust_version;
-                
 
-                version.map(|version| Pkg::new(
-                            format!("rust-bin.stable.\"{}\".default", version).as_str(),
-                        ))
+                version
+                    .map(|version| {
+                        Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str())
+                    })
                     .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE))
             }
             None => Pkg::new(DEFAULT_RUST_PACKAGE),
