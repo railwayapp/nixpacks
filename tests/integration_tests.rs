@@ -160,6 +160,31 @@ fn test_pin_archive() -> Result<()> {
 }
 
 #[test]
+fn test_custom_rust_version() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/rust-custom-version",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(plan.build_cmd, Some("cargo build --release".to_string()));
+    assert!(
+        plan.nix_config
+            .pkgs
+            .iter()
+            .filter(|p| p.name.contains("1.56.0"))
+            .collect::<Vec<_>>()
+            .len()
+            > 0
+    );
+    assert!(plan.nix_config.overlays.len() > 0);
+
+    Ok(())
+}
+
+#[test]
 fn test_rust_rocket() -> Result<()> {
     let plan = gen_plan(
         "./examples/rust-rocket",
