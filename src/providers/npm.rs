@@ -10,10 +10,18 @@ use anyhow::{bail, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-pub struct NpmProvider {}
-
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 17];
 const DEFAULT_NODE_PKG_NAME: &'static &str = &"pkgs.nodejs";
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PackageJson {
+    pub name: String,
+    pub scripts: Option<HashMap<String, String>>,
+    pub engines: Option<HashMap<String, String>>,
+    pub main: Option<String>,
+}
+
+pub struct NpmProvider {}
 
 impl Provider for NpmProvider {
     fn name(&self) -> &str {
@@ -114,14 +122,6 @@ impl NpmProvider {
 
         Ok(Pkg::new(DEFAULT_NODE_PKG_NAME))
     }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct PackageJson {
-    pub name: String,
-    pub scripts: Option<HashMap<String, String>>,
-    pub engines: Option<HashMap<String, String>>,
-    pub main: Option<String>,
 }
 
 fn version_number_to_pkg(version: &u32) -> Result<Option<String>> {
