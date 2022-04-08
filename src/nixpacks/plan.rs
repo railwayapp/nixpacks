@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{
-    environment::EnvironmentVariables,
-    nix::{NixConfig},
-};
+use super::{environment::EnvironmentVariables, nix::NixConfig};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BuildPlan {
