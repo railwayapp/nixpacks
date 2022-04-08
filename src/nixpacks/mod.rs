@@ -190,8 +190,8 @@ impl<'a> AppBuilder<'a> {
                 config.add_pkgs(&mut pkgs)
             }
             None => {
-                let config = NixConfig::new(self.options.custom_pkgs.clone());
-                config
+                
+                NixConfig::new(self.options.custom_pkgs.clone())
             }
         };
 
@@ -327,7 +327,7 @@ impl<'a> AppBuilder<'a> {
             .nix_config
             .overlays
             .iter()
-            .map(|url| format!("(import (builtins.fetchTarball \"{}\"))", url).to_string())
+            .map(|url| format!("(import (builtins.fetchTarball \"{}\"))", url))
             .collect::<Vec<String>>()
             .join("\n");
 

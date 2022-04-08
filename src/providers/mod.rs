@@ -1,7 +1,7 @@
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    nix::{NixConfig, Pkg},
+    nix::{NixConfig},
 };
 use anyhow::Result;
 

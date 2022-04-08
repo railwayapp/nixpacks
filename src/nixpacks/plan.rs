@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     environment::EnvironmentVariables,
-    nix::{NixConfig, Pkg},
+    nix::{NixConfig},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
