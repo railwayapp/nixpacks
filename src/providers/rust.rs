@@ -88,7 +88,6 @@ impl RustProvider {
     fn get_rust_pkg(&self, app: &App) -> Result<Pkg> {
         let pkg = match self.parse_cargo_toml(app)? {
             Some(toml_file) => {
-                println!("{:?}", toml_file);
                 let version = toml_file.package.rust_version;
 
                 version
