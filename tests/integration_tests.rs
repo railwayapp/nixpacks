@@ -170,16 +170,15 @@ fn test_custom_rust_version() -> Result<()> {
         false,
     )?;
     assert_eq!(plan.build_cmd, Some("cargo build --release".to_string()));
-    assert!(
+    assert_eq!(
         plan.nix_config
             .pkgs
             .iter()
             .filter(|p| p.name.contains("1.56.0"))
-            .collect::<Vec<_>>()
-            .len()
-            > 0
+            .count(),
+        1
     );
-    assert!(plan.nix_config.overlays.len() > 0);
+    assert!(!plan.nix_config.overlays.is_empty());
 
     Ok(())
 }
