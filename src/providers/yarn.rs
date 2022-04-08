@@ -5,7 +5,7 @@ use super::{
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    pkg::Pkg,
+    nix::{NixConfig, Pkg},
 };
 use anyhow::Result;
 
@@ -20,12 +20,12 @@ impl Provider for YarnProvider {
         Ok(app.includes_file("package.json") && app.includes_file("yarn.lock"))
     }
 
-    fn pkgs(&self, app: &App, _env: &Environment) -> Result<Vec<Pkg>> {
+    fn pkgs(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
         let node_pkg = NpmProvider::get_nix_node_pkg(&app.read_json("package.json")?)?;
-        Ok(vec![
+        Ok(NixConfig::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.yarn").set_override("nodejs", node_pkg.name.as_str()),
-        ])
+        ]))
     }
 
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {

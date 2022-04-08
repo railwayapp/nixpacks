@@ -1,8 +1,8 @@
-use std::{env};
+use std::env;
 
 use crate::{
     nixpacks::{
-        app::App, environment::Environment, logger::Logger, pkg::Pkg, plan::BuildPlan, AppBuilder,
+        app::App, environment::Environment, logger::Logger, nix::Pkg, plan::BuildPlan, AppBuilder,
         AppBuilderOptions,
     },
     providers::{

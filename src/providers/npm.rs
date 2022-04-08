@@ -4,7 +4,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    pkg::Pkg,
+    nix::{NixConfig, Pkg},
 };
 use anyhow::{bail, Result};
 use regex::Regex;
@@ -24,11 +24,11 @@ impl Provider for NpmProvider {
         Ok(app.includes_file("package.json"))
     }
 
-    fn pkgs(&self, app: &App, _env: &Environment) -> Result<Vec<Pkg>> {
+    fn pkgs(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NpmProvider::get_nix_node_pkg(&package_json)?;
 
-        Ok(vec![Pkg::new("pkgs.stdenv"), node_pkg])
+        Ok(NixConfig::new(vec![Pkg::new("pkgs.stdenv"), node_pkg]))
     }
 
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {

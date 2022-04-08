@@ -2,9 +2,11 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    pkg::Pkg,
+    nix::{NixConfig, Pkg},
 };
 use anyhow::{Context, Result};
+
+static RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
 
 pub struct RustProvider {}
 
@@ -17,13 +19,13 @@ impl Provider for RustProvider {
         Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn pkgs(&self, _app: &App, _env: &Environment) -> Result<Vec<Pkg>> {
-        Ok(vec![
+    fn pkgs(&self, _app: &App, _env: &Environment) -> Result<NixConfig> {
+        Ok(NixConfig::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.gcc"),
-            Pkg::new("pkgs.rustc"),
-            Pkg::new("pkgs.cargo"),
+            Pkg::new("rust-bin.stable.latest.default"),
         ])
+        .add_overlay(RUST_OVERLAY.to_string()))
     }
 
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {

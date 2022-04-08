@@ -1,5 +1,5 @@
 use anyhow::Result;
-use nixpacks::{gen_plan, nixpacks::pkg::Pkg};
+use nixpacks::{gen_plan, nixpacks::nix::Pkg};
 
 #[test]
 fn test_node() -> Result<()> {

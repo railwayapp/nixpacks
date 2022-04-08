@@ -11,7 +11,7 @@ use uuid::Uuid;
 pub mod app;
 pub mod environment;
 pub mod logger;
-pub mod pkg;
+pub mod nix;
 pub mod plan;
 
 use crate::providers::Provider;
@@ -20,7 +20,7 @@ use self::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     logger::Logger,
-    pkg::Pkg,
+    nix::{NixConfig, Pkg},
     plan::BuildPlan,
 };
 
@@ -83,7 +83,7 @@ impl<'a> AppBuilder<'a> {
         // Load options from the best matching provider
         self.detect(providers).context("Detecting provider")?;
 
-        let pkgs = self.get_pkgs().context("Getting packages")?;
+        let nix_config = self.get_nix_config().context("Getting packages")?;
         let install_cmd = self
             .get_install_cmd()
             .context("Generating install command")?;
@@ -93,12 +93,7 @@ impl<'a> AppBuilder<'a> {
 
         let plan = BuildPlan {
             version: NIX_PACKS_VERSION.to_string(),
-            nixpkgs_archive: if self.options.pin_pkgs {
-                Some(NIXPKGS_ARCHIVE.to_string())
-            } else {
-                None
-            },
-            pkgs,
+            nix_config,
             install_cmd,
             start_cmd,
             build_cmd,
@@ -187,18 +182,24 @@ impl<'a> AppBuilder<'a> {
         Ok(())
     }
 
-    fn get_pkgs(&self) -> Result<Vec<Pkg>> {
-        let pkgs: Vec<Pkg> = match self.provider {
+    fn get_nix_config(&self) -> Result<NixConfig> {
+        let config: NixConfig = match self.provider {
             Some(provider) => {
-                let mut provider_pkgs = provider.pkgs(self.app, self.environment)?;
+                let config = provider.pkgs(self.app, self.environment)?;
                 let mut pkgs = self.options.custom_pkgs.clone();
-                pkgs.append(&mut provider_pkgs);
-                pkgs
+                config.add_pkgs(&mut pkgs)
             }
-            None => self.options.custom_pkgs.clone(),
+            None => {
+                let config = NixConfig::new(self.options.custom_pkgs.clone());
+                config
+            }
         };
 
-        Ok(pkgs)
+        if self.options.pin_pkgs {
+            Ok(config.set_archive(NIXPKGS_ARCHIVE.to_string()))
+        } else {
+            Ok(config)
+        }
     }
 
     fn get_variables(&self) -> Result<EnvironmentVariables> {
@@ -306,13 +307,14 @@ impl<'a> AppBuilder<'a> {
 
     pub fn gen_nix(plan: &BuildPlan) -> Result<String> {
         let nixpkgs = plan
+            .nix_config
             .pkgs
             .iter()
             .map(|p| p.to_nix_string())
             .collect::<Vec<String>>()
             .join(" ");
 
-        let nix_archive = plan.nixpkgs_archive.clone();
+        let nix_archive = plan.nix_config.nixpkgs_archive.clone();
         let pkg_import = match nix_archive {
             Some(archive) => format!(
                 "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
@@ -321,21 +323,34 @@ impl<'a> AppBuilder<'a> {
             None => "import <nixpkgs>".to_string(),
         };
 
+        let overlays = plan
+            .nix_config
+            .overlays
+            .iter()
+            .map(|url| format!("(import (builtins.fetchTarball \"{}\"))", url).to_string())
+            .collect::<Vec<String>>()
+            .join("\n");
+
         let nix_expression = formatdoc! {"
             {{ }}:
 
             let
-                pkgs = {pkg_import} {{ }};
+              pkgs = {pkg_import} {{ 
+                overlays = [
+                  {overlays}
+                ];
+              }};
             in with pkgs;
             buildEnv {{
-                name = \"env\";
-                paths = [
-                    {pkgs}
-                ];
+              name = \"env\";
+              paths = [
+                {pkgs}
+              ];
             }}
         ",
         pkg_import=pkg_import,
-        pkgs=nixpkgs};
+        pkgs=nixpkgs,
+        overlays=overlays};
 
         Ok(nix_expression)
     }
