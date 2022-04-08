@@ -27,6 +27,13 @@ fn main() -> Result<()> {
                         .long("plan")
                         .help("Existing build plan file to use")
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::new("out")
+                        .long("out")
+                        .short('o')
+                        .help("Save Docker output directory instead of building it with Docker")
+                        .takes_value(true),
                 ),
         )
         .arg(
@@ -95,10 +102,11 @@ fn main() -> Result<()> {
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").expect("required");
             let name = matches.value_of("name").map(|n| n.to_string());
-            let plan_path = matches.value_of("plan");
+            let plan_path = matches.value_of("plan").map(|n| n.to_string());
+            let output_dir = matches.value_of("out").map(|n| n.to_string());
 
             build(
-                path, name, pkgs, build_cmd, start_cmd, pin_pkgs, envs, plan_path,
+                path, name, pkgs, build_cmd, start_cmd, pin_pkgs, envs, plan_path, output_dir,
             )?;
         }
         _ => eprintln!("Invalid command"),
