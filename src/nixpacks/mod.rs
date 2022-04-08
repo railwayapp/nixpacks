@@ -185,14 +185,11 @@ impl<'a> AppBuilder<'a> {
     fn get_nix_config(&self) -> Result<NixConfig> {
         let config: NixConfig = match self.provider {
             Some(provider) => {
-                let config = provider.pkgs(self.app, self.environment)?;
+                let config = provider.nix_config(self.app, self.environment)?;
                 let mut pkgs = self.options.custom_pkgs.clone();
                 config.add_pkgs(&mut pkgs)
             }
-            None => {
-                
-                NixConfig::new(self.options.custom_pkgs.clone())
-            }
+            None => NixConfig::new(self.options.custom_pkgs.clone()),
         };
 
         if self.options.pin_pkgs {

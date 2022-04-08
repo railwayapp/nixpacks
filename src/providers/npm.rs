@@ -32,7 +32,7 @@ impl Provider for NpmProvider {
         Ok(app.includes_file("package.json"))
     }
 
-    fn pkgs(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
+    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NpmProvider::get_nix_node_pkg(&package_json)?;
 

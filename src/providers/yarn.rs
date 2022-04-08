@@ -20,7 +20,7 @@ impl Provider for YarnProvider {
         Ok(app.includes_file("package.json") && app.includes_file("yarn.lock"))
     }
 
-    fn pkgs(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
+    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
         let node_pkg = NpmProvider::get_nix_node_pkg(&app.read_json("package.json")?)?;
         Ok(NixConfig::new(vec![
             Pkg::new("pkgs.stdenv"),

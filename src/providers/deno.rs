@@ -19,7 +19,7 @@ impl Provider for DenoProvider {
         app.find_match(&re, "**/*.ts")
     }
 
-    fn pkgs(&self, _app: &App, _env: &Environment) -> Result<NixConfig> {
+    fn nix_config(&self, _app: &App, _env: &Environment) -> Result<NixConfig> {
         Ok(NixConfig::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.deno"),

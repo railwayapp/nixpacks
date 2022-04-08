@@ -34,7 +34,7 @@ impl Provider for RustProvider {
         Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn pkgs(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
+    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
         let rust_pkg: Pkg = self.get_rust_pkg(app)?;
 
         Ok(NixConfig::new(vec![
