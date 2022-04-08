@@ -32,7 +32,7 @@ fn main() -> Result<()> {
                     Arg::new("out")
                         .long("out")
                         .short('o')
-                        .help("Save Docker output directory instead of building it with Docker")
+                        .help("Save output directory instead of building it with Docker")
                         .takes_value(true),
                 ),
         )

@@ -315,14 +315,24 @@ impl<'a> AppBuilder<'a> {
         let nix_archive = plan.nixpkgs_archive.clone();
         let pkg_import = match nix_archive {
             Some(archive) => format!(
-                "with import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
+                "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
                 archive
             ),
-            None => "with import <nixpkgs>".to_string(),
+            None => "import <nixpkgs>".to_string(),
         };
 
         let nix_expression = formatdoc! {"
-           {pkg_import} {{ }}; [ {pkgs} ]
+            {{ }}:
+
+            let
+                pkgs = {pkg_import} {{ }};
+            in with pkgs;
+            buildEnv {{
+                name = \"env\";
+                paths = [
+                    {pkgs}
+                ];
+            }}
         ",
         pkg_import=pkg_import,
         pkgs=nixpkgs};
