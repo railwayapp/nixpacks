@@ -6,16 +6,17 @@ use crate::{
         AppBuilderOptions,
     },
     providers::{
-        go::GolangProvider, npm::NpmProvider, rust::RustProvider, yarn::YarnProvider, python::PythonProvider, deno::DenoProvider
+        deno::DenoProvider, go::GolangProvider, npm::NpmProvider, python::PythonProvider,
+        rust::RustProvider, yarn::YarnProvider,
     },
 };
 use anyhow::{bail, Result};
 use providers::Provider;
 
+pub(crate) mod chain;
 pub mod nixpacks;
 pub mod providers;
 pub(crate) mod python;
-pub(crate) mod chain;
 
 pub fn get_providers() -> Vec<&'static dyn Provider> {
     vec![

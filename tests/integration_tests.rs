@@ -205,11 +205,21 @@ fn test_rust_rocket() -> Result<()> {
 
 #[test]
 pub fn test_python() -> Result<()> {
-    let plan = gen_plan("./examples/python", Vec::new(), None, None, Vec::new(), true)?;
+    let plan = gen_plan(
+        "./examples/python",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        true,
+    )?;
     assert_eq!(plan.build_cmd, None);
-    assert_eq!(plan.install_cmd, Some("python -m ensurepip && python -m pip install -r requirements.txt".to_string()));
+    assert_eq!(
+        plan.install_cmd,
+        Some("python -m ensurepip && python -m pip install -r requirements.txt".to_string())
+    );
     assert_eq!(plan.start_cmd, Some("python main.py".to_string()));
-    
+
     Ok(())
 }
 
@@ -231,9 +241,16 @@ fn test_node_main_file() -> Result<()> {
 
 #[test]
 pub fn test_python_setuptools() -> Result<()> {
-    let plan = gen_plan("./examples/python-setuptools", Vec::new(), None, None, Vec::new(), true)?;
+    let plan = gen_plan(
+        "./examples/python-setuptools",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        true,
+    )?;
     assert_eq!(plan.build_cmd, None);
-    
+
     if let Some(install_cmd) = plan.install_cmd {
         assert!(install_cmd.contains("setuptools"));
     } else {
