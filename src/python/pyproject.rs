@@ -1,6 +1,6 @@
 use anyhow::{Result, Context};
 
-use crate::nixpacks::app::App;
+use crate::{nixpacks::app::App, chain};
 
 pub struct ProjectMeta {
     pub project_name: Option<String>,
@@ -18,35 +18,46 @@ pub fn parse(app: &App) -> Result<ProjectMeta> {
         return Err(anyhow::anyhow!("no project.toml found"));
     }
     let pyproject: toml::Value = app.read_toml("pyproject.toml").context("Reading pyproject.toml")?;
+    let project = chain!(Some(pyproject) => |cfg| cfg.get("project"));
+    let project_name = chain!(project =>
+        |proj| proj.get("name"),
+        |name| name.as_str(),
+        |name| Some(name.to_string())
+    );
 
-    let project_name = pyproject.get("project")
-        .and_then(|project| project.get("name"))
-        .and_then(|x| x.as_str())
-        .and_then(|s| Some(s.to_string()));
-
-    let module_name = pyproject.get("project")
-        .and_then(|project| project.get("packages"))
-        .and_then(|packages| packages.as_array())
-        .and_then(|packages| packages.get(0))
-        .and_then(|x| x.as_str())
-        .and_then(|s| Some(s.to_string()))
-        .or_else(|| pyproject
-            .get("project")
-            .and_then(|project| project.get("py-modules"))
-            .and_then(|modules| modules.as_array())
-            .and_then(|modules| modules.get(0))
-            .and_then(|module| module.as_str())
-            .and_then(|str| Some(str.to_string()))
+    let module_name = chain!(project =>
+        (
+            |proj| proj.get("packages"),
+            |pkgs| pkgs.as_array(),
+            |pkgs| pkgs.get(0),
+            |package| package.as_str(),
+            |name| Some(name.to_string())
+        );
+        (
+            |proj| proj.get("py-modules"),
+            |mods| mods.as_array(),
+            |mods| mods.get(0),
+            |module| module.as_str(),
+            |name| Some(name.to_string())
+        );
+        (
+            |_| project_name
         )
-        .or_else(|| project_name.to_owned());
+    );
     
-    let entry_point = pyproject.get("project")
-        .and_then(|project| project.get("scripts"))
-        .and_then(|scripts| scripts.as_table())
-        .and_then(|scripts| Some(scripts.keys()))
-        .and_then(|mut cmds| cmds.nth(0))
-        .and_then(|cmd| Some(EntryPoint::Command(cmd.to_string())))
-        .or_else(|| module_name.to_owned().and_then(|module| Some(EntryPoint::Module(module))));
+    let entry_point = chain!(project =>
+        (
+            |project| project.get("scripts"),
+            |scripts| scripts.as_table(),
+            |scripts| Some(scripts.keys()),
+            |mut cmds| cmds.nth(0),
+            |cmd| Some(EntryPoint::Command(cmd.to_string()))
+        );
+        (
+            |_| module_name.to_owned(),
+            |module| Some(EntryPoint::Module(module))
+        )
+    );
     
     Ok(ProjectMeta {
         project_name,
