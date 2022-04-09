@@ -1,5 +1,12 @@
-use super::{npm::PackageJson, Pkg, Provider};
-use crate::nixpacks::app::App;
+use super::{
+    npm::{NpmProvider, PackageJson},
+    Provider,
+};
+use crate::nixpacks::{
+    app::App,
+    environment::{Environment, EnvironmentVariables},
+    nix::{NixConfig, Pkg},
+};
 use anyhow::Result;
 
 pub struct YarnProvider {}
@@ -9,19 +16,23 @@ impl Provider for YarnProvider {
         "yarn"
     }
 
-    fn detect(&self, app: &App) -> Result<bool> {
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
         Ok(app.includes_file("package.json") && app.includes_file("yarn.lock"))
     }
 
-    fn pkgs(&self, _app: &App) -> Vec<Pkg> {
-        vec![Pkg::new("pkgs.stdenv"), Pkg::new("pkgs.yarn")]
+    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
+        let node_pkg = NpmProvider::get_nix_node_pkg(&app.read_json("package.json")?)?;
+        Ok(NixConfig::new(vec![
+            Pkg::new("pkgs.stdenv"),
+            Pkg::new("pkgs.yarn").set_override("nodejs", node_pkg.name.as_str()),
+        ]))
     }
 
-    fn install_cmd(&self, _app: &App) -> Result<Option<String>> {
-        Ok(Some("yarn".to_string()))
+    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
+        Ok(Some("yarn install --frozen-lockfile".to_string()))
     }
 
-    fn suggested_build_cmd(&self, app: &App) -> Result<Option<String>> {
+    fn suggested_build_cmd(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         if let Some(scripts) = package_json.scripts {
             if scripts.get("build").is_some() {
@@ -32,7 +43,7 @@ impl Provider for YarnProvider {
         Ok(None)
     }
 
-    fn suggested_start_command(&self, app: &App) -> Result<Option<String>> {
+    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         if let Some(scripts) = package_json.scripts {
             if scripts.get("start").is_some() {
@@ -40,10 +51,23 @@ impl Provider for YarnProvider {
             }
         }
 
+        if let Some(main) = package_json.main {
+            if app.includes_file(&main) {
+                return Ok(Some(format!("node {}", main)));
+            }
+        }
         if app.includes_file("index.js") {
-            return Ok(Some("node index.js".to_string()));
+            return Ok(Some(String::from("node index.js")));
         }
 
         Ok(None)
+    }
+
+    fn get_environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<EnvironmentVariables> {
+        Ok(NpmProvider::get_node_environment_variables())
     }
 }

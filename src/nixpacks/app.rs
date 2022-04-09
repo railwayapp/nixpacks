@@ -1,6 +1,10 @@
-use anyhow::{Context, Result};
-use serde::de::DeserializeOwned;
+use std::path::Path;
 use std::{env, fs, path::PathBuf};
+
+use anyhow::{bail, Context, Result};
+use glob::glob;
+use regex::Regex;
+use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone)]
 pub struct App {
@@ -23,19 +27,49 @@ impl App {
     }
 
     pub fn includes_file(&self, name: &str) -> bool {
-        for path in &self.paths {
-            if path.file_name().unwrap() == name {
-                return true;
-            }
-        }
+        fs::canonicalize(self.source.join(name)).is_ok()
+    }
 
-        false
+    pub fn find_files(&self, pattern: &str) -> Result<Vec<String>> {
+        let full_pattern = self.source.join(pattern);
+
+        let pattern_str = match full_pattern.to_str() {
+            Some(s) => s,
+            None => return Ok(Vec::new()),
+        };
+
+        let relative_paths = glob(pattern_str)?
+            .filter_map(|result| result.ok()) // Remove bad ones
+            .filter_map(|path| path.to_str().map(|p| p.to_string())) // convert to string
+            .collect();
+
+        Ok(relative_paths)
     }
 
     pub fn read_file(&self, name: &str) -> Result<String> {
         let name = self.source.join(name);
         let contents = fs::read_to_string(name)?;
         Ok(contents)
+    }
+
+    pub fn find_match(&self, re: &Regex, pattern: &str) -> Result<bool> {
+        let paths = match self.find_files(pattern) {
+            Ok(v) => v,
+            Err(_e) => return Ok(false),
+        };
+
+        for path in paths {
+            let path_buf = fs::canonicalize(path)?;
+
+            if let Some(p) = path_buf.to_str() {
+                let f = self.read_file(p)?;
+                if re.find(f.as_str()).is_some() {
+                    return Ok(true);
+                }
+            }
+        }
+
+        Ok(false)
     }
 
     pub fn read_json<T>(&self, name: &str) -> Result<T>
@@ -54,6 +88,26 @@ impl App {
         let contents = self.read_file(name)?;
         let toml_file = toml::from_str(contents.as_str())?;
         Ok(toml_file)
+    }
+
+    pub fn strip_source_path(&self, abs: &str) -> Result<String> {
+        let source_str = match self.source.to_str() {
+            Some(s) => s,
+            None => bail!("Failed to parse source path"),
+        };
+        let abs_path = Path::new(abs);
+
+        // Strip source path from absolute path
+        let stripped = match abs_path.strip_prefix(source_str) {
+            Ok(p) => p,
+            Err(_e) => abs_path,
+        };
+
+        // Convert path to string
+        return match stripped.to_str() {
+            Some(v) => Ok(v.to_string()),
+            None => bail!("Failed to convert path to string"),
+        };
     }
 }
 
@@ -121,6 +175,53 @@ mod tests {
                 .unwrap(),
             "rocket"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_files() -> Result<()> {
+        let app = App::new("./examples/monorepo")?;
+        let m = app.find_files("**/*.tsx").unwrap();
+        let dir = env::current_dir().unwrap();
+        assert_eq!(
+            m,
+            vec![
+                dir.join("examples/monorepo/packages/client/pages/_app.tsx")
+                    .to_str()
+                    .unwrap(),
+                dir.join("examples/monorepo/packages/client/pages/index.tsx")
+                    .to_str()
+                    .unwrap(),
+            ]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_match() -> Result<()> {
+        let app = App::new("./examples/monorepo")?;
+        let re = Regex::new(r"className")?;
+        let m = app.find_match(&re, "**/*.tsx").unwrap();
+        assert!(m);
+        Ok(())
+    }
+
+    #[test]
+    fn test_strip_source_path() -> Result<()> {
+        let app = App::new("./examples/npm")?;
+        let path_to_strip = app.source.join("foo/bar.txt");
+        assert_eq!(
+            app.strip_source_path(path_to_strip.to_str().unwrap())
+                .unwrap(),
+            "foo/bar.txt"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_strip_source_path_no_source_prefix() -> Result<()> {
+        let app = App::new("./examples/npm")?;
+        assert_eq!(app.strip_source_path("no/prefix.txt")?, "no/prefix.txt");
         Ok(())
     }
 }

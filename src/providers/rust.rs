@@ -1,6 +1,27 @@
 use super::Provider;
-use crate::{nixpacks::app::App, providers::Pkg};
+use crate::nixpacks::{
+    app::App,
+    environment::{Environment, EnvironmentVariables},
+    nix::{NixConfig, Pkg},
+};
 use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
+
+static RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
+static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CargoTomlPackage {
+    pub name: String,
+    pub version: String,
+    #[serde(rename = "rust-version")]
+    pub rust_version: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CargoToml {
+    pub package: CargoTomlPackage,
+}
 
 pub struct RustProvider {}
 
@@ -9,45 +30,75 @@ impl Provider for RustProvider {
         "rust"
     }
 
-    fn detect(&self, app: &App) -> Result<bool> {
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
         Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn pkgs(&self, _app: &App) -> Vec<Pkg> {
-        vec![
+    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
+        let rust_pkg: Pkg = self.get_rust_pkg(app)?;
+
+        Ok(NixConfig::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.gcc"),
-            Pkg::new("pkgs.rustc"),
-            Pkg::new("pkgs.cargo"),
-        ]
+            rust_pkg,
+        ])
+        .add_overlay(RUST_OVERLAY.to_string()))
     }
 
-    fn install_cmd(&self, _app: &App) -> Result<Option<String>> {
+    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
         Ok(None)
     }
 
-    fn suggested_build_cmd(&self, _app: &App) -> Result<Option<String>> {
+    fn suggested_build_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
         Ok(Some("cargo build --release".to_string()))
     }
 
-    fn suggested_start_command(&self, app: &App) -> Result<Option<String>> {
-        if app.includes_file("Cargo.toml") {
-            // Parse name from Cargo.toml so we can run ./target/release/{name}
-            let toml_file: toml::Value =
-                app.read_toml("Cargo.toml").context("Reading Cargo.toml")?;
-            let name = toml_file
-                .get("package")
-                .and_then(|package| package.get("name"))
-                .and_then(|v| v.as_str());
-
-            if let Some(name) = name {
-                return Ok(Some(format!(
-                    "ROCKET_ADDRESS=0.0.0.0 ./target/release/{}",
-                    name
-                )));
-            }
+    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
+        if let Some(toml_file) = self.parse_cargo_toml(app)? {
+            let name = toml_file.package.name;
+            return Ok(Some(format!("./target/release/{}", name)));
         }
 
         Ok(None)
+    }
+
+    fn get_environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<EnvironmentVariables> {
+        let mut variables = EnvironmentVariables::default();
+        variables.insert("ROCKET_ADDRESS".to_string(), "0.0.0.0".to_string());
+        Ok(variables)
+    }
+}
+
+impl RustProvider {
+    fn parse_cargo_toml(&self, app: &App) -> Result<Option<CargoToml>> {
+        if app.includes_file("Cargo.toml") {
+            let cargo_toml: CargoToml =
+                app.read_toml("Cargo.toml").context("Reading Cargo.toml")?;
+            return Ok(Some(cargo_toml));
+        }
+
+        Ok(None)
+    }
+
+    // Get the rust package version by parsing the `rust-version` field in `Cargo.toml`
+    fn get_rust_pkg(&self, app: &App) -> Result<Pkg> {
+        let pkg = match self.parse_cargo_toml(app)? {
+            Some(toml_file) => {
+                let version = toml_file.package.rust_version;
+
+                version
+                    .map(|version| {
+                        Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str())
+                    })
+                    .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE))
+            }
+            None => Pkg::new(DEFAULT_RUST_PACKAGE),
+        };
+
+        Ok(pkg)
     }
 }

@@ -4,20 +4,25 @@
 
 **App source + Nix packages + Docker = Image**
 
-The goal of this project is to build an app source directory in a reproducible way. Providers analyze the source code and recommend nix packages and suggest install/build/start commands. However, all of these settings can be overriden by the user.
+Nixpacks takes a source directory and produces an OCI compliant image that can be deployed anywhere. The project was started by the [Railway](https://railway.app) team as an alternative to [Buildpacks](https://buildpacks.io/) and attempts to address a lot of the shortcomings and issues that occurred when deploying thousands of user apps to the Railway platform. The biggest change is that system and language dependencies are pulled from the Nix ecosystem, which provides a bunch of benefits.
 
-Nixpacks currently supports
+You can follow along with the roadmap in the [GitHub project](https://github.com/railwayapp/nixpacks/projects/1).
 
-- Node/NPM
-- Yarn
-- Go
-- Rust
+## Core Ideas
 
-More langauges will be added very soon
+- ✨ **Intutive defaults**: In most cases, building and deploying and app with nixpacks should _just work_ with no configuration needed.
+- ⚙️ **Customization where necessary**: Every part of the pipeline should be customizable. These include the [Nix packages](https://search.nixos.org/packages) to add to the environment and build/start commands.
+- 🚀 **Easily extendible**: New providers (languages) should be able to be easily added to nixpacks with minimal knowledge of Nix and Docker.
 
-## Getting Started
+## How Nix is used
 
-_Note: This is a young project and is in active development_
+Nix packages are used for OS and language level dependencies (e.g. [nodejs](https://search.nixos.org/packages?channel=unstable&show=nodejs&from=0&size=50&sort=relevance&type=packages&query=nodejs) and [ffmpeg](https://search.nixos.org/packages?channel=unstable&show=ffmpeg&from=0&size=50&sort=relevance&type=packages&query=ffmpeg)). These packages are built and loaded into the environment where we then use these dependencies to install, build, and run the app (e.g. `npm install`, `cargo build`, etc.).
+
+## How Docker is used
+
+At the moment nixpacks generates a `Dockerfile` based on all information available. To create an image this is then built with `docker build`. However, this may change so providers should not need to know about the underlying Docker implementation.
+
+# Docs
 
 This project is not yet distributed anywhere and must be built with [Rust](https://www.rust-lang.org/tools/install).
 
@@ -49,9 +54,7 @@ cargo run -- build $APP_SRC --name $NAME
 
 ![image](https://user-images.githubusercontent.com/3044853/161355162-73651b6d-6ee2-41ee-a0f0-abbf581ce8f4.png)
 
-
 View the help with `cargo run -- build --help`
-
 
 ## How this works
 
@@ -75,21 +78,16 @@ The build phase takes the build plan and creates an OCI compliant image (with Do
 
 Overall the process is fairy simple.
 
-## Future Steps
+## Language providers
 
-This project is still in early development and is just the start.
+At the moment nixpacks supports the following languages out of the box
 
-- [ ] Build and support Nix flakes
-- Lanauge support
-  * [x] NPM
-  * [x] Yarn
-  * [x] Golang
-  * [ ] Python
-  * [x] Rust
-  * [ ] Java
-  * [ ] Zip
-  * [ ] Crystal
-  * [ ] Ruby
-- [ ] Environment variables
-- [ ] Nix package version overriding
-- [ ] NodeJS package.json engines parsing
+- [Node via NPM](https://www.npmjs.com/)
+- [Node via Yarn](https://yarnpkg.com/)
+- [Go](https://golang.org)
+- [Rust](https://www.rust-lang.org/)
+- [Deno](https://deno.land)
+
+## Contributing
+
+Contributions are welcome with the big caveat that this is a very early stage project and the implementation details and API will most likely change between now and a stable release. For more details on how to contribute, please see the [Contributing guidelines](./CONTRIBUTING.md).

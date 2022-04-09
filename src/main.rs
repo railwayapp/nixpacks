@@ -27,6 +27,13 @@ fn main() -> Result<()> {
                         .long("plan")
                         .help("Existing build plan file to use")
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::new("out")
+                        .long("out")
+                        .short('o')
+                        .help("Save output directory instead of building it with Docker")
+                        .takes_value(true),
                 ),
         )
         .arg(
@@ -61,6 +68,14 @@ fn main() -> Result<()> {
                 .takes_value(false)
                 .global(true),
         )
+        .arg(
+            Arg::new("env")
+                .long("env")
+                .help("Provide environment variables to your build")
+                .takes_value(true)
+                .multiple_values(true)
+                .global(true),
+        )
         .get_matches();
 
     let build_cmd = matches.value_of("build_cmd").map(|s| s.to_string());
@@ -71,20 +86,28 @@ fn main() -> Result<()> {
     };
     let pin_pkgs = matches.is_present("pin");
 
+    let envs: Vec<_> = match matches.values_of("env") {
+        Some(envs) => envs.collect(),
+        None => Vec::new(),
+    };
+
     match &matches.subcommand() {
         Some(("plan", matches)) => {
             let path = matches.value_of("PATH").expect("required");
 
-            let plan = gen_plan(path, pkgs, build_cmd, start_cmd, pin_pkgs)?;
+            let plan = gen_plan(path, pkgs, build_cmd, start_cmd, envs, pin_pkgs)?;
             let json = serde_json::to_string_pretty(&plan)?;
             println!("{}", json);
         }
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").expect("required");
             let name = matches.value_of("name").map(|n| n.to_string());
-            let plan_path = matches.value_of("plan");
+            let plan_path = matches.value_of("plan").map(|n| n.to_string());
+            let output_dir = matches.value_of("out").map(|n| n.to_string());
 
-            build(path, name, pkgs, build_cmd, start_cmd, pin_pkgs, plan_path)?;
+            build(
+                path, name, pkgs, build_cmd, start_cmd, pin_pkgs, envs, plan_path, output_dir,
+            )?;
         }
         _ => eprintln!("Invalid command"),
     }

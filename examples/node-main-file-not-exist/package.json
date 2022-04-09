@@ -1,0 +1,6 @@
+{
+    "name": "node-main-file-not-exist",
+    "version": "1.0.0",
+    "main": "inbex.js"
+  }
+  

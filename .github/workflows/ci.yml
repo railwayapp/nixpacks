@@ -1,4 +1,8 @@
-on: [push]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
 
 name: CI
 
@@ -66,3 +70,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
+          args: --all-targets --all-features
