@@ -11,7 +11,7 @@ impl Provider for PythonProvider {
     }
 
     fn detect(&self, app: &crate::nixpacks::app::App) -> anyhow::Result<bool> {
-        Ok(app.includes_file("main.py") || app.includes_file("requirements.txt") || app.includes_file("setup.py") || app.includes_file("setup.cfg"))
+        Ok(app.includes_file("main.py") || app.includes_file("requirements.txt") || app.includes_file("pyproject.toml"))
     }
 
     fn pkgs(&self, _app: &crate::nixpacks::app::App) -> Vec<super::Pkg> {
@@ -23,8 +23,8 @@ impl Provider for PythonProvider {
     fn install_cmd(&self, app: &App) -> Result<Option<String>> {
         if app.includes_file("requirements.txt") {
             return Ok(Some("python -m ensurepip && python -m pip install -r requirements.txt".to_string()))
-        } else if app.includes_file("setup.py") || app.includes_file("setup.cfg") {
-            return Ok(Some("python -m ensurepip && python -m pip install .".to_string()))
+        } else if app.includes_file("pyproject.toml") {
+            return Ok(Some("python -m ensurepip && python -m pip install --upgrade build setuptools && python -m pip install .".to_string()))
         }
         Ok(None)
     }
@@ -35,8 +35,13 @@ impl Provider for PythonProvider {
 
     fn suggested_start_command(&self, app: &App) -> Result<Option<String>> {
         if app.includes_file("pyproject.toml") {
-            if matches!(pyproject::parse(app), Ok(meta)) && matches!(meta.entry_point, Some(entry_point)) {
-                
+            if let Ok(meta) = pyproject::parse(app) {
+                if let Some(entry_point) = meta.entry_point {
+                    return match entry_point {
+                        pyproject::EntryPoint::Command(cmd) => Ok(Some(cmd.to_string())),
+                        pyproject::EntryPoint::Module(module) => Ok(Some(format!("python -m {}", module)))
+                    };
+                }
             }
         }
         // falls through

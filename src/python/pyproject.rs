@@ -18,7 +18,7 @@ pub fn parse(app: &App) -> Result<ProjectMeta> {
         return Err(anyhow::anyhow!("no project.toml found"));
     }
     let pyproject: toml::Value = app.read_toml("pyproject.toml").context("Reading pyproject.toml")?;
-    let project = chain!(Some(pyproject) => |cfg| cfg.get("project"));
+    let project = pyproject.get("project");
     let project_name = chain!(project =>
         |proj| proj.get("name"),
         |name| name.as_str(),
@@ -41,7 +41,7 @@ pub fn parse(app: &App) -> Result<ProjectMeta> {
             |name| Some(name.to_string())
         );
         (
-            |_| project_name
+            |_| project_name.to_owned()
         )
     );
     
