@@ -16,7 +16,6 @@ use providers::Provider;
 pub(crate) mod chain;
 pub mod nixpacks;
 pub mod providers;
-pub(crate) mod python;
 
 pub fn get_providers() -> Vec<&'static dyn Provider> {
     vec![
