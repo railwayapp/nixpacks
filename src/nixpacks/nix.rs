@@ -52,19 +52,16 @@ impl NixConfig {
         }
     }
 
-    pub fn add_pkgs(mut self, new_pkgs: &mut Vec<Pkg>) -> Self {
+    pub fn add_pkgs(&mut self, new_pkgs: &mut Vec<Pkg>) {
         self.pkgs.append(new_pkgs);
-        self
     }
 
-    pub fn add_overlay(mut self, overlay: String) -> Self {
+    pub fn add_overlay(&mut self, overlay: String) {
         self.overlays.push(overlay);
-        self
     }
 
-    pub fn set_archive(mut self, archive: String) -> Self {
+    pub fn set_archive(&mut self, archive: String) {
         self.nixpkgs_archive = Some(archive);
-        self
     }
 }
 

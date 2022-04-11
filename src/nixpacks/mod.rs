@@ -12,6 +12,7 @@ pub mod app;
 pub mod environment;
 pub mod logger;
 pub mod nix;
+pub mod phase;
 pub mod plan;
 
 use crate::providers::Provider;
@@ -21,6 +22,7 @@ use self::{
     environment::{Environment, EnvironmentVariables},
     logger::Logger,
     nix::{NixConfig, Pkg},
+    phase::SetupPhase,
     plan::BuildPlan,
 };
 
@@ -83,7 +85,8 @@ impl<'a> AppBuilder<'a> {
         // Load options from the best matching provider
         self.detect(providers).context("Detecting provider")?;
 
-        let nix_config = self.get_nix_config().context("Getting packages")?;
+        // let nix_config = self.get_nix_config().context("Getting packages")?;
+        let setup_phase = self.get_setup_phase().context("Getting setup phase")?;
         let install_cmd = self
             .get_install_cmd()
             .context("Generating install command")?;
@@ -93,7 +96,7 @@ impl<'a> AppBuilder<'a> {
 
         let plan = BuildPlan {
             version: NIX_PACKS_VERSION.to_string(),
-            nix_config,
+            setup_phase,
             install_cmd,
             start_cmd,
             build_cmd,
@@ -182,21 +185,27 @@ impl<'a> AppBuilder<'a> {
         Ok(())
     }
 
-    fn get_nix_config(&self) -> Result<NixConfig> {
-        let config: NixConfig = match self.provider {
-            Some(provider) => {
-                let config = provider.nix_config(self.app, self.environment)?;
-                let mut pkgs = self.options.custom_pkgs.clone();
-                config.add_pkgs(&mut pkgs)
-            }
-            None => NixConfig::new(self.options.custom_pkgs.clone()),
+    fn get_setup_phase(&self) -> Result<SetupPhase> {
+        let base_setup_phase = SetupPhase::new(NixConfig::new(vec![Pkg::new("stdenv")]));
+
+        let mut setup_phase: SetupPhase = match self.provider {
+            Some(provider) => provider
+                .setup(self.app, self.environment)?
+                .unwrap_or_else(|| base_setup_phase),
+            None => base_setup_phase,
         };
 
+        // Add custom user packages
+        let mut pkgs = self.options.custom_pkgs.clone();
+        setup_phase.nix_config.add_pkgs(&mut pkgs);
+
         if self.options.pin_pkgs {
-            Ok(config.set_archive(NIXPKGS_ARCHIVE.to_string()))
-        } else {
-            Ok(config)
+            setup_phase
+                .nix_config
+                .set_archive(NIXPKGS_ARCHIVE.to_string())
         }
+
+        Ok(setup_phase)
     }
 
     fn get_variables(&self) -> Result<EnvironmentVariables> {
@@ -304,6 +313,7 @@ impl<'a> AppBuilder<'a> {
 
     pub fn gen_nix(plan: &BuildPlan) -> Result<String> {
         let nixpkgs = plan
+            .setup_phase
             .nix_config
             .pkgs
             .iter()
@@ -311,7 +321,7 @@ impl<'a> AppBuilder<'a> {
             .collect::<Vec<String>>()
             .join(" ");
 
-        let nix_archive = plan.nix_config.nixpkgs_archive.clone();
+        let nix_archive = plan.setup_phase.nix_config.nixpkgs_archive.clone();
         let pkg_import = match nix_archive {
             Some(archive) => format!(
                 "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
@@ -321,6 +331,7 @@ impl<'a> AppBuilder<'a> {
         };
 
         let overlays = plan
+            .setup_phase
             .nix_config
             .overlays
             .iter()
@@ -360,6 +371,9 @@ impl<'a> AppBuilder<'a> {
             .collect::<Vec<String>>()
             .join("\n");
 
+        let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
+        setup_files.append(&mut plan.setup_phase.file_dependencies.clone());
+
         let install_cmd = plan
             .install_cmd
             .as_ref()
@@ -382,18 +396,17 @@ impl<'a> AppBuilder<'a> {
           RUN nix-channel --update
 
           RUN mkdir /app
-          COPY environment.nix /app
           WORKDIR /app
 
-          # Load Nix environment
+          # Setup
+          COPY {setup_files} /app
           RUN nix-env -if environment.nix
 
           # Load environment variables
           {args_string}
 
-          COPY . /app
-
           # Install
+          COPY . /app
           {install_cmd}
 
           # Build
@@ -402,6 +415,7 @@ impl<'a> AppBuilder<'a> {
           # Start
           {start_cmd}
         ",
+        setup_files=setup_files.join(" "),
         args_string=args_string,
         install_cmd=install_cmd,
         build_cmd=build_cmd,

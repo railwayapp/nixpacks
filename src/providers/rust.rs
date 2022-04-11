@@ -3,6 +3,7 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::{NixConfig, Pkg},
+    phase::SetupPhase,
 };
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -34,15 +35,24 @@ impl Provider for RustProvider {
         Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
+    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         let rust_pkg: Pkg = self.get_rust_pkg(app)?;
 
-        Ok(NixConfig::new(vec![
+        let mut nix_config = NixConfig::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.gcc"),
             rust_pkg,
-        ])
-        .add_overlay(RUST_OVERLAY.to_string()))
+        ]);
+        nix_config.add_overlay(RUST_OVERLAY.to_string());
+
+        let mut setup_phase = SetupPhase::new(nix_config);
+
+        // Include the rust toolchain file so we can install that rust version with Nix
+        if let Some(toolchain_file) = self.get_rust_toolchain_file(app)? {
+            setup_phase.file_dependencies.push(toolchain_file);
+        }
+
+        Ok(Some(setup_phase))
     }
 
     fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
@@ -84,8 +94,24 @@ impl RustProvider {
         Ok(None)
     }
 
+    fn get_rust_toolchain_file(&self, app: &App) -> Result<Option<String>> {
+        if app.includes_file("rust-toolchain") {
+            Ok(Some("rust-toolchain".to_string()))
+        } else if app.includes_file("rust-toolchain.toml") {
+            Ok(Some("rust-toolchain.toml".to_string()))
+        } else {
+            Ok(None)
+        }
+    }
+
     // Get the rust package version by parsing the `rust-version` field in `Cargo.toml`
     fn get_rust_pkg(&self, app: &App) -> Result<Pkg> {
+        if let Some(toolchain_file) = self.get_rust_toolchain_file(app)? {
+            return Ok(Pkg::new(
+                format!("(rust-bin.fromRustupToolchainFile ./{})", toolchain_file).as_str(),
+            ));
+        }
+
         let pkg = match self.parse_cargo_toml(app)? {
             Some(toml_file) => {
                 let version = toml_file.package.rust_version;
