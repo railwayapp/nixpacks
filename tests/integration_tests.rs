@@ -204,6 +204,26 @@ fn test_rust_rocket() -> Result<()> {
 }
 
 #[test]
+pub fn test_python() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/python",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        true,
+    )?;
+    assert_eq!(plan.build_cmd, None);
+    assert_eq!(
+        plan.install_cmd,
+        Some("python -m ensurepip && python -m pip install -r requirements.txt".to_string())
+    );
+    assert_eq!(plan.start_cmd, Some("python main.py".to_string()));
+
+    Ok(())
+}
+
+#[test]
 fn test_node_main_file() -> Result<()> {
     let plan = gen_plan(
         "./examples/node-main-file",
@@ -215,6 +235,33 @@ fn test_node_main_file() -> Result<()> {
     )?;
     assert_eq!(plan.build_cmd, None);
     assert_eq!(plan.start_cmd, Some("node src/index.js".to_string()));
+
+    Ok(())
+}
+
+#[test]
+pub fn test_python_setuptools() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/python-setuptools",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        true,
+    )?;
+    assert_eq!(plan.build_cmd, None);
+
+    if let Some(install_cmd) = plan.install_cmd {
+        assert!(install_cmd.contains("setuptools"));
+    } else {
+        return Err(anyhow::anyhow!("no install command"));
+    }
+
+    if let Some(start_cmd) = plan.start_cmd {
+        assert!(start_cmd.contains("python -m"));
+    } else {
+        return Err(anyhow::anyhow!("no start command"));
+    }
 
     Ok(())
 }
