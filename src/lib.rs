@@ -5,13 +5,15 @@ use crate::{
         app::App, environment::Environment, logger::Logger, nix::Pkg, plan::BuildPlan, AppBuilder,
         AppBuilderOptions,
     },
-    providers::rust::RustProvider,
+    providers::{
+        deno::DenoProvider, go::GolangProvider, npm::NpmProvider, python::PythonProvider,
+        rust::RustProvider, yarn::YarnProvider,
+    },
 };
 use anyhow::{bail, Result};
-use providers::{
-    deno::DenoProvider, go::GolangProvider, npm::NpmProvider, yarn::YarnProvider, Provider,
-};
+use providers::Provider;
 
+pub(crate) mod chain;
 pub mod nixpacks;
 pub mod providers;
 
@@ -22,6 +24,8 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &YarnProvider {},
         &NpmProvider {},
         &RustProvider {},
+        &PythonProvider {},
+        &DenoProvider {},
     ]
 }
 
