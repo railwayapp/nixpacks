@@ -187,11 +187,9 @@ impl<'a> AppBuilder<'a> {
     }
 
     fn get_setup_phase(&self) -> Result<SetupPhase> {
-        let base_setup_phase = SetupPhase::new(NixConfig::new(vec![Pkg::new("stdenv")]));
-
         let mut setup_phase: SetupPhase = match self.provider {
             Some(provider) => provider.setup(self.app, self.environment)?,
-            None => base_setup_phase,
+            None => SetupPhase::default(),
         };
 
         // Add custom user packages
