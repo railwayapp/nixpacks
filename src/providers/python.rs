@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use serde::Deserialize;
 
 use crate::{
+    chain,
     nixpacks::{app::App, environment::Environment, nix::NixConfig},
-    Pkg, chain,
+    Pkg,
 };
 
 use super::Provider;
@@ -43,9 +44,7 @@ impl Provider for PythonProvider {
                 if let Some(entry_point) = meta.entry_point {
                     return match entry_point {
                         EntryPoint::Command(cmd) => Ok(Some(cmd)),
-                        EntryPoint::Module(module) => {
-                            Ok(Some(format!("python -m {}", module)))
-                        }
+                        EntryPoint::Module(module) => Ok(Some(format!("python -m {}", module))),
                     };
                 }
             }
@@ -69,7 +68,7 @@ impl Provider for PythonProvider {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(dead_code)]
 struct PyProject {
-    pub project: Option<ProjectDecl>
+    pub project: Option<ProjectDecl>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -78,7 +77,7 @@ struct ProjectDecl {
     pub name: Option<String>,
     pub packages: Option<Vec<String>>,
     pub py_modules: Option<Vec<String>>,
-    pub entry_points: Option<HashMap<String, String>>
+    pub entry_points: Option<HashMap<String, String>>,
 }
 
 #[allow(dead_code)]
@@ -97,38 +96,49 @@ enum EntryPoint {
 impl PythonProvider {
     fn read_pyproject(&self, app: &App) -> Result<Option<PyProject>> {
         if app.includes_file("pyproject.toml") {
-            return Ok(Some(app.read_toml("pyproject.toml").context("Reading pyproject.toml")?))
+            return Ok(Some(
+                app.read_toml("pyproject.toml")
+                    .context("Reading pyproject.toml")?,
+            ));
         }
         Ok(None)
     }
     fn parse_project(&self, project: &PyProject) -> ProjectMeta {
-        let project_name = project.project.as_ref().and_then(|proj| proj.name.as_ref()).and_then(|name| Some(name.to_owned()));
+        let project_name = project
+            .project
+            .as_ref()
+            .and_then(|proj| proj.name.as_ref())
+            .map(|name| name.to_owned());
 
         let module_name = chain!(project.project.clone() =>
             (
                 |proj| proj.packages,
-                |pkgs| pkgs.get(0).cloned(),
-                |package| Some(package.to_string())
+                |pkgs| pkgs.get(0).cloned()
             );
             (
                 |proj| proj.py_modules,
-                |mods| mods.get(0).cloned(),
-                |module| Some(module.to_string())
+                |mods| mods.get(0).cloned()
             );
             (
                 |_| project_name.to_owned()
             )
         );
 
-        let entry_point = module_name.to_owned().and_then(|module| Some(EntryPoint::Module(module.to_owned())));
-    
+        let entry_point = module_name
+            .to_owned()
+            .map(EntryPoint::Module);
+
         ProjectMeta {
-            project_name: project_name.to_owned(),
-            module_name: module_name.and_then(|module| Some(module.to_owned())),
-            entry_point: entry_point,
+            project_name,
+            module_name,
+            entry_point,
         }
     }
     fn parse_pyproject(&self, app: &App) -> Result<ProjectMeta> {
-        Ok(self.parse_project(&(self.read_pyproject(app)?.ok_or(anyhow::anyhow!("failed to load pyproject.toml"))?)))
+        Ok(self.parse_project(
+            &(self
+                .read_pyproject(app)?
+                .ok_or_else(|| anyhow::anyhow!("failed to load pyproject.toml"))?),
+        ))
     }
 }
