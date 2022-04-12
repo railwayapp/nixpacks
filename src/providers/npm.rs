@@ -14,11 +14,12 @@ use serde::{Deserialize, Serialize};
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 17];
 const DEFAULT_NODE_PKG_NAME: &'static &str = &"pkgs.nodejs";
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
     pub name: String,
     pub scripts: Option<HashMap<String, String>>,
     pub engines: Option<HashMap<String, String>>,
+    pub workspaces: Option<Vec<String>>,
     pub main: Option<String>,
 }
 
@@ -68,22 +69,11 @@ impl Provider for NpmProvider {
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
-        if NpmProvider::has_script(app, "start")? {
-            return Ok(StartPhase::new("npm run start".to_string()));
+        if let Some(start_cmd) = NpmProvider::get_start_cmd(app)? {
+            Ok(StartPhase::new(start_cmd))
+        } else {
+            Ok(StartPhase::default())
         }
-
-        let package_json: PackageJson = app.read_json("package.json")?;
-        if let Some(main) = package_json.main {
-            if app.includes_file(&main) {
-                return Ok(StartPhase::new(format!("node {}", main)));
-            }
-        }
-
-        if app.includes_file("index.js") {
-            return Ok(StartPhase::new("node index.js".to_string()));
-        }
-
-        Ok(StartPhase::default())
     }
 
     fn environment_variables(
@@ -112,6 +102,25 @@ impl NpmProvider {
         }
 
         Ok(false)
+    }
+
+    pub fn get_start_cmd(app: &App) -> Result<Option<String>> {
+        if NpmProvider::has_script(app, "start")? {
+            return Ok(Some("npm run start".to_string()));
+        }
+
+        let package_json: PackageJson = app.read_json("package.json")?;
+        if let Some(main) = package_json.main {
+            if app.includes_file(&main) {
+                return Ok(Some(format!("node {}", main)));
+            }
+        }
+
+        if app.includes_file("index.js") {
+            return Ok(Some("node index.js".to_string()));
+        }
+
+        Ok(None)
     }
 
     /// Parses the package.json engines field and returns a Nix package if available
@@ -182,6 +191,7 @@ mod test {
                 name: String::default(),
                 main: None,
                 scripts: None,
+                workspaces: None,
                 engines: None
             })?,
             Pkg::new(DEFAULT_NODE_PKG_NAME)
@@ -197,6 +207,7 @@ mod test {
                 name: String::default(),
                 main: None,
                 scripts: None,
+                workspaces: None,
                 engines: engines_node("*")
             })?,
             Pkg::new(DEFAULT_NODE_PKG_NAME)
@@ -212,6 +223,7 @@ mod test {
                 name: String::default(),
                 main: None,
                 scripts: None,
+                workspaces: None,
                 engines: engines_node("14"),
             })?,
             Pkg::new("nodejs-14_x")
@@ -227,6 +239,7 @@ mod test {
                 name: String::default(),
                 main: None,
                 scripts: None,
+                workspaces: None,
                 engines: engines_node("12.x"),
             })?,
             Pkg::new("nodejs-12_x")
@@ -242,6 +255,7 @@ mod test {
                 name: String::default(),
                 main: None,
                 scripts: None,
+                workspaces: None,
                 engines: engines_node(">=14.10.3 <16"),
             })?,
             Pkg::new("nodejs-14_x")
@@ -256,6 +270,7 @@ mod test {
             name: String::default(),
             main: None,
             scripts: None,
+            workspaces: None,
             engines: engines_node("15"),
         })
         .is_err());

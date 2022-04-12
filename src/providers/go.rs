@@ -3,6 +3,7 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::{NixConfig, Pkg},
+    phase::{InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
 
@@ -17,25 +18,21 @@ impl Provider for GolangProvider {
         Ok(app.includes_file("main.go"))
     }
 
-    fn nix_config(&self, _app: &App, _env: &Environment) -> Result<NixConfig> {
-        Ok(NixConfig::new(vec![
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<SetupPhase> {
+        Ok(SetupPhase::new(NixConfig::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.go"),
-        ]))
+        ])))
     }
 
-    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        if _app.includes_file("go.mod") {
-            return Ok(Some("go get".to_string()));
+    fn install(&self, app: &App, _env: &Environment) -> Result<InstallPhase> {
+        if app.includes_file("go.mod") {
+            return Ok(InstallPhase::new("go get".to_string()));
         }
-        Ok(None)
+        Ok(InstallPhase::default())
     }
 
-    fn suggested_build_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(None)
-    }
-
-    fn suggested_start_command(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(Some("go run main.go".to_string()))
+    fn start(&self, _app: &App, _env: &Environment) -> Result<StartPhase> {
+        Ok(StartPhase::new("go run main.go".to_string()))
     }
 }

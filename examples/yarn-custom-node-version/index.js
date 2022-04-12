@@ -1,1 +1,1 @@
-console.log("Hello from Node");
+console.log("Hello from Yarn");

@@ -8,13 +8,21 @@ use crate::{
     providers::rust::RustProvider,
 };
 use anyhow::{bail, Result};
-use providers::{npm::NpmProvider, Provider};
+use providers::{
+    deno::DenoProvider, go::GolangProvider, npm::NpmProvider, yarn::YarnProvider, Provider,
+};
 
 pub mod nixpacks;
 pub mod providers;
 
 pub fn get_providers() -> Vec<&'static dyn Provider> {
-    vec![&NpmProvider {}, &RustProvider {}]
+    vec![
+        &GolangProvider {},
+        &DenoProvider {},
+        &YarnProvider {},
+        &NpmProvider {},
+        &RustProvider {},
+    ]
 }
 
 pub fn gen_plan(
