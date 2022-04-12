@@ -5,6 +5,7 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::{NixConfig, Pkg},
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{bail, Result};
 use regex::Regex;
@@ -32,49 +33,60 @@ impl Provider for NpmProvider {
         Ok(app.includes_file("package.json"))
     }
 
-    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
+    fn setup(&self, app: &App, _env: &Environment) -> Result<SetupPhase> {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NpmProvider::get_nix_node_pkg(&package_json)?;
 
-        Ok(NixConfig::new(vec![Pkg::new("pkgs.stdenv"), node_pkg]))
+        Ok(SetupPhase::new(NixConfig::new(vec![
+            Pkg::new("pkgs.stdenv"),
+            node_pkg,
+        ])))
     }
 
-    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(Some("npm install".to_string()))
-    }
+    fn install(&self, app: &App, _env: &Environment) -> Result<InstallPhase> {
+        let mut install_phase = InstallPhase::new("npm install".to_string());
 
-    fn suggested_build_cmd(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
-        let package_json: PackageJson = app.read_json("package.json")?;
-        if let Some(scripts) = package_json.scripts {
-            if scripts.get("build").is_some() {
-                return Ok(Some("npm run build".to_string()));
-            }
+        // Installing node modules only depends on package.json and lock file
+        install_phase
+            .file_dependencies
+            .push("package.json".to_string());
+        if app.includes_file("package-lock.json") {
+            install_phase
+                .file_dependencies
+                .push("package-lock.json".to_string());
         }
 
-        Ok(None)
+        Ok(install_phase)
     }
 
-    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
-        let package_json: PackageJson = app.read_json("package.json")?;
-        if let Some(scripts) = package_json.scripts {
-            if scripts.get("start").is_some() {
-                return Ok(Some("npm run start".to_string()));
-            }
+    fn build(&self, app: &App, _env: &Environment) -> Result<BuildPhase> {
+        if NpmProvider::has_script(app, "build")? {
+            Ok(BuildPhase::new("npm run build".to_string()))
+        } else {
+            Ok(BuildPhase::default())
+        }
+    }
+
+    fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
+        if NpmProvider::has_script(app, "start")? {
+            return Ok(StartPhase::new("npm run start".to_string()));
         }
 
+        let package_json: PackageJson = app.read_json("package.json")?;
         if let Some(main) = package_json.main {
             if app.includes_file(&main) {
-                return Ok(Some(format!("node {}", main)));
+                return Ok(StartPhase::new(format!("node {}", main)));
             }
         }
+
         if app.includes_file("index.js") {
-            return Ok(Some(String::from("node index.js")));
+            return Ok(StartPhase::new("node index.js".to_string()));
         }
 
-        Ok(None)
+        Ok(StartPhase::default())
     }
 
-    fn get_environment_variables(
+    fn environment_variables(
         &self,
         _app: &App,
         _env: &Environment,
@@ -89,6 +101,17 @@ impl NpmProvider {
             ("NODE_ENV".to_string(), "production".to_string()),
             ("NPM_CONFIG_PRODUCTION".to_string(), "false".to_string()),
         ])
+    }
+
+    pub fn has_script(app: &App, script: &str) -> Result<bool> {
+        let package_json: PackageJson = app.read_json("package.json")?;
+        if let Some(scripts) = package_json.scripts {
+            if scripts.get(script).is_some() {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
     }
 
     /// Parses the package.json engines field and returns a Nix package if available
