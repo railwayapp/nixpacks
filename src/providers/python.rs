@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use anyhow::{Result, Context};
+use serde::Deserialize;
 
 use crate::{
     nixpacks::{app::App, environment::Environment, nix::NixConfig},
@@ -36,7 +39,7 @@ impl Provider for PythonProvider {
 
     fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
         if app.includes_file("pyproject.toml") {
-            if let Ok(meta) = parse_project(app) {
+            if let Ok(meta) = self.parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
                     return match entry_point {
                         EntryPoint::Command(cmd) => Ok(Some(cmd)),
@@ -63,6 +66,21 @@ impl Provider for PythonProvider {
     }
 }
 
+#[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
+struct PyProject {
+    pub project: Option<ProjectDecl>
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
+struct ProjectDecl {
+    pub name: Option<String>,
+    pub packages: Option<Vec<String>>,
+    pub py_modules: Option<Vec<String>>,
+    pub entry_points: Option<HashMap<String, String>>
+}
+
 #[allow(dead_code)]
 struct ProjectMeta {
     pub project_name: Option<String>,
@@ -70,62 +88,47 @@ struct ProjectMeta {
     pub entry_point: Option<EntryPoint>,
 }
 
+#[allow(dead_code)]
 enum EntryPoint {
     Command(String),
     Module(String),
 }
 
-fn parse_project(app: &App) -> Result<ProjectMeta> {
-    if !app.includes_file("pyproject.toml") {
-        return Err(anyhow::anyhow!("no project.toml found"));
+impl PythonProvider {
+    fn read_pyproject(&self, app: &App) -> Result<Option<PyProject>> {
+        if app.includes_file("pyproject.toml") {
+            return Ok(Some(app.read_toml("pyproject.toml").context("Reading pyproject.toml")?))
+        }
+        Ok(None)
     }
-    let pyproject: toml::Value = app
-        .read_toml("pyproject.toml")
-        .context("Reading pyproject.toml")?;
-    let project = pyproject.get("project");
-    let project_name = chain!(project =>
-        |proj| proj.get("name"),
-        |name| name.as_str(),
-        |name| Some(name.to_string())
-    );
+    fn parse_project(&self, project: &PyProject) -> ProjectMeta {
+        let project_name = project.project.as_ref().and_then(|proj| proj.name.as_ref()).and_then(|name| Some(name.to_owned()));
 
-    let module_name = chain!(project =>
-        (
-            |proj| proj.get("packages"),
-            |pkgs| pkgs.as_array(),
-            |pkgs| pkgs.get(0),
-            |package| package.as_str(),
-            |name| Some(name.to_string())
+        let module_name = chain!(project.project.clone() =>
+            (
+                |proj| proj.packages,
+                |pkgs| pkgs.get(0).cloned(),
+                |package| Some(package.to_string())
+            );
+            (
+                |proj| proj.py_modules,
+                |mods| mods.get(0).cloned(),
+                |module| Some(module.to_string())
+            );
+            (
+                |_| project_name.to_owned()
+            )
         );
-        (
-            |proj| proj.get("py-modules"),
-            |mods| mods.as_array(),
-            |mods| mods.get(0),
-            |module| module.as_str(),
-            |name| Some(name.to_string())
-        );
-        (
-            |_| project_name.to_owned()
-        )
-    );
 
-    let entry_point = chain!(project =>
-        (
-            |project| project.get("scripts"),
-            |scripts| scripts.as_table(),
-            |scripts| Some(scripts.keys()),
-            |mut cmds| cmds.next(),
-            |cmd| Some(EntryPoint::Command(cmd.to_string()))
-        );
-        (
-            |_| module_name.to_owned(),
-            |module| Some(EntryPoint::Module(module))
-        )
-    );
-
-    Ok(ProjectMeta {
-        project_name,
-        module_name,
-        entry_point,
-    })
+        let entry_point = module_name.to_owned().and_then(|module| Some(EntryPoint::Module(module.to_owned())));
+    
+        ProjectMeta {
+            project_name: project_name.to_owned(),
+            module_name: module_name.and_then(|module| Some(module.to_owned())),
+            entry_point: entry_point,
+        }
+    }
+    fn parse_pyproject(&self, app: &App) -> Result<ProjectMeta> {
+        Ok(self.parse_project(&(self.read_pyproject(app)?.ok_or(anyhow::anyhow!("failed to load pyproject.toml"))?)))
+    }
 }
