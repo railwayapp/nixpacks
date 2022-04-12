@@ -124,9 +124,7 @@ impl PythonProvider {
             )
         );
 
-        let entry_point = module_name
-            .to_owned()
-            .map(EntryPoint::Module);
+        let entry_point = module_name.to_owned().map(EntryPoint::Module);
 
         ProjectMeta {
             project_name,
