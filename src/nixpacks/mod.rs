@@ -3,6 +3,7 @@ use indoc::formatdoc;
 use std::{
     fs::{self, File},
     io::Write,
+    num::IntErrorKind,
     path::PathBuf,
     process::Command,
 };
@@ -22,7 +23,7 @@ use self::{
     environment::{Environment, EnvironmentVariables},
     logger::Logger,
     nix::{NixConfig, Pkg},
-    phase::SetupPhase,
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
     plan::BuildPlan,
 };
 
@@ -87,19 +88,19 @@ impl<'a> AppBuilder<'a> {
 
         // let nix_config = self.get_nix_config().context("Getting packages")?;
         let setup_phase = self.get_setup_phase().context("Getting setup phase")?;
-        let install_cmd = self
-            .get_install_cmd()
-            .context("Generating install command")?;
-        let build_cmd = self.get_build_cmd().context("Generating build command")?;
-        let start_cmd = self.get_start_cmd().context("Generating start command")?;
+        let install_phase = self
+            .get_install_phase()
+            .context("Generating install phase")?;
+        let build_phase = self.get_build_phase().context("Generating build phase")?;
+        let start_phase = self.get_start_cmd().context("Generating start phase")?;
         let variables = self.get_variables().context("Getting plan variables")?;
 
         let plan = BuildPlan {
             version: NIX_PACKS_VERSION.to_string(),
-            setup_phase,
-            install_cmd,
-            start_cmd,
-            build_cmd,
+            setup: setup_phase,
+            install: install_phase,
+            build: build_phase,
+            start: start_phase,
             variables,
         };
 
@@ -189,9 +190,7 @@ impl<'a> AppBuilder<'a> {
         let base_setup_phase = SetupPhase::new(NixConfig::new(vec![Pkg::new("stdenv")]));
 
         let mut setup_phase: SetupPhase = match self.provider {
-            Some(provider) => provider
-                .setup(self.app, self.environment)?
-                .unwrap_or_else(|| base_setup_phase),
+            Some(provider) => provider.setup(self.app, self.environment)?,
             None => base_setup_phase,
         };
 
@@ -208,6 +207,49 @@ impl<'a> AppBuilder<'a> {
         Ok(setup_phase)
     }
 
+    fn get_install_phase(&self) -> Result<InstallPhase> {
+        let install_phase = match self.provider {
+            Some(provider) => provider.install(self.app, self.environment)?,
+            None => InstallPhase::default(),
+        };
+
+        Ok(install_phase)
+    }
+
+    fn get_build_phase(&self) -> Result<BuildPhase> {
+        let mut build_phase = match self.provider {
+            Some(provider) => provider.build(self.app, self.environment)?,
+            None => BuildPhase::default(),
+        };
+
+        if let Some(custom_build_cmd) = self.options.custom_build_cmd.clone() {
+            build_phase.cmd = Some(custom_build_cmd);
+        }
+
+        Ok(build_phase)
+    }
+
+    fn get_start_cmd(&self) -> Result<StartPhase> {
+        let procfile_cmd = self.parse_procfile()?;
+
+        let mut start_phase = match self.provider {
+            Some(provider) => provider.start(self.app, self.environment)?,
+            None => StartPhase::default(),
+        };
+
+        // Start command priority
+        // - custom start command
+        // - procfile
+        // - provider
+        start_phase.cmd = self
+            .options
+            .custom_start_cmd
+            .clone()
+            .or_else(|| procfile_cmd.or_else(|| start_phase.cmd));
+
+        Ok(start_phase)
+    }
+
     fn get_variables(&self) -> Result<EnvironmentVariables> {
         // Get a copy of the variables in the environment
         let variables = Environment::clone_variables(self.environment);
@@ -216,55 +258,13 @@ impl<'a> AppBuilder<'a> {
             Some(provider) => {
                 // Merge provider variables
                 let provider_variables =
-                    provider.get_environment_variables(self.app, self.environment)?;
+                    provider.environment_variables(self.app, self.environment)?;
                 provider_variables.into_iter().chain(variables).collect()
             }
             None => variables,
         };
 
         Ok(new_variables)
-    }
-
-    fn get_install_cmd(&self) -> Result<Option<String>> {
-        let install_cmd = match self.provider {
-            Some(provider) => provider.install_cmd(self.app, self.environment)?,
-            None => None,
-        };
-
-        Ok(install_cmd)
-    }
-
-    fn get_build_cmd(&self) -> Result<Option<String>> {
-        let suggested_build_cmd = match self.provider {
-            Some(provider) => provider.suggested_build_cmd(self.app, self.environment)?,
-            None => None,
-        };
-
-        let build_cmd = self
-            .options
-            .custom_build_cmd
-            .clone()
-            .or(suggested_build_cmd);
-
-        Ok(build_cmd)
-    }
-
-    fn get_start_cmd(&self) -> Result<Option<String>> {
-        let procfile_cmd = self.parse_procfile()?;
-
-        let suggested_start_cmd = match self.provider {
-            Some(provider) => provider.suggested_start_command(self.app, self.environment)?,
-            None => None,
-        };
-
-        let start_cmd = self
-            .options
-            .custom_start_cmd
-            .clone()
-            .or(procfile_cmd)
-            .or(suggested_start_cmd);
-
-        Ok(start_cmd)
     }
 
     fn detect(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
@@ -313,7 +313,7 @@ impl<'a> AppBuilder<'a> {
 
     pub fn gen_nix(plan: &BuildPlan) -> Result<String> {
         let nixpkgs = plan
-            .setup_phase
+            .setup
             .nix_config
             .pkgs
             .iter()
@@ -321,7 +321,7 @@ impl<'a> AppBuilder<'a> {
             .collect::<Vec<String>>()
             .join(" ");
 
-        let nix_archive = plan.setup_phase.nix_config.nixpkgs_archive.clone();
+        let nix_archive = plan.setup.nix_config.nixpkgs_archive.clone();
         let pkg_import = match nix_archive {
             Some(archive) => format!(
                 "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
@@ -331,7 +331,7 @@ impl<'a> AppBuilder<'a> {
         };
 
         let overlays = plan
-            .setup_phase
+            .setup
             .nix_config
             .overlays
             .iter()
@@ -364,6 +364,9 @@ impl<'a> AppBuilder<'a> {
     }
 
     pub fn gen_dockerfile(plan: &BuildPlan) -> Result<String> {
+        let app_dir = "/app";
+
+        // -- Variables
         let args_string = plan
             .variables
             .iter()
@@ -371,54 +374,101 @@ impl<'a> AppBuilder<'a> {
             .collect::<Vec<String>>()
             .join("\n");
 
+        // -- Setup
         let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
-        setup_files.append(&mut plan.setup_phase.file_dependencies.clone());
+        setup_files.append(&mut plan.setup.file_dependencies.clone());
+        let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
 
+        // Whether or not we have copied over the entire app yet (so we don't do it twice)
+        let mut copied_app = false;
+
+        // -- Install
         let install_cmd = plan
-            .install_cmd
-            .as_ref()
+            .install
+            .cmd
+            .clone()
             .map(|cmd| format!("RUN {}", cmd))
             .unwrap_or_else(|| "".to_string());
+
+        // Files to copy for install phase
+        // If none specified, copy over the entire app
+        let mut install_files = plan.install.file_dependencies.clone();
+        if install_files.len() == 0 {
+            install_files.push(".".to_string());
+            copied_app = true;
+        }
+        let install_copy_cmd = match !install_files.is_empty() {
+            true => format!("COPY {} {}", install_files.join(" "), app_dir),
+            false => "".to_owned(),
+        };
+
+        // -- Build
         let build_cmd = plan
-            .build_cmd
-            .as_ref()
+            .build
+            .cmd
+            .clone()
             .map(|cmd| format!("RUN {}", cmd))
             .unwrap_or_else(|| "".to_string());
+        let mut build_files = plan.build.file_dependencies.clone();
+        if !copied_app && build_files.is_empty() {
+            build_files.push(".".to_string());
+            copied_app = true;
+        }
+        let build_copy_cmd = match !build_files.is_empty() {
+            true => format!("COPY {} {}", build_files.join(" "), app_dir),
+            false => "".to_owned(),
+        };
+
+        // -- Start
         let start_cmd = plan
-            .start_cmd
-            .as_ref()
+            .start
+            .cmd
+            .clone()
             .map(|cmd| format!("CMD {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
+        let mut start_files = plan.build.file_dependencies.clone();
+        if !copied_app && start_files.is_empty() {
+            start_files.push(".".to_string());
+        }
+        let start_copy_cmd = match !start_files.is_empty() {
+            true => format!("COPY {} {}", start_files.join(" "), app_dir),
+            false => "".to_owned(),
+        };
+
         let dockerfile = formatdoc! {"
           FROM nixos/nix
-
           RUN nix-channel --update
 
           RUN mkdir /app
           WORKDIR /app
 
           # Setup
-          COPY {setup_files} /app
+          {setup_copy_cmd}
           RUN nix-env -if environment.nix
 
           # Load environment variables
           {args_string}
 
           # Install
-          COPY . /app
+          {install_copy_cmd}
           {install_cmd}
 
           # Build
+          {build_copy_cmd}
           {build_cmd}
 
           # Start
+          {start_copy_cmd}
           {start_cmd}
         ",
-        setup_files=setup_files.join(" "),
+        setup_copy_cmd=setup_copy_cmd,
         args_string=args_string,
+        install_copy_cmd=install_copy_cmd,
         install_cmd=install_cmd,
+        build_copy_cmd=build_copy_cmd,
         build_cmd=build_cmd,
+        start_copy_cmd=start_copy_cmd,
         start_cmd=start_cmd};
 
         Ok(dockerfile)

@@ -3,7 +3,7 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::{NixConfig, Pkg},
-    phase::SetupPhase,
+    phase::{BuildPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -35,7 +35,7 @@ impl Provider for RustProvider {
         Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, _env: &Environment) -> Result<SetupPhase> {
         let rust_pkg: Pkg = self.get_rust_pkg(app)?;
 
         let mut nix_config = NixConfig::new(vec![
@@ -52,27 +52,23 @@ impl Provider for RustProvider {
             setup_phase.file_dependencies.push(toolchain_file);
         }
 
-        Ok(Some(setup_phase))
+        Ok(setup_phase)
     }
 
-    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(None)
+    fn build(&self, _app: &App, _env: &Environment) -> Result<BuildPhase> {
+        Ok(BuildPhase::new("cargo build --release".to_string()))
     }
 
-    fn suggested_build_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(Some("cargo build --release".to_string()))
-    }
-
-    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
         if let Some(toml_file) = self.parse_cargo_toml(app)? {
             let name = toml_file.package.name;
-            return Ok(Some(format!("./target/release/{}", name)));
+            Ok(StartPhase::new(format!("./target/release/{}", name)))
+        } else {
+            Ok(StartPhase::default())
         }
-
-        Ok(None)
     }
 
-    fn get_environment_variables(
+    fn environment_variables(
         &self,
         _app: &App,
         _env: &Environment,
