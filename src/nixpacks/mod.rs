@@ -85,7 +85,6 @@ impl<'a> AppBuilder<'a> {
         // Load options from the best matching provider
         self.detect(providers).context("Detecting provider")?;
 
-        // let nix_config = self.get_nix_config().context("Getting packages")?;
         let setup_phase = self.get_setup_phase().context("Getting setup phase")?;
         let install_phase = self
             .get_install_phase()
