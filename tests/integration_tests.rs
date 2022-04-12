@@ -214,12 +214,12 @@ pub fn test_python() -> Result<()> {
         Vec::new(),
         true,
     )?;
-    assert_eq!(plan.build_cmd, None);
+    assert_eq!(plan.build.cmd, None);
     assert_eq!(
-        plan.install_cmd,
+        plan.install.cmd,
         Some("python -m ensurepip && python -m pip install -r requirements.txt".to_string())
     );
-    assert_eq!(plan.start_cmd, Some("python main.py".to_string()));
+    assert_eq!(plan.start.cmd, Some("python main.py".to_string()));
 
     Ok(())
 }
@@ -250,15 +250,15 @@ pub fn test_python_setuptools() -> Result<()> {
         Vec::new(),
         true,
     )?;
-    assert_eq!(plan.build_cmd, None);
+    assert_eq!(plan.build.cmd, None);
 
-    if let Some(install_cmd) = plan.install_cmd {
+    if let Some(install_cmd) = plan.install.cmd {
         assert!(install_cmd.contains("setuptools"));
     } else {
         return Err(anyhow::anyhow!("no install command"));
     }
 
-    if let Some(start_cmd) = plan.start_cmd {
+    if let Some(start_cmd) = plan.start.cmd {
         assert!(start_cmd.contains("python -m"));
     } else {
         return Err(anyhow::anyhow!("no start command"));

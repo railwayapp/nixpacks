@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     environment::EnvironmentVariables,
-    nix::NixConfig,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 

@@ -3,7 +3,6 @@ use indoc::formatdoc;
 use std::{
     fs::{self, File},
     io::Write,
-    num::IntErrorKind,
     path::PathBuf,
     process::Command,
 };
@@ -22,7 +21,7 @@ use self::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     logger::Logger,
-    nix::{NixConfig, Pkg},
+    nix::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
     plan::BuildPlan,
 };
@@ -243,7 +242,7 @@ impl<'a> AppBuilder<'a> {
             .options
             .custom_start_cmd
             .clone()
-            .or_else(|| procfile_cmd.or_else(|| start_phase.cmd));
+            .or_else(|| procfile_cmd.or(start_phase.cmd));
 
         Ok(start_phase)
     }
@@ -391,7 +390,7 @@ impl<'a> AppBuilder<'a> {
         // Files to copy for install phase
         // If none specified, copy over the entire app
         let mut install_files = plan.install.file_dependencies.clone();
-        if install_files.len() == 0 {
+        if install_files.is_empty() {
             install_files.push(".".to_string());
             copied_app = true;
         }
