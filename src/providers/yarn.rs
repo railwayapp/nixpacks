@@ -38,10 +38,8 @@ impl Provider for YarnProvider {
         // When install deps for a monorepo, we need all workspace package.json files
         if package_json.workspaces.is_none() {
             // Installing node modules only depends on package.json and lock file
-            install_phase.file_dependencies.append(&mut vec![
-                "package.json".to_string(),
-                "yarn.lock".to_string(),
-            ]);
+            install_phase.add_file_dependency("package.json".to_string());
+            install_phase.add_file_dependency("yarn.lock".to_string());
         }
 
         Ok(install_phase)

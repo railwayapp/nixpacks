@@ -43,15 +43,11 @@ impl Provider for PythonProvider {
             let mut install_phase = InstallPhase::new(
                 "python -m ensurepip && python -m pip install -r requirements.txt".to_string(),
             );
-            install_phase
-                .file_dependencies
-                .push("requirements.txt".to_string());
+            install_phase.add_file_dependency("requirements.txt".to_string());
             return Ok(install_phase);
         } else if app.includes_file("pyproject.toml") {
             let mut install_phase =InstallPhase::new("python -m ensurepip && python -m pip install --upgrade build setuptools && python -m pip install .".to_string());
-            install_phase
-                .file_dependencies
-                .push("pyproject.toml".to_string());
+            install_phase.add_file_dependency("pyproject.toml".to_string());
             return Ok(install_phase);
         }
         Ok(InstallPhase::default())

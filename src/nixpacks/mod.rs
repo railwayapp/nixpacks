@@ -372,11 +372,10 @@ impl<'a> AppBuilder<'a> {
 
         // -- Setup
         let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
-        setup_files.append(&mut plan.setup.file_dependencies.clone());
+        if let Some(mut setup_file_deps) = plan.setup.file_dependencies.clone() {
+            setup_files.append(&mut setup_file_deps);
+        }
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
-
-        // Whether or not we have copied over the entire app yet (so we don't do it twice)
-        let mut copied_app = false;
 
         // -- Install
         let install_cmd = plan
@@ -388,15 +387,11 @@ impl<'a> AppBuilder<'a> {
 
         // Files to copy for install phase
         // If none specified, copy over the entire app
-        let mut install_files = plan.install.file_dependencies.clone();
-        if install_files.is_empty() {
-            install_files.push(".".to_string());
-            copied_app = true;
-        }
-        let install_copy_cmd = match !install_files.is_empty() {
-            true => format!("COPY {} {}", install_files.join(" "), app_dir),
-            false => "".to_owned(),
-        };
+        let install_files = plan
+            .install
+            .file_dependencies
+            .clone()
+            .unwrap_or_else(|| vec![".".to_string()]);
 
         // -- Build
         let build_cmd = plan
@@ -405,15 +400,15 @@ impl<'a> AppBuilder<'a> {
             .clone()
             .map(|cmd| format!("RUN {}", cmd))
             .unwrap_or_else(|| "".to_string());
-        let mut build_files = plan.build.file_dependencies.clone();
-        if !copied_app && build_files.is_empty() {
-            build_files.push(".".to_string());
-            copied_app = true;
-        }
-        let build_copy_cmd = match !build_files.is_empty() {
-            true => format!("COPY {} {}", build_files.join(" "), app_dir),
-            false => "".to_owned(),
-        };
+
+        let build_files = plan.build.file_dependencies.clone().unwrap_or_else(|| {
+            // Only copy over the entire app if we haven't already in the install phase
+            if plan.install.file_dependencies.is_none() {
+                Vec::new()
+            } else {
+                vec![".".to_string()]
+            }
+        });
 
         // -- Start
         let start_cmd = plan
@@ -423,14 +418,11 @@ impl<'a> AppBuilder<'a> {
             .map(|cmd| format!("CMD {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
-        let mut start_files = plan.build.file_dependencies.clone();
-        if !copied_app && start_files.is_empty() {
+        // If we haven't yet copied over the entire app, do that before starting
+        let mut start_files: Vec<String> = Vec::new();
+        if plan.build.file_dependencies.is_some() {
             start_files.push(".".to_string());
         }
-        let start_copy_cmd = match !start_files.is_empty() {
-            true => format!("COPY {} {}", start_files.join(" "), app_dir),
-            false => "".to_owned(),
-        };
 
         let dockerfile = formatdoc! {"
           FROM nixos/nix
@@ -460,13 +452,21 @@ impl<'a> AppBuilder<'a> {
         ",
         setup_copy_cmd=setup_copy_cmd,
         args_string=args_string,
-        install_copy_cmd=install_copy_cmd,
+        install_copy_cmd=get_copy_command(&install_files, app_dir),
         install_cmd=install_cmd,
-        build_copy_cmd=build_copy_cmd,
+        build_copy_cmd=get_copy_command(&build_files, app_dir),
         build_cmd=build_cmd,
-        start_copy_cmd=start_copy_cmd,
+        start_copy_cmd=get_copy_command(&start_files, app_dir),
         start_cmd=start_cmd};
 
         Ok(dockerfile)
+    }
+}
+
+fn get_copy_command(files: &[String], app_dir: &str) -> String {
+    if files.is_empty() {
+        "".to_owned()
+    } else {
+        format!("COPY {} {}", files.join(" "), app_dir)
     }
 }
