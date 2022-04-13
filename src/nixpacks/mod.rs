@@ -463,7 +463,7 @@ impl<'a> AppBuilder<'a> {
     }
 }
 
-fn get_copy_command(files: &Vec<String>, app_dir: &str) -> String {
+fn get_copy_command(files: &[String], app_dir: &str) -> String {
     if files.is_empty() {
         "".to_owned()
     } else {
