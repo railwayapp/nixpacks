@@ -8,6 +8,7 @@ pub struct Pkg {
     pub overrides: HashMap<String, String>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, PartialEq, Clone, Default, Debug)]
 pub struct NixConfig {
     pub pkgs: Vec<Pkg>,

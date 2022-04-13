@@ -49,7 +49,7 @@ impl Provider for RustProvider {
 
         // Include the rust toolchain file so we can install that rust version with Nix
         if let Some(toolchain_file) = self.get_rust_toolchain_file(app)? {
-            setup_phase.file_dependencies.push(toolchain_file);
+            setup_phase.add_file_dependency(toolchain_file);
         }
 
         Ok(setup_phase)

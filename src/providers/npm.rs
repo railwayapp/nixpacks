@@ -48,13 +48,9 @@ impl Provider for NpmProvider {
         let mut install_phase = InstallPhase::new("npm install".to_string());
 
         // Installing node modules only depends on package.json and lock file
-        install_phase
-            .file_dependencies
-            .push("package.json".to_string());
+        install_phase.add_file_dependency("package.json".to_string());
         if app.includes_file("package-lock.json") {
-            install_phase
-                .file_dependencies
-                .push("package-lock.json".to_string());
+            install_phase.add_file_dependency("package-lock.json".to_string());
         }
 
         Ok(install_phase)

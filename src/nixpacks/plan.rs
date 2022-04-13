@@ -5,6 +5,7 @@ use super::{
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BuildPlan {
     pub version: String,
