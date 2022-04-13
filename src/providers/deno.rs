@@ -3,6 +3,7 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::{NixConfig, Pkg},
+    phase::{SetupPhase, StartPhase},
 };
 use anyhow::Result;
 use regex::Regex;
@@ -19,31 +20,23 @@ impl Provider for DenoProvider {
         app.find_match(&re, "**/*.ts")
     }
 
-    fn nix_config(&self, _app: &App, _env: &Environment) -> Result<NixConfig> {
-        Ok(NixConfig::new(vec![
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<SetupPhase> {
+        Ok(SetupPhase::new(NixConfig::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.deno"),
-        ]))
+        ])))
     }
 
-    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(None)
-    }
-
-    fn suggested_build_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(None)
-    }
-
-    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
         // Find the first index.ts or index.js file to run
         let matches = app.find_files("**/index.[tj]s")?;
         let path_to_index = match matches.first() {
             Some(m) => m.to_string(),
-            None => return Ok(None),
+            None => return Ok(StartPhase::default()),
         };
 
         let relative_path_to_index = app.strip_source_path(&path_to_index)?;
-        return Ok(Some(format!(
+        return Ok(StartPhase::new(format!(
             "deno run --allow-all {}",
             relative_path_to_index
         )));

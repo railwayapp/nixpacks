@@ -1,13 +1,16 @@
 use serde::{Deserialize, Serialize};
 
-use super::{environment::EnvironmentVariables, nix::NixConfig};
+use super::{
+    environment::EnvironmentVariables,
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BuildPlan {
     pub version: String,
-    pub nix_config: NixConfig,
-    pub install_cmd: Option<String>,
-    pub build_cmd: Option<String>,
-    pub start_cmd: Option<String>,
+    pub setup: SetupPhase,
+    pub install: InstallPhase,
+    pub build: BuildPhase,
+    pub start: StartPhase,
     pub variables: EnvironmentVariables,
 }

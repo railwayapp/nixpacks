@@ -5,6 +5,7 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::{NixConfig, Pkg},
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{bail, Result};
 use regex::Regex;
@@ -13,11 +14,12 @@ use serde::{Deserialize, Serialize};
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 17];
 const DEFAULT_NODE_PKG_NAME: &'static &str = &"pkgs.nodejs";
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
     pub name: String,
     pub scripts: Option<HashMap<String, String>>,
     pub engines: Option<HashMap<String, String>>,
+    pub workspaces: Option<Vec<String>>,
     pub main: Option<String>,
 }
 
@@ -32,49 +34,49 @@ impl Provider for NpmProvider {
         Ok(app.includes_file("package.json"))
     }
 
-    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
+    fn setup(&self, app: &App, _env: &Environment) -> Result<SetupPhase> {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NpmProvider::get_nix_node_pkg(&package_json)?;
 
-        Ok(NixConfig::new(vec![Pkg::new("pkgs.stdenv"), node_pkg]))
+        Ok(SetupPhase::new(NixConfig::new(vec![
+            Pkg::new("pkgs.stdenv"),
+            node_pkg,
+        ])))
     }
 
-    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(Some("npm install".to_string()))
+    fn install(&self, app: &App, _env: &Environment) -> Result<InstallPhase> {
+        let mut install_phase = InstallPhase::new("npm install".to_string());
+
+        // Installing node modules only depends on package.json and lock file
+        install_phase
+            .file_dependencies
+            .push("package.json".to_string());
+        if app.includes_file("package-lock.json") {
+            install_phase
+                .file_dependencies
+                .push("package-lock.json".to_string());
+        }
+
+        Ok(install_phase)
     }
 
-    fn suggested_build_cmd(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
-        let package_json: PackageJson = app.read_json("package.json")?;
-        if let Some(scripts) = package_json.scripts {
-            if scripts.get("build").is_some() {
-                return Ok(Some("npm run build".to_string()));
-            }
+    fn build(&self, app: &App, _env: &Environment) -> Result<BuildPhase> {
+        if NpmProvider::has_script(app, "build")? {
+            Ok(BuildPhase::new("npm run build".to_string()))
+        } else {
+            Ok(BuildPhase::default())
         }
-
-        Ok(None)
     }
 
-    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
-        let package_json: PackageJson = app.read_json("package.json")?;
-        if let Some(scripts) = package_json.scripts {
-            if scripts.get("start").is_some() {
-                return Ok(Some("npm run start".to_string()));
-            }
+    fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
+        if let Some(start_cmd) = NpmProvider::get_start_cmd(app)? {
+            Ok(StartPhase::new(start_cmd))
+        } else {
+            Ok(StartPhase::default())
         }
-
-        if let Some(main) = package_json.main {
-            if app.includes_file(&main) {
-                return Ok(Some(format!("node {}", main)));
-            }
-        }
-        if app.includes_file("index.js") {
-            return Ok(Some(String::from("node index.js")));
-        }
-
-        Ok(None)
     }
 
-    fn get_environment_variables(
+    fn environment_variables(
         &self,
         _app: &App,
         _env: &Environment,
@@ -89,6 +91,36 @@ impl NpmProvider {
             ("NODE_ENV".to_string(), "production".to_string()),
             ("NPM_CONFIG_PRODUCTION".to_string(), "false".to_string()),
         ])
+    }
+
+    pub fn has_script(app: &App, script: &str) -> Result<bool> {
+        let package_json: PackageJson = app.read_json("package.json")?;
+        if let Some(scripts) = package_json.scripts {
+            if scripts.get(script).is_some() {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
+    }
+
+    pub fn get_start_cmd(app: &App) -> Result<Option<String>> {
+        if NpmProvider::has_script(app, "start")? {
+            return Ok(Some("npm run start".to_string()));
+        }
+
+        let package_json: PackageJson = app.read_json("package.json")?;
+        if let Some(main) = package_json.main {
+            if app.includes_file(&main) {
+                return Ok(Some(format!("node {}", main)));
+            }
+        }
+
+        if app.includes_file("index.js") {
+            return Ok(Some("node index.js".to_string()));
+        }
+
+        Ok(None)
     }
 
     /// Parses the package.json engines field and returns a Nix package if available
@@ -159,6 +191,7 @@ mod test {
                 name: String::default(),
                 main: None,
                 scripts: None,
+                workspaces: None,
                 engines: None
             })?,
             Pkg::new(DEFAULT_NODE_PKG_NAME)
@@ -174,6 +207,7 @@ mod test {
                 name: String::default(),
                 main: None,
                 scripts: None,
+                workspaces: None,
                 engines: engines_node("*")
             })?,
             Pkg::new(DEFAULT_NODE_PKG_NAME)
@@ -189,6 +223,7 @@ mod test {
                 name: String::default(),
                 main: None,
                 scripts: None,
+                workspaces: None,
                 engines: engines_node("14"),
             })?,
             Pkg::new("nodejs-14_x")
@@ -204,6 +239,7 @@ mod test {
                 name: String::default(),
                 main: None,
                 scripts: None,
+                workspaces: None,
                 engines: engines_node("12.x"),
             })?,
             Pkg::new("nodejs-12_x")
@@ -219,6 +255,7 @@ mod test {
                 name: String::default(),
                 main: None,
                 scripts: None,
+                workspaces: None,
                 engines: engines_node(">=14.10.3 <16"),
             })?,
             Pkg::new("nodejs-14_x")
@@ -233,6 +270,7 @@ mod test {
             name: String::default(),
             main: None,
             scripts: None,
+            workspaces: None,
             engines: engines_node("15"),
         })
         .is_err());

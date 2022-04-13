@@ -19,9 +19,10 @@ pub mod providers;
 
 pub fn get_providers() -> Vec<&'static dyn Provider> {
     vec![
+        &GolangProvider {},
+        &DenoProvider {},
         &YarnProvider {},
         &NpmProvider {},
-        &GolangProvider {},
         &RustProvider {},
         &PythonProvider {},
         &DenoProvider {},

@@ -5,7 +5,12 @@ use serde::Deserialize;
 
 use crate::{
     chain,
-    nixpacks::{app::App, environment::Environment, nix::NixConfig},
+    nixpacks::{
+        app::App,
+        environment::Environment,
+        nix::NixConfig,
+        phase::{InstallPhase, SetupPhase, StartPhase},
+    },
     Pkg,
 };
 
@@ -23,45 +28,52 @@ impl Provider for PythonProvider {
             || app.includes_file("pyproject.toml"))
     }
 
-    fn install_cmd(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
+    fn setup(
+        &self,
+        _app: &App,
+        _env: &crate::nixpacks::environment::Environment,
+    ) -> Result<SetupPhase> {
+        Ok(SetupPhase::new(NixConfig::new(vec![Pkg::new(
+            "pkgs.python38",
+        )])))
+    }
+
+    fn install(&self, app: &App, _env: &Environment) -> Result<InstallPhase> {
         if app.includes_file("requirements.txt") {
-            return Ok(Some(
+            let mut install_phase = InstallPhase::new(
                 "python -m ensurepip && python -m pip install -r requirements.txt".to_string(),
-            ));
+            );
+            install_phase
+                .file_dependencies
+                .push("requirements.txt".to_string());
+            return Ok(install_phase);
         } else if app.includes_file("pyproject.toml") {
-            return Ok(Some("python -m ensurepip && python -m pip install --upgrade build setuptools && python -m pip install .".to_string()));
+            let mut install_phase =InstallPhase::new("python -m ensurepip && python -m pip install --upgrade build setuptools && python -m pip install .".to_string());
+            install_phase
+                .file_dependencies
+                .push("pyproject.toml".to_string());
+            return Ok(install_phase);
         }
-        Ok(None)
+        Ok(InstallPhase::default())
     }
 
-    fn suggested_build_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(None)
-    }
-
-    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
         if app.includes_file("pyproject.toml") {
             if let Ok(meta) = self.parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
-                    return match entry_point {
-                        EntryPoint::Command(cmd) => Ok(Some(cmd)),
-                        EntryPoint::Module(module) => Ok(Some(format!("python -m {}", module))),
-                    };
+                    return Ok(StartPhase::new(match entry_point {
+                        EntryPoint::Command(cmd) => cmd,
+                        EntryPoint::Module(module) => format!("python -m {}", module),
+                    }));
                 }
             }
         }
         // falls through
         if app.includes_file("main.py") {
-            return Ok(Some("python main.py".to_string()));
+            return Ok(StartPhase::new("python main.py".to_string()));
         }
-        Ok(None)
-    }
 
-    fn nix_config(
-        &self,
-        _app: &App,
-        _env: &crate::nixpacks::environment::Environment,
-    ) -> Result<crate::nixpacks::nix::NixConfig> {
-        Ok(NixConfig::new(vec![Pkg::new("pkgs.python38")]))
+        Ok(StartPhase::default())
     }
 }
 

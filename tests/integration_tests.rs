@@ -4,8 +4,8 @@ use nixpacks::{gen_plan, nixpacks::nix::Pkg};
 #[test]
 fn test_node() -> Result<()> {
     let plan = gen_plan("./examples/node", Vec::new(), None, None, Vec::new(), false)?;
-    assert_eq!(plan.build_cmd, None);
-    assert_eq!(plan.start_cmd, Some("npm run start".to_string()));
+    assert_eq!(plan.build.cmd, None);
+    assert_eq!(plan.start.cmd, Some("npm run start".to_string()));
 
     Ok(())
 }
@@ -13,8 +13,8 @@ fn test_node() -> Result<()> {
 #[test]
 fn test_npm() -> Result<()> {
     let plan = gen_plan("./examples/npm", Vec::new(), None, None, Vec::new(), false)?;
-    assert_eq!(plan.build_cmd, Some("npm run build".to_string()));
-    assert_eq!(plan.start_cmd, Some("npm run start".to_string()));
+    assert_eq!(plan.build.cmd, Some("npm run build".to_string()));
+    assert_eq!(plan.start.cmd, Some("npm run start".to_string()));
     assert_eq!(
         plan.variables.get("NODE_ENV"),
         Some(&"production".to_string())
@@ -37,8 +37,8 @@ fn test_node_no_scripts() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(plan.build_cmd, None);
-    assert_eq!(plan.start_cmd, Some("node index.js".to_string()));
+    assert_eq!(plan.build.cmd, None);
+    assert_eq!(plan.start.cmd, Some("node index.js".to_string()));
 
     Ok(())
 }
@@ -54,7 +54,7 @@ fn test_node_custom_version() -> Result<()> {
         false,
     )?;
     assert_eq!(
-        plan.nix_config.pkgs,
+        plan.setup.nix_config.pkgs,
         vec![Pkg::new("pkgs.stdenv"), Pkg::new("nodejs-12_x")]
     );
 
@@ -64,8 +64,8 @@ fn test_node_custom_version() -> Result<()> {
 #[test]
 fn test_yarn() -> Result<()> {
     let plan = gen_plan("./examples/yarn", Vec::new(), None, None, Vec::new(), false)?;
-    assert_eq!(plan.build_cmd, Some("yarn build".to_string()));
-    assert_eq!(plan.start_cmd, Some("yarn start".to_string()));
+    assert_eq!(plan.build.cmd, Some("yarn build".to_string()));
+    assert_eq!(plan.start.cmd, Some("yarn start".to_string()));
     assert_eq!(
         plan.variables.get("NODE_ENV"),
         Some(&"production".to_string())
@@ -89,7 +89,7 @@ fn test_yarn_custom_version() -> Result<()> {
         false,
     )?;
     assert_eq!(
-        plan.nix_config.pkgs,
+        plan.setup.nix_config.pkgs,
         vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.yarn").set_override("nodejs", "nodejs-14_x")
@@ -102,8 +102,8 @@ fn test_yarn_custom_version() -> Result<()> {
 #[test]
 fn test_go() -> Result<()> {
     let plan = gen_plan("./examples/go", Vec::new(), None, None, Vec::new(), false)?;
-    assert_eq!(plan.build_cmd, None);
-    assert_eq!(plan.start_cmd, Some("go run main.go".to_string()));
+    assert_eq!(plan.build.cmd, None);
+    assert_eq!(plan.start.cmd, Some("go run main.go".to_string()));
 
     Ok(())
 }
@@ -111,9 +111,9 @@ fn test_go() -> Result<()> {
 #[test]
 fn test_deno() -> Result<()> {
     let plan = gen_plan("./examples/deno", Vec::new(), None, None, Vec::new(), false)?;
-    assert_eq!(plan.build_cmd, None);
+    assert_eq!(plan.build.cmd, None);
     assert_eq!(
-        plan.start_cmd,
+        plan.start.cmd,
         Some("deno run --allow-all src/index.ts".to_string())
     );
 
@@ -130,7 +130,7 @@ fn test_procfile() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(plan.start_cmd, Some("node index.js".to_string()));
+    assert_eq!(plan.start.cmd, Some("node index.js".to_string()));
 
     Ok(())
 }
@@ -145,8 +145,8 @@ fn test_custom_pkgs() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(plan.nix_config.pkgs, vec![Pkg::new("cowsay")]);
-    assert_eq!(plan.start_cmd, Some("./start.sh".to_string()));
+    assert_eq!(plan.setup.nix_config.pkgs, vec![Pkg::new("cowsay")]);
+    assert_eq!(plan.start.cmd, Some("./start.sh".to_string()));
 
     Ok(())
 }
@@ -154,7 +154,7 @@ fn test_custom_pkgs() -> Result<()> {
 #[test]
 fn test_pin_archive() -> Result<()> {
     let plan = gen_plan("./examples/hello", Vec::new(), None, None, Vec::new(), true)?;
-    assert!(plan.nix_config.nixpkgs_archive.is_some());
+    assert!(plan.setup.nix_config.nixpkgs_archive.is_some());
 
     Ok(())
 }
@@ -169,16 +169,17 @@ fn test_custom_rust_version() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(plan.build_cmd, Some("cargo build --release".to_string()));
+    assert_eq!(plan.build.cmd, Some("cargo build --release".to_string()));
     assert_eq!(
-        plan.nix_config
+        plan.setup
+            .nix_config
             .pkgs
             .iter()
             .filter(|p| p.name.contains("1.56.0"))
             .count(),
         1
     );
-    assert!(!plan.nix_config.overlays.is_empty());
+    assert!(!plan.setup.nix_config.overlays.is_empty());
 
     Ok(())
 }
@@ -193,10 +194,10 @@ fn test_rust_rocket() -> Result<()> {
         Vec::new(),
         true,
     )?;
-    assert_eq!(plan.build_cmd, Some("cargo build --release".to_string()));
-    assert!(plan.start_cmd.is_some());
+    assert_eq!(plan.build.cmd, Some("cargo build --release".to_string()));
+    assert!(plan.start.cmd.is_some());
 
-    if let Some(start_cmd) = plan.start_cmd {
+    if let Some(start_cmd) = plan.start.cmd {
         assert!(start_cmd.contains("./target/release/rocket"));
     }
 
@@ -213,12 +214,12 @@ pub fn test_python() -> Result<()> {
         Vec::new(),
         true,
     )?;
-    assert_eq!(plan.build_cmd, None);
+    assert_eq!(plan.build.cmd, None);
     assert_eq!(
-        plan.install_cmd,
+        plan.install.cmd,
         Some("python -m ensurepip && python -m pip install -r requirements.txt".to_string())
     );
-    assert_eq!(plan.start_cmd, Some("python main.py".to_string()));
+    assert_eq!(plan.start.cmd, Some("python main.py".to_string()));
 
     Ok(())
 }
@@ -233,8 +234,8 @@ fn test_node_main_file() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(plan.build_cmd, None);
-    assert_eq!(plan.start_cmd, Some("node src/index.js".to_string()));
+    assert_eq!(plan.build.cmd, None);
+    assert_eq!(plan.start.cmd, Some("node src/index.js".to_string()));
 
     Ok(())
 }
@@ -249,15 +250,15 @@ pub fn test_python_setuptools() -> Result<()> {
         Vec::new(),
         true,
     )?;
-    assert_eq!(plan.build_cmd, None);
+    assert_eq!(plan.build.cmd, None);
 
-    if let Some(install_cmd) = plan.install_cmd {
+    if let Some(install_cmd) = plan.install.cmd {
         assert!(install_cmd.contains("setuptools"));
     } else {
         return Err(anyhow::anyhow!("no install command"));
     }
 
-    if let Some(start_cmd) = plan.start_cmd {
+    if let Some(start_cmd) = plan.start.cmd {
         assert!(start_cmd.contains("python -m"));
     } else {
         return Err(anyhow::anyhow!("no start command"));
@@ -276,8 +277,8 @@ fn test_node_main_file_doesnt_exist() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(plan.build_cmd, None);
-    assert_eq!(plan.start_cmd, Some("node index.js".to_string()));
+    assert_eq!(plan.build.cmd, None);
+    assert_eq!(plan.start.cmd, Some("node index.js".to_string()));
 
     Ok(())
 }

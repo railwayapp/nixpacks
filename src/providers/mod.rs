@@ -1,7 +1,7 @@
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    nix::NixConfig,
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
 
@@ -15,17 +15,19 @@ pub mod yarn;
 pub trait Provider {
     fn name(&self) -> &str;
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
-    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig>;
-    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(None)
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<SetupPhase> {
+        Ok(SetupPhase::default())
     }
-    fn suggested_build_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(None)
+    fn install(&self, _app: &App, _env: &Environment) -> Result<InstallPhase> {
+        Ok(InstallPhase::default())
     }
-    fn suggested_start_command(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(None)
+    fn build(&self, _app: &App, _env: &Environment) -> Result<BuildPhase> {
+        Ok(BuildPhase::default())
     }
-    fn get_environment_variables(
+    fn start(&self, _app: &App, _env: &Environment) -> Result<StartPhase> {
+        Ok(StartPhase::default())
+    }
+    fn environment_variables(
         &self,
         _app: &App,
         _env: &Environment,

@@ -6,6 +6,7 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::{NixConfig, Pkg},
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
 
@@ -20,50 +21,49 @@ impl Provider for YarnProvider {
         Ok(app.includes_file("package.json") && app.includes_file("yarn.lock"))
     }
 
-    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
-        let node_pkg = NpmProvider::get_nix_node_pkg(&app.read_json("package.json")?)?;
-        Ok(NixConfig::new(vec![
+    fn setup(&self, app: &App, _env: &Environment) -> Result<SetupPhase> {
+        let package_json: PackageJson = app.read_json("package.json")?;
+        let node_pkg = NpmProvider::get_nix_node_pkg(&package_json)?;
+
+        Ok(SetupPhase::new(NixConfig::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.yarn").set_override("nodejs", node_pkg.name.as_str()),
-        ]))
+        ])))
     }
 
-    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(Some("yarn install --frozen-lockfile".to_string()))
-    }
-
-    fn suggested_build_cmd(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
+    fn install(&self, app: &App, _env: &Environment) -> Result<InstallPhase> {
         let package_json: PackageJson = app.read_json("package.json")?;
-        if let Some(scripts) = package_json.scripts {
-            if scripts.get("build").is_some() {
-                return Ok(Some("yarn build".to_string()));
-            }
+        let mut install_phase = InstallPhase::new("yarn install --frozen-lockfile".to_string());
+
+        // When install deps for a monorepo, we need all workspace package.json files
+        if package_json.workspaces.is_none() {
+            // Installing node modules only depends on package.json and lock file
+            install_phase.file_dependencies.append(&mut vec![
+                "package.json".to_string(),
+                "yarn.lock".to_string(),
+            ]);
         }
 
-        Ok(None)
+        Ok(install_phase)
     }
 
-    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
-        let package_json: PackageJson = app.read_json("package.json")?;
-        if let Some(scripts) = package_json.scripts {
-            if scripts.get("start").is_some() {
-                return Ok(Some("yarn start".to_string()));
-            }
+    fn build(&self, app: &App, _env: &Environment) -> Result<BuildPhase> {
+        if NpmProvider::has_script(app, "build")? {
+            Ok(BuildPhase::new("yarn build".to_string()))
+        } else {
+            Ok(BuildPhase::default())
         }
-
-        if let Some(main) = package_json.main {
-            if app.includes_file(&main) {
-                return Ok(Some(format!("node {}", main)));
-            }
-        }
-        if app.includes_file("index.js") {
-            return Ok(Some(String::from("node index.js")));
-        }
-
-        Ok(None)
     }
 
-    fn get_environment_variables(
+    fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
+        if let Some(start_cmd) = NpmProvider::get_start_cmd(app)? {
+            Ok(StartPhase::new(start_cmd.replace("npm run", "yarn")))
+        } else {
+            Ok(StartPhase::default())
+        }
+    }
+
+    fn environment_variables(
         &self,
         _app: &App,
         _env: &Environment,

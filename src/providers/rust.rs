@@ -3,6 +3,7 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::{NixConfig, Pkg},
+    phase::{BuildPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -34,35 +35,40 @@ impl Provider for RustProvider {
         Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn nix_config(&self, app: &App, _env: &Environment) -> Result<NixConfig> {
+    fn setup(&self, app: &App, _env: &Environment) -> Result<SetupPhase> {
         let rust_pkg: Pkg = self.get_rust_pkg(app)?;
 
-        Ok(NixConfig::new(vec![
+        let mut nix_config = NixConfig::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.gcc"),
             rust_pkg,
-        ])
-        .add_overlay(RUST_OVERLAY.to_string()))
-    }
+        ]);
+        nix_config.add_overlay(RUST_OVERLAY.to_string());
 
-    fn install_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(None)
-    }
+        let mut setup_phase = SetupPhase::new(nix_config);
 
-    fn suggested_build_cmd(&self, _app: &App, _env: &Environment) -> Result<Option<String>> {
-        Ok(Some("cargo build --release".to_string()))
-    }
-
-    fn suggested_start_command(&self, app: &App, _env: &Environment) -> Result<Option<String>> {
-        if let Some(toml_file) = self.parse_cargo_toml(app)? {
-            let name = toml_file.package.name;
-            return Ok(Some(format!("./target/release/{}", name)));
+        // Include the rust toolchain file so we can install that rust version with Nix
+        if let Some(toolchain_file) = self.get_rust_toolchain_file(app)? {
+            setup_phase.file_dependencies.push(toolchain_file);
         }
 
-        Ok(None)
+        Ok(setup_phase)
     }
 
-    fn get_environment_variables(
+    fn build(&self, _app: &App, _env: &Environment) -> Result<BuildPhase> {
+        Ok(BuildPhase::new("cargo build --release".to_string()))
+    }
+
+    fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
+        if let Some(toml_file) = self.parse_cargo_toml(app)? {
+            let name = toml_file.package.name;
+            Ok(StartPhase::new(format!("./target/release/{}", name)))
+        } else {
+            Ok(StartPhase::default())
+        }
+    }
+
+    fn environment_variables(
         &self,
         _app: &App,
         _env: &Environment,
@@ -84,8 +90,24 @@ impl RustProvider {
         Ok(None)
     }
 
+    fn get_rust_toolchain_file(&self, app: &App) -> Result<Option<String>> {
+        if app.includes_file("rust-toolchain") {
+            Ok(Some("rust-toolchain".to_string()))
+        } else if app.includes_file("rust-toolchain.toml") {
+            Ok(Some("rust-toolchain.toml".to_string()))
+        } else {
+            Ok(None)
+        }
+    }
+
     // Get the rust package version by parsing the `rust-version` field in `Cargo.toml`
     fn get_rust_pkg(&self, app: &App) -> Result<Pkg> {
+        if let Some(toolchain_file) = self.get_rust_toolchain_file(app)? {
+            return Ok(Pkg::new(
+                format!("(rust-bin.fromRustupToolchainFile ./{})", toolchain_file).as_str(),
+            ));
+        }
+
         let pkg = match self.parse_cargo_toml(app)? {
             Some(toml_file) => {
                 let version = toml_file.package.rust_version;
