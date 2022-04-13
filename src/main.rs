@@ -3,9 +3,12 @@ use anyhow::Result;
 use clap::{arg, Arg, Command};
 
 fn main() -> Result<()> {
-    let matches = Command::new("bb")
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+    let matches = Command::new("nixpacks")
         .subcommand_required(true)
         .arg_required_else_help(true)
+        .version(VERSION)
         .subcommand(
             Command::new("plan")
                 .about("Generate a build plan for an app")
