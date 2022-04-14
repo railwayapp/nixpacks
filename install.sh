@@ -5,7 +5,7 @@ set -e
 # Nixpacks
 #
 # This script is meant for quick installs via sh
-#   sh -c "$(curl -sSL https://github.com/railwayapp/nixpacks/blob/master/install.sh)"
+#   sh -c "$(curl -sSL https://raw.githubusercontent.com/railwayapp/nixpacks/master/install.sh)"
 #
 
 INSTALL_DIR=${INSTALL_DIR:-"/usr/local/bin"}
@@ -171,7 +171,7 @@ main() {
 
   do_install_binary
 
-  printf "$MAGENTA"
+  printf "$GREEN"
   cat <<'EOF'
 
       +--------------+
@@ -192,3 +192,4 @@ EOF
 }
 
 main
+
