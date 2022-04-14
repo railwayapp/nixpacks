@@ -23,7 +23,7 @@ get_latest_release() {
 }
 
 get_asset_name() {
-  echo "railway_$1_$2_$3.tar.gz"
+  echo "nixpacks-v$1-$2_$3.tar.gz"
 }
 
 get_download_url() {
@@ -119,9 +119,6 @@ do_install_binary() {
   asset_name=$(get_asset_name $version $os $machine)
   download_url=$(get_download_url $version $os $machine)
 
-  echo DOWNLOAD URL $download_url
-  exit 0
-
   command_exists curl || {
     fmt_error "curl is not installed"
     exit 1
@@ -138,7 +135,7 @@ do_install_binary() {
   echo "Downloading $download_url"
   (cd $tmp_dir && curl -sL -O "$download_url")
 
-  (cd $tmp_dir && do_checksum)
+  # (cd $tmp_dir && do_checksum)
 
   # Extract download
   (cd $tmp_dir && tar -xzf "$asset_name")
@@ -176,20 +173,18 @@ main() {
 
   printf "$MAGENTA"
   cat <<'EOF'
-                   .
-         /^\     .
-    /\   "V"
-   /__\   I      O  o             
-  //..\\  I     .                            Poof!
-  \].`[/  I
-  /l\/j\  (]    .  O
- /. ~~ ,\/I          .               Railway is now installed
- \\L__j^\/I       o              Run `railway help` for commands
-  \/--v}  I     o   .
-  |    |  I   _________                    
-  |    |  I c(`       ')o            
-  |    l  I   \.     ,/
-_/j  L l\_!  _//^---^\\_ 
+
+      +--------------+
+     /|             /|
+    / |            / |
+   *--+-----------*  |
+   |  |           |  |                Nixpacks is now installed
+   |  |           |  |             Run `nixpacks help` for commands
+   |  |           |  |
+   |  +-----------+--+
+   | /            | /
+   |/             |/
+   *--------------*
 
 EOF
   printf "$RESET"
