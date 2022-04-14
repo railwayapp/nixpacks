@@ -141,7 +141,7 @@ do_install_binary() {
   (cd $tmp_dir && tar -xzf "$asset_name")
 
   # Install binary
-  mv "$tmp_dir/$BINARY_NAME" $INSTALL_DIR
+  sudo mv "$tmp_dir/$BINARY_NAME" $INSTALL_DIR
   echo "Installed railway to $INSTALL_DIR"
 
   # Cleanup
@@ -192,4 +192,3 @@ EOF
 }
 
 main
-
