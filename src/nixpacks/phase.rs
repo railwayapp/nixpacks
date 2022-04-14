@@ -77,6 +77,7 @@ impl BuildPhase {
     }
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct StartPhase {
     pub cmd: Option<String>,
