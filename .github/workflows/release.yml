@@ -46,11 +46,12 @@ jobs:
       matrix:
         config:
         # Linux
-        - { os: ubuntu-latest, build: linux, toolchain: stable, target: x86_64-unknown-linux-musl, cross: true }
-        - { os: ubuntu-latest, build: linux-arm, toolchain: stable, target: arm-unknown-linux-gnueabihf, cross: true }
+        - { os: ubuntu-latest, build: linux_amd64, toolchain: stable, target: x86_64-unknown-linux-musl, cross: true }
+        - { os: ubuntu-latest, build: linux_arm64, toolchain: stable, target: arm-unknown-linux-gnueabihf, cross: true }
 
         # Macos
-        - { os: macos-latest, build: macos, toolchain: stable, target: x86_64-apple-darwin, cross: false }
+        - { os: macos-latest, build: darwin_amd64, toolchain: stable, target: x86_64-apple-darwin, cross: false }
+        - { os: macos-latest, build: darwin_arm64, toolchain: stable, target: aarch64-apple-darwin, cross: true }
 
     steps:
     - name: Checkout repository
@@ -106,7 +107,7 @@ jobs:
 
     - name: Update homebrew tap
       uses: mislav/bump-homebrew-formula-action@v1
-      if: "matrix.config.os == 'macos-latest' && !contains(github.ref, '-')"
+      if: "matrix.config.build == 'darwin_amd64' && !contains(github.ref, '-')"
       with:
         formula-name: nixpacks
         formula-path: nixpacks.rb
