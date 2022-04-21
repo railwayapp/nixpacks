@@ -47,6 +47,7 @@ pub fn gen_plan(
         pin_pkgs,
         out_dir: None,
         plan_path: None,
+        tags: Vec::new(),
     };
 
     let app = App::new(path)?;
@@ -68,6 +69,7 @@ pub fn build(
     envs: Vec<&str>,
     plan_path: Option<String>,
     out_dir: Option<String>,
+    tags: Vec<&str>,
 ) -> Result<()> {
     let logger = Logger::new();
     let providers = get_providers();
@@ -79,6 +81,7 @@ pub fn build(
         pin_pkgs,
         out_dir,
         plan_path,
+        tags: tags.iter().map(|s| s.to_string()).collect(),
     };
 
     let app = App::new(path)?;
