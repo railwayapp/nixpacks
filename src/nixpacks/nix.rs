@@ -57,23 +57,6 @@ impl Pkg {
     }
 }
 
-impl NixConfig {
-    pub fn new(pkgs: Vec<Pkg>) -> Self {
-        NixConfig {
-            pkgs,
-            archive: None,
-        }
-    }
-
-    pub fn add_pkgs(&mut self, new_pkgs: &mut Vec<Pkg>) {
-        self.pkgs.append(new_pkgs);
-    }
-
-    pub fn set_archive(&mut self, archive: String) {
-        self.archive = Some(archive);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

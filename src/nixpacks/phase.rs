@@ -1,20 +1,22 @@
 use serde::{Deserialize, Serialize};
 
-use super::nix::NixConfig;
+use super::nix::Pkg;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct SetupPhase {
-    pub nix: NixConfig,
+    pub pkgs: Vec<Pkg>,
+    pub archive: Option<String>,
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
 }
 
 impl SetupPhase {
-    pub fn new(nix: NixConfig) -> Self {
+    pub fn new(pkgs: Vec<Pkg>) -> Self {
         Self {
-            nix,
+            pkgs,
+            archive: None,
             only_include_files: None,
         }
     }
@@ -26,6 +28,14 @@ impl SetupPhase {
         } else {
             self.only_include_files = Some(vec![file]);
         }
+    }
+
+    pub fn add_pkgs(&mut self, new_pkgs: &mut Vec<Pkg>) {
+        self.pkgs.append(new_pkgs);
+    }
+
+    pub fn set_archive(&mut self, archive: String) {
+        self.archive = Some(archive);
     }
 }
 

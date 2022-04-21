@@ -2,7 +2,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
-    nix::{NixConfig, Pkg},
+    nix::{Pkg},
     phase::{SetupPhase, StartPhase},
 };
 use anyhow::Result;
@@ -21,10 +21,10 @@ impl Provider for DenoProvider {
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        Ok(Some(SetupPhase::new(NixConfig::new(vec![
+        Ok(Some(SetupPhase::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.deno"),
-        ]))))
+        ])))
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {

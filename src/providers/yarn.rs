@@ -5,7 +5,7 @@ use super::{
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    nix::{NixConfig, Pkg},
+    nix::{Pkg},
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
@@ -25,10 +25,10 @@ impl Provider for YarnProvider {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NpmProvider::get_nix_node_pkg(&package_json)?;
 
-        Ok(Some(SetupPhase::new(NixConfig::new(vec![
+        Ok(Some(SetupPhase::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.yarn").set_override("nodejs", node_pkg.name.as_str()),
-        ]))))
+        ])))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {

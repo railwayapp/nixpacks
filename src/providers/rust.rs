@@ -2,7 +2,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    nix::{NixConfig, Pkg},
+    nix::Pkg,
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Context, Result};
@@ -38,13 +38,11 @@ impl Provider for RustProvider {
     fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         let rust_pkg: Pkg = self.get_rust_pkg(app)?;
 
-        let nix_config = NixConfig::new(vec![
+        let mut setup_phase = SetupPhase::new(vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.gcc"),
             rust_pkg.from_overlay(RUST_OVERLAY),
         ]);
-
-        let mut setup_phase = SetupPhase::new(nix_config);
 
         // Include the rust toolchain file so we can install that rust version with Nix
         if let Some(toolchain_file) = self.get_rust_toolchain_file(app)? {

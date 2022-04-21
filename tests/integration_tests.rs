@@ -54,7 +54,7 @@ fn test_node_custom_version() -> Result<()> {
         false,
     )?;
     assert_eq!(
-        plan.setup.unwrap().nix.pkgs,
+        plan.setup.unwrap().pkgs,
         vec![Pkg::new("pkgs.stdenv"), Pkg::new("nodejs-12_x")]
     );
 
@@ -89,7 +89,7 @@ fn test_yarn_custom_version() -> Result<()> {
         false,
     )?;
     assert_eq!(
-        plan.setup.unwrap().nix.pkgs,
+        plan.setup.unwrap().pkgs,
         vec![
             Pkg::new("pkgs.stdenv"),
             Pkg::new("pkgs.yarn").set_override("nodejs", "nodejs-14_x")
@@ -145,7 +145,7 @@ fn test_custom_pkgs() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(plan.setup.unwrap().nix.pkgs, vec![Pkg::new("cowsay")]);
+    assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("cowsay")]);
     assert_eq!(plan.start.unwrap().cmd, Some("./start.sh".to_string()));
 
     Ok(())
@@ -154,7 +154,7 @@ fn test_custom_pkgs() -> Result<()> {
 #[test]
 fn test_pin_archive() -> Result<()> {
     let plan = gen_plan("./examples/hello", Vec::new(), None, None, Vec::new(), true)?;
-    assert!(plan.setup.unwrap().nix.archive.is_some());
+    assert!(plan.setup.unwrap().archive.is_some());
 
     Ok(())
 }
@@ -176,7 +176,6 @@ fn test_custom_rust_version() -> Result<()> {
     assert_eq!(
         plan.setup
             .unwrap()
-            .nix
             .pkgs
             .iter()
             .filter(|p| p.name.contains("1.56.0"))

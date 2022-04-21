@@ -200,10 +200,10 @@ impl<'a> AppBuilder<'a> {
 
         // Add custom user packages
         let mut pkgs = self.options.custom_pkgs.clone();
-        setup_phase.nix.add_pkgs(&mut pkgs);
+        setup_phase.add_pkgs(&mut pkgs);
 
         if self.options.pin_pkgs {
-            setup_phase.nix.set_archive(NIXPKGS_ARCHIVE.to_string())
+            setup_phase.set_archive(NIXPKGS_ARCHIVE.to_string())
         }
 
         Ok(setup_phase)
@@ -324,14 +324,13 @@ impl<'a> AppBuilder<'a> {
         let setup_phase = plan.setup.clone().unwrap_or_default();
 
         let nixpkgs = setup_phase
-            .nix
             .pkgs
             .iter()
             .map(|p| p.to_nix_string())
             .collect::<Vec<String>>()
             .join(" ");
 
-        let nix_archive = setup_phase.nix.archive.clone();
+        let nix_archive = setup_phase.archive.clone();
         let pkg_import = match nix_archive {
             Some(archive) => format!(
                 "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
@@ -341,7 +340,7 @@ impl<'a> AppBuilder<'a> {
         };
 
         let mut overlays: Vec<String> = Vec::new();
-        for pkg in &setup_phase.nix.pkgs {
+        for pkg in &setup_phase.pkgs {
             if let Some(overlay) = &pkg.overlay {
                 overlays.push(overlay.to_string());
             }
@@ -394,7 +393,7 @@ impl<'a> AppBuilder<'a> {
 
         // -- Setup
         let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
-        if let Some(mut setup_file_deps) = setup_phase.only_include_files.clone() {
+        if let Some(mut setup_file_deps) = setup_phase.only_include_files {
             setup_files.append(&mut setup_file_deps);
         }
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
@@ -432,7 +431,7 @@ impl<'a> AppBuilder<'a> {
         // -- Start
         let start_cmd = start_phase
             .cmd
-            .clone()
+            
             .map(|cmd| format!("CMD {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
