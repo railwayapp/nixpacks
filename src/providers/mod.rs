@@ -15,23 +15,23 @@ pub mod yarn;
 pub trait Provider {
     fn name(&self) -> &str;
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<SetupPhase> {
-        Ok(SetupPhase::default())
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+        Ok(None)
     }
-    fn install(&self, _app: &App, _env: &Environment) -> Result<InstallPhase> {
-        Ok(InstallPhase::default())
+    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+        Ok(None)
     }
-    fn build(&self, _app: &App, _env: &Environment) -> Result<BuildPhase> {
-        Ok(BuildPhase::default())
+    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+        Ok(None)
     }
-    fn start(&self, _app: &App, _env: &Environment) -> Result<StartPhase> {
-        Ok(StartPhase::default())
+    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+        Ok(None)
     }
     fn environment_variables(
         &self,
         _app: &App,
         _env: &Environment,
-    ) -> Result<EnvironmentVariables> {
-        Ok(EnvironmentVariables::default())
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(None)
     }
 }
