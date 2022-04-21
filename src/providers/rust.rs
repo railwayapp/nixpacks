@@ -38,11 +38,8 @@ impl Provider for RustProvider {
     fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         let rust_pkg: Pkg = self.get_rust_pkg(app)?;
 
-        let mut setup_phase = SetupPhase::new(vec![
-            Pkg::new("pkgs.stdenv"),
-            Pkg::new("pkgs.gcc"),
-            rust_pkg.from_overlay(RUST_OVERLAY),
-        ]);
+        let mut setup_phase =
+            SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
 
         // Include the rust toolchain file so we can install that rust version with Nix
         if let Some(toolchain_file) = self.get_rust_toolchain_file(app)? {

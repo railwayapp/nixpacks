@@ -32,7 +32,7 @@ impl Provider for PythonProvider {
         _app: &App,
         _env: &crate::nixpacks::environment::Environment,
     ) -> Result<Option<SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![Pkg::new("pkgs.python38")])))
+        Ok(Some(SetupPhase::new(vec![Pkg::new("python38")])))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {

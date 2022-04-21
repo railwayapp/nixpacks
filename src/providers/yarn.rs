@@ -1,11 +1,11 @@
 use super::{
-    npm::{NpmProvider, PackageJson},
+    npm::{NpmProvider, PackageJson, DEFAULT_NODE_PKG_NAME},
     Provider,
 };
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    nix::{Pkg},
+    nix::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
@@ -24,11 +24,14 @@ impl Provider for YarnProvider {
     fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NpmProvider::get_nix_node_pkg(&package_json)?;
+        let mut yarn_pkg = Pkg::new("yarn");
 
-        Ok(Some(SetupPhase::new(vec![
-            Pkg::new("pkgs.stdenv"),
-            Pkg::new("pkgs.yarn").set_override("nodejs", node_pkg.name.as_str()),
-        ])))
+        // Only override the node package if not the default one
+        if node_pkg.name != DEFAULT_NODE_PKG_NAME.to_string() {
+            yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
+        }
+
+        Ok(Some(SetupPhase::new(vec![yarn_pkg])))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {

@@ -2,7 +2,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
-    nix::{Pkg},
+    nix::Pkg,
     phase::{InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
@@ -19,10 +19,7 @@ impl Provider for GolangProvider {
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![
-            Pkg::new("pkgs.stdenv"),
-            Pkg::new("pkgs.go"),
-        ])))
+        Ok(Some(SetupPhase::new(vec![Pkg::new("go")])))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
