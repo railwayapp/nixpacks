@@ -4,7 +4,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    nix::{NixConfig, Pkg},
+    nix::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{bail, Result};
@@ -12,7 +12,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 17];
-const DEFAULT_NODE_PKG_NAME: &'static &str = &"pkgs.nodejs";
+pub const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
@@ -34,17 +34,14 @@ impl Provider for NpmProvider {
         Ok(app.includes_file("package.json"))
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<SetupPhase> {
+    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NpmProvider::get_nix_node_pkg(&package_json)?;
 
-        Ok(SetupPhase::new(NixConfig::new(vec![
-            Pkg::new("pkgs.stdenv"),
-            node_pkg,
-        ])))
+        Ok(Some(SetupPhase::new(vec![node_pkg])))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<InstallPhase> {
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let mut install_phase = InstallPhase::new("npm install".to_string());
 
         // Installing node modules only depends on package.json and lock file
@@ -53,22 +50,22 @@ impl Provider for NpmProvider {
             install_phase.add_file_dependency("package-lock.json".to_string());
         }
 
-        Ok(install_phase)
+        Ok(Some(install_phase))
     }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<BuildPhase> {
+    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         if NpmProvider::has_script(app, "build")? {
-            Ok(BuildPhase::new("npm run build".to_string()))
+            Ok(Some(BuildPhase::new("npm run build".to_string())))
         } else {
-            Ok(BuildPhase::default())
+            Ok(None)
         }
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(start_cmd) = NpmProvider::get_start_cmd(app)? {
-            Ok(StartPhase::new(start_cmd))
+            Ok(Some(StartPhase::new(start_cmd)))
         } else {
-            Ok(StartPhase::default())
+            Ok(None)
         }
     }
 
@@ -76,8 +73,8 @@ impl Provider for NpmProvider {
         &self,
         _app: &App,
         _env: &Environment,
-    ) -> Result<EnvironmentVariables> {
-        Ok(NpmProvider::get_node_environment_variables())
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(NpmProvider::get_node_environment_variables()))
     }
 }
 

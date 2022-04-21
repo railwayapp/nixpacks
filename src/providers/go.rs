@@ -2,7 +2,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
-    nix::{NixConfig, Pkg},
+    nix::Pkg,
     phase::{InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
@@ -18,21 +18,18 @@ impl Provider for GolangProvider {
         Ok(app.includes_file("main.go"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<SetupPhase> {
-        Ok(SetupPhase::new(NixConfig::new(vec![
-            Pkg::new("pkgs.stdenv"),
-            Pkg::new("pkgs.go"),
-        ])))
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+        Ok(Some(SetupPhase::new(vec![Pkg::new("go")])))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<InstallPhase> {
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         if app.includes_file("go.mod") {
-            return Ok(InstallPhase::new("go get".to_string()));
+            return Ok(Some(InstallPhase::new("go get".to_string())));
         }
-        Ok(InstallPhase::default())
+        Ok(None)
     }
 
-    fn start(&self, _app: &App, _env: &Environment) -> Result<StartPhase> {
-        Ok(StartPhase::new("go run main.go".to_string()))
+    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+        Ok(Some(StartPhase::new("go run main.go".to_string())))
     }
 }

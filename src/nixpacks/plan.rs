@@ -8,10 +8,10 @@ use super::{
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BuildPlan {
-    pub version: String,
-    pub setup: SetupPhase,
-    pub install: InstallPhase,
-    pub build: BuildPhase,
-    pub start: StartPhase,
-    pub variables: EnvironmentVariables,
+    pub version: Option<String>,
+    pub setup: Option<SetupPhase>,
+    pub install: Option<InstallPhase>,
+    pub build: Option<BuildPhase>,
+    pub start: Option<StartPhase>,
+    pub variables: Option<EnvironmentVariables>,
 }

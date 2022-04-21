@@ -26,7 +26,7 @@ use self::{
     plan::BuildPlan,
 };
 
-static NIX_PACKS_VERSION: &str = "0.0.1";
+const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "30d3d79b7d3607d56546dd2a6b49e156ba0ec634";
@@ -96,12 +96,12 @@ impl<'a> AppBuilder<'a> {
         let variables = self.get_variables().context("Getting plan variables")?;
 
         let plan = BuildPlan {
-            version: NIX_PACKS_VERSION.to_string(),
-            setup: setup_phase,
-            install: install_phase,
-            build: build_phase,
-            start: start_phase,
-            variables,
+            version: Some(NIX_PACKS_VERSION.to_string()),
+            setup: Some(setup_phase),
+            install: Some(install_phase),
+            build: Some(build_phase),
+            start: Some(start_phase),
+            variables: Some(variables),
         };
 
         Ok(plan)
@@ -192,18 +192,18 @@ impl<'a> AppBuilder<'a> {
 
     fn get_setup_phase(&self) -> Result<SetupPhase> {
         let mut setup_phase: SetupPhase = match self.provider {
-            Some(provider) => provider.setup(self.app, self.environment)?,
+            Some(provider) => provider
+                .setup(self.app, self.environment)?
+                .unwrap_or_default(),
             None => SetupPhase::default(),
         };
 
         // Add custom user packages
         let mut pkgs = self.options.custom_pkgs.clone();
-        setup_phase.nix_config.add_pkgs(&mut pkgs);
+        setup_phase.add_pkgs(&mut pkgs);
 
         if self.options.pin_pkgs {
-            setup_phase
-                .nix_config
-                .set_archive(NIXPKGS_ARCHIVE.to_string())
+            setup_phase.set_archive(NIXPKGS_ARCHIVE.to_string())
         }
 
         Ok(setup_phase)
@@ -211,7 +211,9 @@ impl<'a> AppBuilder<'a> {
 
     fn get_install_phase(&self) -> Result<InstallPhase> {
         let install_phase = match self.provider {
-            Some(provider) => provider.install(self.app, self.environment)?,
+            Some(provider) => provider
+                .install(self.app, self.environment)?
+                .unwrap_or_default(),
             None => InstallPhase::default(),
         };
 
@@ -220,7 +222,9 @@ impl<'a> AppBuilder<'a> {
 
     fn get_build_phase(&self) -> Result<BuildPhase> {
         let mut build_phase = match self.provider {
-            Some(provider) => provider.build(self.app, self.environment)?,
+            Some(provider) => provider
+                .build(self.app, self.environment)?
+                .unwrap_or_default(),
             None => BuildPhase::default(),
         };
 
@@ -235,7 +239,9 @@ impl<'a> AppBuilder<'a> {
         let procfile_cmd = self.parse_procfile()?;
 
         let mut start_phase = match self.provider {
-            Some(provider) => provider.start(self.app, self.environment)?,
+            Some(provider) => provider
+                .start(self.app, self.environment)?
+                .unwrap_or_default(),
             None => StartPhase::default(),
         };
 
@@ -259,8 +265,9 @@ impl<'a> AppBuilder<'a> {
         let new_variables = match self.provider {
             Some(provider) => {
                 // Merge provider variables
-                let provider_variables =
-                    provider.environment_variables(self.app, self.environment)?;
+                let provider_variables = provider
+                    .environment_variables(self.app, self.environment)?
+                    .unwrap_or_default();
                 provider_variables.into_iter().chain(variables).collect()
             }
             None => variables,
@@ -314,16 +321,16 @@ impl<'a> AppBuilder<'a> {
     }
 
     pub fn gen_nix(plan: &BuildPlan) -> Result<String> {
-        let nixpkgs = plan
-            .setup
-            .nix_config
+        let setup_phase = plan.setup.clone().unwrap_or_default();
+
+        let nixpkgs = setup_phase
             .pkgs
             .iter()
             .map(|p| p.to_nix_string())
             .collect::<Vec<String>>()
             .join(" ");
 
-        let nix_archive = plan.setup.nix_config.nixpkgs_archive.clone();
+        let nix_archive = setup_phase.archive.clone();
         let pkg_import = match nix_archive {
             Some(archive) => format!(
                 "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
@@ -332,10 +339,13 @@ impl<'a> AppBuilder<'a> {
             None => "import <nixpkgs>".to_string(),
         };
 
-        let overlays = plan
-            .setup
-            .nix_config
-            .overlays
+        let mut overlays: Vec<String> = Vec::new();
+        for pkg in &setup_phase.pkgs {
+            if let Some(overlay) = &pkg.overlay {
+                overlays.push(overlay.to_string());
+            }
+        }
+        let overlays_string = overlays
             .iter()
             .map(|url| format!("(import (builtins.fetchTarball \"{}\"))", url))
             .collect::<Vec<String>>()
@@ -360,7 +370,7 @@ impl<'a> AppBuilder<'a> {
         ",
         pkg_import=pkg_import,
         pkgs=nixpkgs,
-        overlays=overlays};
+        overlays=overlays_string};
 
         Ok(nix_expression)
     }
@@ -368,9 +378,14 @@ impl<'a> AppBuilder<'a> {
     pub fn gen_dockerfile(plan: &BuildPlan) -> Result<String> {
         let app_dir = "/app";
 
+        let setup_phase = plan.setup.clone().unwrap_or_default();
+        let install_phase = plan.install.clone().unwrap_or_default();
+        let build_phase = plan.build.clone().unwrap_or_default();
+        let start_phase = plan.start.clone().unwrap_or_default();
+        let variables = plan.variables.clone().unwrap_or_default();
+
         // -- Variables
-        let args_string = plan
-            .variables
+        let args_string = variables
             .iter()
             .map(|var| format!("ENV {}='{}'", var.0, var.1))
             .collect::<Vec<String>>()
@@ -378,14 +393,13 @@ impl<'a> AppBuilder<'a> {
 
         // -- Setup
         let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
-        if let Some(mut setup_file_deps) = plan.setup.file_dependencies.clone() {
+        if let Some(mut setup_file_deps) = setup_phase.only_include_files {
             setup_files.append(&mut setup_file_deps);
         }
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
 
         // -- Install
-        let install_cmd = plan
-            .install
+        let install_cmd = install_phase
             .cmd
             .clone()
             .map(|cmd| format!("RUN {}", cmd))
@@ -393,23 +407,21 @@ impl<'a> AppBuilder<'a> {
 
         // Files to copy for install phase
         // If none specified, copy over the entire app
-        let install_files = plan
-            .install
-            .file_dependencies
+        let install_files = install_phase
+            .only_include_files
             .clone()
             .unwrap_or_else(|| vec![".".to_string()]);
 
         // -- Build
-        let build_cmd = plan
-            .build
+        let build_cmd = build_phase
             .cmd
             .clone()
             .map(|cmd| format!("RUN {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
-        let build_files = plan.build.file_dependencies.clone().unwrap_or_else(|| {
+        let build_files = build_phase.only_include_files.clone().unwrap_or_else(|| {
             // Only copy over the entire app if we haven't already in the install phase
-            if plan.install.file_dependencies.is_none() {
+            if install_phase.only_include_files.is_none() {
                 Vec::new()
             } else {
                 vec![".".to_string()]
@@ -417,16 +429,14 @@ impl<'a> AppBuilder<'a> {
         });
 
         // -- Start
-        let start_cmd = plan
-            .start
+        let start_cmd = start_phase
             .cmd
-            .clone()
             .map(|cmd| format!("CMD {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
         // If we haven't yet copied over the entire app, do that before starting
         let mut start_files: Vec<String> = Vec::new();
-        if plan.build.file_dependencies.is_some() {
+        if build_phase.only_include_files.is_some() {
             start_files.push(".".to_string());
         }
 

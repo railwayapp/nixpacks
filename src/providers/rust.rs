@@ -2,7 +2,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    nix::{NixConfig, Pkg},
+    nix::Pkg,
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Context, Result};
@@ -35,36 +35,30 @@ impl Provider for RustProvider {
         Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<SetupPhase> {
+    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         let rust_pkg: Pkg = self.get_rust_pkg(app)?;
 
-        let mut nix_config = NixConfig::new(vec![
-            Pkg::new("pkgs.stdenv"),
-            Pkg::new("pkgs.gcc"),
-            rust_pkg,
-        ]);
-        nix_config.add_overlay(RUST_OVERLAY.to_string());
-
-        let mut setup_phase = SetupPhase::new(nix_config);
+        let mut setup_phase =
+            SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
 
         // Include the rust toolchain file so we can install that rust version with Nix
         if let Some(toolchain_file) = self.get_rust_toolchain_file(app)? {
             setup_phase.add_file_dependency(toolchain_file);
         }
 
-        Ok(setup_phase)
+        Ok(Some(setup_phase))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<BuildPhase> {
-        Ok(BuildPhase::new("cargo build --release".to_string()))
+    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+        Ok(Some(BuildPhase::new("cargo build --release".to_string())))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(toml_file) = self.parse_cargo_toml(app)? {
             let name = toml_file.package.name;
-            Ok(StartPhase::new(format!("./target/release/{}", name)))
+            Ok(Some(StartPhase::new(format!("./target/release/{}", name))))
         } else {
-            Ok(StartPhase::default())
+            Ok(None)
         }
     }
 
@@ -72,10 +66,10 @@ impl Provider for RustProvider {
         &self,
         _app: &App,
         _env: &Environment,
-    ) -> Result<EnvironmentVariables> {
+    ) -> Result<Option<EnvironmentVariables>> {
         let mut variables = EnvironmentVariables::default();
         variables.insert("ROCKET_ADDRESS".to_string(), "0.0.0.0".to_string());
-        Ok(variables)
+        Ok(Some(variables))
     }
 }
 

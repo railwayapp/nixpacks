@@ -8,7 +8,6 @@ use crate::{
     nixpacks::{
         app::App,
         environment::Environment,
-        nix::NixConfig,
         phase::{InstallPhase, SetupPhase, StartPhase},
     },
     Pkg,
@@ -32,44 +31,42 @@ impl Provider for PythonProvider {
         &self,
         _app: &App,
         _env: &crate::nixpacks::environment::Environment,
-    ) -> Result<SetupPhase> {
-        Ok(SetupPhase::new(NixConfig::new(vec![Pkg::new(
-            "pkgs.python38",
-        )])))
+    ) -> Result<Option<SetupPhase>> {
+        Ok(Some(SetupPhase::new(vec![Pkg::new("python38")])))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<InstallPhase> {
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         if app.includes_file("requirements.txt") {
             let mut install_phase = InstallPhase::new(
                 "python -m ensurepip && python -m pip install -r requirements.txt".to_string(),
             );
             install_phase.add_file_dependency("requirements.txt".to_string());
-            return Ok(install_phase);
+            return Ok(Some(install_phase));
         } else if app.includes_file("pyproject.toml") {
             let mut install_phase =InstallPhase::new("python -m ensurepip && python -m pip install --upgrade build setuptools && python -m pip install .".to_string());
             install_phase.add_file_dependency("pyproject.toml".to_string());
-            return Ok(install_phase);
+            return Ok(Some(install_phase));
         }
-        Ok(InstallPhase::default())
+        Ok(None)
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<StartPhase> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if app.includes_file("pyproject.toml") {
             if let Ok(meta) = self.parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
-                    return Ok(StartPhase::new(match entry_point {
+                    return Ok(Some(StartPhase::new(match entry_point {
                         EntryPoint::Command(cmd) => cmd,
                         EntryPoint::Module(module) => format!("python -m {}", module),
-                    }));
+                    })));
                 }
             }
         }
         // falls through
         if app.includes_file("main.py") {
-            return Ok(StartPhase::new("python main.py".to_string()));
+            return Ok(Some(StartPhase::new("python main.py".to_string())));
         }
 
-        Ok(StartPhase::default())
+        Ok(None)
     }
 }
 
