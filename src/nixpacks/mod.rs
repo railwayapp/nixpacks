@@ -39,6 +39,7 @@ pub struct AppBuilderOptions {
     pub pin_pkgs: bool,
     pub out_dir: Option<String>,
     pub plan_path: Option<String>,
+    pub tags: Vec<String>,
 }
 
 impl AppBuilderOptions {
@@ -50,6 +51,7 @@ impl AppBuilderOptions {
             pin_pkgs: false,
             out_dir: None,
             plan_path: None,
+            tags: Vec::new(),
         }
     }
 }
@@ -159,14 +161,18 @@ impl<'a> AppBuilder<'a> {
         let name = self.name.clone().unwrap_or_else(|| id.to_string());
 
         if self.options.out_dir.is_none() {
-            let mut docker_build_cmd = Command::new("docker")
+            let mut docker_build_cmd = Command::new("docker");
+            docker_build_cmd
                 .arg("build")
                 .arg(dir)
                 .arg("-t")
-                .arg(name.clone())
-                .spawn()?;
+                .arg(name.clone());
 
-            let build_result = docker_build_cmd.wait().context("Building image")?;
+            for t in self.options.tags.clone() {
+                docker_build_cmd.arg("-t").arg(t);
+            }
+
+            let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
 
             if !build_result.success() {
                 bail!("Docker build failed")

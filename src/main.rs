@@ -37,6 +37,14 @@ fn main() -> Result<()> {
                         .short('o')
                         .help("Save output directory instead of building it with Docker")
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::new("tag")
+                        .long("tag")
+                        .short('t')
+                        .help("Additional tags to add to the output image")
+                        .takes_value(true)
+                        .multiple_values(true),
                 ),
         )
         .arg(
@@ -108,8 +116,13 @@ fn main() -> Result<()> {
             let plan_path = matches.value_of("plan").map(|n| n.to_string());
             let output_dir = matches.value_of("out").map(|n| n.to_string());
 
+            let tags: Vec<_> = match matches.values_of("tag") {
+                Some(values) => values.collect(),
+                None => Vec::new(),
+            };
+
             build(
-                path, name, pkgs, build_cmd, start_cmd, pin_pkgs, envs, plan_path, output_dir,
+                path, name, pkgs, build_cmd, start_cmd, pin_pkgs, envs, plan_path, output_dir, tags,
             )?;
         }
         _ => eprintln!("Invalid command"),
