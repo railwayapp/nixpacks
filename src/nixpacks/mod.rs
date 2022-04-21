@@ -431,7 +431,6 @@ impl<'a> AppBuilder<'a> {
         // -- Start
         let start_cmd = start_phase
             .cmd
-            
             .map(|cmd| format!("CMD {}", cmd))
             .unwrap_or_else(|| "".to_string());
 

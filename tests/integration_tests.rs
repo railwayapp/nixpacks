@@ -53,10 +53,7 @@ fn test_node_custom_version() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(
-        plan.setup.unwrap().pkgs,
-        vec![Pkg::new("pkgs.stdenv"), Pkg::new("nodejs-12_x")]
-    );
+    assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("nodejs-12_x")]);
 
     Ok(())
 }
@@ -90,10 +87,7 @@ fn test_yarn_custom_version() -> Result<()> {
     )?;
     assert_eq!(
         plan.setup.unwrap().pkgs,
-        vec![
-            Pkg::new("pkgs.stdenv"),
-            Pkg::new("pkgs.yarn").set_override("nodejs", "nodejs-14_x")
-        ]
+        vec![Pkg::new("yarn").set_override("nodejs", "nodejs-14_x")]
     );
 
     Ok(())

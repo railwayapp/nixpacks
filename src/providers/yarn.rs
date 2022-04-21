@@ -27,7 +27,7 @@ impl Provider for YarnProvider {
         let mut yarn_pkg = Pkg::new("yarn");
 
         // Only override the node package if not the default one
-        if node_pkg.name != DEFAULT_NODE_PKG_NAME.to_string() {
+        if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
             yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
         }
 
