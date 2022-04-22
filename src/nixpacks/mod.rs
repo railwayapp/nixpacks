@@ -395,7 +395,7 @@ impl<'a> AppBuilder<'a> {
             "ARG {}",
             variables
                 .iter()
-                .map(|var| format!("{}", var.0))
+                .map(|var| var.0.to_string())
                 .collect::<Vec<_>>()
                 .join(" ")
         );
