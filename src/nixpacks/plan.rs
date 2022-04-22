@@ -26,7 +26,7 @@ impl BuildPlan {
                 setup
                     .pkgs
                     .iter()
-                    .map(|pkg| format!("{}", pkg.to_pretty_string()))
+                    .map(|pkg| pkg.to_pretty_string())
                     .collect::<Vec<_>>()
                     .join("\n    -> ")
             }),
