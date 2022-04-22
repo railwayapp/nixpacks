@@ -26,9 +26,9 @@ impl BuildPlan {
                 setup
                     .pkgs
                     .iter()
-                    .map(|pkg| format!("    - {}", pkg.to_pretty_string()))
+                    .map(|pkg| format!("{}", pkg.to_pretty_string()))
                     .collect::<Vec<_>>()
-                    .join("\n")
+                    .join("\n    -> ")
             }),
         );
 
@@ -56,10 +56,10 @@ impl BuildPlan {
 fn get_phase_string(phase: &str, content: Option<String>) -> String {
     match &content {
         Some(content) => {
-            format!("=> {}\n    {}", phase, content.trim())
+            format!("=> {}\n    -> {}", phase, content.trim())
         }
         None => {
-            format!("=> {}\n    Skipping", phase)
+            format!("=> {}\n    -> Skipping", phase)
         }
     }
 }
