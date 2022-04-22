@@ -1,7 +1,7 @@
 # Nixpacks
 
 [![CI](https://github.com/railwayapp/bb/actions/workflows/ci.yml/badge.svg)](https://github.com/railwayapp/bb/actions/workflows/ci.yml)
-![Crates.io](https://img.shields.io/crates/v/nixpacks)
+[![Crates.io](https://img.shields.io/crates/v/nixpacks)](https://crates.io/crates/nixpacks)
 
 **App source + Nix packages + Docker = Image**
 
