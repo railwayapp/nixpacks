@@ -166,6 +166,14 @@ impl<'a> AppBuilder<'a> {
                 .arg("-t")
                 .arg(name.clone());
 
+            // Add build environment variables
+            for (name, value) in plan.variables.clone().unwrap_or_default().iter() {
+                docker_build_cmd
+                    .arg("--build-arg")
+                    .arg(format!("{}={}", name, value));
+            }
+
+            // Add user defined tags to the image
             for t in self.options.tags.clone() {
                 docker_build_cmd.arg("-t").arg(t);
             }
@@ -383,11 +391,14 @@ impl<'a> AppBuilder<'a> {
         let variables = plan.variables.clone().unwrap_or_default();
 
         // -- Variables
-        let args_string = variables
-            .iter()
-            .map(|var| format!("ENV {}='{}'", var.0, var.1))
-            .collect::<Vec<String>>()
-            .join("\n");
+        let args_string = format!(
+            "ARG {}",
+            variables
+                .iter()
+                .map(|var| format!("{}", var.0))
+                .collect::<Vec<_>>()
+                .join(" ")
+        );
 
         // -- Setup
         let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
