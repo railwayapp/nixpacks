@@ -108,7 +108,8 @@ impl<'a> AppBuilder<'a> {
     }
 
     pub fn build(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
-        self.logger.log_section("Building");
+        self.logger
+            .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
 
         let plan = match &self.options.plan_path {
             Some(plan_path) => {
@@ -120,10 +121,11 @@ impl<'a> AppBuilder<'a> {
             }
             None => {
                 self.logger.log_step("Generated new build plan");
-
                 self.plan(providers).context("Creating build plan")?
             }
         };
+
+        println!("{}", plan.get_build_string());
 
         self.do_build(&plan)
     }
@@ -140,8 +142,6 @@ impl<'a> AppBuilder<'a> {
             }
         };
 
-        self.logger.log_step("Copying source to tmp dir");
-
         let source = self.app.source.as_path().to_str().unwrap();
         let mut copy_cmd = Command::new("cp")
             .arg("-a")
@@ -153,10 +153,8 @@ impl<'a> AppBuilder<'a> {
             bail!("Copy failed")
         }
 
-        self.logger.log_step("Writing build plan");
         AppBuilder::write_build_plan(plan, dir.as_str()).context("Writing build plan")?;
-
-        self.logger.log_step("Building image");
+        self.logger.log_step("Building image with Docker");
 
         let name = self.name.clone().unwrap_or_else(|| id.to_string());
 
@@ -376,7 +374,7 @@ impl<'a> AppBuilder<'a> {
     }
 
     pub fn gen_dockerfile(plan: &BuildPlan) -> Result<String> {
-        let app_dir = "/app";
+        let app_dir = "/app/";
 
         let setup_phase = plan.setup.clone().unwrap_or_default();
         let install_phase = plan.install.clone().unwrap_or_default();
@@ -444,8 +442,8 @@ impl<'a> AppBuilder<'a> {
           FROM nixos/nix
           RUN nix-channel --update
 
-          RUN mkdir /app
-          WORKDIR /app
+          RUN mkdir /app/
+          WORKDIR /app/
 
           # Setup
           {setup_copy_cmd}

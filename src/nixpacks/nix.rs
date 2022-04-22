@@ -55,6 +55,20 @@ impl Pkg {
         self.overlay = Some(overlay.to_string());
         self
     }
+
+    pub fn to_pretty_string(&self) -> String {
+        match &self.overrides {
+            Some(overrides) => {
+                let override_string = overrides
+                    .iter()
+                    .map(|(name, value)| format!("{} = {}", name, value))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!("{} {{ {} }}", self.name, override_string)
+            }
+            None => self.name.clone(),
+        }
+    }
 }
 
 #[cfg(test)]

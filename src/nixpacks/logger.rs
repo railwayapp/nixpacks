@@ -8,11 +8,11 @@ impl Logger {
     }
 
     pub fn log_section(&self, msg: &str) {
-        println!("\n=== {} ===", msg.magenta().bold());
+        println!("=== {} ===", msg.magenta().bold());
     }
 
     pub fn log_step(&self, msg: &str) {
-        println!("  →  {}", msg);
+        println!("=> {}", msg);
     }
 }
 
