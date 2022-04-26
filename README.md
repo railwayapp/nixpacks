@@ -38,10 +38,11 @@ There are two main commands
 Generates a build plan and outputs to stdout.
 
 ```
-cargo run -- plan $APP_SRC
+nixpacks plan $APP_SRC
 ```
 
-![image](https://user-images.githubusercontent.com/3044853/161355091-1eb38fd7-aa59-412e-904d-74e48e2016e7.png)
+![image](https://user-images.githubusercontent.com/3044853/165360487-550e51c4-198f-4a40-af23-6f498736b280.png)
+
 
 View the help with `cargo run -- plan --help`
 
@@ -50,10 +51,10 @@ View the help with `cargo run -- plan --help`
 Creates a runnable image with Docker
 
 ```
-cargo run -- build $APP_SRC --name $NAME
+nixpacks build $APP_SRC --name $NAME
 ```
 
-![image](https://user-images.githubusercontent.com/3044853/161355162-73651b6d-6ee2-41ee-a0f0-abbf581ce8f4.png)
+![image](https://user-images.githubusercontent.com/3044853/165363312-5c1d39c3-c461-4b87-b7a2-1f3f00957f01.png)
 
 View the help with `cargo run -- build --help`
 
