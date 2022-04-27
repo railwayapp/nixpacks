@@ -455,15 +455,16 @@ impl<'a> AppBuilder<'a> {
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
-          RUN apt-get update && apt-get -y upgrade && apt-get install --no-install-recommends -y locales curl xz-utils ca-certificates openssl && apt-get clean && rm -rf /var/lib/apt/lists/* \\
-            && mkdir -m 0755 /nix && groupadd -r nixbld && chown root /nix \\
+          RUN apt-get update && apt-get -y upgrade \\
+            && apt-get install --no-install-recommends -y wget locales curl xz-utils ca-certificates openssl \\
+            && apt-get clean && rm -rf /var/lib/apt/lists/* \\
+            && mkdir -m 0755 /nix && mkdir -m 0755 /etc/nix && groupadd -r nixbld && chown root /nix \\
+            && echo 'sandbox = false' > /etc/nix/nix.conf \\
             && for n in $(seq 1 10); do useradd -c \"Nix build user $n\" -d /var/empty -g nixbld -G nixbld -M -N -r -s \"$(command -v nologin)\" \"nixbld$n\"; done
 
-          RUN mkdir -m 0755 /etc/nix \\
-            && echo 'sandbox = false' > /etc/nix/nix.conf \\
-            && echo 'filter-syscalls = false' > /etc/nix/nix.conf
           SHELL [\"/bin/bash\", \"-o\", \"pipefail\", \"-c\"]
-          RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash
+          RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash \\
+              && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old
 
           ENV \\
             ENV=/etc/profile \\
