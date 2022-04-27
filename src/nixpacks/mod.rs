@@ -156,7 +156,8 @@ impl<'a> AppBuilder<'a> {
             bail!("Copy failed")
         }
 
-        AppBuilder::write_build_plan(plan, dir.as_str()).context("Writing build plan")?;
+        AppBuilder::write_build_plan(plan, self.environment, dir.as_str())
+            .context("Writing build plan")?;
         self.logger.log_step("Building image with Docker");
 
         let name = self.name.clone().unwrap_or_else(|| id.to_string());
@@ -170,7 +171,8 @@ impl<'a> AppBuilder<'a> {
                 .arg(name.clone());
 
             // Add build environment variables
-            for (name, value) in plan.variables.clone().unwrap_or_default().iter() {
+            let env_variables = Environment::clone_variables(self.environment);
+            for (name, value) in env_variables.iter() {
                 docker_build_cmd
                     .arg("--build-arg")
                     .arg(format!("{}={}", name, value));
@@ -180,6 +182,8 @@ impl<'a> AppBuilder<'a> {
             for t in self.options.tags.clone() {
                 docker_build_cmd.arg("-t").arg(t);
             }
+
+            println!("{:?}", docker_build_cmd);
 
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
 
@@ -268,21 +272,15 @@ impl<'a> AppBuilder<'a> {
     }
 
     fn get_variables(&self) -> Result<EnvironmentVariables> {
-        // Get a copy of the variables in the environment
-        let variables = Environment::clone_variables(self.environment);
-
-        let new_variables = match self.provider {
-            Some(provider) => {
-                // Merge provider variables
-                let provider_variables = provider
-                    .environment_variables(self.app, self.environment)?
-                    .unwrap_or_default();
-                provider_variables.into_iter().chain(variables).collect()
-            }
-            None => variables,
+        // Get the variables from the provider
+        let variables = match self.provider {
+            Some(provider) => provider
+                .environment_variables(self.app, self.environment)?
+                .unwrap_or_default(),
+            None => EnvironmentVariables::default(),
         };
 
-        Ok(new_variables)
+        Ok(variables)
     }
 
     fn detect(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
@@ -312,9 +310,10 @@ impl<'a> AppBuilder<'a> {
         }
     }
 
-    pub fn write_build_plan(plan: &BuildPlan, dest: &str) -> Result<()> {
+    pub fn write_build_plan(plan: &BuildPlan, environment: &Environment, dest: &str) -> Result<()> {
         let nix_expression = AppBuilder::gen_nix(plan).context("Generating Nix expression")?;
-        let dockerfile = AppBuilder::gen_dockerfile(plan).context("Generating Dockerfile")?;
+        let dockerfile =
+            AppBuilder::gen_dockerfile(plan, environment).context("Generating Dockerfile")?;
 
         let nix_path = PathBuf::from(dest).join(PathBuf::from("environment.nix"));
         let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
@@ -384,7 +383,7 @@ impl<'a> AppBuilder<'a> {
         Ok(nix_expression)
     }
 
-    pub fn gen_dockerfile(plan: &BuildPlan) -> Result<String> {
+    pub fn gen_dockerfile(plan: &BuildPlan, environment: &Environment) -> Result<String> {
         let app_dir = "/app/";
 
         let setup_phase = plan.setup.clone().unwrap_or_default();
@@ -394,14 +393,34 @@ impl<'a> AppBuilder<'a> {
         let variables = plan.variables.clone().unwrap_or_default();
 
         // -- Variables
-        let args_string = format!(
-            "ARG {}",
-            variables
-                .iter()
-                .map(|var| var.0.to_string())
-                .collect::<Vec<_>>()
-                .join(" ")
-        );
+        // Variables from the environment are loaded into build as a `ARG`
+        let env_variables = Environment::clone_variables(environment);
+        let args_string = if env_variables.len() > 0 {
+            format!(
+                "ARG {}",
+                Environment::clone_variables(environment)
+                    .iter()
+                    .map(|var| var.0.to_string())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )
+        } else {
+            "".to_string()
+        };
+
+        // Variables from providers are loaded as `ENV` so that they are available when running the container
+        let envs_string = if variables.len() > 0 {
+            format!(
+                "ENV {}",
+                variables
+                    .iter()
+                    .map(|var| format!("{}={}", var.0, var.1))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )
+        } else {
+            "".to_string()
+        };
 
         // -- Setup
         let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
@@ -485,6 +504,7 @@ impl<'a> AppBuilder<'a> {
 
           # Load environment variables
           {args_string}
+          {envs_string}
 
           # Install
           {install_copy_cmd}
@@ -501,6 +521,7 @@ impl<'a> AppBuilder<'a> {
         base_image=BASE_IMAGE,
         setup_copy_cmd=setup_copy_cmd,
         args_string=args_string,
+        envs_string=envs_string,
         install_copy_cmd=get_copy_command(&install_files, app_dir),
         install_cmd=install_cmd,
         build_copy_cmd=get_copy_command(&build_files, app_dir),
