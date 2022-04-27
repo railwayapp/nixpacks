@@ -31,6 +31,9 @@ const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "30d3d79b7d3607d56546dd2a6b49e156ba0ec634";
 
+// Debian 11
+static BASE_IMAGE: &str = "debian:buster-slim";
+
 #[derive(Debug)]
 pub struct AppBuilderOptions {
     pub custom_build_cmd: Option<String>,
@@ -450,7 +453,27 @@ impl<'a> AppBuilder<'a> {
         }
 
         let dockerfile = formatdoc! {"
-          FROM nixos/nix
+          FROM {base_image}
+
+          RUN apt-get update && apt-get -y upgrade \\
+            && apt-get install --no-install-recommends -y locales curl xz-utils ca-certificates openssl \\
+            && apt-get clean && rm -rf /var/lib/apt/lists/* \\
+            && mkdir -m 0755 /nix && mkdir -m 0755 /etc/nix && groupadd -r nixbld && chown root /nix \\
+            && echo 'sandbox = false' > /etc/nix/nix.conf \\
+            && for n in $(seq 1 10); do useradd -c \"Nix build user $n\" -d /var/empty -g nixbld -G nixbld -M -N -r -s \"$(command -v nologin)\" \"nixbld$n\"; done
+
+          SHELL [\"/bin/bash\", \"-o\", \"pipefail\", \"-c\"]
+          RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash \\
+              && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old
+
+          ENV \\
+            ENV=/etc/profile \\
+            USER=root \\
+            PATH=/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/bin:/sbin:/usr/bin:/usr/sbin \\
+            GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt \\
+            NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \\
+            NIX_PATH=/nix/var/nix/profiles/per-user/root/channels
+
           RUN nix-channel --update
 
           RUN mkdir /app/
@@ -475,6 +498,7 @@ impl<'a> AppBuilder<'a> {
           {start_copy_cmd}
           {start_cmd}
         ",
+        base_image=BASE_IMAGE,
         setup_copy_cmd=setup_copy_cmd,
         args_string=args_string,
         install_copy_cmd=get_copy_command(&install_files, app_dir),
