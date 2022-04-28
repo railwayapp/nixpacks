@@ -397,11 +397,13 @@ impl<'a> AppBuilder<'a> {
         let args_string = if variables.len() > 0 {
             format!(
                 "ARG {}\nENV {}",
+                // Pull the variables in from docker `--build-arg`
                 variables
                     .iter()
                     .map(|var| var.0.to_string())
                     .collect::<Vec<_>>()
                     .join(" "),
+                // Make the variables available at runtime
                 variables
                     .iter()
                     .map(|var| format!("{}=${}", var.0, var.0))
