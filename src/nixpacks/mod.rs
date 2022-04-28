@@ -394,14 +394,25 @@ impl<'a> AppBuilder<'a> {
         let variables = plan.variables.clone().unwrap_or_default();
 
         // -- Variables
-        let args_string = format!(
-            "ARG {}",
-            variables
-                .iter()
-                .map(|var| var.0.to_string())
-                .collect::<Vec<_>>()
-                .join(" ")
-        );
+        let args_string = if !variables.is_empty() {
+            format!(
+                "ARG {}\nENV {}",
+                // Pull the variables in from docker `--build-arg`
+                variables
+                    .iter()
+                    .map(|var| var.0.to_string())
+                    .collect::<Vec<_>>()
+                    .join(" "),
+                // Make the variables available at runtime
+                variables
+                    .iter()
+                    .map(|var| format!("{}=${}", var.0, var.0))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )
+        } else {
+            "".to_string()
+        };
 
         // -- Setup
         let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
