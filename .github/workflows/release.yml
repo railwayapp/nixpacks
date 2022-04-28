@@ -22,6 +22,11 @@ jobs:
           echo "NIXPACKS_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "version is: ${{ env.NIXPACKS_VERSION }}"
 
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
       - name: Build Changelog
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v2.9.0
