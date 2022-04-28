@@ -46,6 +46,8 @@ pub struct InstallPhase {
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
+
+    pub paths: Option<Vec<String>>,
 }
 
 impl InstallPhase {
@@ -53,6 +55,7 @@ impl InstallPhase {
         Self {
             cmd: Some(cmd),
             only_include_files: None,
+            paths: None,
         }
     }
 
@@ -62,6 +65,15 @@ impl InstallPhase {
             self.only_include_files = Some(files);
         } else {
             self.only_include_files = Some(vec![file]);
+        }
+    }
+
+    pub fn add_path(&mut self, path: String) {
+        if let Some(mut paths) = self.paths.clone() {
+            paths.push(path);
+            self.paths = Some(paths);
+        } else {
+            self.paths = Some(vec![path]);
         }
     }
 }

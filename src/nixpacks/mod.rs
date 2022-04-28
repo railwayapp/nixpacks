@@ -428,6 +428,12 @@ impl<'a> AppBuilder<'a> {
             .map(|cmd| format!("RUN {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
+        let path_env = if let Some(paths) = install_phase.paths {
+            format!("ENV PATH {}:$PATH", paths.join(":"))
+        } else {
+            "".to_string()
+        };
+
         // Files to copy for install phase
         // If none specified, copy over the entire app
         let install_files = install_phase
@@ -500,6 +506,7 @@ impl<'a> AppBuilder<'a> {
           # Install
           {install_copy_cmd}
           {install_cmd}
+          {path_env}
 
           # Build
           {build_copy_cmd}
@@ -514,6 +521,7 @@ impl<'a> AppBuilder<'a> {
         args_string=args_string,
         install_copy_cmd=get_copy_command(&install_files, app_dir),
         install_cmd=install_cmd,
+        path_env=path_env,
         build_copy_cmd=get_copy_command(&build_files, app_dir),
         build_cmd=build_cmd,
         start_copy_cmd=get_copy_command(&start_files, app_dir),
