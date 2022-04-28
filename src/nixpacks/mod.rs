@@ -394,7 +394,7 @@ impl<'a> AppBuilder<'a> {
         let variables = plan.variables.clone().unwrap_or_default();
 
         // -- Variables
-        let args_string = if variables.len() > 0 {
+        let args_string = if !variables.is_empty() {
             format!(
                 "ARG {}\nENV {}",
                 // Pull the variables in from docker `--build-arg`
