@@ -1,0 +1,11 @@
+{
+  "categories": [
+    {
+      "title": "## Changes",
+      "labels": [],
+      "exhaustive": false
+    }
+  ],
+  "template": "${{CHANGELOG}}\n",
+  "pr_template": "- #${{NUMBER}} ${{TITLE}}"
+}
