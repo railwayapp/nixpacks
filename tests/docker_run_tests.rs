@@ -6,7 +6,7 @@ use std::{
 };
 use uuid::Uuid;
 
-const TIMEOUT_SECONDS: i32 = 4;
+const TIMEOUT_SECONDS: i32 = 5;
 
 fn get_container_ids_from_image(image: String) -> String {
     let output = Command::new("docker")
