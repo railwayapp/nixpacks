@@ -134,6 +134,13 @@ fn test_yarn_custom_version() {
 }
 
 #[test]
+fn test_yarn_prisma() {
+    let name = simple_build("./examples/yarn-prisma");
+    let output = run_image(name);
+    assert!(output.contains("My post content"));
+}
+
+#[test]
 fn test_python() {
     let name = simple_build("./examples/python");
     let output = run_image(name);
@@ -144,6 +151,40 @@ fn test_python() {
 fn test_deno() {
     let name = simple_build("./examples/deno");
     let output = run_image(name);
-    println!("{}", output);
     assert!(output.contains("Hello Deno"));
+}
+
+#[test]
+fn test_rust_custom_version() {
+    let name = simple_build("./examples/rust-custom-version");
+    let output = run_image(name);
+    assert!(output.contains("cargo 1.56.0"));
+}
+
+#[test]
+fn test_go() {
+    let name = simple_build("./examples/go");
+    let output = run_image(name);
+    assert!(output.contains("Hello from Go"));
+}
+
+#[test]
+fn test_cowsay() {
+    let name = Uuid::new_v4().to_string();
+    build(
+        "./examples/hello",
+        Some(name.clone()),
+        vec!["cowsay"],
+        None,
+        Some("./start.sh".to_string()),
+        false,
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        true,
+    )
+    .unwrap();
+    let output = run_image(name);
+    assert!(output.contains("Hello World"));
 }
