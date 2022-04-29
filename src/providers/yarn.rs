@@ -31,7 +31,7 @@ impl Provider for YarnProvider {
             yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
         }
 
-        Ok(Some(SetupPhase::new(vec![yarn_pkg])))
+        Ok(Some(SetupPhase::new(vec![node_pkg, yarn_pkg])))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
