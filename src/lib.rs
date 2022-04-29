@@ -48,6 +48,7 @@ pub fn gen_plan(
         out_dir: None,
         plan_path: None,
         tags: Vec::new(),
+        quiet: false,
     };
 
     let app = App::new(path)?;
@@ -70,6 +71,7 @@ pub fn build(
     plan_path: Option<String>,
     out_dir: Option<String>,
     tags: Vec<&str>,
+    quiet: bool,
 ) -> Result<()> {
     let logger = Logger::new();
     let providers = get_providers();
@@ -82,6 +84,7 @@ pub fn build(
         out_dir,
         plan_path,
         tags: tags.iter().map(|s| s.to_string()).collect(),
+        quiet,
     };
 
     let app = App::new(path)?;

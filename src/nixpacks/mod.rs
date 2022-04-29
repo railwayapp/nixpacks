@@ -43,6 +43,7 @@ pub struct AppBuilderOptions {
     pub out_dir: Option<String>,
     pub plan_path: Option<String>,
     pub tags: Vec<String>,
+    pub quiet: bool,
 }
 
 impl AppBuilderOptions {
@@ -55,6 +56,7 @@ impl AppBuilderOptions {
             out_dir: None,
             plan_path: None,
             tags: Vec::new(),
+            quiet: false,
         }
     }
 }
@@ -168,6 +170,10 @@ impl<'a> AppBuilder<'a> {
                 .arg(dir)
                 .arg("-t")
                 .arg(name.clone());
+
+            if self.options.quiet {
+                docker_build_cmd.arg("--quiet");
+            }
 
             // Add build environment variables
             for (name, value) in plan.variables.clone().unwrap_or_default().iter() {
