@@ -120,8 +120,30 @@ fn test_node() {
 }
 
 #[test]
+fn test_node_custom_version() {
+    let name = simple_build("./examples/node-custom-version");
+    let output = run_image(name);
+    assert!(output.contains("Node version: v12"));
+}
+
+#[test]
+fn test_yarn_custom_version() {
+    let name = simple_build("./examples/yarn-custom-node-version");
+    let output = run_image(name);
+    assert!(output.contains("Node version: v14"));
+}
+
+#[test]
 fn test_python() {
     let name = simple_build("./examples/python");
     let output = run_image(name);
     assert!(output.contains("Hello from Python"));
+}
+
+#[test]
+fn test_deno() {
+    let name = simple_build("./examples/deno");
+    let output = run_image(name);
+    println!("{}", output);
+    assert!(output.contains("Hello Deno"));
 }
