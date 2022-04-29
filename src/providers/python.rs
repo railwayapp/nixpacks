@@ -36,17 +36,28 @@ impl Provider for PythonProvider {
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+        let env_loc = "/opt/venv";
+        let create_env = format!("python -m venv {}", env_loc);
+        let activate_env = format!(". {}/bin/activate", env_loc);
+
         if app.includes_file("requirements.txt") {
-            let mut install_phase = InstallPhase::new(
-                "python -m ensurepip && python -m pip install -r requirements.txt".to_string(),
-            );
+            let mut install_phase = InstallPhase::new(format!(
+                "{} && {} && pip install -r requirements.txt",
+                create_env, activate_env
+            ));
             install_phase.add_file_dependency("requirements.txt".to_string());
+            install_phase.add_path(format!("{}/bin", env_loc));
             return Ok(Some(install_phase));
         } else if app.includes_file("pyproject.toml") {
-            let mut install_phase =InstallPhase::new("python -m ensurepip && python -m pip install --upgrade build setuptools && python -m pip install .".to_string());
+            let mut install_phase = InstallPhase::new(format!(
+                "{} && {} && pip install --upgrade build setuptools && pip install .",
+                create_env, activate_env
+            ));
             install_phase.add_file_dependency("pyproject.toml".to_string());
+            install_phase.add_path(format!("{}/bin", env_loc));
             return Ok(Some(install_phase));
         }
+
         Ok(None)
     }
 
