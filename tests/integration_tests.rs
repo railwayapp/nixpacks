@@ -87,7 +87,10 @@ fn test_yarn_custom_version() -> Result<()> {
     )?;
     assert_eq!(
         plan.setup.unwrap().pkgs,
-        vec![Pkg::new("yarn").set_override("nodejs", "nodejs-14_x")]
+        vec![
+            Pkg::new("nodejs-14_x"),
+            Pkg::new("yarn").set_override("nodejs", "nodejs-14_x")
+        ]
     );
 
     Ok(())
