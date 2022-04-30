@@ -1,9 +1,7 @@
-import { serve } from "https://deno.land/std@0.114.0/http/server.ts";
+import * as o from "https://deno.land/x/cowsay/mod.ts";
 
-const port = parseInt(Deno.env.get("PORT") ?? "8000");
-serve(
-  () => new Response("Choo Choo! Welcome to your Deno app\n"),
-  { addr: `:${port}` },
-).catch(err => console.log("Failed to serve", err));
+let m = o.say({
+  text: "Hello Deno",
+});
 
-console.log(`http://localhost:${port}/`);
+console.log(m);

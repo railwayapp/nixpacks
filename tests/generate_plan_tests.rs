@@ -221,10 +221,7 @@ pub fn test_python() -> Result<()> {
         plan.install.unwrap().cmd,
         Some("python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt".to_string())
     );
-    assert_eq!(
-        plan.start.unwrap().cmd,
-        Some("gunicorn main:app".to_string())
-    );
+    assert_eq!(plan.start.unwrap().cmd, Some("python main.py".to_string()));
 
     Ok(())
 }

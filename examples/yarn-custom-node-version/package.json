@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "./start.sh"
+    "start": "echo Node version: $(node --version) && node index.js"
   },
   "engines": {
     "node": ">=14.2 <16"

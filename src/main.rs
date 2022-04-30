@@ -122,7 +122,8 @@ fn main() -> Result<()> {
             };
 
             build(
-                path, name, pkgs, build_cmd, start_cmd, pin_pkgs, envs, plan_path, output_dir, tags,
+                path, name, pkgs, build_cmd, start_cmd, pin_pkgs, envs, plan_path, output_dir,
+                tags, false,
             )?;
         }
         _ => eprintln!("Invalid command"),
