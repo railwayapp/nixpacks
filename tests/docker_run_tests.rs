@@ -18,29 +18,27 @@ fn get_container_ids_from_image(image: String) -> String {
         .output()
         .expect("failed to execute docker ps");
 
-    assert!(output.status.success());
-
     String::from_utf8_lossy(&output.stdout).to_string()
 }
 
 fn stop_containers(container_id: &String) {
-    let output = Command::new("docker")
+    Command::new("docker")
         .arg("stop")
         .arg(container_id)
-        .output()
+        .spawn()
+        .unwrap()
+        .wait()
         .expect("failed to execute docker stop");
-
-    assert!(output.status.success());
 }
 
 fn remove_containers(container_id: &String) {
-    let output = Command::new("docker")
+    Command::new("docker")
         .arg("rm")
         .arg(container_id)
-        .output()
+        .spawn()
+        .unwrap()
+        .wait()
         .expect("failed to execute docker rm");
-
-    assert!(output.status.success());
 }
 
 fn stop_and_remove_container(image: String) {

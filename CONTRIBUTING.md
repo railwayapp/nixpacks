@@ -17,6 +17,16 @@ First, make sure you can build and run the project
 
 You should see `Hello from Node` printed to the console.
 
+## Debugging
+
+When debugging it can be useful to see the `environment.nix` and `Dockerfile` generated. You can do this my saving the build artifact to a specific directory instead of to a temp dir.
+
+```
+cargo run -- build examples/node --out test
+```
+
+_The `test` directory will contain everything that would be built with Docker._
+
 ## Contribution Ideas
 
 The easiest way to contribute is to add support for new languages. There is a list of languages we would like to add [here](https://github.com/railwayapp/nixpacks/issues?q=is%3Aissue+is%3Aopen+label%3A%22new+provider%22), but languages not on the list are welcome as well. To guage interest you can always create an issue before working on an implementation.
