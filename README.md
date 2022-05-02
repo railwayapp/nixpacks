@@ -141,7 +141,7 @@ The build step takes the build plan and creates an OCI compliant image (with Doc
 1. Create build plan
 2. Copy app source to temp directory
 3. Use the Nix packages in the build plan and generate an `environment.nix` file
-4. Build the app by in multiple phases
+4. Build the app in multiple phases
    - **Setup**: Install all necessary Nix packages
    - **Install**: Download all build dependencies
    - **Build**: Generate everything necessary to run the app
