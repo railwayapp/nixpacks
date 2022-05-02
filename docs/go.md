@@ -12,10 +12,12 @@ go get
 
 **Build**
 
-_None_
+```
+go build -o out
+```
 
 **Start**
 
 ```
-go run main.go
+./out
 ```

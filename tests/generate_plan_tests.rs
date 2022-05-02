@@ -99,8 +99,27 @@ fn test_yarn_custom_version() -> Result<()> {
 #[test]
 fn test_go() -> Result<()> {
     let plan = gen_plan("./examples/go", Vec::new(), None, None, Vec::new(), false)?;
-    assert_eq!(plan.build.unwrap().cmd, None);
-    assert_eq!(plan.start.unwrap().cmd, Some("go run main.go".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("go build -o out main.go".to_string())
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("./out".to_string()));
+
+    Ok(())
+}
+
+#[test]
+fn test_go_mod() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/go-mod",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(plan.build.unwrap().cmd, Some("go build -o out".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("./out".to_string()));
 
     Ok(())
 }
