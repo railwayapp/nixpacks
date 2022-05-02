@@ -116,12 +116,10 @@ nixpacks plan --help
 
 ## Help
 
-Run `nixpacks --help` for an exhaustive list of CLI commands and options.
-
-Help can also be displayed for each subcommand.
+For a full list of CLI commands run
 
 ```sh
-nixpacks build --help
+nixpacks --help
 ```
 
 ## How this works
