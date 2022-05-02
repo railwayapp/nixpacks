@@ -29,7 +29,7 @@ At the moment nixpacks generates a `Dockerfile` based on all information availab
 2. Build an image from app source code `nixpacks build ~/path/to/source --name my-app`
 3. Run the image `docker run -it my-app`
 
-_Note: Docker must be running ana available locally to use Nixpacks_
+_Note: Docker must be running and available locally to use Nixpacks_
 
 # Language Support
 
