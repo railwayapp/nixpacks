@@ -34,17 +34,9 @@ impl Provider for YarnProvider {
         Ok(Some(SetupPhase::new(vec![node_pkg, yarn_pkg])))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let package_json: PackageJson = app.read_json("package.json")?;
-        let mut install_phase = InstallPhase::new("yarn install --frozen-lockfile".to_string());
-
-        // When install deps for a monorepo, we need all workspace package.json files
-        if package_json.workspaces.is_none() {
-            // Installing node modules only depends on package.json and lock file
-            install_phase.add_file_dependency("package.json".to_string());
-            install_phase.add_file_dependency("yarn.lock".to_string());
-        }
-
+    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+        let install_phase =
+            InstallPhase::new("yarn install --production=false --frozen-lockfile".to_string());
         Ok(Some(install_phase))
     }
 
