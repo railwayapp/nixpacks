@@ -41,15 +41,8 @@ impl Provider for NpmProvider {
         Ok(Some(SetupPhase::new(vec![node_pkg])))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let mut install_phase = InstallPhase::new("npm install".to_string());
-
-        // Installing node modules only depends on package.json and lock file
-        install_phase.add_file_dependency("package.json".to_string());
-        if app.includes_file("package-lock.json") {
-            install_phase.add_file_dependency("package-lock.json".to_string());
-        }
-
+    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+        let install_phase = InstallPhase::new("npm ci".to_string());
         Ok(Some(install_phase))
     }
 
@@ -134,7 +127,7 @@ impl NpmProvider {
         }
 
         // Parse `12` or `12.x` into nodejs-12_x
-        let re = Regex::new(r"^(\d+)\.?x?$").unwrap();
+        let re = Regex::new(r"^(\d+)\.?[x|X]?$").unwrap();
         if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version)? {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
@@ -236,6 +229,17 @@ mod test {
                 engines: engines_node("12.x"),
             })?,
             Pkg::new("nodejs-12_x")
+        );
+
+        assert_eq!(
+            NpmProvider::get_nix_node_pkg(&PackageJson {
+                name: String::default(),
+                main: None,
+                scripts: None,
+                workspaces: None,
+                engines: engines_node("14.X"),
+            })?,
+            Pkg::new("nodejs-14_x")
         );
 
         Ok(())
