@@ -216,13 +216,8 @@ impl<'a> AppBuilder<'a> {
         let env_var_pkgs = self
             .environment
             .get_config_variable("PKGS")
-            .map(|pkg_string| {
-                pkg_string
-                    .split(" ")
-                    .map(|s| Pkg::new(s))
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or(Vec::new());
+            .map(|pkg_string| pkg_string.split(' ').map(Pkg::new).collect::<Vec<_>>())
+            .unwrap_or_default();
 
         // Add custom user packages
         let mut pkgs = [self.options.custom_pkgs.clone(), env_var_pkgs].concat();

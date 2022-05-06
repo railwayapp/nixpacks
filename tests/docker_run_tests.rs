@@ -21,7 +21,7 @@ fn get_container_ids_from_image(image: String) -> String {
     String::from_utf8_lossy(&output.stdout).to_string()
 }
 
-fn stop_containers(container_id: &String) {
+fn stop_containers(container_id: &str) {
     Command::new("docker")
         .arg("stop")
         .arg(container_id)
@@ -31,7 +31,7 @@ fn stop_containers(container_id: &String) {
         .expect("failed to execute docker stop");
 }
 
-fn remove_containers(container_id: &String) {
+fn remove_containers(container_id: &str) {
     Command::new("docker")
         .arg("rm")
         .arg(container_id)
@@ -143,6 +143,13 @@ fn test_python() {
     let name = simple_build("./examples/python");
     let output = run_image(name);
     assert!(output.contains("Hello from Python"));
+}
+
+#[test]
+fn test_python_2() {
+    let name = simple_build("./examples/python-2");
+    let output = run_image(name);
+    assert!(output.contains("Hello from Python 2"));
 }
 
 #[test]
