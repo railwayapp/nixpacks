@@ -256,6 +256,10 @@ impl<'a> AppBuilder<'a> {
 
         let env_build_cmd = self.environment.get_config_variable("BUILD_CMD").cloned();
 
+        // Build command priority
+        // - custom build command
+        // - environment variable
+        // - provider
         build_phase.cmd = self
             .options
             .custom_build_cmd
