@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
+
 use serde::Deserialize;
 
 use crate::{
@@ -15,7 +16,10 @@ use crate::{
 
 use super::Provider;
 
+pub const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
+
 pub struct PythonProvider {}
+
 impl Provider for PythonProvider {
     fn name(&self) -> &str {
         "python"
@@ -27,12 +31,9 @@ impl Provider for PythonProvider {
             || app.includes_file("pyproject.toml"))
     }
 
-    fn setup(
-        &self,
-        _app: &App,
-        _env: &crate::nixpacks::environment::Environment,
-    ) -> Result<Option<SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![Pkg::new("python38")])))
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
+        let pkg = PythonProvider::get_nix_python_packages(app, env)?;
+        Ok(Some(SetupPhase::new(vec![pkg])))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
@@ -63,7 +64,7 @@ impl Provider for PythonProvider {
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if app.includes_file("pyproject.toml") {
-            if let Ok(meta) = self.parse_pyproject(app) {
+            if let Ok(meta) = PythonProvider::parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
                     return Ok(Some(StartPhase::new(match entry_point {
                         EntryPoint::Command(cmd) => cmd,
@@ -110,7 +111,30 @@ enum EntryPoint {
 }
 
 impl PythonProvider {
-    fn read_pyproject(&self, app: &App) -> Result<Option<PyProject>> {
+    fn get_nix_python_packages(app: &App, env: &Environment) -> Result<Pkg> {
+        let mut custom_version = env
+            .get_config_variable("PYTHON_VERSION")
+            .map(|s| s.to_string());
+
+        if custom_version.is_none() && app.includes_file(".python-version") {
+            custom_version = Some(app.read_file(".python-version")?);
+        }
+
+        match custom_version.map(|s| s.trim().to_string()) {
+            Some(custom_version) => {
+                if custom_version == "2" || custom_version == "2.7" {
+                    Ok(Pkg::new("python27Full"))
+                } else if custom_version == "3" || custom_version == "3.8" {
+                    Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME))
+                } else {
+                    bail!("Only the latest version of Python `2` or `3` are supported.")
+                }
+            }
+            None => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
+        }
+    }
+
+    fn read_pyproject(app: &App) -> Result<Option<PyProject>> {
         if app.includes_file("pyproject.toml") {
             return Ok(Some(
                 app.read_toml("pyproject.toml")
@@ -119,7 +143,8 @@ impl PythonProvider {
         }
         Ok(None)
     }
-    fn parse_project(&self, project: &PyProject) -> ProjectMeta {
+
+    fn parse_project(project: &PyProject) -> ProjectMeta {
         let project_name = project
             .project
             .as_ref()
@@ -148,10 +173,10 @@ impl PythonProvider {
             entry_point,
         }
     }
-    fn parse_pyproject(&self, app: &App) -> Result<ProjectMeta> {
-        Ok(self.parse_project(
-            &(self
-                .read_pyproject(app)?
+
+    fn parse_pyproject(app: &App) -> Result<ProjectMeta> {
+        Ok(PythonProvider::parse_project(
+            &(PythonProvider::read_pyproject(app)?
                 .ok_or_else(|| anyhow::anyhow!("failed to load pyproject.toml"))?),
         ))
     }
