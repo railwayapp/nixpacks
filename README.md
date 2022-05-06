@@ -11,7 +11,7 @@ You can follow along with the roadmap in the [GitHub project](https://github.com
 
 ## Core Ideas
 
-- ✨ **Intutive defaults**: In most cases, building and deploying and app with nixpacks should _just work_ with no configuration needed.
+- ✨ **Intuitive defaults**: In most cases, building and deploying an app with nixpacks should _just work_ with no configuration needed.
 - ⚙️ **Customization where necessary**: Every part of the pipeline should be customizable. These include the [Nix packages](https://search.nixos.org/packages) to add to the environment and build/start commands.
 - 🚀 **Easily extendible**: New providers (languages) should be able to be easily added to nixpacks with minimal knowledge of Nix and Docker.
 
@@ -128,7 +128,7 @@ Nixpacks works in two steps
 
 ### Plan
 
-Analyze the app source directory and generates a reproducible build plan. This plan can be saved (in JSON format) an re-used at a later date to build the image in the exact same way every time.
+Analyze the app source directory and generates a reproducible build plan. This plan can be saved (in JSON format) and re-used at a later date to build the image in the exact same way every time.
 
 Language providers are matched against the app source directory and suggest Nix packages, an install command, build command, and start command. All of these can be overwritten by the user.
 
@@ -146,7 +146,7 @@ The build step takes the build plan and creates an OCI compliant image (with Doc
    - **Start**: Configure a default command to run when starting the container
 5. Done!
 
-Overall the process is fairy simple.
+Overall the process is fairly simple.
 
 ## Contributing
 
