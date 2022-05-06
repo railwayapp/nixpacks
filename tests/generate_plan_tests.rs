@@ -324,3 +324,27 @@ fn test_overriding_environment_variables() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_config_from_environment_variables() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/hello",
+        Vec::new(),
+        None,
+        None,
+        vec![
+            "NIXPACKS_PKGS=cowsay ripgrep",
+            "NIXPACKS_BUILD_CMD=build",
+            "NIXPACKS_START_CMD=start",
+        ],
+        false,
+    )?;
+    assert_eq!(plan.build.unwrap().cmd, Some("build".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("start".to_string()));
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("cowsay"), Pkg::new("ripgrep")]
+    );
+
+    Ok(())
+}

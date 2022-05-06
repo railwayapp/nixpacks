@@ -34,9 +34,9 @@ impl Provider for NpmProvider {
         Ok(app.includes_file("package.json"))
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let package_json: PackageJson = app.read_json("package.json")?;
-        let node_pkg = NpmProvider::get_nix_node_pkg(&package_json)?;
+        let node_pkg = NpmProvider::get_nix_node_pkg(&package_json, env)?;
 
         Ok(Some(SetupPhase::new(vec![node_pkg])))
     }
@@ -110,11 +110,15 @@ impl NpmProvider {
     }
 
     /// Parses the package.json engines field and returns a Nix package if available
-    pub fn get_nix_node_pkg(package_json: &PackageJson) -> Result<Pkg> {
-        let node_version = package_json
+    pub fn get_nix_node_pkg(package_json: &PackageJson, environment: &Environment) -> Result<Pkg> {
+        let env_node_version = environment.get_config_variable("NODE_VERSION");
+
+        let pkg_node_version = package_json
             .engines
             .as_ref()
             .and_then(|engines| engines.get("node"));
+
+        let node_version = env_node_version.or(pkg_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
@@ -173,13 +177,16 @@ mod test {
     #[test]
     fn test_no_engines() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(&PackageJson {
-                name: String::default(),
-                main: None,
-                scripts: None,
-                workspaces: None,
-                engines: None
-            })?,
+            NpmProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: String::default(),
+                    main: None,
+                    scripts: None,
+                    workspaces: None,
+                    engines: None
+                },
+                &Environment::default()
+            )?,
             Pkg::new(DEFAULT_NODE_PKG_NAME)
         );
 
@@ -189,13 +196,16 @@ mod test {
     #[test]
     fn test_star_engine() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(&PackageJson {
-                name: String::default(),
-                main: None,
-                scripts: None,
-                workspaces: None,
-                engines: engines_node("*")
-            })?,
+            NpmProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: String::default(),
+                    main: None,
+                    scripts: None,
+                    workspaces: None,
+                    engines: engines_node("*")
+                },
+                &Environment::default()
+            )?,
             Pkg::new(DEFAULT_NODE_PKG_NAME)
         );
 
@@ -205,13 +215,16 @@ mod test {
     #[test]
     fn test_simple_engine() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(&PackageJson {
-                name: String::default(),
-                main: None,
-                scripts: None,
-                workspaces: None,
-                engines: engines_node("14"),
-            })?,
+            NpmProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: String::default(),
+                    main: None,
+                    scripts: None,
+                    workspaces: None,
+                    engines: engines_node("14"),
+                },
+                &Environment::default()
+            )?,
             Pkg::new("nodejs-14_x")
         );
 
@@ -221,24 +234,30 @@ mod test {
     #[test]
     fn test_simple_engine_x() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(&PackageJson {
-                name: String::default(),
-                main: None,
-                scripts: None,
-                workspaces: None,
-                engines: engines_node("12.x"),
-            })?,
+            NpmProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: String::default(),
+                    main: None,
+                    scripts: None,
+                    workspaces: None,
+                    engines: engines_node("12.x"),
+                },
+                &Environment::default()
+            )?,
             Pkg::new("nodejs-12_x")
         );
 
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(&PackageJson {
-                name: String::default(),
-                main: None,
-                scripts: None,
-                workspaces: None,
-                engines: engines_node("14.X"),
-            })?,
+            NpmProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: String::default(),
+                    main: None,
+                    scripts: None,
+                    workspaces: None,
+                    engines: engines_node("14.X"),
+                },
+                &Environment::default()
+            )?,
             Pkg::new("nodejs-14_x")
         );
 
@@ -248,13 +267,38 @@ mod test {
     #[test]
     fn test_engine_range() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(&PackageJson {
-                name: String::default(),
-                main: None,
-                scripts: None,
-                workspaces: None,
-                engines: engines_node(">=14.10.3 <16"),
-            })?,
+            NpmProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: String::default(),
+                    main: None,
+                    scripts: None,
+                    workspaces: None,
+                    engines: engines_node(">=14.10.3 <16"),
+                },
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs-14_x")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_from_environment_variable() -> Result<()> {
+        assert_eq!(
+            NpmProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: String::default(),
+                    main: None,
+                    scripts: None,
+                    workspaces: None,
+                    engines: None,
+                },
+                &Environment::new(HashMap::from([(
+                    "NIXPACKS_NODE_VERSION".to_string(),
+                    "14".to_string()
+                )]))
+            )?,
             Pkg::new("nodejs-14_x")
         );
 
@@ -263,13 +307,16 @@ mod test {
 
     #[test]
     fn test_engine_invalid_version() -> Result<()> {
-        assert!(NpmProvider::get_nix_node_pkg(&PackageJson {
-            name: String::default(),
-            main: None,
-            scripts: None,
-            workspaces: None,
-            engines: engines_node("15"),
-        })
+        assert!(NpmProvider::get_nix_node_pkg(
+            &PackageJson {
+                name: String::default(),
+                main: None,
+                scripts: None,
+                workspaces: None,
+                engines: engines_node("15"),
+            },
+            &Environment::default()
+        )
         .is_err());
 
         Ok(())

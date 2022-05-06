@@ -21,9 +21,9 @@ impl Provider for YarnProvider {
         Ok(app.includes_file("package.json") && app.includes_file("yarn.lock"))
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let package_json: PackageJson = app.read_json("package.json")?;
-        let node_pkg = NpmProvider::get_nix_node_pkg(&package_json)?;
+        let node_pkg = NpmProvider::get_nix_node_pkg(&package_json, env)?;
         let mut yarn_pkg = Pkg::new("yarn");
 
         // Only override the node package if not the default one

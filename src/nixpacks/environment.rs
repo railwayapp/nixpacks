@@ -16,6 +16,10 @@ impl Environment {
         self.variables.get(name)
     }
 
+    pub fn get_config_variable(&self, name: &str) -> Option<&String> {
+        self.get_variable(format!("NIXPACKS_{}", name).as_str())
+    }
+
     pub fn set_variable(&mut self, name: String, value: String) {
         self.variables.insert(name, value);
     }

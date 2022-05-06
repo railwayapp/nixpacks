@@ -97,7 +97,7 @@ impl<'a> AppBuilder<'a> {
             .get_install_phase()
             .context("Generating install phase")?;
         let build_phase = self.get_build_phase().context("Generating build phase")?;
-        let start_phase = self.get_start_cmd().context("Generating start phase")?;
+        let start_phase = self.get_start_phase().context("Generating start phase")?;
         let variables = self.get_variables().context("Getting plan variables")?;
 
         let plan = BuildPlan {
@@ -213,8 +213,19 @@ impl<'a> AppBuilder<'a> {
             None => SetupPhase::default(),
         };
 
+        let env_var_pkgs = self
+            .environment
+            .get_config_variable("PKGS")
+            .map(|pkg_string| {
+                pkg_string
+                    .split(" ")
+                    .map(|s| Pkg::new(s))
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or(Vec::new());
+
         // Add custom user packages
-        let mut pkgs = self.options.custom_pkgs.clone();
+        let mut pkgs = [self.options.custom_pkgs.clone(), env_var_pkgs].concat();
         setup_phase.add_pkgs(&mut pkgs);
 
         if self.options.pin_pkgs {
@@ -243,14 +254,23 @@ impl<'a> AppBuilder<'a> {
             None => BuildPhase::default(),
         };
 
-        if let Some(custom_build_cmd) = self.options.custom_build_cmd.clone() {
-            build_phase.cmd = Some(custom_build_cmd);
-        }
+        let env_build_cmd = self.environment.get_config_variable("BUILD_CMD").cloned();
+
+        // Build command priority
+        // - custom build command
+        // - environment variable
+        // - provider
+        build_phase.cmd = self
+            .options
+            .custom_build_cmd
+            .clone()
+            .or(env_build_cmd)
+            .or(build_phase.cmd);
 
         Ok(build_phase)
     }
 
-    fn get_start_cmd(&self) -> Result<StartPhase> {
+    fn get_start_phase(&self) -> Result<StartPhase> {
         let procfile_cmd = self.parse_procfile()?;
 
         let mut start_phase = match self.provider {
@@ -260,15 +280,18 @@ impl<'a> AppBuilder<'a> {
             None => StartPhase::default(),
         };
 
+        let env_start_cmd = self.environment.get_config_variable("START_CMD").cloned();
+
         // Start command priority
         // - custom start command
+        // - environment variable
         // - procfile
         // - provider
         start_phase.cmd = self
             .options
             .custom_start_cmd
             .clone()
-            .or_else(|| procfile_cmd.or(start_phase.cmd));
+            .or_else(|| env_start_cmd.or_else(|| procfile_cmd.or(start_phase.cmd)));
 
         Ok(start_phase)
     }
