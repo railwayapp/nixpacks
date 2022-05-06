@@ -32,7 +32,7 @@ impl Provider for PythonProvider {
     }
 
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
-        let pkg = PythonProvider::get_nix_python_packages(app, env)?;
+        let pkg = PythonProvider::get_nix_python_package(app, env)?;
         Ok(Some(SetupPhase::new(vec![pkg])))
     }
 
@@ -111,7 +111,7 @@ enum EntryPoint {
 }
 
 impl PythonProvider {
-    fn get_nix_python_packages(app: &App, env: &Environment) -> Result<Pkg> {
+    fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
         let mut custom_version = env
             .get_config_variable("PYTHON_VERSION")
             .map(|s| s.to_string());
@@ -179,5 +179,54 @@ impl PythonProvider {
             &(PythonProvider::read_pyproject(app)?
                 .ok_or_else(|| anyhow::anyhow!("failed to load pyproject.toml"))?),
         ))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::nixpacks::{app::App, environment::Environment, nix::Pkg};
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_no_version() -> Result<()> {
+        assert_eq!(
+            PythonProvider::get_nix_python_package(
+                &App::new("./examples/python")?,
+                &Environment::default()
+            )?,
+            Pkg::new(DEFAULT_PYTHON_PKG_NAME)
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_custom_version() -> Result<()> {
+        assert_eq!(
+            PythonProvider::get_nix_python_package(
+                &App::new("./examples/python-2")?,
+                &Environment::default()
+            )?,
+            Pkg::new("python27Full")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_from_environment_variable() -> Result<()> {
+        assert_eq!(
+            PythonProvider::get_nix_python_package(
+                &App::new("./examples/python")?,
+                &Environment::new(HashMap::from([(
+                    "NIXPACKS_PYTHON_VERSION".to_string(),
+                    "2.7".to_string()
+                )]))
+            )?,
+            Pkg::new("python27Full")
+        );
+
+        Ok(())
     }
 }
