@@ -127,7 +127,10 @@ fn test_go_mod() -> Result<()> {
 #[test]
 fn test_deno() -> Result<()> {
     let plan = gen_plan("./examples/deno", Vec::new(), None, None, Vec::new(), false)?;
-    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("deno cache src/index.ts".to_string())
+    );
     assert_eq!(
         plan.start.unwrap().cmd,
         Some("deno run --allow-all src/index.ts".to_string())
