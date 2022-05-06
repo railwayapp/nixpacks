@@ -17,7 +17,9 @@ impl Provider for DenoProvider {
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
         let re = Regex::new(r##"(?m)^import .+ from "https://deno.land/[^"]+\.ts";?$"##).unwrap();
-        app.find_match(&re, "**/*.ts")
+        Ok(app.includes_file("deno.json")
+            || app.includes_file("deno.jsonc")
+            || app.find_match(&re, "**/*.ts")?)
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
