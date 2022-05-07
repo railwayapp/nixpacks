@@ -11,6 +11,7 @@ pub mod npm;
 pub mod python;
 pub mod rust;
 pub mod yarn;
+pub mod haskell;
 
 pub trait Provider {
     fn name(&self) -> &str;

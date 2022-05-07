@@ -90,6 +90,15 @@ impl App {
         Ok(toml_file)
     }
 
+    pub fn read_yaml<T>(&self, name: &str) -> Result<T>
+    where
+        T: DeserializeOwned
+    {
+        let contents = self.read_file(name)?;
+        let yaml_file = serde_yaml::from_str(contents.as_str())?;
+        Ok(yaml_file)
+    }
+
     pub fn strip_source_path(&self, abs: &str) -> Result<String> {
         let source_str = match self.source.to_str() {
             Some(s) => s,

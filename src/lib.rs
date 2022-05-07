@@ -11,7 +11,7 @@ use crate::{
     },
 };
 use anyhow::{bail, Result};
-use providers::Provider;
+use providers::{Provider, haskell::HaskellStackProvider};
 
 pub(crate) mod chain;
 pub mod nixpacks;
@@ -26,6 +26,7 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &RustProvider {},
         &PythonProvider {},
         &DenoProvider {},
+        &HaskellStackProvider {},
     ]
 }
 
