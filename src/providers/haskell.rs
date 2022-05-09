@@ -55,14 +55,12 @@ impl Provider for HaskellStackProvider {
     ) -> anyhow::Result<Option<crate::nixpacks::phase::StartPhase>> {
         let package: HaskellStackPackageYaml = app.read_yaml("package.yaml")?;
         let exe_names: Vec<String> = package.executables.keys().cloned().collect();
-        Ok(Some(StartPhase::new(
-            format!(
-                "stack exec {}",
-                exe_names
-                    .get(0)
-                    .ok_or_else(|| anyhow::anyhow!("Failed to get executable name"))?
-            ),
-        )))
+        Ok(Some(StartPhase::new(format!(
+            "stack exec {}",
+            exe_names
+                .get(0)
+                .ok_or_else(|| anyhow::anyhow!("Failed to get executable name"))?
+        ))))
     }
 }
 
