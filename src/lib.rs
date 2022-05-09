@@ -11,7 +11,7 @@ use crate::{
     },
 };
 use anyhow::{bail, Result};
-use providers::{Provider, haskell::HaskellStackProvider};
+use providers::{haskell::HaskellStackProvider, Provider};
 
 pub(crate) mod chain;
 pub mod nixpacks;

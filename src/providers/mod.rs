@@ -7,11 +7,11 @@ use anyhow::Result;
 
 pub mod deno;
 pub mod go;
+pub mod haskell;
 pub mod npm;
 pub mod python;
 pub mod rust;
 pub mod yarn;
-pub mod haskell;
 
 pub trait Provider {
     fn name(&self) -> &str;

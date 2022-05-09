@@ -92,7 +92,7 @@ impl App {
 
     pub fn read_yaml<T>(&self, name: &str) -> Result<T>
     where
-        T: DeserializeOwned
+        T: DeserializeOwned,
     {
         let contents = self.read_file(name)?;
         let yaml_file = serde_yaml::from_str(contents.as_str())?;
