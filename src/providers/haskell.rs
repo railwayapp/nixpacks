@@ -29,7 +29,7 @@ impl Provider for HaskellStackProvider {
         _app: &crate::nixpacks::app::App,
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![Pkg::new("stack")])))
+        Ok(Some(SetupPhase::new(vec![Pkg::new("stack"), Pkg::new("apt")])))
     }
 
     fn install(
