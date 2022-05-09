@@ -14,7 +14,7 @@ impl Provider for HaskellStackProvider {
     }
 
     fn detect(&self, app: &crate::nixpacks::app::App, _env: &crate::nixpacks::environment::Environment) -> anyhow::Result<bool> {
-        Ok(app.includes_file("stack.yaml") && app.includes_file("package.yaml"))
+        Ok(app.includes_file("package.yaml"))
     }
 
     fn setup(&self, _app: &crate::nixpacks::app::App, _env: &crate::nixpacks::environment::Environment) -> anyhow::Result<Option<crate::nixpacks::phase::SetupPhase>> {
@@ -22,7 +22,7 @@ impl Provider for HaskellStackProvider {
     }
 
     fn install(&self, _app: &crate::nixpacks::app::App, _env: &crate::nixpacks::environment::Environment) -> anyhow::Result<Option<crate::nixpacks::phase::InstallPhase>> {
-        Ok(Some(InstallPhase::new("stack setup".to_string())))
+        Ok(Some(InstallPhase::new("sudo apt-get update && sudo apt-get install -y libgmp-dev gcc binutils make && stack setup".to_string())))
     }
 
     fn build(&self, _app: &crate::nixpacks::app::App, _env: &crate::nixpacks::environment::Environment) -> anyhow::Result<Option<crate::nixpacks::phase::BuildPhase>> {
