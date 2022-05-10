@@ -7,10 +7,9 @@ use anyhow::Result;
 
 pub mod deno;
 pub mod go;
-pub mod npm;
+pub mod node;
 pub mod python;
 pub mod rust;
-pub mod yarn;
 
 pub trait Provider {
     fn name(&self) -> &str;
