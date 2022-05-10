@@ -26,9 +26,7 @@ fn stop_containers(container_id: &str) {
         .arg("stop")
         .arg(container_id)
         .spawn()
-        .unwrap()
-        .wait()
-        .expect("failed to execute docker stop");
+        .unwrap();
 }
 
 fn remove_containers(container_id: &str) {
@@ -36,9 +34,7 @@ fn remove_containers(container_id: &str) {
         .arg("rm")
         .arg(container_id)
         .spawn()
-        .unwrap()
-        .wait()
-        .expect("failed to execute docker rm");
+        .unwrap();
 }
 
 fn stop_and_remove_container(image: String) {
@@ -99,7 +95,7 @@ fn simple_build(path: &str) -> String {
         Vec::new(),
         None,
         None,
-        false,
+        true,
         Vec::new(),
         None,
         None,
@@ -121,7 +117,7 @@ fn test_node() {
 fn test_node_custom_version() {
     let name = simple_build("./examples/node-custom-version");
     let output = run_image(name);
-    assert!(output.contains("Node version: v12"));
+    assert!(output.contains("Node version: v14"));
 }
 
 #[test]
@@ -150,13 +146,6 @@ fn test_python_2() {
     let name = simple_build("./examples/python-2");
     let output = run_image(name);
     assert!(output.contains("Hello from Python 2"));
-}
-
-#[test]
-fn test_deno() {
-    let name = simple_build("./examples/deno");
-    let output = run_image(name);
-    assert!(output.contains("Hello Deno"));
 }
 
 #[test]
