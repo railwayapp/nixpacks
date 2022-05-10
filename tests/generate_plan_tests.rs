@@ -79,8 +79,8 @@ fn test_node_custom_version() -> Result<()> {
 #[test]
 fn test_yarn() -> Result<()> {
     let plan = gen_plan("./examples/yarn", Vec::new(), None, None, Vec::new(), false)?;
-    assert_eq!(plan.build.unwrap().cmd, Some("yarn build".to_string()));
-    assert_eq!(plan.start.unwrap().cmd, Some("yarn start".to_string()));
+    assert_eq!(plan.build.unwrap().cmd, Some("yarn run build".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("yarn run start".to_string()));
     assert_eq!(
         plan.variables.clone().unwrap().get("NODE_ENV"),
         Some(&"production".to_string())
@@ -117,8 +117,8 @@ fn test_yarn_custom_version() -> Result<()> {
 #[test]
 fn pnpm() -> Result<()> {
     let plan = gen_plan("./examples/pnpm", Vec::new(), None, None, Vec::new(), false)?;
-    assert_eq!(plan.build.unwrap().cmd, Some("pnpm build".to_string()));
-    assert_eq!(plan.start.unwrap().cmd, Some("pnpm start".to_string()));
+    assert_eq!(plan.build.unwrap().cmd, Some("pnpm run build".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("pnpm run start".to_string()));
     assert_eq!(
         plan.variables.clone().unwrap().get("NODE_ENV"),
         Some(&"production".to_string())

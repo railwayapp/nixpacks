@@ -58,27 +58,21 @@ impl Provider for NodeProvider {
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let install_cmd: InstallPhase;
+        let mut install_cmd = "npm i";
         if NodeProvider::get_package_manager(app)? == "pnpm" {
-            install_cmd = InstallPhase::new("pnpm i --frozen-lockfile".to_string());
+            install_cmd = "pnpm i --frozen-lockfile"
         } else if NodeProvider::get_package_manager(app)? == "yarn" {
-            install_cmd = InstallPhase::new("yarn install --frozen-lockfile".to_string());
+            install_cmd = "yarn install --frozen-lockfile"
         } else if app.includes_file("package-lock.json") {
-            install_cmd = InstallPhase::new("npm ci".to_string());
-        } else {
-            install_cmd = InstallPhase::new("npm i".to_string());
+            install_cmd = "npm ci"
         }
-        Ok(Some(install_cmd))
+        Ok(Some(InstallPhase::new(install_cmd.to_string())))
     }
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         if NodeProvider::has_script(app, "build")? {
-            if NodeProvider::get_package_manager(app)? == "pnpm" {
-                return Ok(Some(BuildPhase::new("pnpm build".to_string())));
-            } else if NodeProvider::get_package_manager(app)? == "yarn" {
-                return Ok(Some(BuildPhase::new("yarn build".to_string())));
-            }
-            Ok(Some(BuildPhase::new("npm run build".to_string())))
+            let pkg_manager = NodeProvider::get_package_manager(app)?;
+            Ok(Some(BuildPhase::new(pkg_manager + " run build")))
         } else {
             Ok(None)
         }
@@ -86,12 +80,10 @@ impl Provider for NodeProvider {
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
-            if NodeProvider::get_package_manager(app)? == "pnpm" {
-                return Ok(Some(StartPhase::new(start_cmd.replace("npm run", "pnpm"))));
-            } else if NodeProvider::get_package_manager(app)? == "yarn" {
-                return Ok(Some(StartPhase::new(start_cmd.replace("npm run", "yarn"))));
-            }
-            Ok(Some(StartPhase::new(start_cmd)))
+            let pkg_manager = NodeProvider::get_package_manager(app)?;
+            Ok(Some(StartPhase::new(
+                start_cmd.replace("npm", &pkg_manager),
+            )))
         } else {
             Ok(None)
         }
@@ -181,12 +173,13 @@ impl NodeProvider {
     }
 
     pub fn get_package_manager(app: &App) -> Result<String> {
+        let mut pkg_manager = "npm";
         if app.includes_file("pnpm-lock.yaml") {
-            return Ok("pnpm".to_string());
+            pkg_manager = "pnpm";
         } else if app.includes_file("yarn.lock") {
-            return Ok("yarn".to_string());
+            pkg_manager = "yarn";
         }
-        Ok("npm".to_string())
+        Ok(pkg_manager.to_string())
     }
 }
 
