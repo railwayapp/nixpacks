@@ -4,6 +4,24 @@ use nixpacks::{gen_plan, nixpacks::nix::Pkg};
 #[test]
 fn test_node() -> Result<()> {
     let plan = gen_plan("./examples/node", Vec::new(), None, None, Vec::new(), false)?;
+    assert_eq!(plan.install.unwrap().cmd, Some("npm ci".to_string()));
+    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
+
+    Ok(())
+}
+
+#[test]
+fn test_node_no_lockfile() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/node-no-lockfile",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(plan.install.unwrap().cmd, Some("npm i".to_string()));
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
 
@@ -90,6 +108,44 @@ fn test_yarn_custom_version() -> Result<()> {
         vec![
             Pkg::new("nodejs-14_x"),
             Pkg::new("yarn").set_override("nodejs", "nodejs-14_x")
+        ]
+    );
+
+    Ok(())
+}
+
+#[test]
+fn pnpm() -> Result<()> {
+    let plan = gen_plan("./examples/pnpm", Vec::new(), None, None, Vec::new(), false)?;
+    assert_eq!(plan.build.unwrap().cmd, Some("pnpm build".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("pnpm start".to_string()));
+    assert_eq!(
+        plan.variables.clone().unwrap().get("NODE_ENV"),
+        Some(&"production".to_string())
+    );
+    assert_eq!(
+        plan.variables.unwrap().get("NPM_CONFIG_PRODUCTION"),
+        Some(&"false".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_pnpm_custom_version() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/pnpm-custom-node-version",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![
+            Pkg::new("nodejs-14_x"),
+            Pkg::new("nodePackages.pnpm").set_override("nodejs", "nodejs-14_x")
         ]
     );
 

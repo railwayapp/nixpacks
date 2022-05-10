@@ -37,7 +37,15 @@ impl Provider for NodeProvider {
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
-        if NodeProvider::get_package_manager(app)? == "yarn" {
+
+        if NodeProvider::get_package_manager(app)? == "pnpm" {
+            let mut pnpm_pkg = Pkg::new("nodePackages.pnpm");
+            // Only override the node package if not the default one
+            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
+                pnpm_pkg = pnpm_pkg.set_override("nodejs", node_pkg.name.as_str());
+            }
+            return Ok(Some(SetupPhase::new(vec![node_pkg, pnpm_pkg])));
+        } else if NodeProvider::get_package_manager(app)? == "yarn" {
             let mut yarn_pkg = Pkg::new("yarn");
             // Only override the node package if not the default one
             if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
@@ -50,20 +58,28 @@ impl Provider for NodeProvider {
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        if NodeProvider::get_package_manager(app)? == "yarn" {
-            return Ok(Some(InstallPhase::new(
-                "yarn install --production=false --frozen-lockfile".to_string(),
-            )));
+        let mut install_cmd: InstallPhase;
+        if NodeProvider::get_package_manager(app)? == "pnpm" {
+            install_cmd = InstallPhase::new("pnpm i --frozen-lockfile".to_string());
+            install_cmd.add_file_dependency("pnpm-lock.yaml".to_string());
+        } else if NodeProvider::get_package_manager(app)? == "yarn" {
+            install_cmd = InstallPhase::new("yarn install --frozen-lockfile".to_string());
+            install_cmd.add_file_dependency("yarn.lock".to_string());
+        } else if app.includes_file("package-lock.json") {
+            install_cmd = InstallPhase::new("npm ci".to_string());
+            install_cmd.add_file_dependency("package-lock.json".to_string());
+        } else {
+            install_cmd = InstallPhase::new("npm i".to_string());
         }
-        if app.includes_file("package-lock.json") {
-            return Ok(Some(InstallPhase::new("npm ci".to_string())));
-        }
-        Ok(Some(InstallPhase::new("npm install".to_string())))
+        install_cmd.add_file_dependency("package.json".to_string());
+        Ok(Some(install_cmd))
     }
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         if NodeProvider::has_script(app, "build")? {
-            if NodeProvider::get_package_manager(app)? == "yarn" {
+            if NodeProvider::get_package_manager(app)? == "pnpm" {
+                return Ok(Some(BuildPhase::new("pnpm build".to_string())));
+            } else if NodeProvider::get_package_manager(app)? == "yarn" {
                 return Ok(Some(BuildPhase::new("yarn build".to_string())));
             }
             Ok(Some(BuildPhase::new("npm run build".to_string())))
@@ -74,7 +90,9 @@ impl Provider for NodeProvider {
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
-            if NodeProvider::get_package_manager(app)? == "yarn" {
+            if NodeProvider::get_package_manager(app)? == "pnpm" {
+                return Ok(Some(StartPhase::new(start_cmd.replace("npm run", "pnpm"))));
+            } else if NodeProvider::get_package_manager(app)? == "yarn" {
                 return Ok(Some(StartPhase::new(start_cmd.replace("npm run", "yarn"))));
             }
             Ok(Some(StartPhase::new(start_cmd)))
@@ -167,7 +185,9 @@ impl NodeProvider {
     }
 
     pub fn get_package_manager(app: &App) -> Result<String> {
-        if app.includes_file("yarn.lock") {
+        if app.includes_file("pnpm-lock.yaml") {
+            return Ok("pnpm".to_string());
+        } else if app.includes_file("yarn.lock") {
             return Ok("yarn".to_string());
         }
         Ok("npm".to_string())
