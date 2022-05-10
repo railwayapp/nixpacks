@@ -50,12 +50,12 @@ impl Provider for NodeProvider {
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        if NodeProvider::get_package_manager(_app)? == "yarn" {
+        if NodeProvider::get_package_manager(app)? == "yarn" {
             return Ok(Some(InstallPhase::new(
                 "yarn install --production=false --frozen-lockfile".to_string(),
             )));
         }
-        if _app.includes_file("package-lock.json") {
+        if app.includes_file("package-lock.json") {
             return Ok(Some(InstallPhase::new("npm ci".to_string())));
         }
         Ok(Some(InstallPhase::new("npm install".to_string())))
