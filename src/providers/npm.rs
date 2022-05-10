@@ -42,7 +42,7 @@ impl Provider for NpmProvider {
     }
 
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let install_phase = InstallPhase::new("npm ci".to_string());
+        let install_phase = InstallPhase::new("npm ci || npm install".to_string());
         Ok(Some(install_phase))
     }
 
