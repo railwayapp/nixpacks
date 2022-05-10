@@ -139,4 +139,4 @@ jobs:
           avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
           title: Published version ${{ needs.create-release.outputs.nixpacks_version }} of Nixpacks
           description: |
-            [View Changelog](https://github.com/railwayapp/automated-rust-release-example/releases/tag/${{ needs.create-release.outputs.nixpacks_version }})
+            [View Changelog](https://github.com/railwayapp/nixpacks/releases/tag/${{ needs.create-release.outputs.nixpacks_version }})
