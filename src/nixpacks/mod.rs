@@ -29,7 +29,7 @@ use self::{
 const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // https://status.nixos.org/
-static NIXPKGS_ARCHIVE: &str = "30d3d79b7d3607d56546dd2a6b49e156ba0ec634";
+static NIXPKGS_ARCHIVE: &str = "934e076a441e318897aa17540f6cf7caadc69028";
 
 // Debian 11
 static BASE_IMAGE: &str = "debian:bullseye-slim";
