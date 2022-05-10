@@ -122,3 +122,21 @@ jobs:
         download-url: https://github.com/railwayapp/nixpacks/releases/download/${{ needs.create-release.outputs.nixpacks_version }}/nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.config.build }}.tar.gz
       env:
         COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
+
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: ['create-release', 'build-release']
+
+    steps:
+      - name: Discord Deployment Status Notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.PUBLISH_WEBHOOK }}
+          status: ${{ job.status }}
+          nodetail: true
+          username: Nixpacks Releases
+          avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+          title: Published version ${{ needs.create-release.outputs.nixpacks_version }} of Nixpacks
+          description: |
+            [View Changelog](https://github.com/railwayapp/automated-rust-release-example/releases/tag/${{ needs.create-release.outputs.nixpacks_version }})
