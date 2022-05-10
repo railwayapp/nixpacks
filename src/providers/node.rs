@@ -49,7 +49,7 @@ impl Provider for NodeProvider {
         Ok(Some(SetupPhase::new(vec![node_pkg])))
     }
 
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         if NodeProvider::get_package_manager(_app)? == "yarn" {
             return Ok(Some(InstallPhase::new(
                 "yarn install --production=false --frozen-lockfile".to_string(),
