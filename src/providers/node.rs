@@ -31,7 +31,6 @@ impl Provider for NodeProvider {
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        NodeProvider::get_package_manager(app)?;
         Ok(app.includes_file("package.json"))
     }
 
