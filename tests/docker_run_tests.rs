@@ -149,13 +149,6 @@ fn test_python_2() {
 }
 
 #[test]
-fn test_deno() {
-    let name = simple_build("./examples/deno");
-    let output = run_image(name);
-    assert!(output.contains("Hello Deno"));
-}
-
-#[test]
 fn test_rust_custom_version() {
     let name = simple_build("./examples/rust-custom-version");
     let output = run_image(name);
