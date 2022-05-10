@@ -58,20 +58,16 @@ impl Provider for NodeProvider {
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let mut install_cmd: InstallPhase;
+        let install_cmd: InstallPhase;
         if NodeProvider::get_package_manager(app)? == "pnpm" {
             install_cmd = InstallPhase::new("pnpm i --frozen-lockfile".to_string());
-            install_cmd.add_file_dependency("pnpm-lock.yaml".to_string());
         } else if NodeProvider::get_package_manager(app)? == "yarn" {
             install_cmd = InstallPhase::new("yarn install --frozen-lockfile".to_string());
-            install_cmd.add_file_dependency("yarn.lock".to_string());
         } else if app.includes_file("package-lock.json") {
             install_cmd = InstallPhase::new("npm ci".to_string());
-            install_cmd.add_file_dependency("package-lock.json".to_string());
         } else {
             install_cmd = InstallPhase::new("npm i".to_string());
         }
-        install_cmd.add_file_dependency("package.json".to_string());
         Ok(Some(install_cmd))
     }
 
