@@ -6,7 +6,7 @@ on:
 
 jobs:
   create-release:
-    name: create-release
+    name: Create Release
     runs-on: ubuntu-latest
     outputs:
       nixpacks_version: ${{ env.NIXPACKS_VERSION }}
@@ -46,7 +46,7 @@ jobs:
           body: ${{steps.build_changelog.outputs.changelog}}
 
   build-release:
-    name: Build release assets
+    name: Build Release Assets
     needs: ['create-release']
     runs-on: ${{ matrix.config.os }}
     strategy:
