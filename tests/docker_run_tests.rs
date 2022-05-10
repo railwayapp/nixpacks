@@ -26,9 +26,7 @@ fn stop_containers(container_id: &str) {
         .arg("stop")
         .arg(container_id)
         .spawn()
-        .unwrap()
-        .wait()
-        .expect("failed to execute docker stop");
+        .unwrap();
 }
 
 fn remove_containers(container_id: &str) {
@@ -36,9 +34,7 @@ fn remove_containers(container_id: &str) {
         .arg("rm")
         .arg(container_id)
         .spawn()
-        .unwrap()
-        .wait()
-        .expect("failed to execute docker rm");
+        .unwrap();
 }
 
 fn stop_and_remove_container(image: String) {
