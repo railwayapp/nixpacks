@@ -148,12 +148,12 @@ fn test_python_2() {
     assert!(output.contains("Hello from Python 2"));
 }
 
-// #[test]
-// fn test_deno() {
-//     let name = simple_build("./examples/deno");
-//     let output = run_image(name);
-//     assert!(output.contains("Hello Deno"));
-// }
+#[test]
+fn test_deno() {
+    let name = simple_build("./examples/deno");
+    let output = run_image(name);
+    assert!(output.contains("Hello Deno"));
+}
 
 #[test]
 fn test_rust_custom_version() {
