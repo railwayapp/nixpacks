@@ -23,7 +23,7 @@ fn get_container_ids_from_image(image: String) -> String {
 
 fn stop_containers(container_id: &str) {
     Command::new("docker")
-        .arg("kill")
+        .arg("stop")
         .arg(container_id)
         .spawn()
         .unwrap()
