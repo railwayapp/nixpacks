@@ -213,6 +213,58 @@ fn test_deno() -> Result<()> {
 }
 
 #[test]
+fn test_csharp_api() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/csharp-api",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("dotnet restore".to_string())
+    );
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("dotnet publish --no-restore -c Release -o out".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./out/csharp-api".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_csharp_cli() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/csharp-cli",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("dotnet restore".to_string())
+    );
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("dotnet publish --no-restore -c Release -o out".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./out/csharp-cli".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_procfile() -> Result<()> {
     let plan = gen_plan(
         "./examples/procfile",
