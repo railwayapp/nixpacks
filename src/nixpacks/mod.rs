@@ -32,9 +32,6 @@ const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "934e076a441e318897aa17540f6cf7caadc69028";
 
-// Debian 11
-static BASE_IMAGE: &str = "debian:bullseye-slim";
-
 #[derive(Debug)]
 pub struct AppBuilderOptions {
     pub custom_build_cmd: Option<String>,
@@ -511,6 +508,17 @@ impl<'a> AppBuilder<'a> {
             start_files.push(".".to_string());
         }
 
+        let mut run_image_setup = "".to_string();
+        if let Some(run_image) = start_phase.run_image {
+            run_image_setup = formatdoc! {"
+                FROM {run_image}
+                RUN mkdir /app/
+                WORKDIR /app/
+                COPY --from=0 /app /app/
+            ",
+            run_image=run_image}
+        }
+
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
@@ -555,10 +563,11 @@ impl<'a> AppBuilder<'a> {
           {build_cmd}
 
           # Start
+          {run_image_setup}
           {start_copy_cmd}
           {start_cmd}
         ",
-        base_image=BASE_IMAGE,
+        base_image=setup_phase.base_image,
         setup_copy_cmd=setup_copy_cmd,
         args_string=args_string,
         install_copy_cmd=get_copy_command(&install_files, app_dir),

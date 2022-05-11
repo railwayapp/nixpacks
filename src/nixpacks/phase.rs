@@ -2,6 +2,9 @@ use serde::{Deserialize, Serialize};
 
 use super::nix::Pkg;
 
+// Debian 11
+static DEFAULT_BASE_IMAGE: &str = "debian:bullseye-slim";
+
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct SetupPhase {
@@ -10,6 +13,9 @@ pub struct SetupPhase {
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
+
+    #[serde(rename = "baseImage")]
+    pub base_image: String,
 }
 
 impl SetupPhase {
@@ -18,6 +24,7 @@ impl SetupPhase {
             pkgs,
             archive: None,
             only_include_files: None,
+            base_image: DEFAULT_BASE_IMAGE.to_string(),
         }
     }
 
@@ -109,10 +116,24 @@ impl BuildPhase {
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct StartPhase {
     pub cmd: Option<String>,
+
+    #[serde(rename = "runImage")]
+    pub run_image: Option<String>,
 }
 
 impl StartPhase {
     pub fn new(cmd: String) -> Self {
-        Self { cmd: Some(cmd) }
+        Self {
+            cmd: Some(cmd),
+            run_image: None,
+        }
+    }
+
+    pub fn run_in_image(&mut self, image_name: String) {
+        self.run_image = Some(image_name);
+    }
+
+    pub fn run_in_default_image(&mut self) {
+        self.run_image = Some(DEFAULT_BASE_IMAGE.to_string());
     }
 }
