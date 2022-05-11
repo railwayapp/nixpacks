@@ -10,14 +10,13 @@ use crate::nixpacks::{
     plan::{
         generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
         BuildPlan, PlanGenerator,
+    providers::{
+        csharp::CSharpProvider, deno::DenoProvider, go::GolangProvider,
+        haskell::HaskellStackProvider, node::NodeProvider, python::PythonProvider,
+        rust::RustProvider,
     },
 };
 use anyhow::Result;
-use providers::{
-    crystal::CrystalProvider, deno::DenoProvider, go::GolangProvider,
-    haskell::HaskellStackProvider, node::NodeProvider, python::PythonProvider, rust::RustProvider,
-    staticfile::StaticfileProvider, Provider,
-};
 
 mod chain;
 pub mod nixpacks;
@@ -31,8 +30,12 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &RustProvider {},
         &PythonProvider {},
         &HaskellStackProvider {},
+<<<<<<< HEAD
         &CrystalProvider {},
         &StaticfileProvider {},
+=======
+        &CSharpProvider {},
+>>>>>>> d4c1929 (csharp provider)
     ]
 }
 
