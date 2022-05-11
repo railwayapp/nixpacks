@@ -518,15 +518,14 @@ impl<'a> AppBuilder<'a> {
             start_files.push(".".to_string());
         }
 
-        let mut run_image_setup = "".to_string();
+        let mut run_image_setup: Option<String> = None;
         if let Some(run_image) = start_phase.run_image {
-            run_image_setup = formatdoc! {"
+            run_image_setup = Some(formatdoc! {"
                 FROM {run_image}
-                RUN mkdir /app/
                 WORKDIR /app/
                 COPY --from=0 /app /app/
             ",
-            run_image=run_image}
+            run_image=run_image})
         }
 
         let dockerfile = formatdoc! {"
@@ -553,7 +552,6 @@ impl<'a> AppBuilder<'a> {
 
           RUN nix-channel --update
 
-          RUN mkdir /app/
           WORKDIR /app/
 
           # Setup
@@ -573,8 +571,8 @@ impl<'a> AppBuilder<'a> {
           {build_cmd}
 
           # Start
-          {run_image_setup}
           {start_copy_cmd}
+          {run_image_setup}
           {start_cmd}
         ",
         base_image=setup_phase.base_image,
@@ -586,6 +584,7 @@ impl<'a> AppBuilder<'a> {
         build_copy_cmd=get_copy_command(&build_files, app_dir),
         build_cmd=build_cmd,
         start_copy_cmd=get_copy_command(&start_files, app_dir),
+        run_image_setup=run_image_setup.unwrap_or_default(),
         start_cmd=start_cmd};
 
         Ok(dockerfile)
