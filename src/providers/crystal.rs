@@ -26,11 +26,11 @@ impl Provider for CrystalProvider {
     }
 
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        Ok(Some(InstallPhase::new("shard install".to_string())))
+        Ok(Some(InstallPhase::new("shards install".to_string())))
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new("shard build".to_string())))
+        Ok(Some(BuildPhase::new("shards build".to_string())))
     }
 
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
