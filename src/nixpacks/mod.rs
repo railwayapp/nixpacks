@@ -3,7 +3,7 @@ use indoc::formatdoc;
 use std::{
     fs::{self, File},
     io::{self, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Command,
 };
 use tempdir::TempDir;
@@ -149,31 +149,7 @@ impl<'a> AppBuilder<'a> {
         let dir_path_str = dir.to_str().context("Invalid temp directory path")?;
 
         // Copy files into temp directory
-        let source = self.app.source.as_path().to_str().unwrap();
-        let in_dir = PathBuf::from(source);
-
-        let walker = WalkDir::new(&in_dir).follow_links(true);
-        for entry in walker {
-            let entry = entry?;
-
-            let from = entry.path();
-            dbg!(&from, &dir, &in_dir);
-            let to = dir.join(from.strip_prefix(&in_dir)?);
-
-            // create directories
-            if entry.file_type().is_dir() {
-                if let Err(e) = fs::create_dir(to) {
-                    match e.kind() {
-                        io::ErrorKind::AlreadyExists => {}
-                        _ => return Err(e.into()),
-                    }
-                }
-            }
-            // copy files
-            else if entry.file_type().is_file() {
-                fs::copy(from, to)?;
-            }
-        }
+        Self::recursive_copy_dir(&self.app.source, &dir)?;
 
         AppBuilder::write_build_plan(plan, dir_path_str).context("Writing build plan")?;
         self.logger.log_step("Building image with Docker");
@@ -219,6 +195,31 @@ impl<'a> AppBuilder<'a> {
             println!("  {}", dir_path_str);
         };
 
+        Ok(())
+    }
+
+    fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) -> Result<()> {
+        let walker = WalkDir::new(&source).follow_links(true);
+        for entry in walker {
+            let entry = entry?;
+
+            let from = entry.path();
+            let to = dest.as_ref().join(from.strip_prefix(&source)?);
+
+            // create directories
+            if entry.file_type().is_dir() {
+                if let Err(e) = fs::create_dir(to) {
+                    match e.kind() {
+                        io::ErrorKind::AlreadyExists => {}
+                        _ => return Err(e.into()),
+                    }
+                }
+            }
+            // copy files
+            else if entry.file_type().is_file() {
+                fs::copy(from, to)?;
+            }
+        }
         Ok(())
     }
 
