@@ -6,12 +6,12 @@ use crate::{
         AppBuilderOptions,
     },
     providers::{
-        deno::DenoProvider, go::GolangProvider, npm::NpmProvider, python::PythonProvider,
-        rust::RustProvider, yarn::YarnProvider,
+        deno::DenoProvider, go::GolangProvider, haskell::HaskellStackProvider, npm::NpmProvider,
+        python::PythonProvider, rust::RustProvider, yarn::YarnProvider,
     },
 };
 use anyhow::{bail, Result};
-use providers::{haskell::HaskellStackProvider, Provider};
+use providers::Provider;
 
 pub(crate) mod chain;
 pub mod nixpacks;

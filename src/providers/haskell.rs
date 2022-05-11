@@ -21,7 +21,7 @@ impl Provider for HaskellStackProvider {
         app: &crate::nixpacks::app::App,
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<bool> {
-        Ok(app.includes_file("package.yaml"))
+        Ok(app.includes_file("package.yaml") && app.has_match("**/*.hs"))
     }
 
     fn setup(

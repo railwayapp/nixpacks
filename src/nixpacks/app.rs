@@ -46,6 +46,14 @@ impl App {
         Ok(relative_paths)
     }
 
+    pub fn has_match(&self, pattern: &str) -> bool {
+        let paths = match self.find_files(pattern) {
+            Ok(v) => v,
+            Err(_e) => return false,
+        };
+        !paths.is_empty()
+    }
+
     pub fn read_file(&self, name: &str) -> Result<String> {
         let name = self.source.join(name);
         let contents = fs::read_to_string(name)?;
