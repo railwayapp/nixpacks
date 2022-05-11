@@ -24,7 +24,6 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &NodeProvider {},
         &RustProvider {},
         &PythonProvider {},
-        &DenoProvider {},
     ]
 }
 
