@@ -6,7 +6,7 @@ on:
 
 jobs:
   create-release:
-    name: create-release
+    name: Create Release
     runs-on: ubuntu-latest
     outputs:
       nixpacks_version: ${{ env.NIXPACKS_VERSION }}
@@ -46,7 +46,7 @@ jobs:
           body: ${{steps.build_changelog.outputs.changelog}}
 
   build-release:
-    name: Build release assets
+    name: Build Release Assets
     needs: ['create-release']
     runs-on: ${{ matrix.config.os }}
     strategy:
@@ -122,3 +122,21 @@ jobs:
         download-url: https://github.com/railwayapp/nixpacks/releases/download/${{ needs.create-release.outputs.nixpacks_version }}/nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.config.build }}.tar.gz
       env:
         COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
+
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: ['create-release', 'build-release']
+
+    steps:
+      - name: Discord Deployment Status Notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.PUBLISH_WEBHOOK }}
+          status: ${{ job.status }}
+          nodetail: true
+          username: Nixpacks Releases
+          avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+          title: Published version ${{ needs.create-release.outputs.nixpacks_version }} of Nixpacks
+          description: |
+            [View Changelog](https://github.com/railwayapp/nixpacks/releases/tag/${{ needs.create-release.outputs.nixpacks_version }})

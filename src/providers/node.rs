@@ -23,9 +23,9 @@ pub struct PackageJson {
     pub main: Option<String>,
 }
 
-pub struct NpmProvider {}
+pub struct NodeProvider {}
 
-impl Provider for NpmProvider {
+impl Provider for NodeProvider {
     fn name(&self) -> &str {
         "node"
     }
@@ -36,27 +36,58 @@ impl Provider for NpmProvider {
 
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let package_json: PackageJson = app.read_json("package.json")?;
-        let node_pkg = NpmProvider::get_nix_node_pkg(&package_json, env)?;
+        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+
+        if NodeProvider::get_package_manager(app)? == "pnpm" {
+            let mut pnpm_pkg = Pkg::new("nodePackages.pnpm");
+            // Only override the node package if not the default one
+            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
+                pnpm_pkg = pnpm_pkg.set_override("nodejs", node_pkg.name.as_str());
+            }
+            return Ok(Some(SetupPhase::new(vec![node_pkg, pnpm_pkg])));
+        } else if NodeProvider::get_package_manager(app)? == "yarn" {
+            let mut yarn_pkg = Pkg::new("yarn");
+            // Only override the node package if not the default one
+            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
+                yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
+            }
+            return Ok(Some(SetupPhase::new(vec![node_pkg, yarn_pkg])));
+        }
 
         Ok(Some(SetupPhase::new(vec![node_pkg])))
     }
 
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let install_phase = InstallPhase::new("npm ci".to_string());
-        Ok(Some(install_phase))
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+        let mut install_cmd = "npm i";
+        if NodeProvider::get_package_manager(app)? == "pnpm" {
+            install_cmd = "pnpm i --frozen-lockfile"
+        } else if NodeProvider::get_package_manager(app)? == "yarn" {
+            if app.includes_file(".yarnrc.yml") {
+                install_cmd = "yarn set version berry && yarn install --immutable --check-cache"
+            } else {
+                install_cmd = "yarn install --frozen-lockfile"
+            }
+        } else if app.includes_file("package-lock.json") {
+            install_cmd = "npm ci"
+        }
+        Ok(Some(InstallPhase::new(install_cmd.to_string())))
     }
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        if NpmProvider::has_script(app, "build")? {
-            Ok(Some(BuildPhase::new("npm run build".to_string())))
+        if NodeProvider::has_script(app, "build")? {
+            let pkg_manager = NodeProvider::get_package_manager(app)?;
+            Ok(Some(BuildPhase::new(pkg_manager + " run build")))
         } else {
             Ok(None)
         }
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        if let Some(start_cmd) = NpmProvider::get_start_cmd(app)? {
-            Ok(Some(StartPhase::new(start_cmd)))
+        if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
+            let pkg_manager = NodeProvider::get_package_manager(app)?;
+            Ok(Some(StartPhase::new(
+                start_cmd.replace("npm", &pkg_manager),
+            )))
         } else {
             Ok(None)
         }
@@ -67,11 +98,11 @@ impl Provider for NpmProvider {
         _app: &App,
         _env: &Environment,
     ) -> Result<Option<EnvironmentVariables>> {
-        Ok(Some(NpmProvider::get_node_environment_variables()))
+        Ok(Some(NodeProvider::get_node_environment_variables()))
     }
 }
 
-impl NpmProvider {
+impl NodeProvider {
     pub fn get_node_environment_variables() -> EnvironmentVariables {
         EnvironmentVariables::from([
             ("NODE_ENV".to_string(), "production".to_string()),
@@ -91,7 +122,7 @@ impl NpmProvider {
     }
 
     pub fn get_start_cmd(app: &App) -> Result<Option<String>> {
-        if NpmProvider::has_script(app, "start")? {
+        if NodeProvider::has_script(app, "start")? {
             return Ok(Some("npm run start".to_string()));
         }
 
@@ -144,6 +175,16 @@ impl NpmProvider {
 
         Ok(Pkg::new(DEFAULT_NODE_PKG_NAME))
     }
+
+    pub fn get_package_manager(app: &App) -> Result<String> {
+        let mut pkg_manager = "npm";
+        if app.includes_file("pnpm-lock.yaml") {
+            pkg_manager = "pnpm";
+        } else if app.includes_file("yarn.lock") {
+            pkg_manager = "yarn";
+        }
+        Ok(pkg_manager.to_string())
+    }
 }
 
 fn version_number_to_pkg(version: &u32) -> Result<Option<String>> {
@@ -177,7 +218,7 @@ mod test {
     #[test]
     fn test_no_engines() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(
+            NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: String::default(),
                     main: None,
@@ -196,7 +237,7 @@ mod test {
     #[test]
     fn test_star_engine() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(
+            NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: String::default(),
                     main: None,
@@ -215,7 +256,7 @@ mod test {
     #[test]
     fn test_simple_engine() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(
+            NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: String::default(),
                     main: None,
@@ -234,7 +275,7 @@ mod test {
     #[test]
     fn test_simple_engine_x() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(
+            NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: String::default(),
                     main: None,
@@ -248,7 +289,7 @@ mod test {
         );
 
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(
+            NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: String::default(),
                     main: None,
@@ -267,7 +308,7 @@ mod test {
     #[test]
     fn test_engine_range() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(
+            NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: String::default(),
                     main: None,
@@ -286,7 +327,7 @@ mod test {
     #[test]
     fn test_version_from_environment_variable() -> Result<()> {
         assert_eq!(
-            NpmProvider::get_nix_node_pkg(
+            NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: String::default(),
                     main: None,
@@ -307,7 +348,7 @@ mod test {
 
     #[test]
     fn test_engine_invalid_version() -> Result<()> {
-        assert!(NpmProvider::get_nix_node_pkg(
+        assert!(NodeProvider::get_nix_node_pkg(
             &PackageJson {
                 name: String::default(),
                 main: None,
