@@ -2,12 +2,13 @@ use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use std::{
     fs::{self, File},
-    io::Write,
+    io::{self, Write},
     path::PathBuf,
     process::Command,
 };
 use tempdir::TempDir;
 use uuid::Uuid;
+use walkdir::WalkDir;
 pub mod app;
 pub mod environment;
 pub mod logger;
@@ -138,27 +139,43 @@ impl<'a> AppBuilder<'a> {
     pub fn do_build(&mut self, plan: &BuildPlan) -> Result<()> {
         let id = Uuid::new_v4();
 
-        let dir: String = match &self.options.out_dir {
-            Some(dir) => dir.clone(),
+        let dir = match &self.options.out_dir {
+            Some(dir) => dir.into(),
             None => {
                 let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
-                let path = tmp.path().to_str().unwrap();
-                path.to_string()
+                tmp.into_path()
             }
         };
+        let dir_path_str = dir.to_str().context("Invalid temp directory path")?;
 
+        // Copy files into temp directory
         let source = self.app.source.as_path().to_str().unwrap();
-        let mut copy_cmd = Command::new("cp")
-            .arg("-a")
-            .arg(format!("{}/.", source))
-            .arg(dir.clone())
-            .spawn()?;
-        let copy_result = copy_cmd.wait().context("Copying app source to tmp dir")?;
-        if !copy_result.success() {
-            bail!("Copy failed")
+        let in_dir = PathBuf::from(source);
+
+        let walker = WalkDir::new(&in_dir).follow_links(true);
+        for entry in walker {
+            let entry = entry?;
+
+            let from = entry.path();
+            dbg!(&from, &dir, &in_dir);
+            let to = dir.join(from.strip_prefix(&in_dir)?);
+
+            // create directories
+            if entry.file_type().is_dir() {
+                if let Err(e) = fs::create_dir(to) {
+                    match e.kind() {
+                        io::ErrorKind::AlreadyExists => {}
+                        _ => return Err(e.into()),
+                    }
+                }
+            }
+            // copy files
+            else if entry.file_type().is_file() {
+                fs::copy(from, to)?;
+            }
         }
 
-        AppBuilder::write_build_plan(plan, dir.as_str()).context("Writing build plan")?;
+        AppBuilder::write_build_plan(plan, dir_path_str).context("Writing build plan")?;
         self.logger.log_step("Building image with Docker");
 
         let name = self.name.clone().unwrap_or_else(|| id.to_string());
@@ -199,7 +216,7 @@ impl<'a> AppBuilder<'a> {
             println!("  docker run -it {}", name);
         } else {
             println!("\nSaved output to:");
-            println!("  {}", dir);
+            println!("  {}", dir_path_str);
         };
 
         Ok(())
