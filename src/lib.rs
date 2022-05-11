@@ -6,8 +6,8 @@ use crate::{
         AppBuilderOptions,
     },
     providers::{
-        deno::DenoProvider, go::GolangProvider, node::NodeProvider, python::PythonProvider,
-        rust::RustProvider, haskell::HaskellStackProvider
+        deno::DenoProvider, go::GolangProvider, haskell::HaskellStackProvider, node::NodeProvider,
+        python::PythonProvider, rust::RustProvider,
     },
 };
 use anyhow::{bail, Result};
