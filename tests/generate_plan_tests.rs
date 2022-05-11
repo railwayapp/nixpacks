@@ -94,6 +94,23 @@ fn test_yarn() -> Result<()> {
 }
 
 #[test]
+fn test_yarn_berry() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/yarn-berry",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("yarn set version berry && yarn install --immutable --check-cache".to_string())
+    );
+    Ok(())
+}
+
+#[test]
 fn test_yarn_custom_version() -> Result<()> {
     let plan = gen_plan(
         "./examples/yarn-custom-node-version",

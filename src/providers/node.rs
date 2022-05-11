@@ -62,7 +62,11 @@ impl Provider for NodeProvider {
         if NodeProvider::get_package_manager(app)? == "pnpm" {
             install_cmd = "pnpm i --frozen-lockfile"
         } else if NodeProvider::get_package_manager(app)? == "yarn" {
-            install_cmd = "yarn install --frozen-lockfile"
+            if app.includes_file(".yarnrc.yml") {
+                install_cmd = "yarn set version berry && yarn install --immutable --check-cache"
+            } else {
+                install_cmd = "yarn install --frozen-lockfile"
+            }
         } else if app.includes_file("package-lock.json") {
             install_cmd = "npm ci"
         }

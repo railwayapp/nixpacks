@@ -121,6 +121,13 @@ fn test_node_custom_version() {
 }
 
 #[test]
+fn test_node_no_lockfile() {
+    let name = simple_build("./examples/node-no-lockfile");
+    let output = run_image(name);
+    assert!(output.contains("Hello from Node"));
+}
+
+#[test]
 fn test_yarn_custom_version() {
     let name = simple_build("./examples/yarn-custom-node-version");
     let output = run_image(name);
@@ -128,10 +135,31 @@ fn test_yarn_custom_version() {
 }
 
 #[test]
+fn test_yarn_berry() {
+    let name = simple_build("./examples/yarn-berry");
+    let output = run_image(name);
+    assert!(output.contains("Hello from Yarn v2+"));
+}
+
+#[test]
 fn test_yarn_prisma() {
     let name = simple_build("./examples/yarn-prisma");
     let output = run_image(name);
     assert!(output.contains("My post content"));
+}
+
+#[test]
+fn test_pnpm() {
+    let name = simple_build("./examples/pnpm");
+    let output = run_image(name);
+    assert!(output.contains("Hello from PNPM"));
+}
+
+#[test]
+fn test_pnpm_custom_version() {
+    let name = simple_build("./examples/pnpm-custom-node-version");
+    let output = run_image(name);
+    assert!(output.contains("Hello from PNPM"));
 }
 
 #[test]
