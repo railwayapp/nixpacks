@@ -2,9 +2,10 @@ use std::path::Path;
 use std::{env, fs, path::PathBuf};
 
 use anyhow::{bail, Context, Result};
-use glob::glob;
+use globset::Glob;
 use regex::Regex;
 use serde::de::DeserializeOwned;
+use walkdir::WalkDir;
 
 #[derive(Debug, Clone)]
 pub struct App {
@@ -30,7 +31,7 @@ impl App {
         fs::canonicalize(self.source.join(name)).is_ok()
     }
 
-    pub fn find_files(&self, pattern: &str) -> Result<Vec<String>> {
+    pub fn find_files(&self, pattern: &str) -> Result<Vec<PathBuf>> {
         let full_pattern = self.source.join(pattern);
 
         let pattern_str = match full_pattern.to_str() {
@@ -38,9 +39,15 @@ impl App {
             None => return Ok(Vec::new()),
         };
 
-        let relative_paths = glob(pattern_str)?
-            .filter_map(|result| result.ok()) // Remove bad ones
-            .filter_map(|path| path.to_str().map(|p| p.to_string())) // convert to string
+        let walker = WalkDir::new(&self.source);
+        let glob = Glob::new(pattern_str)?.compile_matcher();
+
+        let relative_paths = walker
+            .sort_by_file_name()
+            .into_iter()
+            .filter_map(|result| result.ok()) // remove bad ones
+            .map(|dir| dir.into_path()) // convert to paths
+            .filter(|path| glob.is_match(path)) // find matches
             .collect();
 
         Ok(relative_paths)
@@ -90,12 +97,11 @@ impl App {
         Ok(toml_file)
     }
 
-    pub fn strip_source_path(&self, abs: &str) -> Result<String> {
+    pub fn strip_source_path(&self, abs_path: &Path) -> Result<PathBuf> {
         let source_str = match self.source.to_str() {
             Some(s) => s,
             None => bail!("Failed to parse source path"),
         };
-        let abs_path = Path::new(abs);
 
         // Strip source path from absolute path
         let stripped = match abs_path.strip_prefix(source_str) {
@@ -103,11 +109,8 @@ impl App {
             Err(_e) => abs_path,
         };
 
-        // Convert path to string
-        return match stripped.to_str() {
-            Some(v) => Ok(v.to_string()),
-            None => bail!("Failed to convert path to string"),
-        };
+        // Convert path to PathBuf
+        Ok(stripped.to_owned())
     }
 }
 
@@ -187,11 +190,9 @@ mod tests {
             m,
             vec![
                 dir.join("examples/monorepo/packages/client/pages/_app.tsx")
-                    .to_str()
-                    .unwrap(),
+                    .canonicalize()?,
                 dir.join("examples/monorepo/packages/client/pages/index.tsx")
-                    .to_str()
-                    .unwrap(),
+                    .canonicalize()?
             ]
         );
         Ok(())
@@ -211,9 +212,8 @@ mod tests {
         let app = App::new("./examples/npm")?;
         let path_to_strip = app.source.join("foo/bar.txt");
         assert_eq!(
-            app.strip_source_path(path_to_strip.to_str().unwrap())
-                .unwrap(),
-            "foo/bar.txt"
+            &app.strip_source_path(&path_to_strip).unwrap(),
+            Path::new("foo/bar.txt")
         );
         Ok(())
     }
@@ -221,7 +221,10 @@ mod tests {
     #[test]
     fn test_strip_source_path_no_source_prefix() -> Result<()> {
         let app = App::new("./examples/npm")?;
-        assert_eq!(app.strip_source_path("no/prefix.txt")?, "no/prefix.txt");
+        assert_eq!(
+            &app.strip_source_path(Path::new("no/prefix.txt"))?,
+            Path::new("no/prefix.txt")
+        );
         Ok(())
     }
 }
