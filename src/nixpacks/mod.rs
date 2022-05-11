@@ -306,7 +306,7 @@ impl<'a> AppBuilder<'a> {
         // Allow the user to override the run image with an environment variable
         if let Some(env_run_image) = self.environment.get_config_variable("RUN_IMAGE") {
             // If the env var is "falsy", then unset the run image on the start phase
-            if env_run_image == "" || env_run_image == "0" || env_run_image == "false" {
+            if env_run_image.is_empty() || env_run_image == "0" || env_run_image == "false" {
                 start_phase.run_image = None;
             } else {
                 start_phase.run_image = Some(env_run_image.clone());
