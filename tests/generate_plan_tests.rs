@@ -424,3 +424,19 @@ fn test_config_from_environment_variables() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_haskell_stack() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/haskell-stack",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(plan.build.unwrap().cmd, Some("stack build".to_string()));
+    assert!(plan.start.unwrap().cmd.unwrap().contains("stack exec"));
+    assert!(plan.install.unwrap().cmd.unwrap().contains("stack setup"));
+    Ok(())
+}

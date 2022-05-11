@@ -53,6 +53,14 @@ impl App {
         Ok(relative_paths)
     }
 
+    pub fn has_match(&self, pattern: &str) -> bool {
+        let paths = match self.find_files(pattern) {
+            Ok(v) => v,
+            Err(_e) => return false,
+        };
+        !paths.is_empty()
+    }
+
     pub fn read_file(&self, name: &str) -> Result<String> {
         let name = self.source.join(name);
         let contents = fs::read_to_string(name)?;
@@ -95,6 +103,15 @@ impl App {
         let contents = self.read_file(name)?;
         let toml_file = toml::from_str(contents.as_str())?;
         Ok(toml_file)
+    }
+
+    pub fn read_yaml<T>(&self, name: &str) -> Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        let contents = self.read_file(name)?;
+        let yaml_file = serde_yaml::from_str(contents.as_str())?;
+        Ok(yaml_file)
     }
 
     pub fn strip_source_path(&self, abs_path: &Path) -> Result<PathBuf> {

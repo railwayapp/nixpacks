@@ -7,6 +7,7 @@ use anyhow::Result;
 
 pub mod deno;
 pub mod go;
+pub mod haskell;
 pub mod node;
 pub mod python;
 pub mod rust;
