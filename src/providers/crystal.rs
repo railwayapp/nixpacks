@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::Provider;
 use crate::nixpacks::{
     app::App,
@@ -6,6 +8,13 @@ use crate::nixpacks::{
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
+use serde::Deserialize;
+
+#[derive(Deserialize, Debug)]
+pub struct ShardYaml {
+    pub name: String,
+    pub targets: HashMap<String, String>,
+}
 
 pub struct CrystalProvider {}
 
@@ -30,7 +39,7 @@ impl Provider for CrystalProvider {
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new("shards build".to_string())))
+        Ok(Some(BuildPhase::new("shards build --release".to_string())))
     }
 
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
