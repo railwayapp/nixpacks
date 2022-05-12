@@ -33,7 +33,7 @@ const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 static NIXPKGS_ARCHIVE: &str = "934e076a441e318897aa17540f6cf7caadc69028";
 
 // Debian 11
-static BASE_IMAGE: &str = "debian:bullseye-slim";
+static BASE_IMAGE: &str = "ghcr.io/railwayapp/nixpacks:debian";
 
 #[derive(Debug)]
 pub struct AppBuilderOptions {
@@ -513,29 +513,6 @@ impl<'a> AppBuilder<'a> {
 
         let dockerfile = formatdoc! {"
           FROM {base_image}
-
-          RUN apt-get update && apt-get -y upgrade \\
-            && apt-get install --no-install-recommends -y sudo locales curl xz-utils ca-certificates openssl \\
-            && apt-get clean && rm -rf /var/lib/apt/lists/* \\
-            && mkdir -m 0755 /nix && mkdir -m 0755 /etc/nix && groupadd -r nixbld && chown root /nix \\
-            && echo 'sandbox = false' > /etc/nix/nix.conf \\
-            && for n in $(seq 1 10); do useradd -c \"Nix build user $n\" -d /var/empty -g nixbld -G nixbld -M -N -r -s \"$(command -v nologin)\" \"nixbld$n\"; done
-
-          SHELL [\"/bin/bash\", \"-o\", \"pipefail\", \"-c\"]
-          RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash \\
-              && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old
-
-          ENV \\
-            ENV=/etc/profile \\
-            USER=root \\
-            PATH=/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/bin:/sbin:/usr/bin:/usr/sbin \\
-            GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt \\
-            NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \\
-            NIX_PATH=/nix/var/nix/profiles/per-user/root/channels
-
-          RUN nix-channel --update
-
-          RUN mkdir /app/
           WORKDIR /app/
 
           # Setup
