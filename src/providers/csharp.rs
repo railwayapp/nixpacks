@@ -30,7 +30,8 @@ impl Provider for CSharpProvider {
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         Ok(Some(BuildPhase::new(format!(
-            "dotnet publish --no-restore -c Release -o {ARTIFACT_DIR}"
+            "dotnet publish --no-restore -c Release -o {}",
+            ARTIFACT_DIR
         ))))
     }
 
@@ -42,7 +43,9 @@ impl Provider for CSharpProvider {
             .to_str()
             .context("Invalid project_name")?;
         Ok(Some(StartPhase::new(format!(
-            "./{ARTIFACT_DIR}/{project_name}"
+            "./{}/{}",
+            ARTIFACT_DIR,
+            project_name
         ))))
     }
 
