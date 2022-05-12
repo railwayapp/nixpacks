@@ -1,7 +1,7 @@
 FROM debian:bullseye-20220509-slim
 
 RUN apt-get update && apt-get -y upgrade \
-  && apt-get install --no-install-recommends -y sudo locales curl xz-utils ca-certificates openssl \
+  && apt-get install --no-install-recommends -y locales curl xz-utils ca-certificates openssl \
   && apt-get clean && rm -rf /var/lib/apt/lists/* \
   && mkdir -m 0755 /nix && mkdir -m 0755 /etc/nix && groupadd -r nixbld && chown root /nix \
   && echo 'sandbox = false' > /etc/nix/nix.conf \
