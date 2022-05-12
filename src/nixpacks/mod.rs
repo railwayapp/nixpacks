@@ -518,16 +518,16 @@ impl<'a> AppBuilder<'a> {
             start_files.push(".".to_string());
         }
 
-        let mut run_image_setup: Option<String> = None;
-        if let Some(run_image) = start_phase.run_image {
-            run_image_setup = Some(formatdoc! {"
+        let run_image_setup = if let Some(run_image) = start_phase.run_image {
+            Some(formatdoc! {"
                 FROM {run_image}
                 WORKDIR /app/
                 COPY --from=0 /app /app/
             ",
             run_image=run_image})
-        }
-
+        } else {
+            None
+        };
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
