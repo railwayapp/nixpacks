@@ -6,7 +6,7 @@ use super::nix::Pkg;
 static DEFAULT_BASE_IMAGE: &str = "ghcr.io/railwayapp/nixpacks:debian-1652414952";
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SetupPhase {
     pub pkgs: Vec<Pkg>,
     pub archive: Option<String>,
@@ -43,6 +43,17 @@ impl SetupPhase {
 
     pub fn set_archive(&mut self, archive: String) {
         self.archive = Some(archive);
+    }
+}
+
+impl Default for SetupPhase {
+    fn default() -> Self {
+        Self {
+            pkgs: Default::default(),
+            archive: Default::default(),
+            only_include_files: Default::default(),
+            base_image: DEFAULT_BASE_IMAGE.to_string(),
+        }
     }
 }
 
