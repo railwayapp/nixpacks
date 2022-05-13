@@ -519,11 +519,12 @@ impl<'a> AppBuilder<'a> {
         }
 
         let run_image_setup = if let Some(run_image) = start_phase.run_image {
+            // The `RUN true` fixes a docker build bug
             Some(formatdoc! {"
                 FROM {run_image}
                 WORKDIR {app_dir}
                 COPY --from=0 /etc/ssl/certs /etc/ssl/certs
-                RUN echo test
+                RUN true
                 COPY --from=0 {app_dir} {app_dir}
             ",
             run_image=run_image,
