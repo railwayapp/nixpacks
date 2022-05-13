@@ -465,7 +465,7 @@ if [ "${PLATFORM}" = "pc-windows-msvc" ]; then
   EXT=zip
 fi
 
-URL="${BASE_URL}/latest/download/nixpacks-${TARGET}.${EXT}"
+URL="${BASE_URL}/latest/download/nixpacks-v${VERSION[0]}-${TARGET}.${EXT}"
 info "Tarball URL: ${UNDERLINE}${BLUE}${URL}${NO_COLOR}"
 confirm "Install nixpacks ${GREEN}${VERSION[0]}${NO_COLOR} to ${BOLD}${GREEN}${BIN_DIR}${NO_COLOR}?"
 check_bin_dir "${BIN_DIR}"

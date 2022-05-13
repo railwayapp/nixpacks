@@ -58,47 +58,36 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            name: nixpacks-x86_64-unknown-linux-gnu.tar.gz
 
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
-            name: nixpacks-x86_64-unknown-linux-musl.tar.gz
 
           - target: i686-unknown-linux-musl
             os: ubuntu-latest
-            name: nixpacks-i686-unknown-linux-musl.tar.gz
 
           - target: aarch64-unknown-linux-musl
             os: ubuntu-latest
-            name: nixpacks-aarch64-unknown-linux-musl.tar.gz
 
           - target: arm-unknown-linux-musleabihf
             os: ubuntu-latest
-            name: nixpacks-arm-unknown-linux-musleabihf.tar.gz
 
           - target: x86_64-apple-darwin
             os: macOS-latest
-            name: nixpacks-x86_64-apple-darwin.tar.gz
 
           - target: aarch64-apple-darwin
             os: macOS-latest
-            name: nixpacks-aarch64-apple-darwin.tar.gz
 
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            name: nixpacks-x86_64-pc-windows-msvc.zip
 
           - target: i686-pc-windows-msvc
             os: windows-latest
-            name: nixpacks-i686-pc-windows-msvc.zip
 
           - target: aarch64-pc-windows-msvc
             os: windows-latest
-            name: nixpacks-aarch64-pc-windows-msvc.zip
 
           - target: x86_64-unknown-freebsd
             os: ubuntu-latest
-            name: nixpacks-x86_64-unknown-freebsd.tar.gz
 
     steps:
     - name: Checkout repository
@@ -126,7 +115,7 @@ jobs:
       run: |
         cd target/${{ matrix.target }}/release
         strip nixpacks.exe
-        7z a ../../../${{ matrix.name }} nixpacks.exe
+        7z a ../../../nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.zip nixpacks.exe
         cd -
 
     - name: Prepare binaries [-nix]
@@ -134,7 +123,7 @@ jobs:
       run: |
         cd target/${{ matrix.target }}/release
         strip nixpacks || true
-        tar czvf ../../../${{ matrix.name }} nixpacks
+        tar czvf ../../../nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.tar.gz nixpacks
         cd -
 
     - name: Add Checksums
