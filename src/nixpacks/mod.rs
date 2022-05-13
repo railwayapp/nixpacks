@@ -521,18 +521,19 @@ impl<'a> AppBuilder<'a> {
         let run_image_setup = if let Some(run_image) = start_phase.run_image {
             Some(formatdoc! {"
                 FROM {run_image}
-                WORKDIR /app/
+                WORKDIR {app_dir}
                 COPY --from=0 /etc/ssl/certs /etc/ssl/certs
-                COPY --from=0 /app /app/
+                COPY --from=0 {app_dir} {app_dir}
             ",
-            run_image=run_image})
+            run_image=run_image,
+            app_dir=app_dir})
         } else {
             None
         };
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
-          WORKDIR /app/
+          WORKDIR {app_dir}
 
           # Setup
           {setup_copy_cmd}
