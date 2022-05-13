@@ -126,8 +126,8 @@ jobs:
         tar czvf ../../../nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.tar.gz nixpacks
         cd -
 
-    - name: Add Checksums
-      run: for file in nixpacks-*/nixpacks-*; do openssl dgst -sha256 -r "$file" | awk '{print $1}' > "${file}.sha256"; done
+    # - name: Add Checksums
+    #   run: for file in nixpacks-*/nixpacks-*; do openssl dgst -sha256 -r "$file" | awk '{print $1}' > "${file}.sha256"; done
 
     - name: Upload release archive
       uses: softprops/action-gh-release@v1
