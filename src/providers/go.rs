@@ -1,7 +1,7 @@
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -45,7 +45,30 @@ impl Provider for GolangProvider {
         }
     }
 
-    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        Ok(Some(StartPhase::new(format!("./{}", BINARY_NAME))))
+    fn start(&self, _app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+        let mut start_phase = StartPhase::new(format!("./{}", BINARY_NAME));
+
+        let cgo = env
+            .get_variable("CGO_ENABLED")
+            .cloned()
+            .unwrap_or_else(|| "0".to_string());
+
+        // Only run in a new image if CGO_ENABLED=0 (default)
+        if cgo != "1" {
+            start_phase.run_in_default_image();
+        }
+
+        Ok(Some(start_phase))
+    }
+
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(EnvironmentVariables::from([(
+            "CGO_ENABLED".to_string(),
+            "0".to_string(),
+        )])))
     }
 }

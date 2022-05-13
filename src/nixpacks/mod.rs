@@ -32,9 +32,6 @@ const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "934e076a441e318897aa17540f6cf7caadc69028";
 
-// Debian 11
-static BASE_IMAGE: &str = "ghcr.io/railwayapp/nixpacks:debian";
-
 #[derive(Debug)]
 pub struct AppBuilderOptions {
     pub custom_build_cmd: Option<String>,
@@ -306,6 +303,16 @@ impl<'a> AppBuilder<'a> {
             .clone()
             .or_else(|| env_start_cmd.or_else(|| procfile_cmd.or(start_phase.cmd)));
 
+        // Allow the user to override the run image with an environment variable
+        if let Some(env_run_image) = self.environment.get_config_variable("RUN_IMAGE") {
+            // If the env var is "falsy", then unset the run image on the start phase
+            start_phase.run_image = match env_run_image.as_str() {
+                "0" | "false" => None,
+                img if img.is_empty() => None,
+                img => Some(img.to_owned()),
+            };
+        }
+
         Ok(start_phase)
     }
 
@@ -511,9 +518,21 @@ impl<'a> AppBuilder<'a> {
             start_files.push(".".to_string());
         }
 
+        let run_image_setup = start_phase.run_image.map(|run_image| {
+            formatdoc! {"
+                FROM {run_image}
+                WORKDIR {app_dir}
+                COPY --from=0 /etc/ssl/certs /etc/ssl/certs
+                RUN true
+                COPY --from=0 {app_dir} {app_dir}
+            ",
+            run_image=run_image,
+            app_dir=app_dir}
+        });
         let dockerfile = formatdoc! {"
           FROM {base_image}
-          WORKDIR /app/
+
+          WORKDIR {app_dir}
 
           # Setup
           {setup_copy_cmd}
@@ -533,9 +552,10 @@ impl<'a> AppBuilder<'a> {
 
           # Start
           {start_copy_cmd}
+          {run_image_setup}
           {start_cmd}
         ",
-        base_image=BASE_IMAGE,
+        base_image=setup_phase.base_image,
         setup_copy_cmd=setup_copy_cmd,
         args_string=args_string,
         install_copy_cmd=get_copy_command(&install_files, app_dir),
@@ -544,6 +564,7 @@ impl<'a> AppBuilder<'a> {
         build_copy_cmd=get_copy_command(&build_files, app_dir),
         build_cmd=build_cmd,
         start_copy_cmd=get_copy_command(&start_files, app_dir),
+        run_image_setup=run_image_setup.unwrap_or_default(),
         start_cmd=start_cmd};
 
         Ok(dockerfile)
