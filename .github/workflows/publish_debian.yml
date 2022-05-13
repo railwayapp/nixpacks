@@ -39,5 +39,6 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: base/debian
+          platforms: linux/arm64, linux/amd64, linux/386
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/railwayapp/nixpacks:debian, ghcr.io/railwayapp/nixpacks:latest, ghcr.io/railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
