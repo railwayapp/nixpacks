@@ -48,11 +48,14 @@ impl Provider for GolangProvider {
     fn start(&self, _app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         let mut start_phase = StartPhase::new(format!("./{}", BINARY_NAME));
 
+        let cgo = env
+            .get_variable("CGO_ENABLED")
+            .map(|s| s.clone())
+            .unwrap_or("0".to_string());
+
         // Only run in a new image if CGO_ENABLED=0 (default)
-        if let Some(value) = env.get_variable("CGO_ENABLED") {
-            if value == "0" {
-                start_phase.run_in_default_image();
-            }
+        if cgo != "1" {
+            start_phase.run_in_default_image();
         }
 
         Ok(Some(start_phase))

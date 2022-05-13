@@ -177,10 +177,27 @@ fn test_go() -> Result<()> {
         Some("go build -o out main.go".to_string())
     );
     assert_eq!(plan.start.clone().unwrap().cmd, Some("./out".to_string()));
+    assert!(plan.start.unwrap().run_image.is_some());
+
+    Ok(())
+}
+
+#[test]
+fn test_go_cgo_enabled() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/go",
+        Vec::new(),
+        None,
+        None,
+        vec!["CGO_ENABLED=1"],
+        false,
+    )?;
     assert_eq!(
-        plan.start.unwrap().run_image,
-        Some("debian:bullseye-slim".to_string())
+        plan.build.unwrap().cmd,
+        Some("go build -o out main.go".to_string())
     );
+    assert_eq!(plan.start.clone().unwrap().cmd, Some("./out".to_string()));
+    assert!(plan.start.unwrap().run_image.is_none());
 
     Ok(())
 }
