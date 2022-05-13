@@ -107,81 +107,81 @@ fn simple_build(path: &str) -> String {
     name
 }
 
-#[test]
-fn test_node() {
-    let name = simple_build("./examples/node");
-    assert!(run_image(name).contains("Hello from Node"));
-}
+// #[test]
+// fn test_node() {
+//     let name = simple_build("./examples/node");
+//     assert!(run_image(name).contains("Hello from Node"));
+// }
 
-#[test]
-fn test_node_custom_version() {
-    let name = simple_build("./examples/node-custom-version");
-    let output = run_image(name);
-    assert!(output.contains("Node version: v14"));
-}
+// #[test]
+// fn test_node_custom_version() {
+//     let name = simple_build("./examples/node-custom-version");
+//     let output = run_image(name);
+//     assert!(output.contains("Node version: v14"));
+// }
 
-#[test]
-fn test_node_no_lockfile() {
-    let name = simple_build("./examples/node-no-lockfile");
-    let output = run_image(name);
-    assert!(output.contains("Hello from Node"));
-}
+// #[test]
+// fn test_node_no_lockfile() {
+//     let name = simple_build("./examples/node-no-lockfile");
+//     let output = run_image(name);
+//     assert!(output.contains("Hello from Node"));
+// }
 
-#[test]
-fn test_yarn_custom_version() {
-    let name = simple_build("./examples/yarn-custom-node-version");
-    let output = run_image(name);
-    assert!(output.contains("Node version: v14"));
-}
+// #[test]
+// fn test_yarn_custom_version() {
+//     let name = simple_build("./examples/yarn-custom-node-version");
+//     let output = run_image(name);
+//     assert!(output.contains("Node version: v14"));
+// }
 
-#[test]
-fn test_yarn_berry() {
-    let name = simple_build("./examples/yarn-berry");
-    let output = run_image(name);
-    assert!(output.contains("Hello from Yarn v2+"));
-}
+// #[test]
+// fn test_yarn_berry() {
+//     let name = simple_build("./examples/yarn-berry");
+//     let output = run_image(name);
+//     assert!(output.contains("Hello from Yarn v2+"));
+// }
 
-#[test]
-fn test_yarn_prisma() {
-    let name = simple_build("./examples/yarn-prisma");
-    let output = run_image(name);
-    assert!(output.contains("My post content"));
-}
+// #[test]
+// fn test_yarn_prisma() {
+//     let name = simple_build("./examples/yarn-prisma");
+//     let output = run_image(name);
+//     assert!(output.contains("My post content"));
+// }
 
-#[test]
-fn test_pnpm() {
-    let name = simple_build("./examples/pnpm");
-    let output = run_image(name);
-    assert!(output.contains("Hello from PNPM"));
-}
+// #[test]
+// fn test_pnpm() {
+//     let name = simple_build("./examples/pnpm");
+//     let output = run_image(name);
+//     assert!(output.contains("Hello from PNPM"));
+// }
 
-#[test]
-fn test_pnpm_custom_version() {
-    let name = simple_build("./examples/pnpm-custom-node-version");
-    let output = run_image(name);
-    assert!(output.contains("Hello from PNPM"));
-}
+// #[test]
+// fn test_pnpm_custom_version() {
+//     let name = simple_build("./examples/pnpm-custom-node-version");
+//     let output = run_image(name);
+//     assert!(output.contains("Hello from PNPM"));
+// }
 
-#[test]
-fn test_python() {
-    let name = simple_build("./examples/python");
-    let output = run_image(name);
-    assert!(output.contains("Hello from Python"));
-}
+// #[test]
+// fn test_python() {
+//     let name = simple_build("./examples/python");
+//     let output = run_image(name);
+//     assert!(output.contains("Hello from Python"));
+// }
 
-#[test]
-fn test_python_2() {
-    let name = simple_build("./examples/python-2");
-    let output = run_image(name);
-    assert!(output.contains("Hello from Python 2"));
-}
+// #[test]
+// fn test_python_2() {
+//     let name = simple_build("./examples/python-2");
+//     let output = run_image(name);
+//     assert!(output.contains("Hello from Python 2"));
+// }
 
-#[test]
-fn test_rust_custom_version() {
-    let name = simple_build("./examples/rust-custom-version");
-    let output = run_image(name);
-    assert!(output.contains("cargo 1.56.0"));
-}
+// #[test]
+// fn test_rust_custom_version() {
+//     let name = simple_build("./examples/rust-custom-version");
+//     let output = run_image(name);
+//     assert!(output.contains("cargo 1.56.0"));
+// }
 
 #[test]
 fn test_go() {
@@ -190,12 +190,12 @@ fn test_go() {
     assert!(output.contains("Hello from Go"));
 }
 
-#[test]
-fn test_haskell_stack() {
-    let name = simple_build("./examples/haskell-stack");
-    let output = run_image(name);
-    assert!(output.contains("Hello from Haskell"));
-}
+// #[test]
+// fn test_haskell_stack() {
+//     let name = simple_build("./examples/haskell-stack");
+//     let output = run_image(name);
+//     assert!(output.contains("Hello from Haskell"));
+// }
 
 #[test]
 fn test_cowsay() {
