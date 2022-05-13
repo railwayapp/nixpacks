@@ -47,7 +47,7 @@ impl Provider for GolangProvider {
 
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         let mut start_phase = StartPhase::new(format!("./{}", BINARY_NAME));
-        start_phase.run_in_image("debian:bullseye-slim".to_string());
+        start_phase.run_in_default_image();
 
         Ok(Some(start_phase))
     }
