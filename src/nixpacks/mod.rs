@@ -306,11 +306,11 @@ impl<'a> AppBuilder<'a> {
         // Allow the user to override the run image with an environment variable
         if let Some(env_run_image) = self.environment.get_config_variable("RUN_IMAGE") {
             // If the env var is "falsy", then unset the run image on the start phase
-            if env_run_image.is_empty() || env_run_image == "0" || env_run_image == "false" {
-                start_phase.run_image = None;
-            } else {
-                start_phase.run_image = Some(env_run_image.clone());
-            }
+            start_phase.run_image = match env_run_image.as_str() {
+                "0" | "false" => None,
+                img @ _ if img.is_empty() => None,
+                img @ _ => Some(img.to_owned()),
+            };
         }
 
         Ok(start_phase)
@@ -518,16 +518,16 @@ impl<'a> AppBuilder<'a> {
             start_files.push(".".to_string());
         }
 
-        let mut run_image_setup: Option<String> = None;
-        if let Some(run_image) = start_phase.run_image {
-            run_image_setup = Some(formatdoc! {"
+        let run_image_setup = if let Some(run_image) = start_phase.run_image {
+            Some(formatdoc! {"
                 FROM {run_image}
                 WORKDIR /app/
                 COPY --from=0 /app /app/
             ",
             run_image=run_image})
-        }
-
+        } else {
+            None
+        };
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
