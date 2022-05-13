@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - "v*.*.*"
+env:
+  MACOSX_DEPLOYMENT_TARGET: 10.7
 
 jobs:
   create-release:
@@ -48,17 +50,44 @@ jobs:
   build-release:
     name: Build Release Assets
     needs: ['create-release']
-    runs-on: ${{ matrix.config.os }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
     strategy:
+      fail-fast: false
       matrix:
-        config:
-        # Linux
-        - { os: ubuntu-latest, build: linux_amd64, toolchain: stable, target: x86_64-unknown-linux-musl, cross: true }
-        - { os: ubuntu-latest, build: linux_arm64, toolchain: stable, target: arm-unknown-linux-gnueabihf, cross: true }
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
 
-        # Macos
-        - { os: macos-latest, build: darwin_amd64, toolchain: stable, target: x86_64-apple-darwin, cross: false }
-        - { os: macos-latest, build: darwin_arm64, toolchain: stable, target: aarch64-apple-darwin, cross: true }
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+
+          - target: i686-unknown-linux-musl
+            os: ubuntu-latest
+
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+
+          - target: arm-unknown-linux-musleabihf
+            os: ubuntu-latest
+
+          - target: x86_64-apple-darwin
+            os: macOS-latest
+
+          - target: aarch64-apple-darwin
+            os: macOS-latest
+
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+
+          - target: i686-pc-windows-msvc
+            os: windows-latest
+
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+
+          - target: x86_64-unknown-freebsd
+            os: ubuntu-latest
 
     steps:
     - name: Checkout repository
@@ -69,33 +98,36 @@ jobs:
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: ${{ matrix.config.toolchain }}
-        target: ${{ matrix.config.target }}
+        toolchain: stable
+        target: ${{ matrix.target }}
         profile: minimal
         override: true
-        default: true
-
-    - name: Install cross
-      uses: actions-rs/cargo@v1
-      if: ${{ matrix.config.cross }}
-      with:
-        command: install
-        args: cross
 
     - name: Build release binary
       uses: actions-rs/cargo@v1
       with:
-        use-cross: ${{ matrix.config.cross }}
         command: build
-        args: --release --target ${{ matrix.config.target }}
+        args: --release --locked --target ${{ matrix.target }}
+        use-cross: ${{ matrix.os == 'ubuntu-latest' }}
 
-    - name: Pack binaries if unix
-      if: matrix.config.os != 'windows-latest'
-      run: tar -C ./target/${{ matrix.config.target }}/release -czvf nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.config.build }}.tar.gz nixpacks nixpacks
+    - name: Prepare binaries [Windows]
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd target/${{ matrix.target }}/release
+        strip nixpacks.exe
+        7z a ../../../nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.zip nixpacks.exe
+        cd -
 
-    - name: Pack binaries if windows
-      if: matrix.config.os == 'windows-latest'
-      run: compress-archive ./target/${{ matrix.config.build }}/release/nixpacks.exe, ./target/${{ matrix.config.target }}/release/nixpacks.exe nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.config.target }}-${{ matrix.config.target_cpu }}.zip
+    - name: Prepare binaries [-nix]
+      if: matrix.os != 'windows-latest'
+      run: |
+        cd target/${{ matrix.target }}/release
+        strip nixpacks || true
+        tar czvf ../../../nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.tar.gz nixpacks
+        cd -
+
+    - name: Add Checksums
+      run: for file in nixpacks-*/nixpacks-*; do openssl dgst -sha256 -r "$file" | awk '{print $1}' > "${file}.sha256"; done
 
     - name: Upload release archive
       uses: softprops/action-gh-release@v1
@@ -103,8 +135,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ needs.create-release.outputs.nixpacks_version }}
-        files: |
-          nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.config.build }}.tar.gz
+        files: nixpacks-*/nixpacks-*
 
     - name: Set SHA
       if: matrix.config.os == 'macos-latest'
@@ -114,12 +145,12 @@ jobs:
 
     - name: Update homebrew tap
       uses: mislav/bump-homebrew-formula-action@v1
-      if: "matrix.config.build == 'darwin_amd64' && !contains(github.ref, '-')"
+      if: "matrix.target == 'x86_64-apple-darwin' && !contains(github.ref, '-')"
       with:
         formula-name: nixpacks
         formula-path: nixpacks.rb
         homebrew-tap: railwayapp/homebrew-tap
-        download-url: https://github.com/railwayapp/nixpacks/releases/download/${{ needs.create-release.outputs.nixpacks_version }}/nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.config.build }}.tar.gz
+        download-url: https://github.com/railwayapp/nixpacks/releases/latest/download/nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-x86_64-apple-darwin.tar.gz
       env:
         COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
 

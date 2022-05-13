@@ -43,8 +43,6 @@ At the moment Nixpacks supports the following languages out of the box
 
 # Installation
 
-Nixpacks only works on MacOS and Linux machines.
-
 ## Homebrew
 
 Install Nixpacks with [Homebrew](https://brew.sh/) (MacOS Only)
