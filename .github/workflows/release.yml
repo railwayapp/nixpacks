@@ -86,8 +86,8 @@ jobs:
           - target: aarch64-pc-windows-msvc
             os: windows-latest
 
-          - target: x86_64-unknown-freebsd
-            os: ubuntu-latest
+          # - target: x86_64-unknown-freebsd
+          #   os: ubuntu-latest
 
     steps:
     - name: Checkout repository
@@ -118,7 +118,7 @@ jobs:
         7z a ../../../nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.zip nixpacks.exe
         cd -
 
-    - name: Prepare binaries [-nix]
+    - name: Prepare binaries [-linux]
       if: matrix.os != 'windows-latest'
       run: |
         cd target/${{ matrix.target }}/release
@@ -135,7 +135,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ needs.create-release.outputs.nixpacks_version }}
-        files: nixpacks-*/nixpacks-*
+        files: nixpacks-${{ needs.create-release.outputs.arre_version }}-${{ matrix.target }}.tar.gz
 
     - name: Set SHA
       if: matrix.config.os == 'macos-latest'
