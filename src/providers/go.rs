@@ -50,8 +50,8 @@ impl Provider for GolangProvider {
 
         let cgo = env
             .get_variable("CGO_ENABLED")
-            .map(|s| s.clone())
-            .unwrap_or("0".to_string());
+            .cloned()
+            .unwrap_or_else(|| "0".to_string());
 
         // Only run in a new image if CGO_ENABLED=0 (default)
         if cgo != "1" {

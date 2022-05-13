@@ -308,8 +308,8 @@ impl<'a> AppBuilder<'a> {
             // If the env var is "falsy", then unset the run image on the start phase
             start_phase.run_image = match env_run_image.as_str() {
                 "0" | "false" => None,
-                img @ _ if img.is_empty() => None,
-                img @ _ => Some(img.to_owned()),
+                img if img.is_empty() => None,
+                img => Some(img.to_owned()),
             };
         }
 
@@ -518,10 +518,8 @@ impl<'a> AppBuilder<'a> {
             start_files.push(".".to_string());
         }
 
-        let run_image_setup = if let Some(run_image) = start_phase.run_image {
-            // The `RUN true` fixes a docker build bug
-            // https://github.com/moby/moby/issues/37965#issuecomment-426853382
-            Some(formatdoc! {"
+        let run_image_setup = start_phase.run_image.map(|run_image| {
+            formatdoc! {"
                 FROM {run_image}
                 WORKDIR {app_dir}
                 COPY --from=0 /etc/ssl/certs /etc/ssl/certs
@@ -529,10 +527,8 @@ impl<'a> AppBuilder<'a> {
                 COPY --from=0 {app_dir} {app_dir}
             ",
             run_image=run_image,
-            app_dir=app_dir})
-        } else {
-            None
-        };
+            app_dir=app_dir}
+        });
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
