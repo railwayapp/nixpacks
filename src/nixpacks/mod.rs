@@ -523,6 +523,7 @@ impl<'a> AppBuilder<'a> {
                 FROM {run_image}
                 WORKDIR {app_dir}
                 COPY --from=0 /etc/ssl/certs /etc/ssl/certs
+                RUN echo test
                 COPY --from=0 {app_dir} {app_dir}
             ",
             run_image=run_image,
