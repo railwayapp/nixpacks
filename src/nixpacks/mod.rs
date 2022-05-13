@@ -520,6 +520,7 @@ impl<'a> AppBuilder<'a> {
 
         let run_image_setup = if let Some(run_image) = start_phase.run_image {
             // The `RUN true` fixes a docker build bug
+            // https://github.com/moby/moby/issues/37965#issuecomment-426853382
             Some(formatdoc! {"
                 FROM {run_image}
                 WORKDIR {app_dir}
