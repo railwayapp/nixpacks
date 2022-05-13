@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use super::nix::Pkg;
 
 // Debian 11
-static DEFAULT_BASE_IMAGE: &str = "ghcr.io/railwayapp/nixpacks:debian";
+static DEFAULT_BASE_IMAGE: &str = "ghcr.io/railwayapp/nixpacks:debian-1652414952";
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
