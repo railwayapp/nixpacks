@@ -522,6 +522,7 @@ impl<'a> AppBuilder<'a> {
             Some(formatdoc! {"
                 FROM {run_image}
                 WORKDIR /app/
+                COPY --from=0 /etc/ssl/certs /etc/ssl/certs
                 COPY --from=0 /app /app/
             ",
             run_image=run_image})
