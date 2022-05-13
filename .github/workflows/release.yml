@@ -150,7 +150,7 @@ jobs:
         formula-name: nixpacks
         formula-path: nixpacks.rb
         homebrew-tap: railwayapp/homebrew-tap
-        download-url: https://github.com/railwayapp/nixpacks/releases/download/${{ needs.create-release.outputs.nixpacks_version }}/nixpacks-x86_64-apple-darwin.tar.gz
+        download-url: https://github.com/railwayapp/nixpacks/releases/latest/download/nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-x86_64-apple-darwin.tar.gz
       env:
         COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
 
