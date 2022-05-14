@@ -123,7 +123,7 @@ impl NodeProvider {
 
     pub fn get_start_cmd(app: &App) -> Result<Option<String>> {
         if NodeProvider::has_script(app, "start")? {
-            return Ok(Some("npm run start".to_string()));
+            return Ok(Some("npm start".to_string()));
         }
 
         let package_json: PackageJson = app.read_json("package.json")?;
