@@ -1,18 +1,17 @@
 # Node Support
 
-For all three NPM, Yarn and PNPM providers, the following environment variables are set.
-
+The NPM, Yarn and PNPM providers all have the following environment variables set:
 - `NODE_ENV=production`
 - `NPM_CONFIG_PRODUCTION=false`: Ensure that dev deps are always installed
 
 ## [NPM](https://www.npmjs.com/)
 
 **Install**:
-If lockfile is found in source code
+If a lockfile is found in the source code
 ```
 npm ci
 ```
-If lockfile isn't found in source code
+If a lockfile isn't found in the source code
 ```
 npm i
 ```
@@ -30,7 +29,7 @@ npm run build
 Start script found in `package.json`
 
 ```
-npm start
+npm run start
 ```
 
 If main field found in `package.json`
@@ -73,7 +72,7 @@ yarn run build
 Start script found in `package.json`
 
 ```
-yarn start
+yarn run start
 ```
 
 If main field found in `package.json`
@@ -110,7 +109,7 @@ pnpm run build
 Start script found in `package.json`
 
 ```
-pnpm start
+pnpm run start
 ```
 
 If main field found in `package.json`
