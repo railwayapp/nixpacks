@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use std::path::Path;
 use std::{env, fs, path::PathBuf};
 
@@ -54,17 +55,14 @@ impl App {
     }
 
     pub fn has_match(&self, pattern: &str) -> bool {
-        let paths = match self.find_files(pattern) {
-            Ok(v) => v,
-            Err(_e) => return false,
-        };
-        !paths.is_empty()
+        match self.find_files(pattern) {
+            Ok(v) => !v.is_empty(),
+            Err(_e) => false,
+        }
     }
 
     pub fn read_file(&self, name: &str) -> Result<String> {
-        let name = self.source.join(name);
-        let contents = fs::read_to_string(name)?;
-        Ok(contents)
+        fs::read_to_string(self.source.join(name)).map_err(|e| anyhow!(e))
     }
 
     pub fn find_match(&self, re: &Regex, pattern: &str) -> Result<bool> {
