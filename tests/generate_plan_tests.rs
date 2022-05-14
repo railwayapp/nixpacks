@@ -6,7 +6,7 @@ fn test_node() -> Result<()> {
     let plan = gen_plan("./examples/node", Vec::new(), None, None, Vec::new(), false)?;
     assert_eq!(plan.install.unwrap().cmd, Some("npm ci".to_string()));
     assert_eq!(plan.build.unwrap().cmd, None);
-    assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("npm start".to_string()));
 
     Ok(())
 }
@@ -23,7 +23,7 @@ fn test_node_no_lockfile() -> Result<()> {
     )?;
     assert_eq!(plan.install.unwrap().cmd, Some("npm i".to_string()));
     assert_eq!(plan.build.unwrap().cmd, None);
-    assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("npm start".to_string()));
 
     Ok(())
 }
@@ -32,7 +32,7 @@ fn test_node_no_lockfile() -> Result<()> {
 fn test_npm() -> Result<()> {
     let plan = gen_plan("./examples/npm", Vec::new(), None, None, Vec::new(), false)?;
     assert_eq!(plan.build.unwrap().cmd, Some("npm run build".to_string()));
-    assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("npm start".to_string()));
     assert_eq!(
         plan.variables.clone().unwrap().get("NODE_ENV"),
         Some(&"production".to_string())
@@ -80,7 +80,7 @@ fn test_node_custom_version() -> Result<()> {
 fn test_yarn() -> Result<()> {
     let plan = gen_plan("./examples/yarn", Vec::new(), None, None, Vec::new(), false)?;
     assert_eq!(plan.build.unwrap().cmd, Some("yarn run build".to_string()));
-    assert_eq!(plan.start.unwrap().cmd, Some("yarn run start".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("yarn start".to_string()));
     assert_eq!(
         plan.variables.clone().unwrap().get("NODE_ENV"),
         Some(&"production".to_string())
@@ -135,7 +135,7 @@ fn test_yarn_custom_version() -> Result<()> {
 fn pnpm() -> Result<()> {
     let plan = gen_plan("./examples/pnpm", Vec::new(), None, None, Vec::new(), false)?;
     assert_eq!(plan.build.unwrap().cmd, Some("pnpm run build".to_string()));
-    assert_eq!(plan.start.unwrap().cmd, Some("pnpm run start".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("pnpm start".to_string()));
     assert_eq!(
         plan.variables.clone().unwrap().get("NODE_ENV"),
         Some(&"production".to_string())
