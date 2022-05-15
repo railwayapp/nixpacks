@@ -23,9 +23,6 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
-      - run: cargo install cargo-quickinstall
-      - run: cargo quickinstall --dry-run cargo-nextest
-
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
@@ -47,10 +44,13 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
-      - name: Run cargo test
+      - name: Install cargo-nextest
+        run: curl --location --silent --show-error --fail "https://github.com/alsuren/cargo-quickinstall/releases/download/cargo-nextest-0.9.14-x86_64-unknown-linux-gnu/cargo-nextest-0.9.14-x86_64-unknown-linux-gnu.tar.gz" | tar -xzvvf - -C /home/runner/.cargo/bin
+
+      - name: Run cargo nextest
         uses: actions-rs/cargo@v1
         with:
-          command: test
+          command: nextest
 
   lints:
     name: Lints
