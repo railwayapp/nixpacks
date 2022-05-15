@@ -135,7 +135,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ needs.create-release.outputs.nixpacks_version }}
-        files: nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.tar.gz
+        files: nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.{zip,tar.gz}
 
     - name: Set SHA
       if: matrix.config.os == 'macos-latest'
