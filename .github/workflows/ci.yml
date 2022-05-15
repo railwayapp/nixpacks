@@ -45,7 +45,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Install cargo-nextest
-        run: curl --location --silent --show-error --fail "https://github.com/alsuren/cargo-quickinstall/releases/download/cargo-nextest-0.9.14-x86_64-unknown-linux-gnu/cargo-nextest-0.9.14-x86_64-unknown-linux-gnu.tar.gz" | tar -xzvvf - -C /home/runner/.cargo/bin
+        uses: taiki-e/install-action@nextest
 
       - name: Run cargo nextest
         uses: actions-rs/cargo@v1
