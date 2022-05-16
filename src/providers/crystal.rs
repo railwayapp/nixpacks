@@ -7,13 +7,14 @@ use crate::nixpacks::{
     nix::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::Deserialize;
 
+// https://github.com/crystal-lang/shards/blob/master/docs/shard.yml.adoc
 #[derive(Deserialize, Debug)]
 pub struct ShardYaml {
     pub name: String,
-    pub targets: HashMap<String, String>,
+    pub targets: HashMap<String, HashMap<String, String>>,
 }
 
 pub struct CrystalProvider {}
@@ -42,7 +43,23 @@ impl Provider for CrystalProvider {
         Ok(Some(BuildPhase::new("shards build --release".to_string())))
     }
 
-    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        Ok(Some(StartPhase::new(format!("./bin/crystal"))))
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+        let config = CrystalProvider::get_config(app)?;
+        let target_names = config.targets.keys().cloned().collect::<Vec<_>>();
+        let start_phase = StartPhase::new(format!(
+            "./bin/{}",
+            target_names
+                .get(0)
+                .ok_or_else(|| anyhow::anyhow!("Unable to get executable name"))?
+        ));
+
+        Ok(Some(start_phase))
+    }
+}
+
+impl CrystalProvider {
+    fn get_config(app: &App) -> Result<ShardYaml> {
+        app.read_yaml::<ShardYaml>("shard.yml")
+            .context("Reading shard.yml")
     }
 }
