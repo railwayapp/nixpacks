@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use super::Provider;
 use crate::nixpacks::{
     app::App,
@@ -5,7 +7,7 @@ use crate::nixpacks::{
     nix::Pkg,
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
-use anyhow::Result;
+use anyhow::{Context, Result};
 use regex::Regex;
 
 pub struct DenoProvider {}
@@ -28,7 +30,12 @@ impl Provider for DenoProvider {
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         match DenoProvider::get_start_file(app)? {
-            Some(start_file) => Ok(Some(BuildPhase::new(format!("deno cache {}", start_file)))),
+            Some(start_file) => Ok(Some(BuildPhase::new(format!(
+                "deno cache {}",
+                start_file
+                    .to_str()
+                    .context("Failed to convert start_file to string")?
+            )))),
             None => Ok(None),
         }
     }
@@ -38,6 +45,8 @@ impl Provider for DenoProvider {
             Some(start_file) => Ok(Some(StartPhase::new(format!(
                 "deno run --allow-all {}",
                 start_file
+                    .to_str()
+                    .context("Failed to convert start_file to string")?
             )))),
             None => Ok(None),
         }
@@ -46,15 +55,15 @@ impl Provider for DenoProvider {
 
 impl DenoProvider {
     // Find the first index.ts or index.js file to run
-    fn get_start_file(app: &App) -> Result<Option<String>> {
+    fn get_start_file(app: &App) -> Result<Option<PathBuf>> {
         // Find the first index.ts or index.js file to run
         let matches = app.find_files("**/index.[tj]s")?;
         let path_to_index = match matches.first() {
-            Some(m) => m.to_string(),
+            Some(m) => m,
             None => return Ok(None),
         };
 
-        let relative_path_to_index = app.strip_source_path(&path_to_index)?;
+        let relative_path_to_index = app.strip_source_path(path_to_index)?;
         Ok(Some(relative_path_to_index))
     }
 }

@@ -21,6 +21,8 @@ jobs:
           toolchain: stable
           override: true
 
+      - uses: Swatinem/rust-cache@v1
+
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
@@ -40,16 +42,7 @@ jobs:
           toolchain: stable
           override: true
 
-      # In this step, this action saves a list of existing images,
-      # the cache is created without them in the post run.
-      # It also restores the cache if it exists.
-      - uses: satackey/action-docker-layer-caching@v0.0.11
-        # Ignore the failure of a step and avoid terminating the job.
-        continue-on-error: true
-        with:
-          key: nixpacks-v3-docker-cache-{hash}
-          restore-keys: |
-            nixpacks-v3-docker-cache-
+      - uses: Swatinem/rust-cache@v1
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
@@ -70,6 +63,8 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt, clippy
+          
+      - uses: Swatinem/rust-cache@v1
 
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1

@@ -2,12 +2,13 @@ use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use std::{
     fs::{self, File},
-    io::Write,
-    path::PathBuf,
+    io::{self, Write},
+    path::{Path, PathBuf},
     process::Command,
 };
 use tempdir::TempDir;
 use uuid::Uuid;
+use walkdir::WalkDir;
 pub mod app;
 pub mod environment;
 pub mod logger;
@@ -30,9 +31,6 @@ const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "934e076a441e318897aa17540f6cf7caadc69028";
-
-// Debian 11
-static BASE_IMAGE: &str = "debian:bullseye-slim";
 
 #[derive(Debug)]
 pub struct AppBuilderOptions {
@@ -138,27 +136,19 @@ impl<'a> AppBuilder<'a> {
     pub fn do_build(&mut self, plan: &BuildPlan) -> Result<()> {
         let id = Uuid::new_v4();
 
-        let dir: String = match &self.options.out_dir {
-            Some(dir) => dir.clone(),
+        let dir = match &self.options.out_dir {
+            Some(dir) => dir.into(),
             None => {
                 let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
-                let path = tmp.path().to_str().unwrap();
-                path.to_string()
+                tmp.into_path()
             }
         };
+        let dir_path_str = dir.to_str().context("Invalid temp directory path")?;
 
-        let source = self.app.source.as_path().to_str().unwrap();
-        let mut copy_cmd = Command::new("cp")
-            .arg("-a")
-            .arg(format!("{}/.", source))
-            .arg(dir.clone())
-            .spawn()?;
-        let copy_result = copy_cmd.wait().context("Copying app source to tmp dir")?;
-        if !copy_result.success() {
-            bail!("Copy failed")
-        }
+        // Copy files into temp directory
+        Self::recursive_copy_dir(&self.app.source, &dir)?;
 
-        AppBuilder::write_build_plan(plan, dir.as_str()).context("Writing build plan")?;
+        AppBuilder::write_build_plan(plan, dir_path_str).context("Writing build plan")?;
         self.logger.log_step("Building image with Docker");
 
         let name = self.name.clone().unwrap_or_else(|| id.to_string());
@@ -199,9 +189,34 @@ impl<'a> AppBuilder<'a> {
             println!("  docker run -it {}", name);
         } else {
             println!("\nSaved output to:");
-            println!("  {}", dir);
+            println!("  {}", dir_path_str);
         };
 
+        Ok(())
+    }
+
+    fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) -> Result<()> {
+        let walker = WalkDir::new(&source).follow_links(true);
+        for entry in walker {
+            let entry = entry?;
+
+            let from = entry.path();
+            let to = dest.as_ref().join(from.strip_prefix(&source)?);
+
+            // create directories
+            if entry.file_type().is_dir() {
+                if let Err(e) = fs::create_dir(to) {
+                    match e.kind() {
+                        io::ErrorKind::AlreadyExists => {}
+                        _ => return Err(e.into()),
+                    }
+                }
+            }
+            // copy files
+            else if entry.file_type().is_file() {
+                fs::copy(from, to)?;
+            }
+        }
         Ok(())
     }
 
@@ -287,6 +302,16 @@ impl<'a> AppBuilder<'a> {
             .custom_start_cmd
             .clone()
             .or_else(|| env_start_cmd.or_else(|| procfile_cmd.or(start_phase.cmd)));
+
+        // Allow the user to override the run image with an environment variable
+        if let Some(env_run_image) = self.environment.get_config_variable("RUN_IMAGE") {
+            // If the env var is "falsy", then unset the run image on the start phase
+            start_phase.run_image = match env_run_image.as_str() {
+                "0" | "false" => None,
+                img if img.is_empty() => None,
+                img => Some(img.to_owned()),
+            };
+        }
 
         Ok(start_phase)
     }
@@ -493,32 +518,21 @@ impl<'a> AppBuilder<'a> {
             start_files.push(".".to_string());
         }
 
+        let run_image_setup = start_phase.run_image.map(|run_image| {
+            formatdoc! {"
+                FROM {run_image}
+                WORKDIR {app_dir}
+                COPY --from=0 /etc/ssl/certs /etc/ssl/certs
+                RUN true
+                COPY --from=0 {app_dir} {app_dir}
+            ",
+            run_image=run_image,
+            app_dir=app_dir}
+        });
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
-          RUN apt-get update && apt-get -y upgrade \\
-            && apt-get install --no-install-recommends -y locales curl xz-utils ca-certificates openssl \\
-            && apt-get clean && rm -rf /var/lib/apt/lists/* \\
-            && mkdir -m 0755 /nix && mkdir -m 0755 /etc/nix && groupadd -r nixbld && chown root /nix \\
-            && echo 'sandbox = false' > /etc/nix/nix.conf \\
-            && for n in $(seq 1 10); do useradd -c \"Nix build user $n\" -d /var/empty -g nixbld -G nixbld -M -N -r -s \"$(command -v nologin)\" \"nixbld$n\"; done
-
-          SHELL [\"/bin/bash\", \"-o\", \"pipefail\", \"-c\"]
-          RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash \\
-              && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old
-
-          ENV \\
-            ENV=/etc/profile \\
-            USER=root \\
-            PATH=/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/bin:/sbin:/usr/bin:/usr/sbin \\
-            GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt \\
-            NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \\
-            NIX_PATH=/nix/var/nix/profiles/per-user/root/channels
-
-          RUN nix-channel --update
-
-          RUN mkdir /app/
-          WORKDIR /app/
+          WORKDIR {app_dir}
 
           # Setup
           {setup_copy_cmd}
@@ -538,9 +552,10 @@ impl<'a> AppBuilder<'a> {
 
           # Start
           {start_copy_cmd}
+          {run_image_setup}
           {start_cmd}
         ",
-        base_image=BASE_IMAGE,
+        base_image=setup_phase.base_image,
         setup_copy_cmd=setup_copy_cmd,
         args_string=args_string,
         install_copy_cmd=get_copy_command(&install_files, app_dir),
@@ -549,6 +564,7 @@ impl<'a> AppBuilder<'a> {
         build_copy_cmd=get_copy_command(&build_files, app_dir),
         build_cmd=build_cmd,
         start_copy_cmd=get_copy_command(&start_files, app_dir),
+        run_image_setup=run_image_setup.unwrap_or_default(),
         start_cmd=start_cmd};
 
         Ok(dockerfile)

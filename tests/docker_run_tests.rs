@@ -191,6 +191,13 @@ fn test_go() {
 }
 
 #[test]
+fn test_haskell_stack() {
+    let name = simple_build("./examples/haskell-stack");
+    let output = run_image(name);
+    assert!(output.contains("Hello from Haskell"));
+}
+
+#[test]
 fn test_cowsay() {
     let name = Uuid::new_v4().to_string();
     build(

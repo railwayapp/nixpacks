@@ -39,10 +39,9 @@ At the moment Nixpacks supports the following languages out of the box
 - [Go](./docs/go.md)
 - [Rust](./docs/rust.md)
 - [Deno](./docs/deno.md)
+- [Haskell with Stack](./docs/haskell-stack.md)
 
 # Installation
-
-Nixpacks only works on MacOS and Linux machines.
 
 ## Homebrew
 
