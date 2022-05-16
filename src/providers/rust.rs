@@ -36,7 +36,8 @@ impl Provider for RustProvider {
     }
 
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
-        let rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
+        let rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?
+            .set_override("targets", "[\"aarch64-unknown-linux-musl\"]");
 
         let mut setup_phase =
             SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
@@ -50,13 +51,21 @@ impl Provider for RustProvider {
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new("cargo build --release".to_string())))
+        Ok(Some(BuildPhase::new(
+            "cargo build --release --target aarch64-unknown-linux-musl".to_string(),
+        )))
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
             let name = toml_file.package.name;
-            Ok(Some(StartPhase::new(format!("./target/release/{}", name))))
+            let binary_file = format!("/app/target/aarch64-unknown-linux-musl/release/{}", name);
+            let mut start_phase = StartPhase::new(format!("./{}", name));
+
+            start_phase.run_in_image("debian:bullseye-slim".to_owned());
+            start_phase.add_file_dependency(binary_file);
+
+            Ok(Some(start_phase))
         } else {
             Ok(None)
         }
