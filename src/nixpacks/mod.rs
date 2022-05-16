@@ -11,6 +11,7 @@ use uuid::Uuid;
 use walkdir::WalkDir;
 pub mod app;
 pub mod environment;
+pub mod images;
 pub mod logger;
 pub mod nix;
 pub mod phase;
@@ -519,6 +520,7 @@ impl<'a> AppBuilder<'a> {
         }
 
         let run_image_setup = start_phase.run_image.map(|run_image| {
+            // RUN true to prevent a Docker bug https://github.com/moby/moby/issues/37965#issuecomment-426853382
             formatdoc! {"
                 FROM {run_image}
                 WORKDIR {app_dir}

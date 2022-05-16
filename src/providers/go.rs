@@ -55,7 +55,7 @@ impl Provider for GolangProvider {
 
         // Only run in a new image if CGO_ENABLED=0 (default)
         if cgo != "1" {
-            start_phase.run_in_default_image();
+            start_phase.run_in_slim_image();
         }
 
         Ok(Some(start_phase))
