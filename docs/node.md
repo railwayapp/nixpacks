@@ -50,12 +50,12 @@ Yarn is detected if a `yarn.lock` file is found at the root level.
 
 **Install**:
 
-For Yarn 1
+For [Yarn 1](https://classic.yarnpkg.com/)
 ```
 yarn install --frozen-lockfile
 ```
 
-For Yarn 2+
+For [Yarn 2+](https://yarnpkg.com/)
 ```
 yarn install --immutable --check-cache
 ```
