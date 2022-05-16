@@ -3,7 +3,7 @@ FROM debian:bullseye-20220509-slim
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get -y upgrade \
-  && apt-get install --no-install-recommends -y sudo locales curl xz-utils ca-certificates openssl build-essential \
+  && apt-get install --no-install-recommends -y sudo locales curl xz-utils ca-certificates openssl make \
   && apt-get clean && rm -rf /var/lib/apt/lists/* \
   && mkdir -m 0755 /nix && mkdir -m 0755 /etc/nix && groupadd -r nixbld && chown root /nix \
   && printf 'sandbox = false \nfilter-syscalls = false' > /etc/nix/nix.conf \
