@@ -513,22 +513,28 @@ impl<'a> AppBuilder<'a> {
             .unwrap_or_else(|| "".to_string());
 
         // If we haven't yet copied over the entire app, do that before starting
-        let mut start_files: Vec<String> = Vec::new();
-        if build_phase.only_include_files.is_some() {
-            start_files.push(".".to_string());
-        }
+        let start_files: Vec<String> = start_phase
+            .only_include_files
+            .clone()
+            .unwrap_or_else(|| vec![".".to_string()]);
 
-        let run_image_setup = start_phase.run_image.map(|run_image| {
-            formatdoc! {"
+        let run_image_setup = match start_phase.run_image {
+            Some(run_image) => {
+                formatdoc! {"
                 FROM {run_image}
                 WORKDIR {app_dir}
                 COPY --from=0 /etc/ssl/certs /etc/ssl/certs
                 RUN true
-                COPY --from=0 {app_dir} {app_dir}
+                {copy_cmd}
             ",
-            run_image=run_image,
-            app_dir=app_dir}
-        });
+                    run_image=run_image,
+                    app_dir=app_dir,
+                    copy_cmd=get_copy_from_command("0", &start_files, app_dir)
+                }
+            }
+            None => get_copy_command(&start_files, app_dir),
+        };
+
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
@@ -551,7 +557,6 @@ impl<'a> AppBuilder<'a> {
           {build_cmd}
 
           # Start
-          {start_copy_cmd}
           {run_image_setup}
           {start_cmd}
         ",
@@ -563,8 +568,7 @@ impl<'a> AppBuilder<'a> {
         path_env=path_env,
         build_copy_cmd=get_copy_command(&build_files, app_dir),
         build_cmd=build_cmd,
-        start_copy_cmd=get_copy_command(&start_files, app_dir),
-        run_image_setup=run_image_setup.unwrap_or_default(),
+        run_image_setup=run_image_setup,
         start_cmd=start_cmd};
 
         Ok(dockerfile)
@@ -576,5 +580,13 @@ fn get_copy_command(files: &[String], app_dir: &str) -> String {
         "".to_owned()
     } else {
         format!("COPY {} {}", files.join(" "), app_dir)
+    }
+}
+
+fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String {
+    if files.is_empty() {
+        format!("COPY --from={} {}", app_dir, app_dir)
+    } else {
+        format!("COPY --from={} {} {}", from, files.join(" "), app_dir)
     }
 }
