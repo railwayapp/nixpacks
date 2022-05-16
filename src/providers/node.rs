@@ -16,7 +16,7 @@ pub const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
-    pub name: String,
+    pub name: Option<String>,
     pub scripts: Option<HashMap<String, String>>,
     pub engines: Option<HashMap<String, String>>,
     pub workspaces: Option<Vec<String>>,
@@ -220,7 +220,7 @@ mod test {
         assert_eq!(
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
-                    name: String::default(),
+                    name: Some(String::default()),
                     main: None,
                     scripts: None,
                     workspaces: None,
@@ -239,7 +239,7 @@ mod test {
         assert_eq!(
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
-                    name: String::default(),
+                    name: Some(String::default()),
                     main: None,
                     scripts: None,
                     workspaces: None,
@@ -258,7 +258,7 @@ mod test {
         assert_eq!(
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
-                    name: String::default(),
+                    name: Some(String::default()),
                     main: None,
                     scripts: None,
                     workspaces: None,
@@ -277,7 +277,7 @@ mod test {
         assert_eq!(
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
-                    name: String::default(),
+                    name: Some(String::default()),
                     main: None,
                     scripts: None,
                     workspaces: None,
@@ -291,7 +291,7 @@ mod test {
         assert_eq!(
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
-                    name: String::default(),
+                    name: Some(String::default()),
                     main: None,
                     scripts: None,
                     workspaces: None,
@@ -310,7 +310,7 @@ mod test {
         assert_eq!(
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
-                    name: String::default(),
+                    name: Some(String::default()),
                     main: None,
                     scripts: None,
                     workspaces: None,
@@ -329,7 +329,7 @@ mod test {
         assert_eq!(
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
-                    name: String::default(),
+                    name: Some(String::default()),
                     main: None,
                     scripts: None,
                     workspaces: None,
@@ -350,7 +350,7 @@ mod test {
     fn test_engine_invalid_version() -> Result<()> {
         assert!(NodeProvider::get_nix_node_pkg(
             &PackageJson {
-                name: String::default(),
+                name: Some(String::default()),
                 main: None,
                 scripts: None,
                 workspaces: None,
