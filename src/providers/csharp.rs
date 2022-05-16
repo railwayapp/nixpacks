@@ -67,7 +67,6 @@ impl Provider for CSharpProvider {
                 "DOTNET_ROOT".to_string(),
                 "/nix/var/nix/profiles/default/".to_string(),
             ),
-            ("PORT".to_string(), "3000".to_string()),
         ]);
         Ok(Some(env_vars))
     }
