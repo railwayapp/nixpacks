@@ -421,6 +421,28 @@ fn test_haskell_stack() -> Result<()> {
 }
 
 #[test]
+fn test_crystal() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/crystal",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("shards install".to_string())
+    );
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("shards build --release".to_string())
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("./bin/crystal".to_string()));
+    Ok(())
+}
+
+#[test]
 fn test_overriding_environment_variables() -> Result<()> {
     let plan = gen_plan(
         "./examples/variables",

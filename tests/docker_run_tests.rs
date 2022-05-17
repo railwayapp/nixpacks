@@ -198,6 +198,13 @@ fn test_haskell_stack() {
 }
 
 #[test]
+fn test_crystal() {
+    let name = simple_build("./examples/crystal");
+    let output = run_image(name);
+    assert!(output.contains("Hello from Crystal"));
+}
+
+#[test]
 fn test_cowsay() {
     let name = Uuid::new_v4().to_string();
     build(
