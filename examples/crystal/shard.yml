@@ -1,0 +1,13 @@
+name: crystal
+version: 0.1.0
+
+authors:
+  - Jake Runzer <jakerunzer@gmail.com>
+
+targets:
+  crystal:
+    main: src/crystal.cr
+
+crystal: 1.4.1
+
+license: MIT
