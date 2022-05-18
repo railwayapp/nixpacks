@@ -178,7 +178,22 @@ fn test_python_2() {
 
 #[test]
 fn test_rust_custom_version() {
-    let name = simple_build("./examples/rust-custom-version");
+    let name = Uuid::new_v4().to_string();
+    build(
+        "./examples/rust-custom-version",
+        Some(name.clone()),
+        Vec::new(),
+        None,
+        None,
+        true,
+        vec!["NIXPACKS_NO_MUSL=1"],
+        None,
+        None,
+        Vec::new(),
+        true,
+    )
+    .unwrap();
+
     let output = run_image(name);
     assert!(output.contains("cargo 1.56.0"));
 }

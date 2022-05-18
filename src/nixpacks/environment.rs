@@ -20,6 +20,14 @@ impl Environment {
         self.get_variable(format!("NIXPACKS_{}", name).as_str())
     }
 
+    pub fn is_config_variable_truthy(&self, name: &str) -> bool {
+        if let Some(var) = self.get_config_variable(name) {
+            matches!(var.as_str(), "1" | "true")
+        } else {
+            false
+        }
+    }
+
     pub fn set_variable(&mut self, name: String, value: String) {
         self.variables.insert(name, value);
     }

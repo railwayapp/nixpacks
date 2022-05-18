@@ -130,6 +130,9 @@ pub struct StartPhase {
 
     #[serde(rename = "runImage")]
     pub run_image: Option<String>,
+
+    #[serde(rename = "onlyIncludeFiles")]
+    pub only_include_files: Option<Vec<String>>,
 }
 
 impl StartPhase {
@@ -137,6 +140,7 @@ impl StartPhase {
         Self {
             cmd: Some(cmd),
             run_image: None,
+            only_include_files: None,
         }
     }
 
@@ -150,5 +154,14 @@ impl StartPhase {
 
     pub fn run_in_slim_image(&mut self) {
         self.run_image = Some(DEBIAN_SLIM_IMAGE.to_string());
+    }
+
+    pub fn add_file_dependency(&mut self, file: String) {
+        if let Some(mut files) = self.only_include_files.clone() {
+            files.push(file);
+            self.only_include_files = Some(files);
+        } else {
+            self.only_include_files = Some(vec![file]);
+        }
     }
 }

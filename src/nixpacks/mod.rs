@@ -498,7 +498,7 @@ impl<'a> AppBuilder<'a> {
             .map(|cmd| format!("RUN {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
-        let build_files = build_phase.only_include_files.clone().unwrap_or_else(|| {
+        let build_files = build_phase.only_include_files.unwrap_or_else(|| {
             // Only copy over the entire app if we haven't already in the install phase
             if install_phase.only_include_files.is_none() {
                 Vec::new()
@@ -514,23 +514,30 @@ impl<'a> AppBuilder<'a> {
             .unwrap_or_else(|| "".to_string());
 
         // If we haven't yet copied over the entire app, do that before starting
-        let mut start_files: Vec<String> = Vec::new();
-        if build_phase.only_include_files.is_some() {
-            start_files.push(".".to_string());
-        }
+        let start_files = start_phase.only_include_files.clone();
 
-        let run_image_setup = start_phase.run_image.map(|run_image| {
-            // RUN true to prevent a Docker bug https://github.com/moby/moby/issues/37965#issuecomment-426853382
-            formatdoc! {"
+        let run_image_setup = match start_phase.run_image {
+            Some(run_image) => {
+                // RUN true to prevent a Docker bug https://github.com/moby/moby/issues/37965#issuecomment-426853382
+                formatdoc! {"
                 FROM {run_image}
                 WORKDIR {app_dir}
                 COPY --from=0 /etc/ssl/certs /etc/ssl/certs
                 RUN true
-                COPY --from=0 {app_dir} {app_dir}
+                {copy_cmd}
             ",
-            run_image=run_image,
-            app_dir=app_dir}
-        });
+                    run_image=run_image,
+                    app_dir=app_dir,
+                    copy_cmd=get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir)
+                }
+            }
+            None => get_copy_command(
+                // If no files specified and no run image, copy everything in /app/ over
+                &start_files.unwrap_or_else(|| vec![".".to_string()]),
+                app_dir,
+            ),
+        };
+
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
@@ -553,7 +560,6 @@ impl<'a> AppBuilder<'a> {
           {build_cmd}
 
           # Start
-          {start_copy_cmd}
           {run_image_setup}
           {start_cmd}
         ",
@@ -565,8 +571,7 @@ impl<'a> AppBuilder<'a> {
         path_env=path_env,
         build_copy_cmd=get_copy_command(&build_files, app_dir),
         build_cmd=build_cmd,
-        start_copy_cmd=get_copy_command(&start_files, app_dir),
-        run_image_setup=run_image_setup.unwrap_or_default(),
+        run_image_setup=run_image_setup,
         start_cmd=start_cmd};
 
         Ok(dockerfile)
@@ -578,5 +583,22 @@ fn get_copy_command(files: &[String], app_dir: &str) -> String {
         "".to_owned()
     } else {
         format!("COPY {} {}", files.join(" "), app_dir)
+    }
+}
+
+fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String {
+    if files.is_empty() {
+        format!("COPY --from=0 {} {}", app_dir, app_dir)
+    } else {
+        format!(
+            "COPY --from={} {} {}",
+            from,
+            files
+                .iter()
+                .map(|f| f.replace("./", app_dir))
+                .collect::<Vec<_>>()
+                .join(" "),
+            app_dir
+        )
     }
 }
