@@ -73,7 +73,7 @@ impl Provider for RustProvider {
                     let binary_file = format!("./target/{target}/release/{name}");
                     let mut start_phase = StartPhase::new(format!("./{name}"));
 
-                    start_phase.run_in_image("debian:bullseye-slim".to_owned());
+                    start_phase.run_in_slim_image();
                     start_phase.add_file_dependency(binary_file);
 
                     start_phase

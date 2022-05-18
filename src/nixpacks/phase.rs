@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use super::nix::Pkg;
-
-// Debian 11
-static DEFAULT_BASE_IMAGE: &str = "ghcr.io/railwayapp/nixpacks:debian-1652414952";
+use super::{
+    images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
+    nix::Pkg,
+};
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -150,6 +150,10 @@ impl StartPhase {
 
     pub fn run_in_default_image(&mut self) {
         self.run_image = Some(DEFAULT_BASE_IMAGE.to_string());
+    }
+
+    pub fn run_in_slim_image(&mut self) {
+        self.run_image = Some(DEBIAN_SLIM_IMAGE.to_string());
     }
 
     pub fn add_file_dependency(&mut self, file: String) {
