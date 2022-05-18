@@ -498,7 +498,7 @@ impl<'a> AppBuilder<'a> {
             .map(|cmd| format!("RUN {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
-        let build_files = build_phase.only_include_files.clone().unwrap_or_else(|| {
+        let build_files = build_phase.only_include_files.unwrap_or_else(|| {
             // Only copy over the entire app if we haven't already in the install phase
             if install_phase.only_include_files.is_none() {
                 Vec::new()

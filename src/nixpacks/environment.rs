@@ -22,10 +22,7 @@ impl Environment {
 
     pub fn is_config_variable_truthy(&self, name: &str) -> bool {
         if let Some(var) = self.get_config_variable(name) {
-            match var.as_str() {
-                "1" | "true" => true,
-                _ => false,
-            }
+            matches!(var.as_str(), "1" | "true")
         } else {
             false
         }
