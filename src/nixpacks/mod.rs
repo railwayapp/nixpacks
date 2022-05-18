@@ -587,6 +587,15 @@ fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String 
     if files.is_empty() {
         format!("COPY --from={} {}", app_dir, app_dir)
     } else {
-        format!("COPY --from={} {} {}", from, files.join(" "), app_dir)
+        format!(
+            "COPY --from={} {} {}",
+            from,
+            files
+                .iter()
+                .map(|f| f.replace("./", app_dir))
+                .collect::<Vec<_>>()
+                .join(" "),
+            app_dir
+        )
     }
 }
