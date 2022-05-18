@@ -514,10 +514,7 @@ impl<'a> AppBuilder<'a> {
             .unwrap_or_else(|| "".to_string());
 
         // If we haven't yet copied over the entire app, do that before starting
-        let start_files: Vec<String> = start_phase
-            .only_include_files
-            .clone()
-            .unwrap_or_else(|| vec![".".to_string()]);
+        let start_files = start_phase.only_include_files.clone();
 
         let run_image_setup = match start_phase.run_image {
             Some(run_image) => {
@@ -531,10 +528,14 @@ impl<'a> AppBuilder<'a> {
             ",
                     run_image=run_image,
                     app_dir=app_dir,
-                    copy_cmd=get_copy_from_command("0", &start_files, app_dir)
+                    copy_cmd=get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir)
                 }
             }
-            None => get_copy_command(&start_files, app_dir),
+            None => get_copy_command(
+                // If no files specified and no run image, copy everything in /app/ over
+                &start_files.unwrap_or_else(|| vec![".".to_string()]),
+                app_dir,
+            ),
         };
 
         let dockerfile = formatdoc! {"
@@ -587,7 +588,7 @@ fn get_copy_command(files: &[String], app_dir: &str) -> String {
 
 fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String {
     if files.is_empty() {
-        format!("COPY --from={} {}", app_dir, app_dir)
+        format!("COPY --from=0 {} {}", app_dir, app_dir)
     } else {
         format!(
             "COPY --from={} {} {}",
