@@ -31,7 +31,7 @@ use self::{
 const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // https://status.nixos.org/
-static NIXPKGS_ARCHIVE: &str = "934e076a441e318897aa17540f6cf7caadc69028";
+static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
 
 #[derive(Debug)]
 pub struct AppBuilderOptions {
