@@ -42,6 +42,7 @@ pub struct AppBuilderOptions {
     pub out_dir: Option<String>,
     pub plan_path: Option<String>,
     pub tags: Vec<String>,
+    pub labels: Vec<String>,
     pub quiet: bool,
 }
 
@@ -55,6 +56,7 @@ impl AppBuilderOptions {
             out_dir: None,
             plan_path: None,
             tags: Vec::new(),
+            labels: Vec::new(),
             quiet: false,
         }
     }
@@ -173,10 +175,15 @@ impl<'a> AppBuilder<'a> {
                     .arg(format!("{}={}", name, value));
             }
 
-            // Add user defined tags to the image
+            // Add user defined tags and labels to the image
             for t in self.options.tags.clone() {
                 docker_build_cmd.arg("-t").arg(t);
             }
+            for l in self.options.labels.clone() {
+                docker_build_cmd.arg("--label").arg(l);
+            }
+
+            println!("{:?}", docker_build_cmd);
 
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
 
