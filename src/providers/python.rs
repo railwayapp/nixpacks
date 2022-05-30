@@ -18,6 +18,7 @@ use super::Provider;
 
 pub const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
 
+const POETRY_VERSION: &'static &str = &"1.1.13";
 pub struct PythonProvider {}
 
 impl Provider for PythonProvider {
@@ -51,7 +52,7 @@ impl Provider for PythonProvider {
             return Ok(Some(install_phase));
         } else if app.includes_file("pyproject.toml") {
             if app.includes_file("poetry.lock") {
-                let install_poetry = "pip install poetry==$POETRY_VERSION".to_string();
+                let install_poetry = "pip install poetry==$NIXPACKS_POETRY_VERSION".to_string();
                 let mut install_phase = InstallPhase::new(format!(
                     "{} && {} && {} && poetry install --no-dev --no-interaction --no-ansi",
                     create_env, activate_env, install_poetry
@@ -98,8 +99,8 @@ impl Provider for PythonProvider {
     ) -> Result<Option<EnvironmentVariables>> {
         if app.includes_file("poetry.lock") {
             return Ok(Some(EnvironmentVariables::from([(
-                "POETRY_VERSION".to_string(),
-                "1.1.13".to_string(),
+                "NIXPACKS_POETRY_VERSION".to_string(),
+                POETRY_VERSION.to_string(),
             )])));
         }
         Ok(None)

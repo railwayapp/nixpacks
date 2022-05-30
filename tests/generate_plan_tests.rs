@@ -386,7 +386,7 @@ pub fn test_python_poetry() -> Result<()> {
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(
         plan.install.unwrap().cmd,
-        Some("python -m venv /opt/venv && . /opt/venv/bin/activate && pip install poetry==$POETRY_VERSION && poetry install --no-dev --no-interaction --no-ansi".to_string())
+        Some("python -m venv /opt/venv && . /opt/venv/bin/activate && pip install poetry==$NIXPACKS_POETRY_VERSION && poetry install --no-dev --no-interaction --no-ansi".to_string())
     );
     assert_eq!(plan.start.unwrap().cmd, Some("python main.py".to_string()));
 
