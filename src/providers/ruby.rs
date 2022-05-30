@@ -6,6 +6,8 @@ use crate::nixpacks::{
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
+use regex::Regex;
+
 enum Framework {
     Rails,
     /// No framework could be found
@@ -25,14 +27,17 @@ impl Provider for RubyProvider {
 
     fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         let framework = self.detect_framework(app);
+        let mut packages = vec![Pkg::new("ruby")];
+        let needs_java = app.find_match(&Regex::new(r"jruby")?, "Gemfile.lock")?;
+        if needs_java {
+            packages.push(Pkg::new("java"));
+        }
         match framework {
-            Framework::Rails => Ok(Some(SetupPhase::new(vec![
-                Pkg::new("ruby"),
-                Pkg::new("postgresql"),
-                Pkg::new("nodejs"),
-                Pkg::new("java"),
-            ]))),
-            Framework::Vanilla => Ok(Some(SetupPhase::new(vec![Pkg::new("ruby")]))),
+            Framework::Rails => {
+                packages.append(&mut vec![Pkg::new("postgresql"), Pkg::new("nodejs")]);
+                Ok(Some(SetupPhase::new(packages)))
+            }
+            Framework::Vanilla => Ok(Some(SetupPhase::new(packages))),
         }
     }
 
