@@ -183,8 +183,6 @@ impl<'a> AppBuilder<'a> {
                 docker_build_cmd.arg("--label").arg(l);
             }
 
-            println!("{:?}", docker_build_cmd);
-
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
 
             if !build_result.success() {

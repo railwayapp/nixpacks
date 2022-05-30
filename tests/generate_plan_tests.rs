@@ -71,7 +71,7 @@ fn test_node_custom_version() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("nodejs-14_x")]);
+    assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("nodejs-18_x")]);
 
     Ok(())
 }
