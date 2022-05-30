@@ -39,13 +39,12 @@ impl Provider for CSharpProvider {
         let csproj = &app.find_files("*.csproj")?[0].with_extension("");
         let project_name = csproj
             .file_name()
-            .unwrap()
+            .context("Invalid file_name")?
             .to_str()
             .context("Invalid project_name")?;
         Ok(Some(StartPhase::new(format!(
             "./{}/{}",
-            ARTIFACT_DIR,
-            project_name
+            ARTIFACT_DIR, project_name
         ))))
     }
 
