@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use std::path::Path;
 use std::{env, fs, path::PathBuf};
 
@@ -26,11 +27,15 @@ impl App {
 
         Ok(App { source, paths })
     }
-
+    /// Check if a file exists
     pub fn includes_file(&self, name: &str) -> bool {
         fs::canonicalize(self.source.join(name)).is_ok()
     }
 
+    /// Returns a list of paths matching a glob pattern
+    ///
+    /// # Errors
+    /// Creating the Glob fails
     pub fn find_files(&self, pattern: &str) -> Result<Vec<PathBuf>> {
         let full_pattern = self.source.join(pattern);
 
@@ -53,18 +58,20 @@ impl App {
         Ok(relative_paths)
     }
 
+    /// Check if a path matching a glob exists
     pub fn has_match(&self, pattern: &str) -> bool {
-        let paths = match self.find_files(pattern) {
-            Ok(v) => v,
-            Err(_e) => return false,
-        };
-        !paths.is_empty()
+        match self.find_files(pattern) {
+            Ok(v) => !v.is_empty(),
+            Err(_e) => false,
+        }
     }
 
+    /// Read the contents of a file
+    ///
+    /// # Errors
+    /// This will error if the path doesn't exist, or if the contents isn't UTF-8
     pub fn read_file(&self, name: &str) -> Result<String> {
-        let name = self.source.join(name);
-        let contents = fs::read_to_string(name)?;
-        Ok(contents)
+        fs::read_to_string(self.source.join(name)).map_err(|e| anyhow!(e))
     }
 
     pub fn find_match(&self, re: &Regex, pattern: &str) -> Result<bool> {

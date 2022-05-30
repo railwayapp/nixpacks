@@ -39,10 +39,9 @@ At the moment Nixpacks supports the following languages out of the box
 - [Go](./docs/go.md)
 - [Rust](./docs/rust.md)
 - [Deno](./docs/deno.md)
+- [Haskell with Stack](./docs/haskell-stack.md)
 
 # Installation
-
-Nixpacks only works on MacOS and Linux machines.
 
 ## Homebrew
 
@@ -57,7 +56,7 @@ brew install railwayapp/tap/nixpacks
 Download Nixpacks from GH releases and install automatically
 
 ```sh
-sh -c "$(curl -sSL https://raw.githubusercontent.com/railwayapp/nixpacks/master/install.sh)"
+curl -fsSL https://raw.githubusercontent.com/railwayapp/nixpacks/master/install.sh | bash
 ```
 
 ## Source

@@ -63,7 +63,7 @@ impl DenoProvider {
             None => return Ok(None),
         };
 
-        let relative_path_to_index = app.strip_source_path(&path_to_index)?;
+        let relative_path_to_index = app.strip_source_path(path_to_index)?;
         Ok(Some(relative_path_to_index))
     }
 }

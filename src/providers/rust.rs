@@ -1,3 +1,5 @@
+use std::env::consts::ARCH;
+
 use super::Provider;
 use crate::nixpacks::{
     app::App,
@@ -36,7 +38,11 @@ impl Provider for RustProvider {
     }
 
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
-        let rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
+        let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
+
+        if let Some(target) = RustProvider::get_target(app, env)? {
+            rust_pkg = rust_pkg.set_override("targets", format!("[\"{target}\"]").as_str());
+        }
 
         let mut setup_phase =
             SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
@@ -49,14 +55,33 @@ impl Provider for RustProvider {
         Ok(Some(setup_phase))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new("cargo build --release".to_string())))
+    fn build(&self, app: &App, env: &Environment) -> Result<Option<BuildPhase>> {
+        let build_phase = match RustProvider::get_target(app, env)? {
+            Some(target) => BuildPhase::new(format!("cargo build --release --target {target}")),
+            None => BuildPhase::new("cargo build --release".to_string()),
+        };
+
+        Ok(Some(build_phase))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
             let name = toml_file.package.name;
-            Ok(Some(StartPhase::new(format!("./target/release/{}", name))))
+
+            let start_phase = match RustProvider::get_target(app, env)? {
+                Some(target) => {
+                    let binary_file = format!("./target/{target}/release/{name}");
+                    let mut start_phase = StartPhase::new(format!("./{name}"));
+
+                    start_phase.run_in_slim_image();
+                    start_phase.add_file_dependency(binary_file);
+
+                    start_phase
+                }
+                None => StartPhase::new(format!("./target/release/{name}")),
+            };
+
+            Ok(Some(start_phase))
         } else {
             Ok(None)
         }
@@ -74,6 +99,18 @@ impl Provider for RustProvider {
 }
 
 impl RustProvider {
+    fn get_target(_app: &App, env: &Environment) -> Result<Option<String>> {
+        // All the user to use the default target instead of compiling with musl
+        if !env.is_config_variable_truthy("NO_MUSL") {
+            match ARCH {
+                "aarch64" => Ok(Some("aarch64-unknown-linux-musl".to_string())),
+                _ => Ok(Some("x86_64-unknown-linux-musl".to_string())),
+            }
+        } else {
+            Ok(None)
+        }
+    }
+
     fn parse_cargo_toml(app: &App) -> Result<Option<CargoToml>> {
         if app.includes_file("Cargo.toml") {
             let cargo_toml: CargoToml =

@@ -11,6 +11,7 @@ use uuid::Uuid;
 use walkdir::WalkDir;
 pub mod app;
 pub mod environment;
+pub mod images;
 pub mod logger;
 pub mod nix;
 pub mod phase;
@@ -30,10 +31,7 @@ use self::{
 const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // https://status.nixos.org/
-static NIXPKGS_ARCHIVE: &str = "934e076a441e318897aa17540f6cf7caadc69028";
-
-// Debian 11
-static BASE_IMAGE: &str = "debian:bullseye-slim";
+static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
 
 #[derive(Debug)]
 pub struct AppBuilderOptions {
@@ -44,6 +42,7 @@ pub struct AppBuilderOptions {
     pub out_dir: Option<String>,
     pub plan_path: Option<String>,
     pub tags: Vec<String>,
+    pub labels: Vec<String>,
     pub quiet: bool,
 }
 
@@ -57,6 +56,7 @@ impl AppBuilderOptions {
             out_dir: None,
             plan_path: None,
             tags: Vec::new(),
+            labels: Vec::new(),
             quiet: false,
         }
     }
@@ -175,10 +175,15 @@ impl<'a> AppBuilder<'a> {
                     .arg(format!("{}={}", name, value));
             }
 
-            // Add user defined tags to the image
+            // Add user defined tags and labels to the image
             for t in self.options.tags.clone() {
                 docker_build_cmd.arg("-t").arg(t);
             }
+            for l in self.options.labels.clone() {
+                docker_build_cmd.arg("--label").arg(l);
+            }
+
+            println!("{:?}", docker_build_cmd);
 
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
 
@@ -305,6 +310,16 @@ impl<'a> AppBuilder<'a> {
             .custom_start_cmd
             .clone()
             .or_else(|| env_start_cmd.or_else(|| procfile_cmd.or(start_phase.cmd)));
+
+        // Allow the user to override the run image with an environment variable
+        if let Some(env_run_image) = self.environment.get_config_variable("RUN_IMAGE") {
+            // If the env var is "falsy", then unset the run image on the start phase
+            start_phase.run_image = match env_run_image.as_str() {
+                "0" | "false" => None,
+                img if img.is_empty() => None,
+                img => Some(img.to_owned()),
+            };
+        }
 
         Ok(start_phase)
     }
@@ -490,7 +505,7 @@ impl<'a> AppBuilder<'a> {
             .map(|cmd| format!("RUN {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
-        let build_files = build_phase.only_include_files.clone().unwrap_or_else(|| {
+        let build_files = build_phase.only_include_files.unwrap_or_else(|| {
             // Only copy over the entire app if we haven't already in the install phase
             if install_phase.only_include_files.is_none() {
                 Vec::new()
@@ -506,37 +521,34 @@ impl<'a> AppBuilder<'a> {
             .unwrap_or_else(|| "".to_string());
 
         // If we haven't yet copied over the entire app, do that before starting
-        let mut start_files: Vec<String> = Vec::new();
-        if build_phase.only_include_files.is_some() {
-            start_files.push(".".to_string());
-        }
+        let start_files = start_phase.only_include_files.clone();
+
+        let run_image_setup = match start_phase.run_image {
+            Some(run_image) => {
+                // RUN true to prevent a Docker bug https://github.com/moby/moby/issues/37965#issuecomment-426853382
+                formatdoc! {"
+                FROM {run_image}
+                WORKDIR {app_dir}
+                COPY --from=0 /etc/ssl/certs /etc/ssl/certs
+                RUN true
+                {copy_cmd}
+            ",
+                    run_image=run_image,
+                    app_dir=app_dir,
+                    copy_cmd=get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir)
+                }
+            }
+            None => get_copy_command(
+                // If no files specified and no run image, copy everything in /app/ over
+                &start_files.unwrap_or_else(|| vec![".".to_string()]),
+                app_dir,
+            ),
+        };
 
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
-          RUN apt-get update && apt-get -y upgrade \\
-            && apt-get install --no-install-recommends -y sudo locales curl xz-utils ca-certificates openssl \\
-            && apt-get clean && rm -rf /var/lib/apt/lists/* \\
-            && mkdir -m 0755 /nix && mkdir -m 0755 /etc/nix && groupadd -r nixbld && chown root /nix \\
-            && echo 'sandbox = false' > /etc/nix/nix.conf \\
-            && for n in $(seq 1 10); do useradd -c \"Nix build user $n\" -d /var/empty -g nixbld -G nixbld -M -N -r -s \"$(command -v nologin)\" \"nixbld$n\"; done
-
-          SHELL [\"/bin/bash\", \"-o\", \"pipefail\", \"-c\"]
-          RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash \\
-              && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old
-
-          ENV \\
-            ENV=/etc/profile \\
-            USER=root \\
-            PATH=/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/bin:/sbin:/usr/bin:/usr/sbin \\
-            GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt \\
-            NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \\
-            NIX_PATH=/nix/var/nix/profiles/per-user/root/channels
-
-          RUN nix-channel --update
-
-          RUN mkdir /app/
-          WORKDIR /app/
+          WORKDIR {app_dir}
 
           # Setup
           {setup_copy_cmd}
@@ -555,10 +567,10 @@ impl<'a> AppBuilder<'a> {
           {build_cmd}
 
           # Start
-          {start_copy_cmd}
+          {run_image_setup}
           {start_cmd}
         ",
-        base_image=BASE_IMAGE,
+        base_image=setup_phase.base_image,
         setup_copy_cmd=setup_copy_cmd,
         args_string=args_string,
         install_copy_cmd=get_copy_command(&install_files, app_dir),
@@ -566,7 +578,7 @@ impl<'a> AppBuilder<'a> {
         path_env=path_env,
         build_copy_cmd=get_copy_command(&build_files, app_dir),
         build_cmd=build_cmd,
-        start_copy_cmd=get_copy_command(&start_files, app_dir),
+        run_image_setup=run_image_setup,
         start_cmd=start_cmd};
 
         Ok(dockerfile)
@@ -578,5 +590,22 @@ fn get_copy_command(files: &[String], app_dir: &str) -> String {
         "".to_owned()
     } else {
         format!("COPY {} {}", files.join(" "), app_dir)
+    }
+}
+
+fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String {
+    if files.is_empty() {
+        format!("COPY --from=0 {} {}", app_dir, app_dir)
+    } else {
+        format!(
+            "COPY --from={} {} {}",
+            from,
+            files
+                .iter()
+                .map(|f| f.replace("./", app_dir))
+                .collect::<Vec<_>>()
+                .join(" "),
+            app_dir
+        )
     }
 }

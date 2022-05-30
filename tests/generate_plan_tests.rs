@@ -176,7 +176,28 @@ fn test_go() -> Result<()> {
         plan.build.unwrap().cmd,
         Some("go build -o out main.go".to_string())
     );
-    assert_eq!(plan.start.unwrap().cmd, Some("./out".to_string()));
+    assert_eq!(plan.start.clone().unwrap().cmd, Some("./out".to_string()));
+    assert!(plan.start.unwrap().run_image.is_some());
+
+    Ok(())
+}
+
+#[test]
+fn test_go_cgo_enabled() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/go",
+        Vec::new(),
+        None,
+        None,
+        vec!["CGO_ENABLED=1"],
+        false,
+    )?;
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("go build -o out main.go".to_string())
+    );
+    assert_eq!(plan.start.clone().unwrap().cmd, Some("./out".to_string()));
+    assert!(plan.start.unwrap().run_image.is_none());
 
     Ok(())
 }
@@ -313,10 +334,12 @@ fn test_custom_rust_version() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("cargo build --release".to_string())
-    );
+    assert!(plan
+        .build
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("cargo build --release"));
     assert_eq!(
         plan.setup
             .unwrap()
@@ -340,15 +363,44 @@ fn test_rust_rocket() -> Result<()> {
         Vec::new(),
         true,
     )?;
+    assert!(plan
+        .build
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("cargo build --release"));
+    assert!(plan.start.clone().unwrap().cmd.is_some());
+    assert_eq!(
+        plan.start.clone().unwrap().cmd.unwrap(),
+        "./rocket".to_string()
+    );
+    assert!(plan.start.unwrap().run_image.is_some());
+
+    Ok(())
+}
+
+#[test]
+fn test_rust_rocket_no_musl() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/rust-rocket",
+        Vec::new(),
+        None,
+        None,
+        vec!["NIXPACKS_NO_MUSL=1"],
+        true,
+    )?;
     assert_eq!(
         plan.build.unwrap().cmd,
         Some("cargo build --release".to_string())
     );
-    assert!(plan.start.clone().unwrap().cmd.is_some());
-
-    if let Some(start_cmd) = plan.start.unwrap().cmd {
-        assert!(start_cmd.contains("./target/release/rocket"));
-    }
+    assert!(plan
+        .start
+        .clone()
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("./target/release/rocket"));
+    assert!(plan.start.unwrap().run_image.is_none());
 
     Ok(())
 }
@@ -436,6 +488,44 @@ fn test_node_main_file_doesnt_exist() -> Result<()> {
 }
 
 #[test]
+fn test_haskell_stack() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/haskell-stack",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(plan.build.unwrap().cmd, Some("stack build".to_string()));
+    assert!(plan.start.unwrap().cmd.unwrap().contains("stack exec"));
+    assert!(plan.install.unwrap().cmd.unwrap().contains("stack setup"));
+    Ok(())
+}
+
+#[test]
+fn test_crystal() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/crystal",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("shards install".to_string())
+    );
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("shards build --release".to_string())
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("./bin/crystal".to_string()));
+    Ok(())
+}
+
+#[test]
 fn test_overriding_environment_variables() -> Result<()> {
     let plan = gen_plan(
         "./examples/variables",
@@ -464,31 +554,17 @@ fn test_config_from_environment_variables() -> Result<()> {
             "NIXPACKS_PKGS=cowsay ripgrep",
             "NIXPACKS_BUILD_CMD=build",
             "NIXPACKS_START_CMD=start",
+            "NIXPACKS_RUN_IMAGE=alpine",
         ],
         false,
     )?;
     assert_eq!(plan.build.unwrap().cmd, Some("build".to_string()));
-    assert_eq!(plan.start.unwrap().cmd, Some("start".to_string()));
+    assert_eq!(plan.start.clone().unwrap().cmd, Some("start".to_string()));
     assert_eq!(
         plan.setup.unwrap().pkgs,
         vec![Pkg::new("cowsay"), Pkg::new("ripgrep")]
     );
+    assert_eq!(plan.start.unwrap().run_image, Some("alpine".to_string()));
 
-    Ok(())
-}
-
-#[test]
-fn test_haskell_stack() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/haskell-stack",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
-    assert_eq!(plan.build.unwrap().cmd, Some("stack build".to_string()));
-    assert!(plan.start.unwrap().cmd.unwrap().contains("stack exec"));
-    assert!(plan.install.unwrap().cmd.unwrap().contains("stack setup"));
     Ok(())
 }
