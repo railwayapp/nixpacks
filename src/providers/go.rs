@@ -5,11 +5,13 @@ use crate::nixpacks::{
     nix::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 pub struct GolangProvider {}
 
 pub const BINARY_NAME: &'static &str = &"out";
+const AVAILABLE_GO_VERSIONS: &[(&str, &str)] = &[("1.17", "go"), ("1.18", "go_1_18")];
+pub const DEFAULT_GO_PKG_NAME: &'static &str = &"go";
 
 impl Provider for GolangProvider {
     fn name(&self) -> &str {
@@ -21,7 +23,10 @@ impl Provider for GolangProvider {
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![Pkg::new("go")])))
+        let go_mod = self.read_go_mod_if_exists(_app)?;
+        let nix_pkg = GolangProvider::get_nix_golang_pkg(go_mod)?;
+
+        Ok(Some(SetupPhase::new(vec![Pkg::new(&nix_pkg)])))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
@@ -70,5 +75,81 @@ impl Provider for GolangProvider {
             "CGO_ENABLED".to_string(),
             "0".to_string(),
         )])))
+    }
+}
+
+impl GolangProvider {
+    pub fn read_go_mod_if_exists(&self, app: &App) -> Result<Option<String>> {
+        if app.includes_file("go.mod") {
+            Ok(Some(app.read_file("go.mod")?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn get_nix_golang_pkg(go_mod_contents: Option<String>) -> Result<String> {
+        if go_mod_contents.is_some() {
+            let mut lines = go_mod_contents.as_ref().unwrap().lines();
+            let go_version_line = lines.find(|line| line.trim().starts_with("go"));
+
+            if let Some(go_version_line) = go_version_line {
+                let go_version = go_version_line.trim().split_whitespace().nth(1).unwrap();
+
+                if let Some(nix_pkg) = version_number_to_pkg(go_version)? {
+                    return Ok(nix_pkg);
+                }
+            }
+        }
+
+        Ok(DEFAULT_GO_PKG_NAME.to_string())
+    }
+}
+
+fn version_number_to_pkg(version: &str) -> Result<Option<String>> {
+    let matched_version = AVAILABLE_GO_VERSIONS.iter().find(|(v, _)| v == &version);
+
+    match matched_version {
+        Some((_, pkg)) => Ok(Some(pkg.to_string())),
+        None => bail!("Go version {} is not available", version),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_no_go_mod() -> Result<()> {
+        assert_eq!(
+            GolangProvider::get_nix_golang_pkg(None)?,
+            DEFAULT_GO_PKG_NAME.to_string()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_with_go_mod() -> Result<()> {
+        let go_mod_contents = r#"
+            go 1.18
+        "#;
+
+        assert_eq!(
+            GolangProvider::get_nix_golang_pkg(Some(go_mod_contents.to_string()))?,
+            "go_1_18".to_string()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_invalid_version() -> Result<()> {
+        let go_mod_contents = r#"
+            go 1.8
+        "#;
+
+        assert!(GolangProvider::get_nix_golang_pkg(Some(go_mod_contents.to_string())).is_err());
+
+        Ok(())
     }
 }
