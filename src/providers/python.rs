@@ -8,7 +8,7 @@ use crate::{
     chain,
     nixpacks::{
         app::App,
-        environment::Environment,
+        environment::{Environment, EnvironmentVariables},
         phase::{InstallPhase, SetupPhase, StartPhase},
     },
     Pkg,
@@ -50,6 +50,17 @@ impl Provider for PythonProvider {
             install_phase.add_path(format!("{}/bin", env_loc));
             return Ok(Some(install_phase));
         } else if app.includes_file("pyproject.toml") {
+            if app.includes_file("poetry.lock") {
+                let install_poetry = "pip install poetry==$POETRY_VERSION".to_string();
+                let mut install_phase = InstallPhase::new(format!(
+                    "{} && {} && {} && poetry install --no-dev --no-interaction --no-ansi",
+                    create_env, activate_env, install_poetry
+                ));
+                install_phase.add_file_dependency("poetry.lock".to_string());
+                install_phase.add_file_dependency("pyproject.toml".to_string());
+                install_phase.add_path(format!("{}/bin", env_loc));
+                return Ok(Some(install_phase));
+            }
             let mut install_phase = InstallPhase::new(format!(
                 "{} && {} && pip install --upgrade build setuptools && pip install .",
                 create_env, activate_env
@@ -78,6 +89,19 @@ impl Provider for PythonProvider {
             return Ok(Some(StartPhase::new("python main.py".to_string())));
         }
 
+        Ok(None)
+    }
+    fn environment_variables(
+        &self,
+        app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        if app.includes_file("poetry.lock") {
+            return Ok(Some(EnvironmentVariables::from([(
+                "POETRY_VERSION".to_string(),
+                "1.1.13".to_string(),
+            )])));
+        }
         Ok(None)
     }
 }

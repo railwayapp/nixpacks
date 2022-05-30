@@ -178,6 +178,13 @@ fn test_python_2() {
 }
 
 #[test]
+fn test_python_poetry() {
+    let name = simple_build("./examples/python-poetry");
+    let output = run_image(name);
+    assert!(output.contains("Hello from Python-Poetry"));
+}
+
+#[test]
 fn test_rust_custom_version() {
     let name = Uuid::new_v4().to_string();
     build(
