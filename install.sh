@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Adapted from https://github.com/starship/starship/blob/master/install/install.sh
 

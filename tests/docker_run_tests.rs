@@ -100,6 +100,7 @@ fn simple_build(path: &str) -> String {
         None,
         None,
         Vec::new(),
+        Vec::new(),
         true,
     )
     .unwrap();
@@ -117,7 +118,7 @@ fn test_node() {
 fn test_node_custom_version() {
     let name = simple_build("./examples/node-custom-version");
     let output = run_image(name);
-    assert!(output.contains("Node version: v14"));
+    assert!(output.contains("Node version: v18"));
 }
 
 #[test]
@@ -190,6 +191,7 @@ fn test_rust_custom_version() {
         None,
         None,
         Vec::new(),
+        Vec::new(),
         true,
     )
     .unwrap();
@@ -232,6 +234,7 @@ fn test_cowsay() {
         Vec::new(),
         None,
         None,
+        Vec::new(),
         Vec::new(),
         true,
     )

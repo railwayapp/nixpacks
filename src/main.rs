@@ -45,6 +45,14 @@ fn main() -> Result<()> {
                         .help("Additional tags to add to the output image")
                         .takes_value(true)
                         .multiple_values(true),
+                )
+                .arg(
+                    Arg::new("label")
+                        .long("label")
+                        .short('l')
+                        .help("Additional labels to add to the output image")
+                        .takes_value(true)
+                        .multiple_values(true),
                 ),
         )
         .arg(
@@ -116,14 +124,19 @@ fn main() -> Result<()> {
             let plan_path = matches.value_of("plan").map(|n| n.to_string());
             let output_dir = matches.value_of("out").map(|n| n.to_string());
 
-            let tags: Vec<_> = match matches.values_of("tag") {
-                Some(values) => values.collect(),
-                None => Vec::new(),
-            };
+            let tags = matches
+                .values_of("tag")
+                .map(|values| values.collect())
+                .unwrap_or_default();
+
+            let labels = matches
+                .values_of("label")
+                .map(|values| values.collect())
+                .unwrap_or_default();
 
             build(
                 path, name, pkgs, build_cmd, start_cmd, pin_pkgs, envs, plan_path, output_dir,
-                tags, false,
+                tags, labels, false,
             )?;
         }
         _ => eprintln!("Invalid command"),
