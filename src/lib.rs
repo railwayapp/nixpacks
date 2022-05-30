@@ -8,7 +8,7 @@ use crate::{
     providers::{
         crystal::CrystalProvider, deno::DenoProvider, go::GolangProvider,
         haskell::HaskellStackProvider, node::NodeProvider, python::PythonProvider,
-        rust::RustProvider,
+        ruby::RubyProvider, rust::RustProvider,
     },
 };
 use anyhow::{bail, Result};
@@ -23,6 +23,7 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &GolangProvider {},
         &DenoProvider {},
         &NodeProvider {},
+        &RubyProvider {},
         &RustProvider {},
         &PythonProvider {},
         &HaskellStackProvider {},

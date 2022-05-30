@@ -11,6 +11,7 @@ pub mod go;
 pub mod haskell;
 pub mod node;
 pub mod python;
+pub mod ruby;
 pub mod rust;
 
 pub trait Provider {
