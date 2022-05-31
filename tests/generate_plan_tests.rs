@@ -219,6 +219,21 @@ fn test_go_mod() -> Result<()> {
 }
 
 #[test]
+fn test_go_custom_version() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/go-custom-version",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("go_1_18")]);
+
+    Ok(())
+}
+
+#[test]
 fn test_deno() -> Result<()> {
     let plan = gen_plan("./examples/deno", Vec::new(), None, None, Vec::new(), false)?;
     assert_eq!(
