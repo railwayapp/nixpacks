@@ -100,6 +100,7 @@ impl<'a> AppBuilder<'a> {
         let build_phase = self.get_build_phase().context("Generating build phase")?;
         let start_phase = self.get_start_phase().context("Generating start phase")?;
         let variables = self.get_variables().context("Getting plan variables")?;
+        let static_assets = self.get_static_assets().context("Getting provider assets")?;
 
         let plan = BuildPlan {
             version: Some(NIX_PACKS_VERSION.to_string()),
@@ -108,6 +109,7 @@ impl<'a> AppBuilder<'a> {
             build: Some(build_phase),
             start: Some(start_phase),
             variables: Some(variables),
+            static_assets: Some(static_assets)
         };
 
         Ok(plan)
@@ -389,6 +391,16 @@ impl<'a> AppBuilder<'a> {
         let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
+        
+        let static_assets_path = PathBuf::from(dest).join(PathBuf::from("assets"));
+        fs::create_dir_all(&static_assets_path).context("Creating static assets folder")?;
+        
+        if let Some(assets) = &plan.static_assets {
+            for (name, content) in assets {
+                let mut file = File::create(PathBuf::from(&static_assets_path).join(PathBuf::from(&name))).context(format!("Creating asset file for {name}"))?;
+                file.write_all(content.as_bytes()).context(format!("Writing asset {name}"))?;
+            }
+        }
 
         Ok(())
     }
@@ -450,7 +462,8 @@ impl<'a> AppBuilder<'a> {
 
     pub fn gen_dockerfile(plan: &BuildPlan) -> Result<String> {
         let app_dir = "/app/";
-
+        let assets_dir = app::ASSETS_DIR;
+        
         let setup_phase = plan.setup.clone().unwrap_or_default();
         let install_phase = plan.install.clone().unwrap_or_default();
         let build_phase = plan.build.clone().unwrap_or_default();
@@ -484,6 +497,9 @@ impl<'a> AppBuilder<'a> {
             setup_files.append(&mut setup_file_deps);
         }
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
+        
+        // -- Static Assets
+        let assets_copy_cmd = format!("COPY assets {}", assets_dir);
 
         // -- Install
         let install_cmd = install_phase
@@ -559,6 +575,7 @@ impl<'a> AppBuilder<'a> {
 
           # Setup
           {setup_copy_cmd}
+          {assets_copy_cmd}
           RUN nix-env -if environment.nix
 
           # Load environment variables

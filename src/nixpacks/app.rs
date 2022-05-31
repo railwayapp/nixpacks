@@ -8,6 +8,8 @@ use regex::Regex;
 use serde::de::DeserializeOwned;
 use walkdir::WalkDir;
 
+pub static ASSETS_DIR: &str = "/assets/";
+
 #[derive(Debug, Clone)]
 pub struct App {
     pub source: PathBuf,
@@ -135,6 +137,11 @@ impl App {
 
         // Convert path to PathBuf
         Ok(stripped.to_owned())
+    }
+    
+    /// Get the path in the container to an asset defined in `static_assets`.
+    pub fn asset_path(name: &str) -> String {
+        format!("{ASSETS_DIR}{name}")
     }
 }
 
