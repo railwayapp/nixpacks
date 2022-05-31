@@ -5,7 +5,7 @@ use crate::nixpacks::{
     nix::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
-use anyhow::{bail, Result};
+use anyhow::Result;
 
 pub struct GolangProvider {}
 
@@ -110,7 +110,7 @@ fn version_number_to_pkg(version: &str) -> Result<Option<String>> {
 
     match matched_version {
         Some((_, pkg)) => Ok(Some(pkg.to_string())),
-        None => bail!("Go version {} is not available", version),
+        None => Ok(None),
     }
 }
 
@@ -143,12 +143,15 @@ mod test {
     }
 
     #[test]
-    fn test_invalid_version() -> Result<()> {
+    fn test_fallback_on_invalid_version() -> Result<()> {
         let go_mod_contents = r#"
             go 1.8
         "#;
 
-        assert!(GolangProvider::get_nix_golang_pkg(Some(go_mod_contents.to_string())).is_err());
+        assert_eq!(
+            GolangProvider::get_nix_golang_pkg(Some(go_mod_contents.to_string()))?,
+            DEFAULT_GO_PKG_NAME.to_string()
+        );
 
         Ok(())
     }
