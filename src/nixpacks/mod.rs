@@ -514,6 +514,7 @@ impl<'a> AppBuilder<'a> {
         // -- Static Assets
         let assets_copy_cmd = if !static_assets.is_empty() {
             static_assets
+                .clone()
                 .into_keys()
                 .map(|name| format!("COPY assets/{} {}{}", name, assets_dir, name))
                 .collect::<Vec<String>>()
@@ -579,7 +580,7 @@ impl<'a> AppBuilder<'a> {
             ",
                     run_image=run_image,
                     app_dir=app_dir,
-                    copy_cmd=get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir)
+                    copy_cmd=get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir, !static_assets.is_empty())
                 }
             }
             None => get_copy_command(
@@ -638,21 +639,27 @@ fn get_copy_command(files: &[String], app_dir: &str) -> String {
     }
 }
 
-fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String {
+fn get_copy_from_command(from: &str, files: &[String], app_dir: &str, has_assets: bool) -> String {
     if files.is_empty() {
         format!(
             "
 COPY --from=0 {} {}
 RUN true
-COPY --from=0 /assets /assets
+{}
 ",
-            app_dir, app_dir
+            app_dir,
+            app_dir,
+            if has_assets {
+                "COPY --from=0 /assets /assets"
+            } else {
+                ""
+            }
         )
     } else {
         format!(
             "COPY --from={} {} {}
             RUN true
-            COPY --from={} /assets /assets",
+            {}",
             from,
             files
                 .iter()
@@ -660,7 +667,11 @@ COPY --from=0 /assets /assets
                 .collect::<Vec<_>>()
                 .join(" "),
             app_dir,
-            from
+            if has_assets {
+                format!("COPY --from={} /assets /assets", from)
+            } else {
+                "".to_string()
+            }
         )
     }
 }
