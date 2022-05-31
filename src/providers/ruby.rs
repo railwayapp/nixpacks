@@ -1,3 +1,4 @@
+use super::node::{NodeProvider, PackageJson, DEFAULT_NODE_PKG_NAME};
 use super::Provider;
 use crate::nixpacks::{
     app::App,
@@ -5,7 +6,6 @@ use crate::nixpacks::{
     nix::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
-use super::node::{NodeProvider, PackageJson, DEFAULT_NODE_PKG_NAME};
 use anyhow::Result;
 use regex::Regex;
 
@@ -36,7 +36,7 @@ impl Provider for RubyProvider {
         match framework {
             Framework::Rails => {
                 packages.push(Pkg::new("postgresql"));
-                if app.includes_file("package.json") {     
+                if app.includes_file("package.json") {
                     let package_json: PackageJson = app.read_json("package.json")?;
                     let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
                     if NodeProvider::get_package_manager(app)? == "pnpm" {
@@ -67,7 +67,8 @@ impl Provider for RubyProvider {
             install_cmd.push("pnpm i --frozen-lockfile");
         } else if NodeProvider::get_package_manager(app)? == "yarn" {
             if app.includes_file(".yarnrc.yml") {
-                install_cmd.push("yarn set version berry && yarn install --immutable --check-cache");
+                install_cmd
+                    .push("yarn set version berry && yarn install --immutable --check-cache");
             } else {
                 install_cmd.push("yarn install --frozen-lockfile --production=false");
             }
