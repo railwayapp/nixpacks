@@ -38,14 +38,14 @@ impl Provider for NodeProvider {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
 
-        if NodeProvider::get_package_manager(app)? == "pnpm" {
+        if NodeProvider::get_package_manager(app) == "pnpm" {
             let mut pnpm_pkg = Pkg::new("nodePackages.pnpm");
             // Only override the node package if not the default one
             if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
                 pnpm_pkg = pnpm_pkg.set_override("nodejs", node_pkg.name.as_str());
             }
             return Ok(Some(SetupPhase::new(vec![node_pkg, pnpm_pkg])));
-        } else if NodeProvider::get_package_manager(app)? == "yarn" {
+        } else if NodeProvider::get_package_manager(app) == "yarn" {
             let mut yarn_pkg = Pkg::new("yarn");
             // Only override the node package if not the default one
             if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
@@ -58,24 +58,13 @@ impl Provider for NodeProvider {
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let mut install_cmd = "npm i";
-        if NodeProvider::get_package_manager(app)? == "pnpm" {
-            install_cmd = "pnpm i --frozen-lockfile"
-        } else if NodeProvider::get_package_manager(app)? == "yarn" {
-            if app.includes_file(".yarnrc.yml") {
-                install_cmd = "yarn set version berry && yarn install --immutable --check-cache"
-            } else {
-                install_cmd = "yarn install --frozen-lockfile --production=false"
-            }
-        } else if app.includes_file("package-lock.json") {
-            install_cmd = "npm ci"
-        }
-        Ok(Some(InstallPhase::new(install_cmd.to_string())))
+        let install_cmd = NodeProvider::get_install_command(app);
+        Ok(Some(InstallPhase::new(install_cmd)))
     }
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         if NodeProvider::has_script(app, "build")? {
-            let pkg_manager = NodeProvider::get_package_manager(app)?;
+            let pkg_manager = NodeProvider::get_package_manager(app);
             Ok(Some(BuildPhase::new(pkg_manager + " run build")))
         } else {
             Ok(None)
@@ -84,7 +73,7 @@ impl Provider for NodeProvider {
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
-            let pkg_manager = NodeProvider::get_package_manager(app)?;
+            let pkg_manager = NodeProvider::get_package_manager(app);
             Ok(Some(StartPhase::new(
                 start_cmd.replace("npm", &pkg_manager),
             )))
@@ -163,48 +152,65 @@ impl NodeProvider {
 
         // Parse `12` or `12.x` into nodejs-12_x
         let re = Regex::new(r"^(\d+)\.?[x|X]?$").unwrap();
-        if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version)? {
+        if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
 
         // Parse `>=14.10.3 <16` into nodejs-14_x
         let re = Regex::new(r"^>=(\d+)").unwrap();
-        if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version)? {
+        if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
 
         Ok(Pkg::new(DEFAULT_NODE_PKG_NAME))
     }
 
-    pub fn get_package_manager(app: &App) -> Result<String> {
+    pub fn get_package_manager(app: &App) -> String {
         let mut pkg_manager = "npm";
         if app.includes_file("pnpm-lock.yaml") {
             pkg_manager = "pnpm";
         } else if app.includes_file("yarn.lock") {
             pkg_manager = "yarn";
         }
-        Ok(pkg_manager.to_string())
+        pkg_manager.to_string()
+    }
+
+    pub fn get_install_command(app: &App) -> String {
+        let mut install_cmd = "npm i";
+        if NodeProvider::get_package_manager(app) == "pnpm" {
+            install_cmd = "pnpm i --frozen-lockfile";
+        } else if NodeProvider::get_package_manager(app) == "yarn" {
+            if app.includes_file(".yarnrc.yml") {
+                install_cmd = "yarn set version berry && yarn install --immutable --check-cache";
+            } else {
+                install_cmd = "yarn install --frozen-lockfile --production=false";
+            }
+        } else if app.includes_file("package-lock.json") {
+            install_cmd = "npm ci";
+        }
+        install_cmd.to_string()
     }
 }
 
-fn version_number_to_pkg(version: &u32) -> Result<Option<String>> {
+fn version_number_to_pkg(version: &u32) -> Result<String> {
     if AVAILABLE_NODE_VERSIONS.contains(version) {
-        Ok(Some(format!("nodejs-{}_x", version)))
+        Ok(format!("nodejs-{}_x", version))
     } else {
+        // FIXME: this logic really needs to be improved, and should default to something
         bail!("Node version {} is not available", version);
     }
 }
 
-fn parse_regex_into_pkg(re: &Regex, node_version: &str) -> Result<Option<String>> {
+fn parse_regex_into_pkg(re: &Regex, node_version: &str) -> Option<String> {
     let matches: Vec<_> = re.captures_iter(node_version).collect();
     if let Some(m) = matches.get(0) {
         match m[1].parse::<u32>() {
-            Ok(version) => return version_number_to_pkg(&version),
+            Ok(version) => return version_number_to_pkg(&version).ok(),
             Err(_e) => {}
         }
     }
 
-    Ok(None)
+    None
 }
 
 #[cfg(test)]
