@@ -1,7 +1,5 @@
-use std::collections::HashMap;
-
 use crate::nixpacks::{
-    app::App,
+    app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -14,8 +12,6 @@ pub mod haskell;
 pub mod node;
 pub mod python;
 pub mod rust;
-
-pub type StaticAssets = HashMap<String, String>;
 
 pub trait Provider {
     fn name(&self) -> &str;

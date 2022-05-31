@@ -17,10 +17,10 @@ pub mod nix;
 pub mod phase;
 pub mod plan;
 
-use crate::providers::{Provider, StaticAssets};
+use crate::providers::{Provider};
 
 use self::{
-    app::App,
+    app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
     logger::Logger,
     nix::Pkg,
