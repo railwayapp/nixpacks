@@ -404,10 +404,10 @@ impl<'a> AppBuilder<'a> {
                 for (name, content) in assets {
                     let path = Path::new(&static_assets_path).join(name);
                     let parent = path.parent().unwrap();
-                    fs::create_dir_all(parent).context(format!("Creating parent directory for {}", name))?;
+                    fs::create_dir_all(parent)
+                        .context(format!("Creating parent directory for {}", name))?;
                     let mut file =
-                        File::create(path)
-                            .context(format!("Creating asset file for {name}"))?;
+                        File::create(path).context(format!("Creating asset file for {name}"))?;
                     file.write_all(content.as_bytes())
                         .context(format!("Writing asset {name}"))?;
                 }
