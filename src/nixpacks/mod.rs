@@ -515,7 +515,7 @@ impl<'a> AppBuilder<'a> {
         let assets_copy_cmd = if !static_assets.is_empty() {
             static_assets
                 .into_keys()
-                .map(|name| format!("COPY assets/{} {}", name, assets_dir))
+                .map(|name| format!("COPY assets/{} {}{}", name, assets_dir, name))
                 .collect::<Vec<String>>()
                 .join("\n")
         } else {
@@ -640,17 +640,27 @@ fn get_copy_command(files: &[String], app_dir: &str) -> String {
 
 fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String {
     if files.is_empty() {
-        format!("COPY --from=0 {} {}", app_dir, app_dir)
+        format!(
+            "
+COPY --from=0 {} {}
+RUN true
+COPY --from=0 /assets /assets
+",
+            app_dir, app_dir
+        )
     } else {
         format!(
-            "COPY --from={} {} {}",
+            "COPY --from={} {} {}
+            RUN true
+            COPY --from={} /assets /assets",
             from,
             files
                 .iter()
                 .map(|f| f.replace("./", app_dir))
                 .collect::<Vec<_>>()
                 .join(" "),
-            app_dir
+            app_dir,
+            from
         )
     }
 }
