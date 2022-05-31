@@ -17,7 +17,7 @@ pub mod nix;
 pub mod phase;
 pub mod plan;
 
-use crate::providers::Provider;
+use crate::providers::{Provider, StaticAssets};
 
 use self::{
     app::App,
@@ -338,6 +338,15 @@ impl<'a> AppBuilder<'a> {
         };
 
         Ok(new_variables)
+    }
+
+    fn get_static_assets(&self) -> Result<StaticAssets> {
+        let static_assets = match self.provider {
+            Some(provider) => provider.static_assets(self.app, self.environment)?.unwrap_or_default(),
+            None => StaticAssets::new()
+        };
+
+        Ok(static_assets)
     }
 
     fn detect(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {

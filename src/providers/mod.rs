@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
@@ -13,6 +15,8 @@ pub mod node;
 pub mod python;
 pub mod rust;
 
+pub type StaticAssets = HashMap<String, String>;
+
 pub trait Provider {
     fn name(&self) -> &str;
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
@@ -26,6 +30,9 @@ pub trait Provider {
         Ok(None)
     }
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+        Ok(None)
+    }
+    fn static_assets(&self, _app: &App, _env: &Environment) -> Result<Option<StaticAssets>> {
         Ok(None)
     }
     fn environment_variables(
