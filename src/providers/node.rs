@@ -35,26 +35,8 @@ impl Provider for NodeProvider {
     }
 
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
-        let package_json: PackageJson = app.read_json("package.json")?;
-        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
-
-        if NodeProvider::get_package_manager(app) == "pnpm" {
-            let mut pnpm_pkg = Pkg::new("nodePackages.pnpm");
-            // Only override the node package if not the default one
-            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
-                pnpm_pkg = pnpm_pkg.set_override("nodejs", node_pkg.name.as_str());
-            }
-            return Ok(Some(SetupPhase::new(vec![node_pkg, pnpm_pkg])));
-        } else if NodeProvider::get_package_manager(app) == "yarn" {
-            let mut yarn_pkg = Pkg::new("yarn");
-            // Only override the node package if not the default one
-            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
-                yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
-            }
-            return Ok(Some(SetupPhase::new(vec![node_pkg, yarn_pkg])));
-        }
-
-        Ok(Some(SetupPhase::new(vec![node_pkg])))
+        let packages = NodeProvider::get_nix_packages(app, env)?;
+        Ok(Some(SetupPhase::new(packages)))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
@@ -189,6 +171,30 @@ impl NodeProvider {
             install_cmd = "npm ci";
         }
         install_cmd.to_string()
+    }
+
+    /// Returns the nodejs nix package and the appropriate package manager nix image.
+    pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
+        let package_json: PackageJson = app.read_json("package.json")?;
+        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+
+        if NodeProvider::get_package_manager(app) == "pnpm" {
+            let mut pnpm_pkg = Pkg::new("nodePackages.pnpm");
+            // Only override the node package if not the default one
+            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
+                pnpm_pkg = pnpm_pkg.set_override("nodejs", node_pkg.name.as_str());
+            }
+            Ok(vec![node_pkg, pnpm_pkg])
+        } else if NodeProvider::get_package_manager(app) == "yarn" {
+            let mut yarn_pkg = Pkg::new("yarn");
+            // Only override the node package if not the default one
+            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
+                yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
+            }
+            Ok(vec![node_pkg, yarn_pkg])
+        } else {
+            Ok(vec![node_pkg])
+        }
     }
 }
 
