@@ -140,7 +140,7 @@ impl App {
     }
     
     /// Get the path in the container to an asset defined in `static_assets`.
-    pub fn asset_path(name: &str) -> String {
+    pub fn asset_path(&self, name: &str) -> String {
         format!("{ASSETS_DIR}{name}")
     }
 }
@@ -255,6 +255,16 @@ mod tests {
         assert_eq!(
             &app.strip_source_path(Path::new("no/prefix.txt"))?,
             Path::new("no/prefix.txt")
+        );
+        Ok(())
+    }
+    
+    #[test]
+    fn test_static_asset_path() -> Result<()> {
+        let app = App::new("./examples/npm")?;
+        assert_eq!(
+            &app.asset_path("hi.txt"),
+            "/assets/hi.txt"
         );
         Ok(())
     }
