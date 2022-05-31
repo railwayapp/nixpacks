@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use super::{
     environment::EnvironmentVariables,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
-    StaticAssets
+    StaticAssets,
 };
 
 #[serde_with::skip_serializing_none]

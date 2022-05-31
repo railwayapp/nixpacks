@@ -138,7 +138,7 @@ impl App {
         // Convert path to PathBuf
         Ok(stripped.to_owned())
     }
-    
+
     /// Get the path in the container to an asset defined in `static_assets`.
     pub fn asset_path(&self, name: &str) -> String {
         format!("{ASSETS_DIR}{name}")
@@ -258,14 +258,11 @@ mod tests {
         );
         Ok(())
     }
-    
+
     #[test]
     fn test_static_asset_path() -> Result<()> {
         let app = App::new("./examples/npm")?;
-        assert_eq!(
-            &app.asset_path("hi.txt"),
-            "/assets/hi.txt"
-        );
+        assert_eq!(&app.asset_path("hi.txt"), "/assets/hi.txt");
         Ok(())
     }
 }
