@@ -17,7 +17,7 @@ pub mod nix;
 pub mod phase;
 pub mod plan;
 
-use crate::providers::{Provider};
+use crate::providers::Provider;
 
 use self::{
     app::{App, StaticAssets},
@@ -396,16 +396,18 @@ impl<'a> AppBuilder<'a> {
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
 
-        let static_assets_path = PathBuf::from(dest).join(PathBuf::from("assets"));
-        fs::create_dir_all(&static_assets_path).context("Creating static assets folder")?;
-
         if let Some(assets) = &plan.static_assets {
-            for (name, content) in assets {
-                let mut file =
-                    File::create(PathBuf::from(&static_assets_path).join(PathBuf::from(&name)))
-                        .context(format!("Creating asset file for {name}"))?;
-                file.write_all(content.as_bytes())
-                    .context(format!("Writing asset {name}"))?;
+            if !assets.is_empty() {
+                let static_assets_path = PathBuf::from(dest).join(PathBuf::from("assets"));
+                fs::create_dir_all(&static_assets_path).context("Creating static assets folder")?;
+
+                for (name, content) in assets {
+                    let mut file =
+                        File::create(PathBuf::from(&static_assets_path).join(PathBuf::from(&name)))
+                            .context(format!("Creating asset file for {name}"))?;
+                    file.write_all(content.as_bytes())
+                        .context(format!("Writing asset {name}"))?;
+                }
             }
         }
 
@@ -476,6 +478,7 @@ impl<'a> AppBuilder<'a> {
         let build_phase = plan.build.clone().unwrap_or_default();
         let start_phase = plan.start.clone().unwrap_or_default();
         let variables = plan.variables.clone().unwrap_or_default();
+        let static_assets = plan.static_assets.clone().unwrap_or_default();
 
         // -- Variables
         let args_string = if !variables.is_empty() {
@@ -506,7 +509,15 @@ impl<'a> AppBuilder<'a> {
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
 
         // -- Static Assets
-        let assets_copy_cmd = format!("COPY assets {}", assets_dir);
+        let assets_copy_cmd = if !static_assets.is_empty() {
+            static_assets
+                .into_keys()
+                .map(|name| format!("COPY assets/{} {}", name, assets_dir))
+                .collect::<Vec<String>>()
+                .join("\n")
+        } else {
+            "".to_string()
+        };
 
         // -- Install
         let install_cmd = install_phase
