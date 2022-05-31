@@ -5,6 +5,7 @@ use crate::nixpacks::{
     nix::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
+use super::node::{NodeProvider, PackageJson, DEFAULT_NODE_PKG_NAME};
 use anyhow::Result;
 use regex::Regex;
 
@@ -25,7 +26,7 @@ impl Provider for RubyProvider {
         Ok(app.includes_file("Gemfile") || app.has_match("*.rb"))
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let framework = self.detect_framework(app);
         let mut packages = vec![Pkg::new("ruby")];
         let needs_java = app.find_match(&Regex::new(r"jruby")?, "Gemfile.lock")?;
@@ -34,7 +35,26 @@ impl Provider for RubyProvider {
         }
         match framework {
             Framework::Rails => {
-                packages.append(&mut vec![Pkg::new("postgresql"), Pkg::new("nodejs")]);
+                packages.push(Pkg::new("postgresql"));
+                if app.includes_file("package.json") {     
+                    let package_json: PackageJson = app.read_json("package.json")?;
+                    let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+                    if NodeProvider::get_package_manager(app)? == "pnpm" {
+                        let mut pnpm_pkg = Pkg::new("nodePackages.pnpm");
+                        // Only override the node package if not the default one
+                        if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
+                            pnpm_pkg = pnpm_pkg.set_override("nodejs", node_pkg.name.as_str());
+                        }
+                        packages.push(pnpm_pkg);
+                    } else if NodeProvider::get_package_manager(app)? == "yarn" {
+                        let mut yarn_pkg = Pkg::new("yarn");
+                        // Only override the node package if not the default one
+                        if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
+                            yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
+                        }
+                        packages.push(yarn_pkg)
+                    }
+                }
                 Ok(Some(SetupPhase::new(packages)))
             }
             Framework::Vanilla => Ok(Some(SetupPhase::new(packages))),
@@ -42,12 +62,26 @@ impl Provider for RubyProvider {
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+        let mut install_cmd = Vec::<&str>::new();
+        if NodeProvider::get_package_manager(app)? == "pnpm" {
+            install_cmd.push("pnpm i --frozen-lockfile");
+        } else if NodeProvider::get_package_manager(app)? == "yarn" {
+            if app.includes_file(".yarnrc.yml") {
+                install_cmd.push("yarn set version berry && yarn install --immutable --check-cache");
+            } else {
+                install_cmd.push("yarn install --frozen-lockfile --production=false");
+            }
+        } else if app.includes_file("package-lock.json") {
+            install_cmd.push("npm ci");
+        }
         if app.includes_file("Gemfile") {
-            Ok(Some(InstallPhase::new(String::from(
-                "bundle install --frozen",
-            ))))
-        } else {
+            install_cmd.push("bundle install --frozen");
+        }
+
+        if install_cmd.is_empty() {
             Ok(None)
+        } else {
+            Ok(Some(InstallPhase::new(install_cmd.join(" && "))))
         }
     }
 
