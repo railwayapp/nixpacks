@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use crate::nixpacks::{phase::{SetupPhase, InstallPhase}, nix::Pkg};
+use crate::nixpacks::{
+    nix::Pkg,
+    phase::{InstallPhase, SetupPhase},
+};
 
-use super::{Provider, node::NodeProvider};
+use super::{node::NodeProvider, Provider};
 
 pub struct PhpProvider;
 
@@ -13,11 +16,19 @@ impl Provider for PhpProvider {
         "php"
     }
 
-    fn detect(&self, app: &crate::nixpacks::app::App, _env: &crate::nixpacks::environment::Environment) -> anyhow::Result<bool> {
+    fn detect(
+        &self,
+        app: &crate::nixpacks::app::App,
+        _env: &crate::nixpacks::environment::Environment,
+    ) -> anyhow::Result<bool> {
         Ok(app.includes_file("composer.json") || app.includes_file("index.php"))
     }
 
-    fn setup(&self, app: &crate::nixpacks::app::App, env: &crate::nixpacks::environment::Environment) -> anyhow::Result<Option<crate::nixpacks::phase::SetupPhase>> {
+    fn setup(
+        &self,
+        app: &crate::nixpacks::app::App,
+        env: &crate::nixpacks::environment::Environment,
+    ) -> anyhow::Result<Option<crate::nixpacks::phase::SetupPhase>> {
         let nodejs = NodeProvider {};
 
         let php_pkg = match self.get_php_package(&app) {
@@ -44,7 +55,11 @@ impl Provider for PhpProvider {
         Ok(Some(SetupPhase::new(pkgs)))
     }
 
-    fn install(&self, app: &crate::nixpacks::app::App, env: &crate::nixpacks::environment::Environment) -> anyhow::Result<Option<crate::nixpacks::phase::InstallPhase>> {
+    fn install(
+        &self,
+        app: &crate::nixpacks::app::App,
+        env: &crate::nixpacks::environment::Environment,
+    ) -> anyhow::Result<Option<crate::nixpacks::phase::InstallPhase>> {
         let mut cmd = String::new();
         let nodejs = NodeProvider {};
         if app.includes_file("composer.json") {
@@ -55,16 +70,33 @@ impl Provider for PhpProvider {
             if !cmd.is_empty() {
                 cmd.push_str(" && ");
             }
-            cmd.push_str(nodejs.install(app, env)?.as_ref().unwrap().cmd.as_ref().unwrap().as_str());
+            cmd.push_str(
+                nodejs
+                    .install(app, env)?
+                    .as_ref()
+                    .unwrap()
+                    .cmd
+                    .as_ref()
+                    .unwrap()
+                    .as_str(),
+            );
         }
         Ok(Some(InstallPhase::new(cmd)))
     }
 
-    fn build(&self, _app: &crate::nixpacks::app::App, _env: &crate::nixpacks::environment::Environment) -> anyhow::Result<Option<crate::nixpacks::phase::BuildPhase>> {
+    fn build(
+        &self,
+        app: &crate::nixpacks::app::App,
+        env: &crate::nixpacks::environment::Environment,
+    ) -> anyhow::Result<Option<crate::nixpacks::phase::BuildPhase>> {
         Ok(None)
     }
 
-    fn start(&self, _app: &crate::nixpacks::app::App, _env: &crate::nixpacks::environment::Environment) -> anyhow::Result<Option<crate::nixpacks::phase::StartPhase>> {
+    fn start(
+        &self,
+        _app: &crate::nixpacks::app::App,
+        _env: &crate::nixpacks::environment::Environment,
+    ) -> anyhow::Result<Option<crate::nixpacks::phase::StartPhase>> {
         Ok(None)
     }
 
@@ -82,20 +114,22 @@ impl PhpProvider {
         let composer_json: ComposerJson = app.read_json("composer.json")?;
         let version = composer_json.require.get("php").map(|v| v.to_string());
         Ok(match version {
-            Some(v) => if v.contains("8.0") {
-                Some("php80".to_string())
-            } else if v.contains("8.1") {
-                Some("php81".to_string())
-            } else if v.contains("7.4") {
-                Some("php74".to_string())
-            } else {
-                println!("Warning: PHP version {} is not available, using PHP 8.1", v);
-                Some("php81".to_string())
-            },
+            Some(v) => {
+                if v.contains("8.0") {
+                    Some("php80".to_string())
+                } else if v.contains("8.1") {
+                    Some("php81".to_string())
+                } else if v.contains("7.4") {
+                    Some("php74".to_string())
+                } else {
+                    println!("Warning: PHP version {} is not available, using PHP 8.1", v);
+                    Some("php81".to_string())
+                }
+            }
             None => {
                 println!("Warning: No PHP version specified, using PHP 8.1; see https://getcomposer.org/doc/04-schema.md#package-links for how to specify a PHP version.");
                 Some("php81".to_string())
-            },
+            }
         })
     }
     fn get_php_extensions(&self, app: &crate::nixpacks::app::App) -> anyhow::Result<Vec<String>> {
@@ -103,7 +137,12 @@ impl PhpProvider {
         let mut extensions = Vec::new();
         for (extension, _) in composer_json.require.iter() {
             if extension.starts_with("ext-") {
-                extensions.push(extension.strip_prefix("ext-").unwrap_or(extension).to_string());
+                extensions.push(
+                    extension
+                        .strip_prefix("ext-")
+                        .unwrap_or(extension)
+                        .to_string(),
+                );
             }
         }
         Ok(extensions)
