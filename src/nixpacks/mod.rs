@@ -597,8 +597,8 @@ impl<'a> AppBuilder<'a> {
 
           # Setup
           {setup_copy_cmd}
-          {assets_copy_cmd}
           RUN nix-env -if environment.nix
+          {assets_copy_cmd}
 
           # Load environment variables
           {args_string}
