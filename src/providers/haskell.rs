@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 
 use crate::nixpacks::{
-    nix::Pkg,
+    nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 

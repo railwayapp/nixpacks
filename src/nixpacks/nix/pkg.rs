@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
@@ -8,13 +7,6 @@ pub struct Pkg {
     pub name: String,
     pub overlay: Option<String>,
     pub overrides: Option<HashMap<String, String>>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, PartialEq, Clone, Default, Debug)]
-pub struct NixConfig {
-    pub pkgs: Vec<Pkg>,
-    pub archive: Option<String>,
 }
 
 impl Pkg {

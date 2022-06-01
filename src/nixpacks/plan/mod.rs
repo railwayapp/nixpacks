@@ -1,11 +1,14 @@
+use crate::nixpacks::{
+    environment::{Environment, EnvironmentVariables},
+    nix::pkg::Pkg,
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    App, Provider, StaticAssets,
+};
+use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use serde::{Deserialize, Serialize};
 
-use super::{
-    environment::EnvironmentVariables,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
-    StaticAssets,
-};
+pub mod generator;
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,6 +20,10 @@ pub struct BuildPlan {
     pub start: Option<StartPhase>,
     pub variables: Option<EnvironmentVariables>,
     pub static_assets: Option<StaticAssets>,
+}
+
+pub trait PlanGenerator {
+    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan>;
 }
 
 impl BuildPlan {
