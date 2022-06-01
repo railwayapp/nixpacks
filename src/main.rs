@@ -105,7 +105,7 @@ fn main() -> Result<()> {
     let build_cmd = matches.value_of("build_cmd").map(|s| s.to_string());
     let start_cmd = matches.value_of("start_cmd").map(|s| s.to_string());
     let pkgs = match matches.values_of("pkgs") {
-        Some(values) => values.map(|p| Pkg::new(p)).collect::<Vec<_>>(),
+        Some(values) => values.map(Pkg::new).collect::<Vec<_>>(),
         None => Vec::new(),
     };
     let pin_pkgs = matches.is_present("pin");
@@ -137,7 +137,7 @@ fn main() -> Result<()> {
             let out_dir = matches.value_of("out").map(|n| n.to_string());
 
             // TODO: Use this
-            let plan_path = matches.value_of("plan").map(|n| n.to_string());
+            let _plan_path = matches.value_of("plan").map(|n| n.to_string());
 
             let tags = matches
                 .values_of("tag")

@@ -76,11 +76,7 @@ impl DockerBuilder {
 
     fn get_docker_build_cmd(&self, plan: &BuildPlan, name: &str, dest: &str) -> Command {
         let mut docker_build_cmd = Command::new("docker");
-        docker_build_cmd
-            .arg("build")
-            .arg(dest)
-            .arg("-t")
-            .arg(name.clone());
+        docker_build_cmd.arg("build").arg(dest).arg("-t").arg(name);
 
         if self.options.quiet {
             docker_build_cmd.arg("--quiet");

@@ -1,23 +1,22 @@
-use std::env;
-
-use anyhow::{bail, Result};
-use nixpacks::{
+use crate::nixpacks::{
+    app::App,
     builder::{
         docker::{DockerBuilder, DockerBuilderOptions},
         Builder,
     },
+    environment::Environment,
+    logger::Logger,
+    nix::pkg::Pkg,
     plan::{
         generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
         BuildPlan, PlanGenerator,
     },
 };
-use {
-    nixpacks::{app::App, environment::Environment, logger::Logger, nix::pkg::Pkg},
-    providers::{
-        crystal::CrystalProvider, deno::DenoProvider, go::GolangProvider,
-        haskell::HaskellStackProvider, node::NodeProvider, python::PythonProvider,
-        rust::RustProvider, Provider,
-    },
+use anyhow::Result;
+use providers::{
+    crystal::CrystalProvider, deno::DenoProvider, go::GolangProvider,
+    haskell::HaskellStackProvider, node::NodeProvider, python::PythonProvider, rust::RustProvider,
+    Provider,
 };
 
 mod chain;

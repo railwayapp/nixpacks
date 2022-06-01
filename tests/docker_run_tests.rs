@@ -1,5 +1,5 @@
 use nixpacks::{
-    create_docker_image, generate_build_plan,
+    create_docker_image,
     nixpacks::{
         builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::generator::GeneratePlanOptions,
     },

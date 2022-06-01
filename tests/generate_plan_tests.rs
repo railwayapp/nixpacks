@@ -8,9 +8,7 @@ use nixpacks::{
 };
 
 fn simple_gen_plan(path: &str) -> BuildPlan {
-    let plan = generate_build_plan(path, Vec::new(), &GeneratePlanOptions::default()).unwrap();
-
-    plan
+    generate_build_plan(path, Vec::new(), &GeneratePlanOptions::default()).unwrap()
 }
 
 #[test]

@@ -1,12 +1,11 @@
 use super::{BuildPlan, PlanGenerator};
 use crate::nixpacks::{
-    app,
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
     App, Provider, StaticAssets,
 };
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::{Context, Ok, Result};
 
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";

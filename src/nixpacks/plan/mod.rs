@@ -1,10 +1,9 @@
 use crate::nixpacks::{
     environment::{Environment, EnvironmentVariables},
-    nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
-    App, Provider, StaticAssets,
+    App, StaticAssets,
 };
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::Result;
 use indoc::formatdoc;
 use serde::{Deserialize, Serialize};
 
