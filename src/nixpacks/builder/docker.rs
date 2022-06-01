@@ -12,7 +12,7 @@ use indoc::formatdoc;
 use tempdir::TempDir;
 use uuid::Uuid;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct DockerBuilderOptions {
     pub name: Option<String>,
     pub out_dir: Option<String>,

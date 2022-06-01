@@ -1,4 +1,9 @@
-use nixpacks::build;
+use nixpacks::{
+    create_docker_image, generate_build_plan,
+    nixpacks::{
+        builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::generator::GeneratePlanOptions,
+    },
+};
 use std::io::{BufRead, BufReader};
 use std::{
     process::{Command, Stdio},
@@ -89,19 +94,18 @@ fn run_image(name: String) -> String {
 /// Returns the randomly generated image name
 fn simple_build(path: &str) -> String {
     let name = Uuid::new_v4().to_string();
-    build(
+    create_docker_image(
         path,
-        Some(name.clone()),
         Vec::new(),
-        None,
-        None,
-        true,
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        Vec::new(),
-        true,
+        &GeneratePlanOptions {
+            pin_pkgs: true,
+            ..Default::default()
+        },
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
     )
     .unwrap();
 
@@ -187,19 +191,18 @@ fn test_python_poetry() {
 #[test]
 fn test_rust_custom_version() {
     let name = Uuid::new_v4().to_string();
-    build(
+    create_docker_image(
         "./examples/rust-custom-version",
-        Some(name.clone()),
-        Vec::new(),
-        None,
-        None,
-        true,
         vec!["NIXPACKS_NO_MUSL=1"],
-        None,
-        None,
-        Vec::new(),
-        Vec::new(),
-        true,
+        &GeneratePlanOptions {
+            pin_pkgs: true,
+            ..Default::default()
+        },
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
     )
     .unwrap();
 
@@ -221,12 +224,12 @@ fn test_go_custom_version() {
     assert!(output.contains("Hello from go1.18"));
 }
 
-#[test]
-fn test_haskell_stack() {
-    let name = simple_build("./examples/haskell-stack");
-    let output = run_image(name);
-    assert!(output.contains("Hello from Haskell"));
-}
+// #[test]
+// fn test_haskell_stack() {
+//     let name = simple_build("./examples/haskell-stack");
+//     let output = run_image(name);
+//     assert!(output.contains("Hello from Haskell"));
+// }
 
 #[test]
 fn test_crystal() {
@@ -238,21 +241,23 @@ fn test_crystal() {
 #[test]
 fn test_cowsay() {
     let name = Uuid::new_v4().to_string();
-    build(
+    create_docker_image(
         "./examples/hello",
-        Some(name.clone()),
-        vec!["cowsay"],
-        None,
-        Some("./start.sh".to_string()),
-        false,
         Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        Vec::new(),
-        true,
+        &GeneratePlanOptions {
+            pin_pkgs: true,
+            custom_start_cmd: Some("./start.sh".to_string()),
+            custom_pkgs: vec![Pkg::new("cowsay")],
+            ..Default::default()
+        },
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
     )
     .unwrap();
+
     let output = run_image(name);
     assert!(output.contains("Hello World"));
 }

@@ -13,7 +13,7 @@ static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
 
 const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
     pub custom_build_cmd: Option<String>,
     pub custom_start_cmd: Option<String>,
