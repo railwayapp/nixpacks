@@ -1,7 +1,7 @@
 use crate::nixpacks::{
+    app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
-    App, StaticAssets,
 };
 use anyhow::Result;
 use indoc::formatdoc;

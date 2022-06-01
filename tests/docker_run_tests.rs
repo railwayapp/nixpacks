@@ -224,12 +224,12 @@ fn test_go_custom_version() {
     assert!(output.contains("Hello from go1.18"));
 }
 
-// #[test]
-// fn test_haskell_stack() {
-//     let name = simple_build("./examples/haskell-stack");
-//     let output = run_image(name);
-//     assert!(output.contains("Hello from Haskell"));
-// }
+#[test]
+fn test_haskell_stack() {
+    let name = simple_build("./examples/haskell-stack");
+    let output = run_image(name);
+    assert!(output.contains("Hello from Haskell"));
+}
 
 #[test]
 fn test_crystal() {

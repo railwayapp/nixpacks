@@ -1,9 +1,12 @@
 use super::{BuildPlan, PlanGenerator};
-use crate::nixpacks::{
-    environment::{Environment, EnvironmentVariables},
-    nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
-    App, Provider, StaticAssets,
+use crate::{
+    nixpacks::{
+        app::{App, StaticAssets},
+        environment::{Environment, EnvironmentVariables},
+        nix::pkg::Pkg,
+        phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    },
+    providers::Provider,
 };
 use anyhow::{Context, Ok, Result};
 
