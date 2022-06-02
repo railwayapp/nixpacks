@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use super::{
     environment::EnvironmentVariables,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    StaticAssets,
 };
 
 #[serde_with::skip_serializing_none]
@@ -15,6 +16,7 @@ pub struct BuildPlan {
     pub build: Option<BuildPhase>,
     pub start: Option<StartPhase>,
     pub variables: Option<EnvironmentVariables>,
+    pub static_assets: Option<StaticAssets>,
 }
 
 impl BuildPlan {

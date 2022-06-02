@@ -253,6 +253,8 @@ fn test_node_custom_version() {
     let name = simple_build("./examples/node-custom-version");
     let output = run_image(name, None);
     assert!(output.contains("Node version: v14"));
+    let output = run_image(name);
+    assert!(output.contains("Node version: v18"));
 }
 
 #[test]
@@ -342,6 +344,12 @@ fn test_django() {
 
     // Check if we could get to Django start
     assert!(output.contains("Booting worker"));
+
+#[test]
+fn test_python_poetry() {
+    let name = simple_build("./examples/python-poetry");
+    let output = run_image(name);
+    assert!(output.contains("Hello from Python-Poetry"));
 }
 
 #[test]
@@ -372,6 +380,13 @@ fn test_go() {
     let name = simple_build("./examples/go");
     let output = run_image(name, None);
     assert!(output.contains("Hello from Go"));
+}
+
+#[test]
+fn test_go_custom_version() {
+    let name = simple_build("./examples/go-custom-version");
+    let output = run_image(name);
+    assert!(output.contains("Hello from go1.18"));
 }
 
 #[test]
