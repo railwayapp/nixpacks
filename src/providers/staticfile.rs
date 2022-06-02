@@ -53,10 +53,9 @@ impl Provider for StaticfileProvider {
         }
 
         let staticfile: Staticfile = app.read_yaml("Staticfile").unwrap_or_default();
-        let port = std::env::var("PORT").unwrap_or_else(|_| "80".to_string());
         let root = staticfile.root.unwrap_or_else(|| "/app".to_string());
         let gzip = staticfile.gzip.unwrap_or_else(|| "on".to_string());
-        let directory = staticfile.directory.unwrap_or_else(|| "on".to_string());
+        let directory = staticfile.directory.unwrap_or_else(|| "off".to_string());
         let status_code = staticfile.status_code.unwrap_or_default();
         let mut error_page = "".to_string();
         for (key, value) in status_code {
@@ -79,7 +78,7 @@ impl Provider for StaticfileProvider {
             keepalive_timeout  60;
             types_hash_max_size 4096;
             server {{
-                listen    {port};
+                listen    0.0.0.0:80;
                 gzip  	  {gzip};
                 root	  {root};
                 location / {{
@@ -91,7 +90,6 @@ impl Provider for StaticfileProvider {
         }}
         ", 
         mime_types = mime_types,
-        port = port,
         gzip = gzip,
         root = root,
         auth_basic = auth_basic,
@@ -109,9 +107,12 @@ impl Provider for StaticfileProvider {
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+        // shell command to edit 0.0.0.0:80 to $PORT
+        let shell_cmd = "[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\"";
         Ok(Some(StartPhase::new(format!(
-            "nginx -c {conf_location}",
-            conf_location = app.asset_path("nginx.conf")
+            "{shell_cmd} {conf_location} && nginx -c {conf_location}",
+            shell_cmd = shell_cmd,
+            conf_location = app.asset_path("nginx.conf"),
         ))))
     }
 }
