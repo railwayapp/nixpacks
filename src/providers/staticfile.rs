@@ -53,7 +53,7 @@ impl Provider for StaticfileProvider {
         }
 
         let staticfile: Staticfile = app.read_yaml("Staticfile").unwrap_or_default();
-        let root = staticfile.root.unwrap_or_else(|| "/app".to_string());
+        let root = staticfile.root.unwrap_or_else(|| "".to_string());
         let gzip = staticfile.gzip.unwrap_or_else(|| "on".to_string());
         let directory = staticfile.directory.unwrap_or_else(|| "off".to_string());
         let status_code = staticfile.status_code.unwrap_or_default();
@@ -80,7 +80,7 @@ impl Provider for StaticfileProvider {
             server {{
                 listen    0.0.0.0:80;
                 gzip  	  {gzip};
-                root	  {root};
+                root	  /app/{root};
                 location / {{
                     {auth_basic}
                     autoindex {directory};
