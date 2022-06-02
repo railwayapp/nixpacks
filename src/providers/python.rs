@@ -87,15 +87,9 @@ impl Provider for PythonProvider {
 
     fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if PythonProvider::is_django(app, env)? {
-            // Get name of folder with settings.py in it
-            // Read the WSGI application out of that
-            // let res = app.find_files("settings.py");
             let app_name = PythonProvider::get_django_app_name(app, env)?;
 
-            println!("APP NAME: {}", app_name);
-            return Ok(Some(StartPhase::new(
-                "python manage.py migrate && gunicorn mysite.wsgi".to_string(),
-            )));
+            return Ok(Some(StartPhase::new(format!("gunicorn {}", app_name))));
         }
 
         if app.includes_file("pyproject.toml") {
@@ -178,6 +172,7 @@ impl PythonProvider {
                 let f = app.read_file(p)?;
                 if let Some(value) = re.captures(f.as_str()) {
                     // Get the first and only match
+                    // e.g "mysite.wsgi"
                     return Ok(value.get(1).unwrap().as_str().into());
                 }
             }
