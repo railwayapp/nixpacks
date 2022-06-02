@@ -23,8 +23,6 @@ my $outfile = $ARGV[1];
 open(FH, '<', $infile) or die "Could not open configuration file '$infile' $!";
 my $out = '';
 while (<FH>) {
-    # Variables
-    s/\$\{(\w+)\}/$ENV{$1}/eg;
 
     # If statements
     s{
@@ -34,6 +32,9 @@ while (<FH>) {
             ([\s\S]*?)
         \)
     }{if_stmt($1, $2, $3)}egx;
+
+    # Variables
+    s/\$\{(\w+)\}/$ENV{$1}/eg;
 
     $out .= $_;
 }

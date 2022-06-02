@@ -39,7 +39,7 @@ impl Provider for PhpProvider {
         let mut pkgs = vec![
             Pkg::new(&php_pkg),
             Pkg::new("perl"),
-            Pkg::new(&format!("{}Packages.composer", &php_pkg)),
+            Pkg::new(&format!("{}Packages.composer", &php_pkg))
         ];
         if let Ok(php_extensions) = self.get_php_extensions(&app) {
             for extension in php_extensions {
@@ -117,8 +117,7 @@ impl Provider for PhpProvider {
     ) -> anyhow::Result<Option<crate::nixpacks::app::StaticAssets>> {
         Ok(Some(static_asset_list! {
             "nginx.template.conf" => include_str!("php/nginx.template.conf"),
-            "transform-config.pl" => include_str!("php/transform-config.pl"),
-            "fastcgi_params" => include_str!("php/fastcgi_params")
+            "transform-config.pl" => include_str!("php/transform-config.pl")
         }))
     }
 
