@@ -403,3 +403,10 @@ fn test_cowsay() {
     let output = run_image(name, None);
     assert!(output.contains("Hello World"));
 }
+
+#[test]
+fn test_staticfile() {
+    let name = simple_build("./examples/staticfile");
+    let output = run_image(name, None);
+    assert!(output.contains("start worker process"));
+}
