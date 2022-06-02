@@ -6,7 +6,7 @@ use std::{
 };
 
 use super::Builder;
-use crate::nixpacks::{files, logger::Logger, nix, plan::BuildPlan, NIX_PACKS_VERSION};
+use crate::nixpacks::{app, files, logger::Logger, nix, plan::BuildPlan, NIX_PACKS_VERSION};
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use tempdir::TempDir;
@@ -158,12 +158,14 @@ impl DockerBuilder {
 
     fn create_dockerfile(&self, plan: &BuildPlan) -> String {
         let app_dir = "/app/";
+        let assets_dir = app::ASSETS_DIR;
 
         let setup_phase = plan.setup.clone().unwrap_or_default();
         let install_phase = plan.install.clone().unwrap_or_default();
         let build_phase = plan.build.clone().unwrap_or_default();
         let start_phase = plan.start.clone().unwrap_or_default();
         let variables = plan.variables.clone().unwrap_or_default();
+        let static_assets = plan.static_assets.clone().unwrap_or_default();
 
         // -- Variables
         let args_string = if !variables.is_empty() {
@@ -192,6 +194,18 @@ impl DockerBuilder {
             setup_files.append(&mut setup_file_deps);
         }
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
+
+        // -- Static Assets
+        let assets_copy_cmd = if !static_assets.is_empty() {
+            static_assets
+                .clone()
+                .into_keys()
+                .map(|name| format!("COPY assets/{} {}{}", name, assets_dir, name))
+                .collect::<Vec<String>>()
+                .join("\n")
+        } else {
+            "".to_string()
+        };
 
         // -- Install
         let install_cmd = install_phase
@@ -268,6 +282,7 @@ impl DockerBuilder {
           # Setup
           {setup_copy_cmd}
           RUN nix-env -if environment.nix
+          {assets_copy_cmd}
 
           # Load environment variables
           {args_string}
