@@ -343,7 +343,6 @@ fn test_django() {
     remove_network(network_name);
 
     // Check if we could get to Django start
-    println!("OUTPUT: {}", output);
     assert!(output.contains("Booting worker"));
 }
 

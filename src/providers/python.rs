@@ -1,7 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
 
 use anyhow::{bail, Context, Result};
 
+use regex::Regex;
 use serde::Deserialize;
 
 use crate::{
@@ -86,6 +87,12 @@ impl Provider for PythonProvider {
 
     fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if PythonProvider::is_django(app, env)? {
+            // Get name of folder with settings.py in it
+            // Read the WSGI application out of that
+            // let res = app.find_files("settings.py");
+            let app_name = PythonProvider::get_django_app_name(app, env)?;
+
+            println!("APP NAME: {}", app_name);
             return Ok(Some(StartPhase::new(
                 "python manage.py migrate && gunicorn mysite.wsgi".to_string(),
             )));
@@ -154,6 +161,28 @@ enum EntryPoint {
 impl PythonProvider {
     fn is_django(app: &App, _env: &Environment) -> Result<bool> {
         Ok(app.includes_file("manage.py"))
+    }
+
+    fn get_django_app_name(app: &App, _env: &Environment) -> Result<String> {
+        // Look for the settings.py file
+        let paths = app.find_files("/**/settings.py").unwrap();
+
+        // Generate regex to find the application name
+        let re = Regex::new(r"WSGI_APPLICATION = '(.*).application'").unwrap();
+
+        // Search all settings.py matches
+        for path in paths {
+            let path_buf = fs::canonicalize(path)?;
+
+            if let Some(p) = path_buf.to_str() {
+                let f = app.read_file(p)?;
+                if let Some(value) = re.captures(f.as_str()) {
+                    // Get the first and only match
+                    return Ok(value.get(1).unwrap().as_str().into());
+                }
+            }
+        }
+        bail!("Failed to find django application name!")
     }
 
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
