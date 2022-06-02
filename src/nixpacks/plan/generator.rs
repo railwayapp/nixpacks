@@ -18,6 +18,7 @@ static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
+    pub custom_install_cmd: Option<String>,
     pub custom_build_cmd: Option<String>,
     pub custom_start_cmd: Option<String>,
     pub custom_pkgs: Vec<Pkg>,
@@ -123,10 +124,24 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
     }
 
     fn get_install_phase(&self, app: &App, environment: &Environment) -> Result<InstallPhase> {
-        let install_phase = match self.matched_provider {
+        let mut install_phase = match self.matched_provider {
             Some(provider) => provider.install(app, environment)?.unwrap_or_default(),
             None => InstallPhase::default(),
         };
+
+        let env_install_cmd = environment.get_config_variable("INSTALL_CMD").cloned();
+
+        // Start command priority
+        // - custom install command
+        // - environment variable
+        // - provider
+
+        install_phase.cmd = self
+            .options
+            .custom_install_cmd
+            .clone()
+            .or(env_install_cmd)
+            .or(install_phase.cmd);
 
         Ok(install_phase)
     }
