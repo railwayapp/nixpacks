@@ -39,12 +39,7 @@ impl Provider for PythonProvider {
 
         pkgs.append(&mut vec![python_base_package]);
 
-        if PythonProvider::is_django(app, env)?
-            && app
-                .read_file("requirements.txt")
-                .unwrap()
-                .contains("psycopg2")
-        {
+        if PythonProvider::is_django(app, env)? && PythonProvider::is_using_postgres(app, env)? {
             // Django with Postgres requires postgresql and gcc on top of the original python packages
             pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
         }
@@ -166,6 +161,13 @@ impl PythonProvider {
                 .read_file("requirements.txt")
                 .unwrap()
                 .contains("Django"))
+    }
+
+    fn is_using_postgres(app: &App, _env: &Environment) -> Result<bool> {
+        // Check for the engine database type in settings.py
+        let re = Regex::new(r"django.db.backends.postgresql").unwrap();
+
+        app.find_match(&re, "/**/settings.py")
     }
 
     fn get_django_app_name(app: &App, _env: &Environment) -> Result<String> {
