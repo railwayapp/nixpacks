@@ -1,12 +1,11 @@
 use anyhow::Context;
-use nixpacks::build;
-use serde_json::json;
 use nixpacks::{
     create_docker_image,
     nixpacks::{
         builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::generator::GeneratePlanOptions,
     },
 };
+use serde_json::json;
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 use std::time::Duration;
