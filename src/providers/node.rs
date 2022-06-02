@@ -4,14 +4,14 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    nix::Pkg,
+    nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{bail, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 17];
+const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
 pub const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
 
 #[derive(Serialize, Deserialize, Default, Debug)]

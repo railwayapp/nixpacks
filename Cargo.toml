@@ -1,6 +1,6 @@
 [package]
 name = "nixpacks"
-version = "0.0.18"
+version = "0.0.19"
 edition = "2021"
 license = "MIT"
 authors = ["Railway <contact@railway.app>"]
@@ -36,3 +36,4 @@ tempdir = "0.3.7"
 thiserror = "1.0.30"
 toml = "0.5.8"
 uuid = { version = "0.8.2", features = ["v4"] }
+wait-timeout = "*"

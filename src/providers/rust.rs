@@ -4,7 +4,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    nix::Pkg,
+    nix::pkg::Pkg,
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Context, Result};
@@ -166,7 +166,7 @@ impl RustProvider {
 mod test {
     use std::collections::HashMap;
 
-    use crate::nixpacks::{app::App, environment::Environment, nix::Pkg};
+    use crate::nixpacks::{app::App, environment::Environment, nix::pkg::Pkg};
 
     use super::*;
 

@@ -1,5 +1,5 @@
 use crate::nixpacks::{
-    app::App,
+    app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -27,6 +27,9 @@ pub trait Provider {
         Ok(None)
     }
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+        Ok(None)
+    }
+    fn static_assets(&self, _app: &App, _env: &Environment) -> Result<Option<StaticAssets>> {
         Ok(None)
     }
     fn environment_variables(
