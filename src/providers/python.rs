@@ -89,7 +89,10 @@ impl Provider for PythonProvider {
         if PythonProvider::is_django(app, env)? {
             let app_name = PythonProvider::get_django_app_name(app, env)?;
 
-            return Ok(Some(StartPhase::new(format!("gunicorn {}", app_name))));
+            return Ok(Some(StartPhase::new(format!(
+                "python manage.py && gunicorn {}",
+                app_name
+            ))));
         }
 
         if app.includes_file("pyproject.toml") {
