@@ -6,7 +6,7 @@ use std::{
 };
 
 use super::Builder;
-use crate::nixpacks::{app::App, files, logger::Logger, nix, plan::BuildPlan, NIX_PACKS_VERSION};
+use crate::nixpacks::{files, logger::Logger, nix, plan::BuildPlan, NIX_PACKS_VERSION};
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use tempdir::TempDir;
@@ -27,7 +27,7 @@ pub struct DockerBuilder {
 }
 
 impl Builder for DockerBuilder {
-    fn create_image(&self, app: &App, plan: &BuildPlan) -> Result<()> {
+    fn create_image(&self, app_src: &str, plan: &BuildPlan) -> Result<()> {
         self.logger
             .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
 
@@ -46,7 +46,7 @@ impl Builder for DockerBuilder {
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
 
         // Write everything to destination
-        self.write_app(app, dest).context("Writing app")?;
+        self.write_app(app_src, dest).context("Writing app")?;
         self.write_assets(plan, dest).context("Writing assets")?;
         self.write_dockerfile(plan, dest)
             .context("Writing Dockerfile")?;
@@ -108,8 +108,8 @@ impl DockerBuilder {
         docker_build_cmd
     }
 
-    fn write_app(&self, app: &App, dest: &str) -> Result<()> {
-        files::recursive_copy_dir(app.source.clone(), &dest)
+    fn write_app(&self, app_src: &str, dest: &str) -> Result<()> {
+        files::recursive_copy_dir(app_src, &dest)
     }
 
     fn write_dockerfile(&self, plan: &BuildPlan, dest: &str) -> Result<()> {
@@ -286,15 +286,8 @@ impl DockerBuilder {
           {start_cmd}
         ",
         base_image=setup_phase.base_image,
-        setup_copy_cmd=setup_copy_cmd,
-        args_string=args_string,
         install_copy_cmd=get_copy_command(&install_files, app_dir),
-        install_cmd=install_cmd,
-        path_env=path_env,
-        build_copy_cmd=get_copy_command(&build_files, app_dir),
-        build_cmd=build_cmd,
-        run_image_setup=run_image_setup,
-        start_cmd=start_cmd};
+        build_copy_cmd=get_copy_command(&build_files, app_dir)};
 
         dockerfile
     }
