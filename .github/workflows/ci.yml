@@ -80,4 +80,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all-targets --all-features -E wildcard_dependencies
+          args: --all-targets --all-features -E clippy::wildcard_dependencies
