@@ -19,13 +19,6 @@ path = "src/lib.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[fix]
-
-[clippy]
-warn = [
-    "clippy::wildcard_dependencies
-]
-
 [dependencies]
 anyhow = "1.0.56"
 clap = { version = "3.1.6", features = ["derive"] }
