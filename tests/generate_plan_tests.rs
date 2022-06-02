@@ -441,7 +441,7 @@ fn test_staticfile() -> Result<()> {
     );
     assert_eq!(
         plan.start.unwrap().cmd,
-        Some("nginx -c /assets/nginx.conf".to_string())
+        Some("[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\" /assets/nginx.conf && nginx -c /assets/nginx.conf".to_string())
     );
     Ok(())
 }
