@@ -36,4 +36,4 @@ tempdir = "0.3.7"
 thiserror = "1.0.30"
 toml = "0.5.8"
 uuid = { version = "0.8.2", features = ["v4"] }
-wait-timeout = "*"
+wait-timeout = "0.2.0"
