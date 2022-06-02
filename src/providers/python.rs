@@ -39,7 +39,6 @@ impl Provider for PythonProvider {
 
         pkgs.append(&mut vec![python_base_package]);
 
-        // TODO. Should probably also read requirements.txt? Maybe?
         if PythonProvider::is_django(app, env)? {
             // Django requires postgresql and gcc on top of the original python packages
             pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
@@ -90,7 +89,7 @@ impl Provider for PythonProvider {
             let app_name = PythonProvider::get_django_app_name(app, env)?;
 
             return Ok(Some(StartPhase::new(format!(
-                "python manage.py && gunicorn {}",
+                "python manage.py migrate && gunicorn {}",
                 app_name
             ))));
         }

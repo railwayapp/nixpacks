@@ -2,11 +2,13 @@ use anyhow::Context;
 use nixpacks::build;
 use serde_json::json;
 use std::io::{BufRead, BufReader};
+use std::time::Duration;
 use std::{
     process::{Command, Stdio},
     thread, time,
 };
 use uuid::Uuid;
+use wait_timeout::ChildExt;
 
 const TIMEOUT_SECONDS: i32 = 5;
 
@@ -83,36 +85,24 @@ fn run_image(name: String, cfg: Option<Config>) -> String {
     cmd.stdout(Stdio::piped());
 
     let mut child = cmd.spawn().unwrap();
-    let stdout = child.stdout.take().unwrap();
 
-    let cloned_name = name.clone();
+    let secs = Duration::from_secs(5);
 
-    let thread = thread::spawn(move || {
-        for _ in 0..TIMEOUT_SECONDS {
-            if let Ok(Some(_)) = child.try_wait() {
-                return;
-            }
-
-            thread::sleep(time::Duration::from_secs(1));
+    let _status_code = match child.wait_timeout(secs).unwrap() {
+        Some(status) => status.code(),
+        None => {
+            stop_and_remove_container_by_image(name);
+            child.kill().unwrap();
+            child.wait().unwrap().code()
         }
+    };
 
-        stop_and_remove_container_by_image(name.clone());
-        child.kill().unwrap();
-    });
-
-    let reader = BufReader::new(stdout);
-    let output = reader
+    let reader = BufReader::new(child.stdout.unwrap());
+    reader
         .lines()
         .map(|line| line.unwrap())
         .collect::<Vec<_>>()
-        .join("\n");
-
-    thread.join().unwrap();
-
-    // Clean up container when done
-    stop_and_remove_container_by_image(cloned_name);
-
-    output
+        .join("\n")
 }
 
 /// Builds a directory with default options
@@ -343,7 +333,8 @@ fn test_django() {
     remove_network(network_name);
 
     // Check if we could get to Django start
-    assert!(output.contains("Booting worker"));
+
+    assert!(output.contains("Running migrations"));
 }
 
 #[test]
