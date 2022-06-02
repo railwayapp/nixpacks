@@ -2,7 +2,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    nix::Pkg,
+    nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Context, Result};
