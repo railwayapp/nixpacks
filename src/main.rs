@@ -31,12 +31,6 @@ fn main() -> Result<()> {
                         .takes_value(true),
                 )
                 .arg(
-                    Arg::new("plan")
-                        .long("plan")
-                        .help("Existing build plan file to use")
-                        .takes_value(true),
-                )
-                .arg(
                     Arg::new("out")
                         .long("out")
                         .short('o')
@@ -59,6 +53,13 @@ fn main() -> Result<()> {
                         .takes_value(true)
                         .multiple_values(true),
                 ),
+        )
+        .arg(
+            Arg::new("plan")
+                .long("plan")
+                .help("Existing build plan file to use")
+                .takes_value(true)
+                .global(true),
         )
         .arg(
             Arg::new("build_cmd")
@@ -115,12 +116,14 @@ fn main() -> Result<()> {
         None => Vec::new(),
     };
 
+    let plan_path = matches.value_of("plan").map(|n| n.to_string());
+
     let plan_options = &GeneratePlanOptions {
         custom_start_cmd: start_cmd,
         custom_build_cmd: build_cmd,
         custom_pkgs: pkgs,
         pin_pkgs,
-        plan_path: None,
+        plan_path,
     };
 
     match &matches.subcommand() {
@@ -135,9 +138,6 @@ fn main() -> Result<()> {
             let path = matches.value_of("PATH").expect("required");
             let name = matches.value_of("name").map(|n| n.to_string());
             let out_dir = matches.value_of("out").map(|n| n.to_string());
-
-            // TODO: Use this
-            let _plan_path = matches.value_of("plan").map(|n| n.to_string());
 
             let tags = matches
                 .values_of("tag")

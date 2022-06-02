@@ -1,3 +1,5 @@
+use std::fs;
+
 use super::{BuildPlan, PlanGenerator};
 use crate::{
     nixpacks::{
@@ -31,6 +33,14 @@ pub struct NixpacksBuildPlanGenerator<'a> {
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan> {
+        // If options.plan_path is specified, use that build plan
+        if let Some(plan_path) = self.options.clone().plan_path {
+            let plan_json = fs::read_to_string(plan_path).context("Reading build plan")?;
+            let plan: BuildPlan =
+                serde_json::from_str(&plan_json).context("Deserializing build plan")?;
+            return Ok(plan);
+        }
+
         self.detect(app, environment)?;
 
         let setup_phase = self
