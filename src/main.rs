@@ -1,6 +1,11 @@
-use ::nixpacks::{build, gen_plan};
 use anyhow::Result;
 use clap::{arg, Arg, Command};
+use nixpacks::{
+    create_docker_image, generate_build_plan,
+    nixpacks::{
+        builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::generator::GeneratePlanOptions,
+    },
+};
 
 fn main() -> Result<()> {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -26,12 +31,6 @@ fn main() -> Result<()> {
                         .takes_value(true),
                 )
                 .arg(
-                    Arg::new("plan")
-                        .long("plan")
-                        .help("Existing build plan file to use")
-                        .takes_value(true),
-                )
-                .arg(
                     Arg::new("out")
                         .long("out")
                         .short('o')
@@ -54,6 +53,13 @@ fn main() -> Result<()> {
                         .takes_value(true)
                         .multiple_values(true),
                 ),
+        )
+        .arg(
+            Arg::new("plan")
+                .long("plan")
+                .help("Existing build plan file to use")
+                .takes_value(true)
+                .global(true),
         )
         .arg(
             Arg::new("build_cmd")
@@ -99,8 +105,8 @@ fn main() -> Result<()> {
 
     let build_cmd = matches.value_of("build_cmd").map(|s| s.to_string());
     let start_cmd = matches.value_of("start_cmd").map(|s| s.to_string());
-    let pkgs: Vec<_> = match matches.values_of("pkgs") {
-        Some(values) => values.collect(),
+    let pkgs = match matches.values_of("pkgs") {
+        Some(values) => values.map(Pkg::new).collect::<Vec<_>>(),
         None => Vec::new(),
     };
     let pin_pkgs = matches.is_present("pin");
@@ -110,34 +116,48 @@ fn main() -> Result<()> {
         None => Vec::new(),
     };
 
+    let plan_path = matches.value_of("plan").map(|n| n.to_string());
+
+    let plan_options = &GeneratePlanOptions {
+        custom_start_cmd: start_cmd,
+        custom_build_cmd: build_cmd,
+        custom_pkgs: pkgs,
+        pin_pkgs,
+        plan_path,
+    };
+
     match &matches.subcommand() {
         Some(("plan", matches)) => {
             let path = matches.value_of("PATH").expect("required");
 
-            let plan = gen_plan(path, pkgs, build_cmd, start_cmd, envs, pin_pkgs)?;
+            let plan = generate_build_plan(path, envs, plan_options)?;
             let json = serde_json::to_string_pretty(&plan)?;
             println!("{}", json);
         }
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").expect("required");
             let name = matches.value_of("name").map(|n| n.to_string());
-            let plan_path = matches.value_of("plan").map(|n| n.to_string());
-            let output_dir = matches.value_of("out").map(|n| n.to_string());
+            let out_dir = matches.value_of("out").map(|n| n.to_string());
 
             let tags = matches
                 .values_of("tag")
-                .map(|values| values.collect())
+                .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
                 .unwrap_or_default();
 
             let labels = matches
                 .values_of("label")
-                .map(|values| values.collect())
+                .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
                 .unwrap_or_default();
 
-            build(
-                path, name, pkgs, build_cmd, start_cmd, pin_pkgs, envs, plan_path, output_dir,
-                tags, labels, false,
-            )?;
+            let build_options = &DockerBuilderOptions {
+                name,
+                tags,
+                labels,
+                out_dir,
+                quiet: false,
+            };
+
+            create_docker_image(path, envs, plan_options, build_options)?;
         }
         _ => eprintln!("Invalid command"),
     }

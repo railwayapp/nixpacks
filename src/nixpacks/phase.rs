@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
-    nix::Pkg,
+    nix::pkg::Pkg,
 };
 
 #[serde_with::skip_serializing_none]

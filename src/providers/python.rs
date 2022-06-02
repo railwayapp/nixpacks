@@ -256,7 +256,7 @@ impl PythonProvider {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::nixpacks::{app::App, environment::Environment, nix::Pkg};
+    use crate::nixpacks::{app::App, environment::Environment, nix::pkg::Pkg};
     use std::collections::HashMap;
 
     #[test]

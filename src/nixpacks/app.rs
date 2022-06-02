@@ -31,6 +31,7 @@ impl App {
 
         Ok(App { source, paths })
     }
+
     /// Check if a file exists
     pub fn includes_file(&self, name: &str) -> bool {
         fs::canonicalize(self.source.join(name)).is_ok()

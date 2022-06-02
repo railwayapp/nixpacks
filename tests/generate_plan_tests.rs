@@ -1,9 +1,19 @@
 use anyhow::Result;
-use nixpacks::{gen_plan, nixpacks::nix::Pkg};
+use nixpacks::{
+    generate_build_plan,
+    nixpacks::{
+        nix::pkg::Pkg,
+        plan::{generator::GeneratePlanOptions, BuildPlan},
+    },
+};
+
+fn simple_gen_plan(path: &str) -> BuildPlan {
+    generate_build_plan(path, Vec::new(), &GeneratePlanOptions::default()).unwrap()
+}
 
 #[test]
 fn test_node() -> Result<()> {
-    let plan = gen_plan("./examples/node", Vec::new(), None, None, Vec::new(), false)?;
+    let plan = simple_gen_plan("./examples/node");
     assert_eq!(plan.install.unwrap().cmd, Some("npm ci".to_string()));
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
@@ -13,14 +23,7 @@ fn test_node() -> Result<()> {
 
 #[test]
 fn test_node_no_lockfile() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/node-no-lockfile",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/node-no-lockfile");
     assert_eq!(plan.install.unwrap().cmd, Some("npm i".to_string()));
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
@@ -30,7 +33,7 @@ fn test_node_no_lockfile() -> Result<()> {
 
 #[test]
 fn test_npm() -> Result<()> {
-    let plan = gen_plan("./examples/npm", Vec::new(), None, None, Vec::new(), false)?;
+    let plan = simple_gen_plan("./examples/npm");
     assert_eq!(plan.build.unwrap().cmd, Some("npm run build".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
     assert_eq!(
@@ -47,14 +50,7 @@ fn test_npm() -> Result<()> {
 
 #[test]
 fn test_node_no_scripts() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/node-no-scripts",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/node-no-scripts");
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(plan.start.unwrap().cmd, Some("node index.js".to_string()));
 
@@ -63,14 +59,7 @@ fn test_node_no_scripts() -> Result<()> {
 
 #[test]
 fn test_node_custom_version() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/node-custom-version",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/node-custom-version");
     assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("nodejs-18_x")]);
 
     Ok(())
@@ -78,7 +67,7 @@ fn test_node_custom_version() -> Result<()> {
 
 #[test]
 fn test_yarn() -> Result<()> {
-    let plan = gen_plan("./examples/yarn", Vec::new(), None, None, Vec::new(), false)?;
+    let plan = simple_gen_plan("./examples/yarn");
     assert_eq!(plan.build.unwrap().cmd, Some("yarn run build".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("yarn run start".to_string()));
     assert_eq!(
@@ -95,14 +84,7 @@ fn test_yarn() -> Result<()> {
 
 #[test]
 fn test_yarn_berry() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/yarn-berry",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/yarn-berry");
     assert_eq!(
         plan.install.unwrap().cmd,
         Some("yarn set version berry && yarn install --immutable --check-cache".to_string())
@@ -112,14 +94,7 @@ fn test_yarn_berry() -> Result<()> {
 
 #[test]
 fn test_yarn_custom_version() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/yarn-custom-node-version",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/yarn-custom-node-version");
     assert_eq!(
         plan.setup.unwrap().pkgs,
         vec![
@@ -133,7 +108,7 @@ fn test_yarn_custom_version() -> Result<()> {
 
 #[test]
 fn pnpm() -> Result<()> {
-    let plan = gen_plan("./examples/pnpm", Vec::new(), None, None, Vec::new(), false)?;
+    let plan = simple_gen_plan("./examples/pnpm");
     assert_eq!(plan.build.unwrap().cmd, Some("pnpm run build".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("pnpm run start".to_string()));
     assert_eq!(
@@ -150,14 +125,7 @@ fn pnpm() -> Result<()> {
 
 #[test]
 fn test_pnpm_custom_version() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/pnpm-custom-node-version",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/pnpm-custom-node-version");
     assert_eq!(
         plan.setup.unwrap().pkgs,
         vec![
@@ -171,7 +139,7 @@ fn test_pnpm_custom_version() -> Result<()> {
 
 #[test]
 fn test_go() -> Result<()> {
-    let plan = gen_plan("./examples/go", Vec::new(), None, None, Vec::new(), false)?;
+    let plan = simple_gen_plan("./examples/go");
     assert_eq!(
         plan.build.unwrap().cmd,
         Some("go build -o out main.go".to_string())
@@ -184,13 +152,10 @@ fn test_go() -> Result<()> {
 
 #[test]
 fn test_go_cgo_enabled() -> Result<()> {
-    let plan = gen_plan(
+    let plan = generate_build_plan(
         "./examples/go",
-        Vec::new(),
-        None,
-        None,
         vec!["CGO_ENABLED=1"],
-        false,
+        &GeneratePlanOptions::default(),
     )?;
     assert_eq!(
         plan.build.unwrap().cmd,
@@ -204,14 +169,7 @@ fn test_go_cgo_enabled() -> Result<()> {
 
 #[test]
 fn test_go_mod() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/go-mod",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/go-mod");
     assert_eq!(plan.build.unwrap().cmd, Some("go build -o out".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("./out".to_string()));
 
@@ -220,14 +178,7 @@ fn test_go_mod() -> Result<()> {
 
 #[test]
 fn test_go_custom_version() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/go-custom-version",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/go-custom-version");
     assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("go_1_18")]);
 
     Ok(())
@@ -235,7 +186,7 @@ fn test_go_custom_version() -> Result<()> {
 
 #[test]
 fn test_deno() -> Result<()> {
-    let plan = gen_plan("./examples/deno", Vec::new(), None, None, Vec::new(), false)?;
+    let plan = simple_gen_plan("./examples/deno");
     assert_eq!(
         plan.build.unwrap().cmd,
         Some("deno cache src/index.ts".to_string())
@@ -250,14 +201,7 @@ fn test_deno() -> Result<()> {
 
 #[test]
 fn test_procfile() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/procfile",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/procfile");
     assert_eq!(plan.start.unwrap().cmd, Some("node index.js".to_string()));
 
     Ok(())
@@ -265,13 +209,14 @@ fn test_procfile() -> Result<()> {
 
 #[test]
 fn test_custom_pkgs() -> Result<()> {
-    let plan = gen_plan(
+    let plan = generate_build_plan(
         "./examples/hello",
-        vec!["cowsay"],
-        None,
-        Some("./start.sh".to_string()),
         Vec::new(),
-        false,
+        &GeneratePlanOptions {
+            custom_start_cmd: Some("./start.sh".to_string()),
+            custom_pkgs: vec![Pkg::new("cowsay")],
+            ..Default::default()
+        },
     )?;
     assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("cowsay")]);
     assert_eq!(plan.start.unwrap().cmd, Some("./start.sh".to_string()));
@@ -281,7 +226,14 @@ fn test_custom_pkgs() -> Result<()> {
 
 #[test]
 fn test_pin_archive() -> Result<()> {
-    let plan = gen_plan("./examples/hello", Vec::new(), None, None, Vec::new(), true)?;
+    let plan = generate_build_plan(
+        "./examples/hello",
+        Vec::new(),
+        &GeneratePlanOptions {
+            pin_pkgs: true,
+            ..Default::default()
+        },
+    )?;
     assert!(plan.setup.unwrap().archive.is_some());
 
     Ok(())
@@ -289,14 +241,7 @@ fn test_pin_archive() -> Result<()> {
 
 #[test]
 fn test_custom_rust_version() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/rust-custom-version",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/rust-custom-version");
     assert!(plan
         .build
         .unwrap()
@@ -318,14 +263,7 @@ fn test_custom_rust_version() -> Result<()> {
 
 #[test]
 fn test_rust_rocket() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/rust-rocket",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        true,
-    )?;
+    let plan = simple_gen_plan("./examples/rust-rocket");
     assert!(plan
         .build
         .unwrap()
@@ -344,13 +282,10 @@ fn test_rust_rocket() -> Result<()> {
 
 #[test]
 fn test_rust_rocket_no_musl() -> Result<()> {
-    let plan = gen_plan(
+    let plan = generate_build_plan(
         "./examples/rust-rocket",
-        Vec::new(),
-        None,
-        None,
         vec!["NIXPACKS_NO_MUSL=1"],
-        true,
+        &GeneratePlanOptions::default(),
     )?;
     assert_eq!(
         plan.build.unwrap().cmd,
@@ -370,14 +305,7 @@ fn test_rust_rocket_no_musl() -> Result<()> {
 
 #[test]
 pub fn test_python() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/python",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        true,
-    )?;
+    let plan = simple_gen_plan("./examples/python");
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(
         plan.install.unwrap().cmd,
@@ -390,14 +318,7 @@ pub fn test_python() -> Result<()> {
 
 #[test]
 pub fn test_python_poetry() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/python-poetry",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        true,
-    )?;
+    let plan = simple_gen_plan("./examples/python-poetry");
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(
         plan.install.unwrap().cmd,
@@ -410,14 +331,7 @@ pub fn test_python_poetry() -> Result<()> {
 
 #[test]
 fn test_node_main_file() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/node-main-file",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/node-main-file");
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(
         plan.start.unwrap().cmd,
@@ -429,14 +343,7 @@ fn test_node_main_file() -> Result<()> {
 
 #[test]
 pub fn test_python_setuptools() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/python-setuptools",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        true,
-    )?;
+    let plan = simple_gen_plan("./examples/python-setuptools");
     assert_eq!(plan.build.unwrap().cmd, None);
 
     if let Some(install_cmd) = plan.install.unwrap().cmd {
@@ -456,14 +363,7 @@ pub fn test_python_setuptools() -> Result<()> {
 
 #[test]
 fn test_node_main_file_doesnt_exist() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/node-main-file-not-exist",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/node-main-file-not-exist");
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(plan.start.unwrap().cmd, Some("node index.js".to_string()));
 
@@ -472,14 +372,7 @@ fn test_node_main_file_doesnt_exist() -> Result<()> {
 
 #[test]
 fn test_haskell_stack() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/haskell-stack",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/haskell-stack");
     assert_eq!(plan.build.unwrap().cmd, Some("stack build".to_string()));
     assert!(plan.start.unwrap().cmd.unwrap().contains("stack exec"));
     assert!(plan.install.unwrap().cmd.unwrap().contains("stack setup"));
@@ -488,14 +381,7 @@ fn test_haskell_stack() -> Result<()> {
 
 #[test]
 fn test_crystal() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/crystal",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/crystal");
     assert_eq!(
         plan.install.unwrap().cmd,
         Some("shards install".to_string())
@@ -510,13 +396,10 @@ fn test_crystal() -> Result<()> {
 
 #[test]
 fn test_overriding_environment_variables() -> Result<()> {
-    let plan = gen_plan(
+    let plan = generate_build_plan(
         "./examples/variables",
-        Vec::new(),
-        None,
-        None,
         vec!["NODE_ENV=test"],
-        false,
+        &GeneratePlanOptions::default(),
     )?;
     assert_eq!(
         plan.variables.unwrap().get("NODE_ENV"),
@@ -528,18 +411,15 @@ fn test_overriding_environment_variables() -> Result<()> {
 
 #[test]
 fn test_config_from_environment_variables() -> Result<()> {
-    let plan = gen_plan(
+    let plan = generate_build_plan(
         "./examples/hello",
-        Vec::new(),
-        None,
-        None,
         vec![
             "NIXPACKS_PKGS=cowsay ripgrep",
             "NIXPACKS_BUILD_CMD=build",
             "NIXPACKS_START_CMD=start",
             "NIXPACKS_RUN_IMAGE=alpine",
         ],
-        false,
+        &GeneratePlanOptions::default(),
     )?;
     assert_eq!(plan.build.unwrap().cmd, Some("build".to_string()));
     assert_eq!(plan.start.clone().unwrap().cmd, Some("start".to_string()));
