@@ -431,3 +431,17 @@ fn test_config_from_environment_variables() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_staticfile() -> Result<()> {
+    let plan = simple_gen_plan("./examples/staticfile");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("nginx -c /assets/nginx.conf".to_string())
+    );
+    Ok(())
+}
