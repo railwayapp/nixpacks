@@ -39,8 +39,13 @@ impl Provider for PythonProvider {
 
         pkgs.append(&mut vec![python_base_package]);
 
-        if PythonProvider::is_django(app, env)? {
-            // Django requires postgresql and gcc on top of the original python packages
+        if PythonProvider::is_django(app, env)?
+            && app
+                .read_file("requirements.txt")
+                .unwrap()
+                .contains("psycopg2")
+        {
+            // Django with Postgres requires postgresql and gcc on top of the original python packages
             pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
         }
 
@@ -156,7 +161,11 @@ enum EntryPoint {
 
 impl PythonProvider {
     fn is_django(app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("manage.py"))
+        Ok(app.includes_file("manage.py")
+            && app
+                .read_file("requirements.txt")
+                .unwrap()
+                .contains("Django"))
     }
 
     fn get_django_app_name(app: &App, _env: &Environment) -> Result<String> {

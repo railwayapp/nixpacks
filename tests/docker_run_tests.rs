@@ -2,7 +2,8 @@ use anyhow::Context;
 use nixpacks::{
     create_docker_image,
     nixpacks::{
-        builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::generator::GeneratePlanOptions,
+        builder::docker::DockerBuilderOptions, environment::EnvironmentVariables, nix::pkg::Pkg,
+        plan::generator::GeneratePlanOptions,
     },
 };
 use serde_json::json;
@@ -60,7 +61,7 @@ fn stop_and_remove_container(name: String) {
 }
 
 struct Config {
-    environment_variables: Option<serde_json::Value>,
+    environment_variables: EnvironmentVariables,
     network: Option<String>,
 }
 /// Runs an image with Docker and returns the output
@@ -70,12 +71,10 @@ fn run_image(name: String, cfg: Option<Config>) -> String {
     cmd.arg("run");
 
     if let Some(config) = cfg {
-        if let Some(variables) = config.environment_variables {
-            for (key, value) in variables.as_object().unwrap() {
-                // arg must be processed as str or else we get extra quotes
-                let arg = format!("{}={}", key, value.as_str().unwrap());
-                cmd.arg("-e").arg(arg);
-            }
+        for (key, value) in config.environment_variables {
+            // arg must be processed as str or else we get extra quotes
+            let arg = format!("{}={}", key, value);
+            cmd.arg("-e").arg(arg);
         }
         if let Some(network) = config.network {
             cmd.arg("--net").arg(network);
@@ -133,9 +132,7 @@ struct Network {
 }
 
 fn attach_container_to_network(network_name: String, container_name: String) {
-    let mut docker_cmd = Command::new("docker");
-
-    docker_cmd
+    Command::new("docker")
         .arg("network")
         .arg("connect")
         .arg(network_name)
@@ -148,11 +145,9 @@ fn attach_container_to_network(network_name: String, container_name: String) {
 }
 
 fn create_network() -> Network {
-    let mut docker_cmd = Command::new("docker");
-
     let network_name = format!("test-net-{}", Uuid::new_v4());
 
-    docker_cmd
+    Command::new("docker")
         .arg("network")
         .arg("create")
         .arg(network_name.clone())
@@ -166,9 +161,7 @@ fn create_network() -> Network {
 }
 
 fn remove_network(network_name: String) {
-    let mut docker_cmd = Command::new("docker");
-
-    docker_cmd
+    Command::new("docker")
         .arg("network")
         .arg("rm")
         .arg(network_name)
@@ -219,13 +212,13 @@ fn run_postgres() -> Container {
     Container {
         name: container_name.clone(),
         config: Some(Config {
-            environment_variables: Some(json!({
-                "PGPORT": port,
-                "PGUSER": "postgres",
-                "PGDATABASE": "postgres",
-                "PGPASSWORD": password,
-                "PGHOST": container_name,
-            })),
+            environment_variables: EnvironmentVariables::from([
+                ("PGPORT".to_string(), port.to_string()),
+                ("PGUSER".to_string(), "postgres".to_string()),
+                ("PGDATABASE".to_string(), "postgres".to_string()),
+                ("PGPASSWORD".to_string(), password),
+                ("PGHOST".to_string(), container_name),
+            ]),
             network: None,
         }),
     }
