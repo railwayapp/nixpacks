@@ -332,8 +332,6 @@ fn test_django() {
     stop_and_remove_container(container_name);
     remove_network(network_name);
 
-    // Check if we could get to Django start
-
     assert!(output.contains("Running migrations"));
 }
 
