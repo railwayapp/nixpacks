@@ -201,14 +201,7 @@ fn test_deno() -> Result<()> {
 
 #[test]
 fn test_csharp_api() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/csharp-api",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/csharp-api");
     assert_eq!(
         plan.install.unwrap().cmd,
         Some("dotnet restore".to_string())
@@ -227,14 +220,7 @@ fn test_csharp_api() -> Result<()> {
 
 #[test]
 fn test_csharp_cli() -> Result<()> {
-    let plan = gen_plan(
-        "./examples/csharp-cli",
-        Vec::new(),
-        None,
-        None,
-        Vec::new(),
-        false,
-    )?;
+    let plan = simple_gen_plan("./examples/csharp-cli");
     assert_eq!(
         plan.install.unwrap().cmd,
         Some("dotnet restore".to_string())
