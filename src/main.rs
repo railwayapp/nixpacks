@@ -62,6 +62,14 @@ fn main() -> Result<()> {
                 .global(true),
         )
         .arg(
+            Arg::new("install_cmd")
+                .long("install-cmd")
+                .short('i')
+                .help("Specify the install command to use")
+                .takes_value(true)
+                .global(true),
+        )
+        .arg(
             Arg::new("build_cmd")
                 .long("build-cmd")
                 .short('b')
@@ -103,6 +111,7 @@ fn main() -> Result<()> {
         )
         .get_matches();
 
+    let install_cmd = matches.value_of("install_cmd").map(|s| s.to_string());
     let build_cmd = matches.value_of("build_cmd").map(|s| s.to_string());
     let start_cmd = matches.value_of("start_cmd").map(|s| s.to_string());
     let pkgs = match matches.values_of("pkgs") {
@@ -119,6 +128,7 @@ fn main() -> Result<()> {
     let plan_path = matches.value_of("plan").map(|n| n.to_string());
 
     let plan_options = &GeneratePlanOptions {
+        custom_install_cmd: install_cmd,
         custom_start_cmd: start_cmd,
         custom_build_cmd: build_cmd,
         custom_pkgs: pkgs,
