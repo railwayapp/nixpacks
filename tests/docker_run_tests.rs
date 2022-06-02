@@ -2,7 +2,6 @@ use anyhow::Context;
 use nixpacks::build;
 use serde_json::json;
 use std::io::{BufRead, BufReader};
-use std::time::Duration;
 use std::{
     process::{Command, Stdio},
     thread, time,

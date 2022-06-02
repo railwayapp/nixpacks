@@ -127,7 +127,7 @@ enum EntryPoint {
 }
 
 impl PythonProvider {
-    fn is_django(app: &App, env: &Environment) -> Result<bool> {
+    fn is_django(app: &App, _env: &Environment) -> Result<bool> {
         Ok(app.includes_file("manage.py"))
     }
 
