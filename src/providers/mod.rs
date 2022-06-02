@@ -12,7 +12,7 @@ pub mod haskell;
 pub mod node;
 pub mod python;
 pub mod rust;
-
+pub mod staticfile;
 pub trait Provider {
     fn name(&self) -> &str;
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
