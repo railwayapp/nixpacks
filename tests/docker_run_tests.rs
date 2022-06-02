@@ -1,5 +1,8 @@
+use anyhow::Context;
 use nixpacks::build;
+use serde_json::json;
 use std::io::{BufRead, BufReader};
+use std::time::Duration;
 use std::{
     process::{Command, Stdio},
     thread, time,
@@ -26,6 +29,9 @@ fn stop_containers(container_id: &str) {
         .arg("stop")
         .arg(container_id)
         .spawn()
+        .unwrap()
+        .wait()
+        .context("Stopping container")
         .unwrap();
 }
 
@@ -34,22 +40,37 @@ fn remove_containers(container_id: &str) {
         .arg("rm")
         .arg(container_id)
         .spawn()
+        .unwrap()
+        .wait()
+        .context("Removing container")
         .unwrap();
 }
 
-fn stop_and_remove_container(image: String) {
+fn stop_and_remove_container_by_image(image: String) {
     let container_ids = get_container_ids_from_image(image);
     let container_id = container_ids.trim().split('\n').collect::<Vec<_>>()[0].to_string();
 
-    stop_containers(&container_id);
-    remove_containers(&container_id);
+    stop_and_remove_container(container_id);
 }
 
+fn stop_and_remove_container(name: String) {
+    stop_containers(&name);
+    remove_containers(&name);
+}
 /// Runs an image with Docker and returns the output
 /// The image is automatically stopped and removed after `TIMEOUT_SECONDS`
-fn run_image(name: String) -> String {
+fn run_image(name: String, environment_variables: Option<serde_json::Value>) -> String {
     let mut cmd = Command::new("docker");
-    cmd.arg("run").arg(name.clone());
+    cmd.arg("run");
+
+    if let Some(variables) = environment_variables {
+        for (key, value) in variables.as_object().unwrap() {
+            // arg must be processed as str or else we get extra quotes
+            let arg = format!("{}={}", key, value.as_str().unwrap());
+            cmd.arg("-e").arg(arg);
+        }
+    }
+    cmd.arg(name.clone());
     cmd.stdout(Stdio::piped());
 
     let mut child = cmd.spawn().unwrap();
@@ -66,7 +87,7 @@ fn run_image(name: String) -> String {
             thread::sleep(time::Duration::from_secs(1));
         }
 
-        stop_and_remove_container(name.clone());
+        stop_and_remove_container_by_image(name.clone());
         child.kill().unwrap();
     });
 
@@ -80,7 +101,7 @@ fn run_image(name: String) -> String {
     thread.join().unwrap();
 
     // Clean up container when done
-    stop_and_remove_container(cloned_name);
+    stop_and_remove_container_by_image(cloned_name);
 
     output
 }
@@ -107,74 +128,139 @@ fn simple_build(path: &str) -> String {
 
     name
 }
+const POSTGRES_IMAGE: &str = "postgres";
+
+struct Container {
+    name: String,
+    environment_variables: serde_json::Value,
+}
+
+fn simple_postgres() -> Container {
+    let mut docker_cmd = Command::new("docker");
+
+    let hash = Uuid::new_v4().to_string();
+    let container_name = format!("postgres-{}", hash);
+    let password = hash;
+    let port = format!("{}", portpicker::pick_unused_port().unwrap());
+    // run
+    docker_cmd.arg("run");
+
+    // Set Needed Envvars
+    docker_cmd
+        .arg("-e")
+        .arg(format!("POSTGRES_PASSWORD={}", &password));
+
+    // expose that port
+    docker_cmd.arg("-p").arg(format!("{}:5432", port));
+
+    // Run detached
+    docker_cmd.arg("-d");
+
+    // attach name
+    docker_cmd.arg("--name").arg(container_name.clone());
+
+    // Assign image
+    docker_cmd.arg(POSTGRES_IMAGE);
+
+    // Run the command
+    docker_cmd
+        .spawn()
+        .unwrap()
+        .wait()
+        .context("Building postgres")
+        .unwrap();
+
+    Container {
+        name: container_name,
+        environment_variables: json!({
+            "PGPORT": port,
+            "PGUSER": "railway",
+            "PGDATABASE": "postgres",
+            "PGPASSWORD": password,
+            "PGHOST": "0.0.0.0",
+        }),
+    }
+}
 
 #[test]
 fn test_node() {
     let name = simple_build("./examples/node");
-    assert!(run_image(name).contains("Hello from Node"));
+    assert!(run_image(name, None).contains("Hello from Node"));
 }
 
 #[test]
 fn test_node_custom_version() {
     let name = simple_build("./examples/node-custom-version");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Node version: v14"));
 }
 
 #[test]
 fn test_node_no_lockfile() {
     let name = simple_build("./examples/node-no-lockfile");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello from Node"));
 }
 
 #[test]
 fn test_yarn_custom_version() {
     let name = simple_build("./examples/yarn-custom-node-version");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Node version: v14"));
 }
 
 #[test]
 fn test_yarn_berry() {
     let name = simple_build("./examples/yarn-berry");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello from Yarn v2+"));
 }
 
 #[test]
 fn test_yarn_prisma() {
     let name = simple_build("./examples/yarn-prisma");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("My post content"));
 }
 
 #[test]
 fn test_pnpm() {
     let name = simple_build("./examples/pnpm");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello from PNPM"));
 }
 
 #[test]
 fn test_pnpm_custom_version() {
     let name = simple_build("./examples/pnpm-custom-node-version");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello from PNPM"));
 }
 
 #[test]
 fn test_python() {
     let name = simple_build("./examples/python");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello from Python"));
 }
 
 #[test]
 fn test_python_2() {
     let name = simple_build("./examples/python-2");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello from Python 2"));
+}
+
+#[test]
+fn test_django() {
+    println!("Getting Postgres");
+    let c = simple_postgres();
+    // Wait for PG to become ready
+    thread::sleep(Duration::from_millis(5000));
+    let name = simple_build("./examples/django");
+    let output = run_image(name, Some(c.environment_variables));
+    stop_and_remove_container(c.name);
+    assert!(output.contains("booting worker"));
 }
 
 #[test]
@@ -196,28 +282,28 @@ fn test_rust_custom_version() {
     )
     .unwrap();
 
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("cargo 1.56.0"));
 }
 
 #[test]
 fn test_go() {
     let name = simple_build("./examples/go");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello from Go"));
 }
 
 #[test]
 fn test_haskell_stack() {
     let name = simple_build("./examples/haskell-stack");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello from Haskell"));
 }
 
 #[test]
 fn test_crystal() {
     let name = simple_build("./examples/crystal");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello from Crystal"));
 }
 
@@ -239,6 +325,6 @@ fn test_cowsay() {
         true,
     )
     .unwrap();
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello World"));
 }

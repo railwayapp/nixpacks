@@ -32,8 +32,18 @@ impl Provider for PythonProvider {
     }
 
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
-        let pkg = PythonProvider::get_nix_python_package(app, env)?;
-        Ok(Some(SetupPhase::new(vec![pkg])))
+        let mut pkgs: Vec<Pkg> = vec![];
+        let python_base_package = PythonProvider::get_nix_python_package(app, env)?;
+
+        pkgs.append(&mut vec![python_base_package]);
+
+        // TODO. Should probably also read requirements.txt? Maybe?
+        if PythonProvider::is_django(app, env)? {
+            // Django requires postgresql and gcc on top of the original python packages
+            pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
+        }
+
+        Ok(Some(SetupPhase::new(pkgs)))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
@@ -62,7 +72,13 @@ impl Provider for PythonProvider {
         Ok(None)
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+        if PythonProvider::is_django(app, env)? {
+            return Ok(Some(StartPhase::new(
+                "python manage.py migrate && gunicorn djangopy.wsgi".to_string(),
+            )));
+        }
+
         if app.includes_file("pyproject.toml") {
             if let Ok(meta) = PythonProvider::parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
@@ -111,6 +127,10 @@ enum EntryPoint {
 }
 
 impl PythonProvider {
+    fn is_django(app: &App, env: &Environment) -> Result<bool> {
+        Ok(app.includes_file("manage.py"))
+    }
+
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
         let mut custom_version = env
             .get_config_variable("PYTHON_VERSION")
