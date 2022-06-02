@@ -71,7 +71,7 @@ fn test_node_custom_version() -> Result<()> {
         Vec::new(),
         false,
     )?;
-    assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("nodejs-14_x")]);
+    assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("nodejs-18_x")]);
 
     Ok(())
 }
@@ -214,6 +214,21 @@ fn test_go_mod() -> Result<()> {
     )?;
     assert_eq!(plan.build.unwrap().cmd, Some("go build -o out".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("./out".to_string()));
+
+    Ok(())
+}
+
+#[test]
+fn test_go_custom_version() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/go-custom-version",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        false,
+    )?;
+    assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("go_1_18")]);
 
     Ok(())
 }
@@ -367,6 +382,26 @@ pub fn test_python() -> Result<()> {
     assert_eq!(
         plan.install.unwrap().cmd,
         Some("python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt".to_string())
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("python main.py".to_string()));
+
+    Ok(())
+}
+
+#[test]
+pub fn test_python_poetry() -> Result<()> {
+    let plan = gen_plan(
+        "./examples/python-poetry",
+        Vec::new(),
+        None,
+        None,
+        Vec::new(),
+        true,
+    )?;
+    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("python -m venv /opt/venv && . /opt/venv/bin/activate && pip install poetry==$NIXPACKS_POETRY_VERSION && poetry install --no-dev --no-interaction --no-ansi".to_string())
     );
     assert_eq!(plan.start.unwrap().cmd, Some("python main.py".to_string()));
 
