@@ -240,8 +240,6 @@ fn test_node() {
 #[test]
 fn test_node_custom_version() {
     let name = simple_build("./examples/node-custom-version");
-    let output = run_image(name.clone(), None);
-    assert!(output.contains("Node version: v18"));
     let output = run_image(name, None);
     assert!(output.contains("Node version: v18"));
 }
