@@ -6,7 +6,7 @@ use nixpacks::{
         plan::generator::GeneratePlanOptions,
     },
 };
-use serde_json::json;
+
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 use std::time::Duration;
@@ -403,4 +403,11 @@ fn test_cowsay() {
     .unwrap();
     let output = run_image(name, None);
     assert!(output.contains("Hello World"));
+}
+
+#[test]
+fn test_staticfile() {
+    let name = simple_build("./examples/staticfile");
+    let output = run_image(name, None);
+    assert!(output.contains("start worker process"));
 }

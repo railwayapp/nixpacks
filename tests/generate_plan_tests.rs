@@ -433,3 +433,17 @@ fn test_config_from_environment_variables() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_staticfile() -> Result<()> {
+    let plan = simple_gen_plan("./examples/staticfile");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\" /assets/nginx.conf && nginx -c /assets/nginx.conf".to_string())
+    );
+    Ok(())
+}
