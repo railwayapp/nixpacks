@@ -2,15 +2,10 @@ use anyhow::Context;
 use nixpacks::build;
 use serde_json::json;
 use std::io::{BufRead, BufReader};
+use std::process::{Command, Stdio};
 use std::time::Duration;
-use std::{
-    process::{Command, Stdio},
-    thread, time,
-};
 use uuid::Uuid;
 use wait_timeout::ChildExt;
-
-const TIMEOUT_SECONDS: i32 = 5;
 
 fn get_container_ids_from_image(image: String) -> String {
     let output = Command::new("docker")
