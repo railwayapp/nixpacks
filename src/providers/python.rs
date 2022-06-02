@@ -86,7 +86,9 @@ impl Provider for PythonProvider {
 
     fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if PythonProvider::is_django(app, env)? {
-            return Ok(Some(StartPhase::new("gunicorn djangopy.wsgi".to_string())));
+            return Ok(Some(StartPhase::new(
+                "python manage.py migrate && gunicorn mysite.wsgi".to_string(),
+            )));
         }
 
         if app.includes_file("pyproject.toml") {
