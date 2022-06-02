@@ -6,7 +6,6 @@ use nixpacks::{
         plan::generator::GeneratePlanOptions,
     },
 };
-use serde_json::json;
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 use std::time::Duration;

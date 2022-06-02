@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::nixpacks::{
-    nix::Pkg,
-    phase::{InstallPhase, SetupPhase},
+    environment::EnvironmentVariables,
+    nix::pkg::Pkg,
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase}, app::App,
 };
 
 use super::{node::NodeProvider, Provider};
@@ -37,7 +38,7 @@ impl Provider for PhpProvider {
         };
         let mut pkgs = vec![
             Pkg::new(&php_pkg),
-            Pkg::new("nginx"),
+            Pkg::new("perl"),
             Pkg::new(&format!("{}Packages.composer", &php_pkg)),
         ];
         if let Ok(php_extensions) = self.get_php_extensions(&app) {
@@ -61,11 +62,11 @@ impl Provider for PhpProvider {
         env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::InstallPhase>> {
         let mut cmd = String::new();
+        cmd.push_str("sudo apt-get update && sudo apt-get install -y nginx");
         let nodejs = NodeProvider {};
         if app.includes_file("composer.json") {
-            cmd.push_str("composer install");
+            cmd.push_str(" && composer install");
         };
-
         if nodejs.detect(app, env)? {
             if !cmd.is_empty() {
                 cmd.push_str(" && ");
@@ -87,25 +88,51 @@ impl Provider for PhpProvider {
     fn build(
         &self,
         app: &crate::nixpacks::app::App,
-        env: &crate::nixpacks::environment::Environment,
+        _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::BuildPhase>> {
+        if let Ok(true) = NodeProvider::has_script(app, "prod") {
+            return Ok(Some(BuildPhase::new(
+                NodeProvider::get_package_manager(app).unwrap_or("npm".to_string()) + " run prod",
+            )));
+        }
         Ok(None)
     }
 
     fn start(
         &self,
-        _app: &crate::nixpacks::app::App,
+        app: &crate::nixpacks::app::App,
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::StartPhase>> {
-        Ok(None)
+        Ok(Some(StartPhase::new(format!(
+            "perl {} {} /etc/nginx/nginx.conf && nginx -c /etc/nginx/nginx.conf",
+            app.asset_path("transform-config.pl"),
+            app.asset_path("nginx.template.conf")
+        ))))
+    }
+
+    fn static_assets(
+        &self,
+        _app: &crate::nixpacks::app::App,
+        _env: &crate::nixpacks::environment::Environment,
+    ) -> anyhow::Result<Option<crate::nixpacks::app::StaticAssets>> {
+        Ok(Some(static_asset_list! {
+            "nginx.template.conf" => include_str!("php/nginx.template.conf"),
+            "transform-config.pl" => include_str!("php/transform-config.pl"),
+            "fastcgi_params" => include_str!("php/fastcgi_params")
+        }))
     }
 
     fn environment_variables(
         &self,
-        _app: &crate::nixpacks::app::App,
+        app: &crate::nixpacks::app::App,
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::environment::EnvironmentVariables>> {
-        Ok(None)
+        let mut vars = EnvironmentVariables::new();
+        vars.insert("PHP_VERSION".to_string(), self.get_php_version(app)?);
+        if app.includes_file("artisan") {
+            vars.insert("IS_LARAVEL".to_string(), "yes".to_string());
+        }
+        return Ok(Some(vars));
     }
 }
 
@@ -129,6 +156,28 @@ impl PhpProvider {
             None => {
                 println!("Warning: No PHP version specified, using PHP 8.1; see https://getcomposer.org/doc/04-schema.md#package-links for how to specify a PHP version.");
                 Some("php81".to_string())
+            }
+        })
+    }
+    fn get_php_version(&self, app: &App) -> anyhow::Result<String> {
+        let composer_json: ComposerJson = app.read_json("composer.json")?;
+        let version = composer_json.require.get("php").map(|v| v.to_string());
+        Ok(match version {
+            Some(v) => {
+                if v.contains("8.0") {
+                    "8.0".to_string()
+                } else if v.contains("8.1") {
+                    "8.1".to_string()
+                } else if v.contains("7.4") {
+                    "7.4".to_string()
+                } else {
+                    println!("Warning: PHP version {} is not available, using PHP 8.1", v);
+                    "8.1".to_string()
+                }
+            }
+            None => {
+                println!("Warning: No PHP version specified, using PHP 8.1; see https://getcomposer.org/doc/04-schema.md#package-links for how to specify a PHP version.");
+                "8.1".to_string()
             }
         })
     }

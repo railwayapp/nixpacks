@@ -1,4 +1,4 @@
-use crate::nixpacks::{
+use crate::{nixpacks::{
     app::App,
     builder::{
         docker::{DockerBuilder, DockerBuilderOptions},
@@ -11,7 +11,7 @@ use crate::nixpacks::{
         generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
         BuildPlan, PlanGenerator,
     },
-};
+}, providers::php::PhpProvider};
 use anyhow::Result;
 use providers::{
     crystal::CrystalProvider, deno::DenoProvider, go::GolangProvider,
@@ -20,11 +20,13 @@ use providers::{
 };
 
 mod chain;
+#[macro_use]
 pub mod nixpacks;
 pub mod providers;
 
 pub fn get_providers() -> Vec<&'static dyn Provider> {
     vec![
+        &PhpProvider {},
         &GolangProvider {},
         &DenoProvider {},
         &NodeProvider {},
