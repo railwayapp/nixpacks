@@ -132,7 +132,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         let env_install_cmd = environment.get_config_variable("INSTALL_CMD").cloned();
 
         // Start command priority
-        // - custom build command
+        // - custom install command
         // - environment variable
         // - provider
 
