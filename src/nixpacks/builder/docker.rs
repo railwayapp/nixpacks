@@ -198,7 +198,6 @@ impl DockerBuilder {
         // -- Static Assets
         let assets_copy_cmd = if !static_assets.is_empty() {
             static_assets
-                .clone()
                 .into_keys()
                 .map(|name| format!("COPY assets/{} {}{}", name, assets_dir, name))
                 .collect::<Vec<String>>()
