@@ -5,6 +5,7 @@ use crate::{
         environment::{Environment, EnvironmentVariables},
         nix::pkg::Pkg,
         phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+        NIX_PACKS_VERSION,
     },
     providers::Provider,
 };
@@ -12,8 +13,6 @@ use anyhow::{Context, Ok, Result};
 
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
-
-const NIX_PACKS_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {

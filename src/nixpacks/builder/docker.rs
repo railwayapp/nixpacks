@@ -6,7 +6,7 @@ use std::{
 };
 
 use super::Builder;
-use crate::nixpacks::{app::App, files, logger::Logger, nix, plan::BuildPlan};
+use crate::nixpacks::{app::App, files, logger::Logger, nix, plan::BuildPlan, NIX_PACKS_VERSION};
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use tempdir::TempDir;
@@ -28,6 +28,11 @@ pub struct DockerBuilder {
 
 impl Builder for DockerBuilder {
     fn create_image(&self, app: &App, plan: &BuildPlan) -> Result<()> {
+        self.logger
+            .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
+
+        println!("{}", plan.get_build_string());
+
         let id = Uuid::new_v4();
 
         let dir = match &self.options.out_dir {
@@ -40,6 +45,7 @@ impl Builder for DockerBuilder {
         let dest = dir.to_str().context("Invalid temp directory path")?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
 
+        // Write everything to destination
         self.write_app(app, dest).context("Writing app")?;
         self.write_assets(plan, dest).context("Writing assets")?;
         self.write_dockerfile(plan, dest)
@@ -50,6 +56,8 @@ impl Builder for DockerBuilder {
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
             let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), dest);
+
+            // Execute docker build
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
 
             if !build_result.success() {
