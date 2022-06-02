@@ -178,6 +178,13 @@ fn test_python_2() {
 }
 
 #[test]
+fn test_python_poetry() {
+    let name = simple_build("./examples/python-poetry");
+    let output = run_image(name);
+    assert!(output.contains("Hello from Python-Poetry"));
+}
+
+#[test]
 fn test_rust_custom_version() {
     let name = Uuid::new_v4().to_string();
     build(
@@ -205,6 +212,13 @@ fn test_go() {
     let name = simple_build("./examples/go");
     let output = run_image(name);
     assert!(output.contains("Hello from Go"));
+}
+
+#[test]
+fn test_go_custom_version() {
+    let name = simple_build("./examples/go-custom-version");
+    let output = run_image(name);
+    assert!(output.contains("Hello from go1.18"));
 }
 
 #[test]

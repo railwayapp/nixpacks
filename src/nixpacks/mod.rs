@@ -20,7 +20,7 @@ pub mod plan;
 use crate::providers::Provider;
 
 use self::{
-    app::App,
+    app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
     logger::Logger,
     nix::Pkg,
@@ -100,6 +100,9 @@ impl<'a> AppBuilder<'a> {
         let build_phase = self.get_build_phase().context("Generating build phase")?;
         let start_phase = self.get_start_phase().context("Generating start phase")?;
         let variables = self.get_variables().context("Getting plan variables")?;
+        let static_assets = self
+            .get_static_assets()
+            .context("Getting provider assets")?;
 
         let plan = BuildPlan {
             version: Some(NIX_PACKS_VERSION.to_string()),
@@ -108,6 +111,7 @@ impl<'a> AppBuilder<'a> {
             build: Some(build_phase),
             start: Some(start_phase),
             variables: Some(variables),
+            static_assets: Some(static_assets),
         };
 
         Ok(plan)
@@ -340,6 +344,17 @@ impl<'a> AppBuilder<'a> {
         Ok(new_variables)
     }
 
+    fn get_static_assets(&self) -> Result<StaticAssets> {
+        let static_assets = match self.provider {
+            Some(provider) => provider
+                .static_assets(self.app, self.environment)?
+                .unwrap_or_default(),
+            None => StaticAssets::new(),
+        };
+
+        Ok(static_assets)
+    }
+
     fn detect(&mut self, providers: Vec<&'a dyn Provider>) -> Result<()> {
         for provider in providers {
             let matches = provider.detect(self.app, self.environment)?;
@@ -380,6 +395,24 @@ impl<'a> AppBuilder<'a> {
         let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
+
+        if let Some(assets) = &plan.static_assets {
+            if !assets.is_empty() {
+                let static_assets_path = PathBuf::from(dest).join(PathBuf::from("assets"));
+                fs::create_dir_all(&static_assets_path).context("Creating static assets folder")?;
+
+                for (name, content) in assets {
+                    let path = Path::new(&static_assets_path).join(name);
+                    let parent = path.parent().unwrap();
+                    fs::create_dir_all(parent)
+                        .context(format!("Creating parent directory for {}", name))?;
+                    let mut file =
+                        File::create(path).context(format!("Creating asset file for {name}"))?;
+                    file.write_all(content.as_bytes())
+                        .context(format!("Writing asset {name}"))?;
+                }
+            }
+        }
 
         Ok(())
     }
@@ -441,12 +474,14 @@ impl<'a> AppBuilder<'a> {
 
     pub fn gen_dockerfile(plan: &BuildPlan) -> Result<String> {
         let app_dir = "/app/";
+        let assets_dir = app::ASSETS_DIR;
 
         let setup_phase = plan.setup.clone().unwrap_or_default();
         let install_phase = plan.install.clone().unwrap_or_default();
         let build_phase = plan.build.clone().unwrap_or_default();
         let start_phase = plan.start.clone().unwrap_or_default();
         let variables = plan.variables.clone().unwrap_or_default();
+        let static_assets = plan.static_assets.clone().unwrap_or_default();
 
         // -- Variables
         let args_string = if !variables.is_empty() {
@@ -475,6 +510,18 @@ impl<'a> AppBuilder<'a> {
             setup_files.append(&mut setup_file_deps);
         }
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
+
+        // -- Static Assets
+        let assets_copy_cmd = if !static_assets.is_empty() {
+            static_assets
+                .clone()
+                .into_keys()
+                .map(|name| format!("COPY assets/{} {}{}", name, assets_dir, name))
+                .collect::<Vec<String>>()
+                .join("\n")
+        } else {
+            "".to_string()
+        };
 
         // -- Install
         let install_cmd = install_phase
@@ -533,7 +580,7 @@ impl<'a> AppBuilder<'a> {
             ",
                     run_image=run_image,
                     app_dir=app_dir,
-                    copy_cmd=get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir)
+                    copy_cmd=get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir, !static_assets.is_empty())
                 }
             }
             None => get_copy_command(
@@ -550,6 +597,7 @@ impl<'a> AppBuilder<'a> {
 
           # Setup
           {setup_copy_cmd}
+          {assets_copy_cmd}
           RUN nix-env -if environment.nix
 
           # Load environment variables
@@ -591,19 +639,39 @@ fn get_copy_command(files: &[String], app_dir: &str) -> String {
     }
 }
 
-fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String {
+fn get_copy_from_command(from: &str, files: &[String], app_dir: &str, has_assets: bool) -> String {
     if files.is_empty() {
-        format!("COPY --from=0 {} {}", app_dir, app_dir)
+        format!(
+            "
+COPY --from=0 {} {}
+RUN true
+{}
+",
+            app_dir,
+            app_dir,
+            if has_assets {
+                "COPY --from=0 /assets /assets"
+            } else {
+                ""
+            }
+        )
     } else {
         format!(
-            "COPY --from={} {} {}",
+            "COPY --from={} {} {}
+            RUN true
+            {}",
             from,
             files
                 .iter()
                 .map(|f| f.replace("./", app_dir))
                 .collect::<Vec<_>>()
                 .join(" "),
-            app_dir
+            app_dir,
+            if has_assets {
+                format!("COPY --from={} /assets /assets", from)
+            } else {
+                "".to_string()
+            }
         )
     }
 }
