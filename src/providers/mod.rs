@@ -6,6 +6,7 @@ use crate::nixpacks::{
 use anyhow::Result;
 
 pub mod crystal;
+pub mod dart;
 pub mod deno;
 pub mod go;
 pub mod haskell;

@@ -447,3 +447,15 @@ fn test_staticfile() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_dart() -> Result<()> {
+    let plan = simple_gen_plan("./examples/dart");
+    assert_eq!(plan.install.unwrap().cmd, Some("dart pub get".to_string()));
+    assert_eq!(
+        plan.start.clone().unwrap().cmd,
+        Some("dart run".to_string())
+    );
+
+    Ok(())
+}
