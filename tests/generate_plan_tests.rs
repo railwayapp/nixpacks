@@ -415,12 +415,14 @@ fn test_config_from_environment_variables() -> Result<()> {
         "./examples/hello",
         vec![
             "NIXPACKS_PKGS=cowsay ripgrep",
+            "NIXPACKS_INSTALL_CMD=install",
             "NIXPACKS_BUILD_CMD=build",
             "NIXPACKS_START_CMD=start",
             "NIXPACKS_RUN_IMAGE=alpine",
         ],
         &GeneratePlanOptions::default(),
     )?;
+    assert_eq!(plan.install.unwrap().cmd, Some("install".to_string()));
     assert_eq!(plan.build.unwrap().cmd, Some("build".to_string()));
     assert_eq!(plan.start.clone().unwrap().cmd, Some("start".to_string()));
     assert_eq!(
