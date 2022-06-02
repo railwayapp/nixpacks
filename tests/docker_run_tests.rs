@@ -57,17 +57,27 @@ fn stop_and_remove_container(name: String) {
     stop_containers(&name);
     remove_containers(&name);
 }
+
+struct Config {
+    environment_variables: Option<serde_json::Value>,
+    network: Option<String>,
+}
 /// Runs an image with Docker and returns the output
 /// The image is automatically stopped and removed after `TIMEOUT_SECONDS`
-fn run_image(name: String, environment_variables: Option<serde_json::Value>) -> String {
+fn run_image(name: String, cfg: Option<Config>) -> String {
     let mut cmd = Command::new("docker");
     cmd.arg("run");
 
-    if let Some(variables) = environment_variables {
-        for (key, value) in variables.as_object().unwrap() {
-            // arg must be processed as str or else we get extra quotes
-            let arg = format!("{}={}", key, value.as_str().unwrap());
-            cmd.arg("-e").arg(arg);
+    if let Some(config) = cfg {
+        if let Some(variables) = config.environment_variables {
+            for (key, value) in variables.as_object().unwrap() {
+                // arg must be processed as str or else we get extra quotes
+                let arg = format!("{}={}", key, value.as_str().unwrap());
+                cmd.arg("-e").arg(arg);
+            }
+        }
+        if let Some(network) = config.network {
+            cmd.arg("--net").arg(network);
         }
     }
     cmd.arg(name.clone());
@@ -130,18 +140,69 @@ fn simple_build(path: &str) -> String {
 }
 const POSTGRES_IMAGE: &str = "postgres";
 
-struct Container {
+struct Network {
     name: String,
-    environment_variables: serde_json::Value,
 }
 
-fn simple_postgres() -> Container {
+fn attach_container_to_network(network_name: String, container_name: String) {
+    let mut docker_cmd = Command::new("docker");
+
+    docker_cmd
+        .arg("network")
+        .arg("connect")
+        .arg(network_name)
+        .arg(container_name)
+        .spawn()
+        .unwrap()
+        .wait()
+        .context("Setting up network")
+        .unwrap();
+}
+
+fn create_network() -> Network {
+    let mut docker_cmd = Command::new("docker");
+
+    let network_name = format!("test-net-{}", Uuid::new_v4());
+
+    docker_cmd
+        .arg("network")
+        .arg("create")
+        .arg(network_name.clone())
+        .spawn()
+        .unwrap()
+        .wait()
+        .context("Setting up network")
+        .unwrap();
+
+    Network { name: network_name }
+}
+
+fn remove_network(network_name: String) {
+    let mut docker_cmd = Command::new("docker");
+
+    docker_cmd
+        .arg("network")
+        .arg("rm")
+        .arg(network_name)
+        .spawn()
+        .unwrap()
+        .wait()
+        .context("Tearing down network")
+        .unwrap();
+}
+
+struct Container {
+    name: String,
+    config: Option<Config>,
+}
+
+fn run_postgres() -> Container {
     let mut docker_cmd = Command::new("docker");
 
     let hash = Uuid::new_v4().to_string();
     let container_name = format!("postgres-{}", hash);
     let password = hash;
-    let port = format!("{}", portpicker::pick_unused_port().unwrap());
+    let port = "5432";
     // run
     docker_cmd.arg("run");
 
@@ -149,9 +210,6 @@ fn simple_postgres() -> Container {
     docker_cmd
         .arg("-e")
         .arg(format!("POSTGRES_PASSWORD={}", &password));
-
-    // expose that port
-    docker_cmd.arg("-p").arg(format!("{}:5432", port));
 
     // Run detached
     docker_cmd.arg("-d");
@@ -171,13 +229,16 @@ fn simple_postgres() -> Container {
         .unwrap();
 
     Container {
-        name: container_name,
-        environment_variables: json!({
-            "PGPORT": port,
-            "PGUSER": "railway",
-            "PGDATABASE": "postgres",
-            "PGPASSWORD": password,
-            "PGHOST": "0.0.0.0",
+        name: container_name.clone(),
+        config: Some(Config {
+            environment_variables: Some(json!({
+                "PGPORT": port,
+                "PGUSER": "postgres",
+                "PGDATABASE": "postgres",
+                "PGPASSWORD": password,
+                "PGHOST": container_name,
+            })),
+            network: None,
         }),
     }
 }
@@ -253,14 +314,35 @@ fn test_python_2() {
 
 #[test]
 fn test_django() {
-    println!("Getting Postgres");
-    let c = simple_postgres();
-    // Wait for PG to become ready
-    thread::sleep(Duration::from_millis(5000));
+    // Create the network
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    // Create the postgres instance
+    let c = run_postgres();
+    let container_name = c.name.clone();
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    // Build the Django example
     let name = simple_build("./examples/django");
-    let output = run_image(name, Some(c.environment_variables));
-    stop_and_remove_container(c.name);
-    assert!(output.contains("booting worker"));
+
+    // Run the Django example on the attached network
+    let output = run_image(
+        name,
+        Some(Config {
+            environment_variables: c.config.unwrap().environment_variables,
+            network: Some(network_name.clone()),
+        }),
+    );
+
+    // Cleanup containers and networks
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
+
+    // Check if we could get to Django start
+    assert!(output.contains("Booting worker"));
 }
 
 #[test]
