@@ -282,7 +282,7 @@ fn test_pnpm_custom_version() {
 #[test]
 fn test_csharp() {
     let name = simple_build("./examples/csharp-cli");
-    let output = run_image(name);
+    let output = run_image(name, None);
     assert!(output.contains("Hello world from C#"));
 }
 
