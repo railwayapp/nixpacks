@@ -11,15 +11,9 @@ use serde::Deserialize;
 pub const DEFAULT_DART_PKG_NAME: &'static &str = &"dart";
 
 #[derive(Deserialize, Debug)]
-pub struct DartPubspecEnvironment {
-    pub sdk: String, // leaving this here in case NixOS will have different Dart SDK versions
-}
-
-#[derive(Deserialize, Debug)]
 pub struct DartPubspec {
     pub name: String,
     pub version: String,
-    pub environment: DartPubspecEnvironment,
 }
 
 pub struct DartProvider {}
