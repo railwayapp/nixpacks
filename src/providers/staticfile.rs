@@ -128,7 +128,7 @@ impl Provider for StaticfileProvider {
 impl StaticfileProvider {
     pub fn get_root(app: &App, env: &Environment, staticfile_root: String) -> String {
         let mut root = "";
-        if let Some(staticfile_root) = env.get_variable("NIXPACKS_STATICFILE_ROOT") {
+        if let Some(staticfile_root) = env.get_config_variable("STATICFILE_ROOT") {
             root = staticfile_root;
         } else if !staticfile_root.is_empty() {
             root = &staticfile_root;
