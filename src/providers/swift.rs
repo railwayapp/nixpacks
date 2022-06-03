@@ -1,7 +1,7 @@
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::{Environment, EnvironmentVariables},
+    environment::Environment,
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -25,8 +25,6 @@ impl Provider for SwiftProvider {
             Pkg::new("clang_13"),
             Pkg::new("python27Full"),
             Pkg::new("wget"),
-            Pkg::new("sqlite"),
-            Pkg::new("ncurses5"),
         ];
 
         Ok(Some(SetupPhase::new(pkgs)))
@@ -46,7 +44,8 @@ impl Provider for SwiftProvider {
         );
 
         let install_cmd = formatdoc! {"
-        wget {download_url} && \
+        sudo apt-get install -y libsqlite3-0 libncurses5 libcurl4 && \
+        wget -q {download_url} && \
         tar -xf {name}.tar.gz && \
         sudo mv {name} /usr/share/swift
         ",
