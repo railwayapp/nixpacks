@@ -40,8 +40,8 @@ impl Provider for SwiftProvider {
         );
 
         let install_cmd = formatdoc! {"
-        wget {download_url}
-        tar -xf {name}.tar.gz
+        wget {download_url} && \
+        tar -xf {name}.tar.gz && \
         sudo mv {name} /usr/share/swift
         ",
         name=name,
