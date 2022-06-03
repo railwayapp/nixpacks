@@ -1,7 +1,7 @@
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
@@ -54,5 +54,18 @@ impl Provider for SwiftProvider {
             "./.build/release/{}",
             names[1]
         ))))
+    }
+
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        let mut variables = EnvironmentVariables::default();
+
+        // https://stackoverflow.com/a/62271027
+        variables.insert("DEBIAN_FRONTEND".to_owned(), "noninteractive".to_owned());
+
+        Ok(Some(variables))
     }
 }
