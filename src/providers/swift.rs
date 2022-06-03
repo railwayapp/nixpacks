@@ -83,13 +83,16 @@ impl Provider for SwiftProvider {
     }
 
     fn environment_variables(
-            &self,
-            _app: &App,
-            _env: &Environment,
-        ) -> Result<Option<EnvironmentVariables>> {
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
         let mut variables = EnvironmentVariables::default();
 
-        variables.insert("PATH".to_string(), "/usr/share/swift/usr/bin:$PATH".to_string());
+        variables.insert(
+            "PATH".to_string(),
+            "/usr/share/swift/usr/bin:$PATH".to_string(),
+        );
 
         Ok(Some(variables))
     }
