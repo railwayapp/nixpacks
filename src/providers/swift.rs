@@ -26,7 +26,7 @@ impl Provider for SwiftProvider {
             Pkg::new("python27Full"),
             Pkg::new("wget"),
             Pkg::new("sqlite"),
-            Pkg::new("ncurses5")
+            Pkg::new("ncurses5"),
         ];
 
         Ok(Some(SetupPhase::new(pkgs)))
