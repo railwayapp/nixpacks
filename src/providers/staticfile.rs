@@ -57,7 +57,11 @@ impl Provider for StaticfileProvider {
         }
 
         let staticfile: Staticfile = app.read_yaml("Staticfile").unwrap_or_default();
-        let root = StaticfileProvider::get_root(app, env, staticfile.root.unwrap_or_else(|| "".to_string()));
+        let root = StaticfileProvider::get_root(
+            app,
+            env,
+            staticfile.root.unwrap_or_else(|| "".to_string()),
+        );
         let gzip = staticfile.gzip.unwrap_or_else(|| "on".to_string());
         let directory = staticfile.directory.unwrap_or_else(|| "off".to_string());
         let status_code = staticfile.status_code.unwrap_or_default();
@@ -126,7 +130,7 @@ impl StaticfileProvider {
         let mut root = "";
         if env.get_variable("NIXPACKS_STATICFILE_ROOT").is_some() {
             root = env.get_variable("NIXPACKS_STATICFILE_ROOT").unwrap();
-        } else if staticfile_root != "" {
+        } else if staticfile_root.is_empty() {
             root = &staticfile_root;
         } else if app.includes_directory("public") {
             root = "public";

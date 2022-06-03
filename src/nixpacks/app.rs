@@ -37,7 +37,7 @@ impl App {
         if fs::metadata(self.source.join(name)).is_ok() {
             return fs::metadata(self.source.join(name)).unwrap().is_file();
         }
-        return false;
+        false
     }
 
     /// Returns a list of paths matching a glob pattern
@@ -106,7 +106,7 @@ impl App {
         if fs::metadata(self.source.join(name)).is_ok() {
             return fs::metadata(self.source.join(name)).unwrap().is_dir();
         }
-        return false;
+        false
     }
 
     pub fn read_json<T>(&self, name: &str) -> Result<T>
