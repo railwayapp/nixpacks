@@ -16,7 +16,7 @@ use anyhow::Result;
 use providers::{
     crystal::CrystalProvider, csharp::CSharpProvider, deno::DenoProvider, go::GolangProvider,
     haskell::HaskellStackProvider, node::NodeProvider, python::PythonProvider, rust::RustProvider,
-    staticfile::StaticfileProvider, Provider,
+    staticfile::StaticfileProvider, swift::SwiftProvider, Provider,
 };
 
 mod chain;
@@ -34,6 +34,7 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &CSharpProvider {},
         &CrystalProvider {},
         &StaticfileProvider {},
+        &SwiftProvider {},
     ]
 }
 

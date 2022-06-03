@@ -485,3 +485,37 @@ fn test_staticfile() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_swift() -> Result<()> {
+    let plan = simple_gen_plan("./examples/swift");
+
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("swift build -c release --static-swift-stdlib".to_owned())
+    );
+
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./.build/release/swift".to_owned())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_swift_vapor() -> Result<()> {
+    let plan = simple_gen_plan("./examples/swift-vapor");
+
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("swift build -c release --static-swift-stdlib".to_owned())
+    );
+
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./.build/release/Run".to_owned())
+    );
+
+    Ok(())
+}
