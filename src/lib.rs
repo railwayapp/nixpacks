@@ -11,7 +11,7 @@ use crate::nixpacks::{
         generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
         BuildPlan, PlanGenerator,
     providers::{
-        csharp::CSharpProvider, deno::DenoProvider, go::GolangProvider,
+        crystal::CrystalProvider, csharp::CSharpProvider, deno::DenoProvider, go::GolangProvider,
         haskell::HaskellStackProvider, node::NodeProvider, python::PythonProvider,
         rust::RustProvider,
     },
@@ -30,12 +30,9 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &RustProvider {},
         &PythonProvider {},
         &HaskellStackProvider {},
-<<<<<<< HEAD
+        &CSharpProvider {},
         &CrystalProvider {},
         &StaticfileProvider {},
-=======
-        &CSharpProvider {},
->>>>>>> d4c1929 (csharp provider)
     ]
 }
 
