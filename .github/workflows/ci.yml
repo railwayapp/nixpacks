@@ -80,4 +80,5 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all-targets --all-features -- -D clippy::wildcard_dependencies
+          # Set linting rules for clippy
+          args: --all-targets --all-features -- -D clippy::wildcard_dependencies 
