@@ -1,15 +1,12 @@
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
-    phase::{BuildPhase, SetupPhase, StartPhase},
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
-
-// Swift 5.1.1
-static SWIFT_ARCHIVE: &str =
-    "https://github.com/NixOS/nixpkgs/archive/9986226d5182c368b7be1db1ab2f7488508b5a87.tar.gz";
+use indoc::formatdoc;
 
 pub struct SwiftProvider {}
 
@@ -24,12 +21,34 @@ impl Provider for SwiftProvider {
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        let pkg = Pkg::new("swift");
-        let mut setup_phase = SetupPhase::new(vec![pkg]);
+        let pkgs = vec![Pkg::new("clang_13"), Pkg::new("python27Full")];
 
-        setup_phase.set_archive(SWIFT_ARCHIVE.to_string());
+        Ok(Some(SetupPhase::new(pkgs)))
+    }
 
-        Ok(Some(setup_phase))
+    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+        #[cfg(target_arch = "x86_64")]
+        let (download_url, name) = (
+            "https://download.swift.org/swift-5.6.1-release/ubuntu2004/swift-5.6.1-RELEASE/swift-5.6.1-RELEASE-ubuntu20.04.tar.gz", 
+            "swift-5.6.1-RELEASE-ubuntu20.04"
+        );
+
+        #[cfg(target_arch = "aarch64")]
+        let (download_url, name) = (
+            "https://download.swift.org/swift-5.6.1-release/ubuntu2004-aarch64/swift-5.6.1-RELEASE/swift-5.6.1-RELEASE-ubuntu20.04-aarch64.tar.gz", 
+            "swift-5.6.1-RELEASE-ubuntu20.04-aarch64"
+        );
+
+        let install_cmd = formatdoc! {"
+        wget {download_url}
+        tar -xf {name}.tar.gz
+        sudo mv {name} /usr/share/swift
+        ",
+        name=name,
+        download_url=download_url
+        };
+
+        Ok(Some(InstallPhase::new(install_cmd)))
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
@@ -61,5 +80,17 @@ impl Provider for SwiftProvider {
             "./.build/release/{}",
             names[1]
         ))))
+    }
+
+    fn environment_variables(
+            &self,
+            _app: &App,
+            _env: &Environment,
+        ) -> Result<Option<EnvironmentVariables>> {
+        let mut variables = EnvironmentVariables::default();
+
+        variables.insert("PATH".to_string(), "/usr/share/swift/usr/bin:$PATH".to_string());
+
+        Ok(Some(variables))
     }
 }
