@@ -34,10 +34,7 @@ impl App {
 
     /// Check if a file exists
     pub fn includes_file(&self, name: &str) -> bool {
-        if fs::metadata(self.source.join(name)).is_ok() {
-            return fs::metadata(self.source.join(name)).unwrap().is_file();
-        }
-        false
+        self.source.join(name).is_file()
     }
 
     /// Returns a list of paths matching a glob pattern
@@ -103,10 +100,7 @@ impl App {
     }
 
     pub fn includes_directory(&self, name: &str) -> bool {
-        if fs::metadata(self.source.join(name)).is_ok() {
-            return fs::metadata(self.source.join(name)).unwrap().is_dir();
-        }
-        false
+        self.source.join(name).is_dir()
     }
 
     pub fn read_json<T>(&self, name: &str) -> Result<T>
