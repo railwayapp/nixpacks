@@ -98,7 +98,8 @@ impl App {
 
         Ok(false)
     }
-
+    
+    /// Check if a directory exists
     pub fn includes_directory(&self, name: &str) -> bool {
         self.source.join(name).is_dir()
     }
