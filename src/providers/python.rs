@@ -156,11 +156,7 @@ enum EntryPoint {
 
 impl PythonProvider {
     fn is_django(app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("manage.py")
-            && app
-                .read_file("requirements.txt")
-                .unwrap()
-                .contains("Django"))
+        Ok(app.includes_file("manage.py") && app.read_file("requirements.txt")?.contains("Django"))
     }
 
     fn is_using_postgres(app: &App, _env: &Environment) -> Result<bool> {

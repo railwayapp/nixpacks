@@ -200,6 +200,44 @@ fn test_deno() -> Result<()> {
 }
 
 #[test]
+fn test_csharp_api() -> Result<()> {
+    let plan = simple_gen_plan("./examples/csharp-api");
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("dotnet restore".to_string())
+    );
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("dotnet publish --no-restore -c Release -o out".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./out/csharp-api".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_csharp_cli() -> Result<()> {
+    let plan = simple_gen_plan("./examples/csharp-cli");
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("dotnet restore".to_string())
+    );
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("dotnet publish --no-restore -c Release -o out".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./out/csharp-cli".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_procfile() -> Result<()> {
     let plan = simple_gen_plan("./examples/procfile");
     assert_eq!(plan.start.unwrap().cmd, Some("node index.js".to_string()));
@@ -415,12 +453,14 @@ fn test_config_from_environment_variables() -> Result<()> {
         "./examples/hello",
         vec![
             "NIXPACKS_PKGS=cowsay ripgrep",
+            "NIXPACKS_INSTALL_CMD=install",
             "NIXPACKS_BUILD_CMD=build",
             "NIXPACKS_START_CMD=start",
             "NIXPACKS_RUN_IMAGE=alpine",
         ],
         &GeneratePlanOptions::default(),
     )?;
+    assert_eq!(plan.install.unwrap().cmd, Some("install".to_string()));
     assert_eq!(plan.build.unwrap().cmd, Some("build".to_string()));
     assert_eq!(plan.start.clone().unwrap().cmd, Some("start".to_string()));
     assert_eq!(
@@ -429,5 +469,19 @@ fn test_config_from_environment_variables() -> Result<()> {
     );
     assert_eq!(plan.start.unwrap().run_image, Some("alpine".to_string()));
 
+    Ok(())
+}
+
+#[test]
+fn test_staticfile() -> Result<()> {
+    let plan = simple_gen_plan("./examples/staticfile");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\" /assets/nginx.conf && nginx -c /assets/nginx.conf".to_string())
+    );
     Ok(())
 }

@@ -279,6 +279,13 @@ fn test_pnpm_custom_version() {
 }
 
 #[test]
+fn test_csharp() {
+    let name = simple_build("./examples/csharp-cli");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello world from C#"));
+}
+
+#[test]
 fn test_python() {
     let name = simple_build("./examples/python");
     let output = run_image(name, None);
@@ -402,4 +409,11 @@ fn test_cowsay() {
     .unwrap();
     let output = run_image(name, None);
     assert!(output.contains("Hello World"));
+}
+
+#[test]
+fn test_staticfile() {
+    let name = simple_build("./examples/staticfile");
+    let output = run_image(name, None);
+    assert!(output.contains("start worker process"));
 }
