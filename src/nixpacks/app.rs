@@ -34,7 +34,10 @@ impl App {
 
     /// Check if a file exists
     pub fn includes_file(&self, name: &str) -> bool {
-        fs::canonicalize(self.source.join(name)).is_ok()
+        if fs::metadata(self.source.join(name)).is_ok() {
+            return fs::metadata(self.source.join(name)).unwrap().is_file();
+        }
+        return false;
     }
 
     /// Returns a list of paths matching a glob pattern
@@ -97,6 +100,13 @@ impl App {
         }
 
         Ok(false)
+    }
+
+    pub fn includes_directory(&self, name: &str) -> bool {
+        if fs::metadata(self.source.join(name)).is_ok() {
+            return fs::metadata(self.source.join(name)).unwrap().is_dir();
+        }
+        return false;
     }
 
     pub fn read_json<T>(&self, name: &str) -> Result<T>

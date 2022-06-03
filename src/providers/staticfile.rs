@@ -26,7 +26,11 @@ impl Provider for StaticfileProvider {
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("Staticfile"))
+        Ok(app.includes_file("Staticfile")
+            || app.includes_directory("public")
+            || app.includes_directory("index")
+            || app.includes_directory("dist")
+            || app.includes_file("index.html"))
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
@@ -34,7 +38,7 @@ impl Provider for StaticfileProvider {
         Ok(Some(SetupPhase::new(vec![pkg])))
     }
 
-    fn static_assets(&self, app: &App, _env: &Environment) -> Result<Option<StaticAssets>> {
+    fn static_assets(&self, app: &App, env: &Environment) -> Result<Option<StaticAssets>> {
         let mut assets = StaticAssets::new();
 
         let mut mime_types = "".to_string();
@@ -53,7 +57,7 @@ impl Provider for StaticfileProvider {
         }
 
         let staticfile: Staticfile = app.read_yaml("Staticfile").unwrap_or_default();
-        let root = staticfile.root.unwrap_or_else(|| "".to_string());
+        let root = StaticfileProvider::get_root(app, env, staticfile.root.unwrap_or_else(|| "".to_string()));
         let gzip = staticfile.gzip.unwrap_or_else(|| "on".to_string());
         let directory = staticfile.directory.unwrap_or_else(|| "off".to_string());
         let status_code = staticfile.status_code.unwrap_or_default();
@@ -114,5 +118,23 @@ impl Provider for StaticfileProvider {
             shell_cmd = shell_cmd,
             conf_location = app.asset_path("nginx.conf"),
         ))))
+    }
+}
+
+impl StaticfileProvider {
+    pub fn get_root(app: &App, env: &Environment, staticfile_root: String) -> String {
+        let mut root = "";
+        if env.get_variable("NIXPACKS_STATICFILE_ROOT").is_some() {
+            root = env.get_variable("NIXPACKS_STATICFILE_ROOT").unwrap();
+        } else if staticfile_root != "" {
+            root = &staticfile_root;
+        } else if app.includes_directory("public") {
+            root = "public";
+        } else if app.includes_directory("dist") {
+            root = "dist";
+        } else if app.includes_directory("index") {
+            root = "index";
+        }
+        root.to_string()
     }
 }
