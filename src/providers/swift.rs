@@ -27,7 +27,7 @@ impl Provider for SwiftProvider {
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         Ok(Some(BuildPhase::new(
-            "swift build -c release --static-swift-stdlib".to_owned(),
+            "swift build -c release --static-swift-stdlib".to_string(),
         )))
     }
 
@@ -64,7 +64,7 @@ impl Provider for SwiftProvider {
         let mut variables = EnvironmentVariables::default();
 
         // https://stackoverflow.com/a/62271027
-        variables.insert("DEBIAN_FRONTEND".to_owned(), "noninteractive".to_owned());
+        variables.insert("DEBIAN_FRONTEND".to_string(), "noninteractive".to_string());
 
         Ok(Some(variables))
     }

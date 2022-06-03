@@ -56,3 +56,4 @@ test
 
 # Github Codespaces
 .devcontainer/
+.vscode/
