@@ -8,7 +8,8 @@ use crate::nixpacks::{
 use anyhow::Result;
 
 // Swift 5.4.2
-static SWIFT_ARCHIVE: &str = "https://github.com/NixOS/nixpkgs/archive/c82b46413401efa740a0b994f52e9903a4f6dcd5.tar.gz";
+static SWIFT_ARCHIVE: &str =
+    "https://github.com/NixOS/nixpkgs/archive/c82b46413401efa740a0b994f52e9903a4f6dcd5.tar.gz";
 
 pub struct SwiftProvider {}
 
