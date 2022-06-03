@@ -7,6 +7,9 @@ use crate::nixpacks::{
 };
 use anyhow::Result;
 
+// Swift 5.4.2
+static SWIFT_ARCHIVE: &str = "https://github.com/NixOS/nixpkgs/archive/c82b46413401efa740a0b994f52e9903a4f6dcd5.tar.gz";
+
 pub struct SwiftProvider {}
 
 impl Provider for SwiftProvider {
@@ -21,8 +24,11 @@ impl Provider for SwiftProvider {
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         let pkg = Pkg::new("swift");
+        let mut setup_phase = SetupPhase::new(vec![pkg]);
 
-        Ok(Some(SetupPhase::new(vec![pkg])))
+        setup_phase.set_archive(SWIFT_ARCHIVE.to_string());
+
+        Ok(Some(setup_phase))
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
