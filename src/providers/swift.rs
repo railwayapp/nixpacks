@@ -21,7 +21,11 @@ impl Provider for SwiftProvider {
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        let pkgs = vec![Pkg::new("clang_13"), Pkg::new("python27Full")];
+        let pkgs = vec![
+            Pkg::new("clang_13"),
+            Pkg::new("python27Full"),
+            Pkg::new("wget"),
+        ];
 
         Ok(Some(SetupPhase::new(pkgs)))
     }
