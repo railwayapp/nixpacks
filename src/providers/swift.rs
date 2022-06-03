@@ -52,7 +52,11 @@ impl Provider for SwiftProvider {
         download_url=download_url
         };
 
-        Ok(Some(InstallPhase::new(install_cmd)))
+        let mut install_phase = InstallPhase::new(install_cmd);
+
+        install_phase.add_path("/usr/share/swift/usr/bin".to_string());
+
+        Ok(Some(install_phase))
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
@@ -84,20 +88,5 @@ impl Provider for SwiftProvider {
             "./.build/release/{}",
             names[1]
         ))))
-    }
-
-    fn environment_variables(
-        &self,
-        _app: &App,
-        _env: &Environment,
-    ) -> Result<Option<EnvironmentVariables>> {
-        let mut variables = EnvironmentVariables::default();
-
-        variables.insert(
-            "PATH".to_string(),
-            "/usr/share/swift/usr/bin:$PATH".to_string(),
-        );
-
-        Ok(Some(variables))
     }
 }
