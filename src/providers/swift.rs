@@ -59,7 +59,7 @@ impl Provider for SwiftProvider {
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         Ok(Some(BuildPhase::new(
-            "swift build -c release --static-swift-stdlib -Xswiftc -I/usr/share/swift/clang/include/"
+            "swift build -c release --static-swift-stdlib -Xswiftc -I/usr/share/swift/usr/lib/clang/include/"
                 .to_string(),
         )))
     }
