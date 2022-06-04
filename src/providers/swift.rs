@@ -21,12 +21,7 @@ impl Provider for SwiftProvider {
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        let pkgs = vec![
-            Pkg::new("clang_13"),
-            Pkg::new("python38"), 
-            Pkg::new("wget"), 
-            Pkg::new("gcc"),
-        ];
+        let pkgs = vec![Pkg::new("clang_13"), Pkg::new("python38"), Pkg::new("wget")];
 
         Ok(Some(SetupPhase::new(pkgs)))
     }
@@ -47,7 +42,7 @@ impl Provider for SwiftProvider {
         // https://forums.swift.org/t/which-clang-package-should-we-install/20542/14
         let install_cmd = formatdoc! {"
         sudo apt-get update && \
-        sudo apt-get install -y libsqlite3-0 libncurses6 libcurl4 libxml2 libatomic1 libedit2 libsqlite3-0 libcurl4 libxml2 libbsd0 libc6-dev && \
+        sudo apt-get install -y build-essential libsqlite3-0 libncurses6 libcurl4 libxml2 libatomic1 libedit2 libsqlite3-0 libcurl4 libxml2 libbsd0 libc6-dev && \
         wget -q {download_url} && \
         tar -xf {name}.tar.gz && \
         sudo mv {name} /usr/share/swift && \
