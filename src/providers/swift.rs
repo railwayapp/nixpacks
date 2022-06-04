@@ -39,9 +39,10 @@ impl Provider for SwiftProvider {
             "swift-5.6.1-RELEASE-ubuntu20.04-aarch64"
         );
 
+        // https://forums.swift.org/t/which-clang-package-should-we-install/20542/14
         let install_cmd = formatdoc! {"
         sudo apt-get update && \
-        sudo apt-get install -y libsqlite3-0 libncurses6 libcurl4 libxml2 && \
+        sudo apt-get install -y libsqlite3-0 libncurses6 libcurl4 libxml2 libatomic1 libedit2 libxml2 libbsd0 libc6-dev binutils libgcc-5-dev libstdc++-5-dev && \
         wget -q {download_url} && \
         tar -xf {name}.tar.gz && \
         sudo mv {name} /usr/share/swift && \
