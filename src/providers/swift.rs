@@ -23,7 +23,7 @@ impl Provider for SwiftProvider {
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         let pkgs = vec![
             Pkg::new("clang_13"),
-            Pkg::new("python27Full"),
+            Pkg::new("python38"),
             Pkg::new("wget"),
         ];
 
@@ -44,6 +44,7 @@ impl Provider for SwiftProvider {
         );
 
         let install_cmd = formatdoc! {"
+        sudo apt-get update && \
         sudo apt-get install -y libsqlite3-0 libncurses5 libcurl4 && \
         wget -q {download_url} && \
         tar -xf {name}.tar.gz && \
