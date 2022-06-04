@@ -495,7 +495,7 @@ fn test_dart() -> Result<()> {
         Some("dart compile exe bin/console_simple.dart".to_string())
     );
     assert_eq!(
-        plan.start.clone().unwrap().cmd,
+        plan.start.unwrap().cmd,
         Some("./bin/console_simple.exe".to_string())
     );
 

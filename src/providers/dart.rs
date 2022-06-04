@@ -32,7 +32,10 @@ impl Provider for DartProvider {
     }
 
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        Ok(Some(InstallPhase::new("dart pub get".to_string())))
+        let mut install_cmd = InstallPhase::new("dart pub get".to_string());
+        install_cmd.add_file_dependency("pubspec.yaml".to_string());
+
+        Ok(Some(install_cmd))
     }
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
