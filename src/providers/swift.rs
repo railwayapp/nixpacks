@@ -8,6 +8,8 @@ use crate::nixpacks::{
 use anyhow::Result;
 use indoc::formatdoc;
 
+static LATEST_SWIFT: &str = "5.6.1";
+
 pub struct SwiftProvider {}
 
 impl Provider for SwiftProvider {
@@ -26,18 +28,9 @@ impl Provider for SwiftProvider {
         Ok(Some(SetupPhase::new(pkgs)))
     }
 
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        #[cfg(target_arch = "x86_64")]
-        let (download_url, name) = (
-            "https://download.swift.org/swift-5.6.1-release/ubuntu2004/swift-5.6.1-RELEASE/swift-5.6.1-RELEASE-ubuntu20.04.tar.gz", 
-            "swift-5.6.1-RELEASE-ubuntu20.04"
-        );
-
-        #[cfg(target_arch = "aarch64")]
-        let (download_url, name) = (
-            "https://download.swift.org/swift-5.6.1-release/ubuntu2004-aarch64/swift-5.6.1-RELEASE/swift-5.6.1-RELEASE-ubuntu20.04-aarch64.tar.gz", 
-            "swift-5.6.1-RELEASE-ubuntu20.04-aarch64"
-        );
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+        let version = SwiftProvider::get_swift_version(&app)?;
+        let (download_url, name) = SwiftProvider::make_download_url(version);
 
         // https://forums.swift.org/t/which-clang-package-should-we-install/20542/14
         let install_cmd = formatdoc! {"
@@ -45,8 +38,7 @@ impl Provider for SwiftProvider {
         sudo apt-get install -y build-essential clang libsqlite3-0 libncurses6 libcurl4 libxml2 libatomic1 libedit2 libsqlite3-0 libcurl4 libxml2 libbsd0 libc6-dev && \
         wget -q {download_url} && \
         tar -xf {name}.tar.gz && \
-        sudo mv {name} /usr/share/swift && \
-        chmod o+rw -R /usr/share/swift/usr/lib/swift/CoreFoundation/
+        sudo mv {name} /usr/share/swift
         ",
         name=name,
         download_url=download_url
@@ -88,5 +80,68 @@ impl Provider for SwiftProvider {
             "./.build/release/{}",
             names[1]
         ))))
+    }
+}
+
+impl SwiftProvider {
+    fn get_swift_version(app: &App) -> Result<String> {
+        if app.includes_file("Package.swift") {
+            let contents = app.read_file("Package.swift")?;
+            let version = contents
+                .split('\n')
+                .filter(|&l| l.contains("swift-tools-version:"))
+                .map(|l| {
+                    l.replace("swift-tools-version:", "")
+                        .replace("//", "")
+                        .trim()
+                        .to_string()
+                })
+                .collect::<Vec<_>>()
+                .first()
+                .map(|s| s.to_owned());
+
+            if let Some(version) = version {
+                Ok(version)
+            } else {
+                Ok(LATEST_SWIFT.to_string())
+            }
+        } else if app.includes_file(".swift-version") {
+            let contents = app.read_file(".swift-version")?;
+
+            Ok(contents)
+        } else {
+            Ok(LATEST_SWIFT.to_string())
+        }
+    }
+
+    fn make_download_url(version: String) -> (String, String) {
+        #[cfg(target_arch = "x86_64")]
+        let (download_url, name) = (
+            format!("https://download.swift.org/swift-{version}-release/ubuntu2004/swift-{version}-RELEASE/swift-{version}-RELEASE-ubuntu20.04.tar.gz", version = version), 
+            format!("swift-{}-RELEASE-ubuntu20.04", version)
+        );
+
+        #[cfg(target_arch = "aarch64")]
+        let (download_url, name) = (
+            format!("https://download.swift.org/swift-{version}-release/ubuntu2004/swift-{version}-RELEASE/swift-{version}-RELEASE-ubuntu20.04-aarch64.tar.gz", version = version), 
+            format!("swift-{}-RELEASE-ubuntu20.04-aarch64", version)
+        );
+
+        (download_url, name)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_custom_version() -> Result<()> {
+        assert_eq!(
+            &SwiftProvider::get_swift_version(&App::new("./examples/swift-custom-version")?)?,
+            "5.4"
+        );
+
+        Ok(())
     }
 }
