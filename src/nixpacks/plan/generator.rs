@@ -11,7 +11,8 @@ use crate::{
     },
     providers::Provider,
 };
-use anyhow::{Context, Ok, Result};
+use anyhow::{bail, Context, Ok, Result};
+use serde::Deserialize;
 
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
@@ -30,6 +31,13 @@ pub struct NixpacksBuildPlanGenerator<'a> {
     providers: Vec<&'a dyn Provider>,
     matched_provider: Option<&'a dyn Provider>,
     options: GeneratePlanOptions,
+}
+
+#[derive(Deserialize, Default, Debug)]
+pub struct Procfile {
+    pub web: Option<String>,
+    pub worker: Option<String>,
+    // pub release: Option<String>,
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
@@ -169,7 +177,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
     }
 
     fn get_start_phase(&self, app: &App, environment: &Environment) -> Result<StartPhase> {
-        let procfile_cmd = self.parse_procfile(app)?;
+        let procfile_cmd = self.get_procfile_start_cmd(app)?;
 
         let mut start_phase = match self.matched_provider {
             Some(provider) => provider.start(app, environment)?.unwrap_or_default(),
@@ -231,16 +239,14 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         Ok(static_assets)
     }
 
-    fn parse_procfile(&self, app: &App) -> Result<Option<String>> {
+    fn get_procfile_start_cmd(&self, app: &App) -> Result<Option<String>> {
         if app.includes_file("Procfile") {
-            let contents = app.read_file("Procfile")?;
-
-            // Better error handling
-            if contents.starts_with("web: ") {
-                return Ok(Some(contents.replace("web: ", "").trim().to_string()));
+            let procfile: Procfile = app.read_yaml("Procfile").unwrap_or_default();
+            if procfile.worker.is_some() && procfile.web.is_some() {
+                bail!("Procfile contains both a worker and a web process. Please specify one.");
+            } else {
+                Ok(procfile.worker.or(procfile.web))
             }
-
-            Ok(None)
         } else {
             Ok(None)
         }
