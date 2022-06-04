@@ -8,7 +8,7 @@ use crate::nixpacks::{
 use anyhow::Result;
 use indoc::formatdoc;
 
-static LATEST_SWIFT: &str = "5.6.1";
+static DEFAULT_SWIFT_VERSION: &str = "5.6.1";
 
 pub struct SwiftProvider {}
 
@@ -40,8 +40,8 @@ impl Provider for SwiftProvider {
         tar -xf {name}.tar.gz && \
         sudo mv {name} /usr/share/swift
         ",
-        name=name,
-        download_url=download_url
+        name = name,
+        download_url = download_url
         };
 
         let mut install_phase = InstallPhase::new(install_cmd);
@@ -103,14 +103,14 @@ impl SwiftProvider {
             if let Some(version) = version {
                 Ok(version)
             } else {
-                Ok(LATEST_SWIFT.to_string())
+                Ok(DEFAULT_SWIFT_VERSION.to_string())
             }
         } else if app.includes_file(".swift-version") {
             let contents = app.read_file(".swift-version")?;
 
             Ok(contents.trim().to_string())
         } else {
-            Ok(LATEST_SWIFT.to_string())
+            Ok(DEFAULT_SWIFT_VERSION.to_string())
         }
     }
 
