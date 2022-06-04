@@ -44,7 +44,7 @@ impl Provider for SwiftProvider {
         sudo apt-get install -y libsqlite3-0 libncurses6 libcurl4 libxml2 && \
         wget -q {download_url} && \
         tar -xf {name}.tar.gz && \
-        sudo mv {name} /usr/share/swift
+        sudo mv {name} /usr/share/swift && \
         chmod o+rw -R /usr/share/swift/usr/lib/swift/CoreFoundation/
         ",
         name=name,
