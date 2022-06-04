@@ -33,7 +33,7 @@ pub struct NixpacksBuildPlanGenerator<'a> {
     options: GeneratePlanOptions,
 }
 
-#[derive(Deserialize, Default, Debug)]
+#[derive(Deserialize, Default)]
 pub struct Procfile {
     pub web: Option<String>,
     pub worker: Option<String>,
@@ -242,10 +242,10 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
     fn get_procfile_start_cmd(&self, app: &App) -> Result<Option<String>> {
         if app.includes_file("Procfile") {
             let procfile: Procfile = app.read_yaml("Procfile").unwrap_or_default();
-            if procfile.worker.is_some() && procfile.web.is_some() {
+            if procfile.web.is_some() && procfile.worker.is_some() {
                 bail!("Procfile contains both a worker and a web process. Please specify one.");
             } else {
-                Ok(procfile.worker.or(procfile.web))
+                Ok(procfile.web.or(procfile.worker))
             }
         } else {
             Ok(None)
