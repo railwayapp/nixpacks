@@ -41,7 +41,7 @@ impl Provider for SwiftProvider {
 
         let install_cmd = formatdoc! {"
         sudo apt-get update && \
-        sudo apt-get install -y libsqlite3-0 libncurses6 libcurl4 && \
+        sudo apt-get install -y libsqlite3-0 libncurses6 libcurl4 libxml2 && \
         wget -q {download_url} && \
         tar -xf {name}.tar.gz && \
         sudo mv {name} /usr/share/swift
