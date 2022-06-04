@@ -108,7 +108,7 @@ impl SwiftProvider {
         } else if app.includes_file(".swift-version") {
             let contents = app.read_file(".swift-version")?;
 
-            Ok(contents)
+            Ok(contents.trim().to_string())
         } else {
             Ok(LATEST_SWIFT.to_string())
         }
