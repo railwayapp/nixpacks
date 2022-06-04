@@ -45,6 +45,7 @@ impl Provider for SwiftProvider {
         wget -q {download_url} && \
         tar -xf {name}.tar.gz && \
         sudo mv {name} /usr/share/swift
+        chmod o+rw -R /usr/share/swift/usr/lib/swift/CoreFoundation/
         ",
         name=name,
         download_url=download_url
@@ -59,8 +60,7 @@ impl Provider for SwiftProvider {
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         Ok(Some(BuildPhase::new(
-            "swift build -c release --static-swift-stdlib -Xswiftc -I/usr/share/swift/usr/lib/clang/include/"
-                .to_string(),
+            "swift build -c release --static-swift-stdlib".to_string(),
         )))
     }
 
