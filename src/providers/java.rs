@@ -2,10 +2,10 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
+    nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
-
 pub struct JavaProvider {}
 
 impl Provider for JavaProvider {
@@ -25,11 +25,14 @@ impl Provider for JavaProvider {
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        Ok(None)
+        Ok(Some(SetupPhase::new(vec![
+            Pkg::new("maven"),
+            Pkg::new("jdk8"),
+        ])))
     }
 
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        Ok(None)
+        Ok(Some(InstallPhase::new("mvn -B -DskipTests clean dependency:list install".to_string())))
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
@@ -37,7 +40,7 @@ impl Provider for JavaProvider {
     }
 
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        Ok(None)
+        Ok(Some(StartPhase::new("java -jar target/app.jar".to_string())))
     }
 }
 
