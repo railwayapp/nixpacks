@@ -14,7 +14,8 @@ use crate::nixpacks::{
 };
 use anyhow::Result;
 use providers::{
-    crystal::CrystalProvider, csharp::CSharpProvider, deno::DenoProvider, go::GolangProvider,
+    crystal::CrystalProvider, csharp::CSharpProvider, deno::DenoProvider,
+    go::GolangProvider, elixir::ElixirProvider,
     haskell::HaskellStackProvider, node::NodeProvider, python::PythonProvider, rust::RustProvider,
     staticfile::StaticfileProvider, Provider,
 };
@@ -27,6 +28,7 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
     vec![
         &GolangProvider {},
         &DenoProvider {},
+        &ElixirProvider {},
         &NodeProvider {},
         &RustProvider {},
         &PythonProvider {},

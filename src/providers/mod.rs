@@ -8,6 +8,7 @@ use anyhow::Result;
 pub mod crystal;
 pub mod csharp;
 pub mod deno;
+pub mod elixir;
 pub mod go;
 pub mod haskell;
 pub mod node;
