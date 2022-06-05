@@ -1,14 +1,15 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
 
 use anyhow::{bail, Context, Result};
 
+use regex::Regex;
 use serde::Deserialize;
 
 use crate::{
     chain,
     nixpacks::{
         app::App,
-        environment::Environment,
+        environment::{Environment, EnvironmentVariables},
         phase::{InstallPhase, SetupPhase, StartPhase},
     },
     Pkg,
@@ -18,6 +19,7 @@ use super::Provider;
 
 pub const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
 
+const POETRY_VERSION: &'static &str = &"1.1.13";
 pub struct PythonProvider {}
 
 impl Provider for PythonProvider {
@@ -32,8 +34,17 @@ impl Provider for PythonProvider {
     }
 
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
-        let pkg = PythonProvider::get_nix_python_package(app, env)?;
-        Ok(Some(SetupPhase::new(vec![pkg])))
+        let mut pkgs: Vec<Pkg> = vec![];
+        let python_base_package = PythonProvider::get_nix_python_package(app, env)?;
+
+        pkgs.append(&mut vec![python_base_package]);
+
+        if PythonProvider::is_django(app, env)? && PythonProvider::is_using_postgres(app, env)? {
+            // Django with Postgres requires postgresql and gcc on top of the original python packages
+            pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
+        }
+
+        Ok(Some(SetupPhase::new(pkgs)))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
@@ -50,6 +61,17 @@ impl Provider for PythonProvider {
             install_phase.add_path(format!("{}/bin", env_loc));
             return Ok(Some(install_phase));
         } else if app.includes_file("pyproject.toml") {
+            if app.includes_file("poetry.lock") {
+                let install_poetry = "pip install poetry==$NIXPACKS_POETRY_VERSION".to_string();
+                let mut install_phase = InstallPhase::new(format!(
+                    "{} && {} && {} && poetry install --no-dev --no-interaction --no-ansi",
+                    create_env, activate_env, install_poetry
+                ));
+                install_phase.add_file_dependency("poetry.lock".to_string());
+                install_phase.add_file_dependency("pyproject.toml".to_string());
+                install_phase.add_path(format!("{}/bin", env_loc));
+                return Ok(Some(install_phase));
+            }
             let mut install_phase = InstallPhase::new(format!(
                 "{} && {} && pip install --upgrade build setuptools && pip install .",
                 create_env, activate_env
@@ -62,7 +84,16 @@ impl Provider for PythonProvider {
         Ok(None)
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+        if PythonProvider::is_django(app, env)? {
+            let app_name = PythonProvider::get_django_app_name(app, env)?;
+
+            return Ok(Some(StartPhase::new(format!(
+                "python manage.py migrate && gunicorn {}",
+                app_name
+            ))));
+        }
+
         if app.includes_file("pyproject.toml") {
             if let Ok(meta) = PythonProvider::parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
@@ -78,6 +109,19 @@ impl Provider for PythonProvider {
             return Ok(Some(StartPhase::new("python main.py".to_string())));
         }
 
+        Ok(None)
+    }
+    fn environment_variables(
+        &self,
+        app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        if app.includes_file("poetry.lock") {
+            return Ok(Some(EnvironmentVariables::from([(
+                "NIXPACKS_POETRY_VERSION".to_string(),
+                POETRY_VERSION.to_string(),
+            )])));
+        }
         Ok(None)
     }
 }
@@ -111,6 +155,40 @@ enum EntryPoint {
 }
 
 impl PythonProvider {
+    fn is_django(app: &App, _env: &Environment) -> Result<bool> {
+        Ok(app.includes_file("manage.py") && app.read_file("requirements.txt")?.contains("Django"))
+    }
+
+    fn is_using_postgres(app: &App, _env: &Environment) -> Result<bool> {
+        // Check for the engine database type in settings.py
+        let re = Regex::new(r"django.db.backends.postgresql").unwrap();
+
+        app.find_match(&re, "/**/settings.py")
+    }
+
+    fn get_django_app_name(app: &App, _env: &Environment) -> Result<String> {
+        // Look for the settings.py file
+        let paths = app.find_files("/**/settings.py").unwrap();
+
+        // Generate regex to find the application name
+        let re = Regex::new(r"WSGI_APPLICATION = '(.*).application'").unwrap();
+
+        // Search all settings.py matches
+        for path in paths {
+            let path_buf = fs::canonicalize(path)?;
+
+            if let Some(p) = path_buf.to_str() {
+                let f = app.read_file(p)?;
+                if let Some(value) = re.captures(f.as_str()) {
+                    // Get the first and only match
+                    // e.g "mysite.wsgi"
+                    return Ok(value.get(1).unwrap().as_str().into());
+                }
+            }
+        }
+        bail!("Failed to find django application name!")
+    }
+
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
         let mut custom_version = env
             .get_config_variable("PYTHON_VERSION")
@@ -185,7 +263,7 @@ impl PythonProvider {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::nixpacks::{app::App, environment::Environment, nix::Pkg};
+    use crate::nixpacks::{app::App, environment::Environment, nix::pkg::Pkg};
     use std::collections::HashMap;
 
     #[test]

@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use std::collections::HashMap;
 use std::path::Path;
 use std::{env, fs, path::PathBuf};
 
@@ -7,6 +8,9 @@ use globset::Glob;
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use walkdir::WalkDir;
+
+pub static ASSETS_DIR: &str = "/assets/";
+pub type StaticAssets = HashMap<String, String>;
 
 #[derive(Debug, Clone)]
 pub struct App {
@@ -27,9 +31,10 @@ impl App {
 
         Ok(App { source, paths })
     }
+
     /// Check if a file exists
     pub fn includes_file(&self, name: &str) -> bool {
-        fs::canonicalize(self.source.join(name)).is_ok()
+        self.source.join(name).is_file()
     }
 
     /// Returns a list of paths matching a glob pattern
@@ -94,6 +99,11 @@ impl App {
         Ok(false)
     }
 
+    /// Check if a directory exists
+    pub fn includes_directory(&self, name: &str) -> bool {
+        self.source.join(name).is_dir()
+    }
+
     pub fn read_json<T>(&self, name: &str) -> Result<T>
     where
         T: DeserializeOwned,
@@ -135,6 +145,11 @@ impl App {
 
         // Convert path to PathBuf
         Ok(stripped.to_owned())
+    }
+
+    /// Get the path in the container to an asset defined in `static_assets`.
+    pub fn asset_path(&self, name: &str) -> String {
+        format!("{ASSETS_DIR}{name}")
     }
 }
 
@@ -249,6 +264,13 @@ mod tests {
             &app.strip_source_path(Path::new("no/prefix.txt"))?,
             Path::new("no/prefix.txt")
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_static_asset_path() -> Result<()> {
+        let app = App::new("./examples/npm")?;
+        assert_eq!(&app.asset_path("hi.txt"), "/assets/hi.txt");
         Ok(())
     }
 }
