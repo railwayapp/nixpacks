@@ -79,4 +79,39 @@ impl ElixirProvider {
 
         has_escript_key && has_main_module
     }
+
+    fn read_mix_exs_if_exists(&self, app: &App) -> Result<Option<String>> {
+        if app.includes_file("mix.exs") {
+            return Ok(Some(app.read_file("mix.exs")?));
+        }
+
+        Ok(None)
+    }
+
+    fn get_nix_elixir_pkg(mix_exs_contents: Option<String>) -> Result<String> {
+        let elixir_nix_pkg = mix_exs_contents
+            .as_ref()
+            .unwrap()
+            .lines()
+            .find(|line| line.trim().starts_with("elixir: ~> "))
+            .and_then(|version_line| version_line.trim().split_whitespace().nth(1))
+            .and_then(|version| version_number_to_pkg(version).ok()?);
+
+        if let Some(nix_pkg) = elixir_nix_pkg {
+            return Ok(nix_pkg);
+        }
+
+        Ok(DEFAULT_ELIXIR_PKG_NAME.to_string())
+    }
+}
+
+fn version_number_to_pkg(version: &str) -> Result<Option<String>> {
+    let matched_version = AVAILABLE_ELIXIR_VERSIONS
+        .iter()
+        .find(|(v, _)| v == &version);
+
+    match matched_version {
+        Some((_, pkg)) => Ok(Some(pkg.to_string())),
+        None => Ok(None),
+    }
 }
