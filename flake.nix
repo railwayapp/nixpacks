@@ -35,7 +35,7 @@
               lockFile = ./Cargo.lock;
             };
             meta = with nixpkgs.lib; {
-              description = "App source + Nix packages + Docker = Image Resources";
+              description = "App source + Nix packages + Docker = Image";
               homepage = "https://github.com/railwayapp/nixpacks";
               license = licenses.mit;
               maintainers = [ maintainers.zoedsoupe ];
