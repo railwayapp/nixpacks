@@ -201,7 +201,6 @@ impl NodeProvider {
 fn version_number_to_pkg(version: &u32) -> String {
     if version % 2 == 1 {
         String::from("nodejs")
-        // test
     } else {
         format!("nodejs-{}_x", version)
     }
