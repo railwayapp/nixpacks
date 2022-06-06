@@ -242,14 +242,14 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
 
     fn get_procfile_start_cmd(&self, app: &App) -> Result<Option<String>> {
         if app.includes_file("Procfile") {
-            let mut procfile: HashMap<String, String> = app.read_yaml("Procfile").context("Reading Procfile")?;
+            let mut procfile: HashMap<String, String> =
+                app.read_yaml("Procfile").context("Reading Procfile")?;
             procfile.remove("release");
             if procfile.len() > 1 {
                 bail!("Procfile contains more than one process types. Please specify only one.");
-            } else if procfile.is_empty(){
+            } else if procfile.is_empty() {
                 Ok(None)
-            }
-            else {
+            } else {
                 let process = Vec::from_iter(procfile.values())[0].to_string();
                 Ok(Some(process))
             }
@@ -259,7 +259,8 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
     }
     fn get_procfile_release_cmd(&self, app: &App) -> Result<Option<String>> {
         if app.includes_file("Procfile") {
-            let procfile: HashMap<String, String> = app.read_yaml("Procfile").context("Reading Procfile")?;
+            let procfile: HashMap<String, String> =
+                app.read_yaml("Procfile").context("Reading Procfile")?;
             if let Some(release) = procfile.get("release") {
                 Ok(Some(release.to_string()))
             } else {
