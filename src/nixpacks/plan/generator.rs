@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::HashMap, fs};
 
 use super::{BuildPlan, PlanGenerator};
 use crate::{
@@ -12,7 +12,6 @@ use crate::{
     providers::Provider,
 };
 use anyhow::{bail, Context, Ok, Result};
-use serde::Deserialize;
 
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
@@ -31,13 +30,6 @@ pub struct NixpacksBuildPlanGenerator<'a> {
     providers: Vec<&'a dyn Provider>,
     matched_provider: Option<&'a dyn Provider>,
     options: GeneratePlanOptions,
-}
-
-#[derive(Deserialize, Default)]
-pub struct Procfile {
-    pub web: Option<String>,
-    pub worker: Option<String>,
-    // pub release: Option<String>,
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
@@ -173,6 +165,15 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
             .or(env_build_cmd)
             .or(build_phase.cmd);
 
+        // Release process type
+        if let Some(release_cmd) = self.get_procfile_release_cmd(app)? {
+            let build_cmd = build_phase.cmd.unwrap_or_default();
+            if build_cmd.is_empty() {
+                build_phase.cmd = Some(release_cmd);
+            } else {
+                build_phase.cmd = Some(format!("{} && {}", build_cmd, release_cmd));
+            }
+        }
         Ok(build_phase)
     }
 
@@ -241,11 +242,28 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
 
     fn get_procfile_start_cmd(&self, app: &App) -> Result<Option<String>> {
         if app.includes_file("Procfile") {
-            let procfile: Procfile = app.read_yaml("Procfile").unwrap_or_default();
-            if procfile.web.is_some() && procfile.worker.is_some() {
-                bail!("Procfile contains both a worker and a web process. Please specify one.");
+            let mut procfile: HashMap<String, String> = app.read_yaml("Procfile").context("Reading Procfile")?;
+            procfile.remove("release");
+            if procfile.len() > 1 {
+                bail!("Procfile contains more than one process types. Please specify only one.");
+            } else if procfile.is_empty(){
+                Ok(None)
+            }
+            else {
+                let process = Vec::from_iter(procfile.values())[0].to_string();
+                Ok(Some(process))
+            }
+        } else {
+            Ok(None)
+        }
+    }
+    fn get_procfile_release_cmd(&self, app: &App) -> Result<Option<String>> {
+        if app.includes_file("Procfile") {
+            let procfile: HashMap<String, String> = app.read_yaml("Procfile").context("Reading Procfile")?;
+            if let Some(release) = procfile.get("release") {
+                Ok(Some(release.to_string()))
             } else {
-                Ok(procfile.web.or(procfile.worker))
+                Ok(None)
             }
         } else {
             Ok(None)
