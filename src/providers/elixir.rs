@@ -114,7 +114,7 @@ impl Provider for ElixirProvider {
                 ) =>
                 // TODO
                 {
-                    return 
+                    return
                 }
 
                 (
@@ -129,7 +129,18 @@ impl Provider for ElixirProvider {
                         app_name: Some(_), ..
                     },
                     Framework::Phoenix,
-                ) => return,
+                ) => {
+                    if app.includes_directory("assets") {
+                        let build_cmd = r#"
+                        mix compile
+                        mix asset.deploy
+                    "#;
+
+                        return Ok(Some(BuildPhase::new(build_cmd_.to_string())));
+                    }
+
+                    return Ok(Some(BuildPhase::new("mix compile".to_string())));
+                }
 
                 (
                     MixProject {
@@ -208,7 +219,7 @@ impl ElixirProvider {
         if let Some(project) = mix_project {
             match project.elixir_version {
                 Some(version) => {
-                    let matched_pkg =  ELIXIR_VERSION_TO_OTP_PKG
+                    let matched_pkg = ELIXIR_VERSION_TO_OTP_PKG
                         .iter()
                         .find(|(v, _)| v == &version)
                         .map(|(_, otp_pkg)| otp_pkg.to_string());
