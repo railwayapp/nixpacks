@@ -143,7 +143,6 @@ impl NodeProvider {
         if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
-        println!("No node version could be matched, defaulting to {DEFAULT_NODE_PKG_NAME}");
 
         Ok(Pkg::new(DEFAULT_NODE_PKG_NAME))
     }
@@ -203,6 +202,7 @@ fn version_number_to_pkg(version: &u32) -> String {
     if AVAILABLE_NODE_VERSIONS.contains(version) {
         format!("nodejs-{}_x", version)
     } else {
+        println!("No node version could be matched, defaulting to {DEFAULT_NODE_PKG_NAME}");
         DEFAULT_NODE_PKG_NAME.to_string()
     }
 }
