@@ -11,7 +11,8 @@ use anyhow::Result;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-pub const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
+const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
+const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
@@ -199,7 +200,7 @@ impl NodeProvider {
 }
 
 fn version_number_to_pkg(version: &u32) -> String {
-    if version % 2 == 1 {
+    if AVAILABLE_NODE_VERSIONS.contains(version) {
         String::from("nodejs")
     } else {
         format!("nodejs-{}_x", version)
