@@ -201,7 +201,7 @@ impl NodeProvider {
 
 fn version_number_to_pkg(version: &u32) -> String {
     if AVAILABLE_NODE_VERSIONS.contains(version) {
-        String::from("nodejs")
+        DEFAULT_NODE_PKG_NAME.to_string()
     } else {
         format!("nodejs-{}_x", version)
     }
