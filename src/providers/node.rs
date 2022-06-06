@@ -360,29 +360,22 @@ mod test {
 
     #[test]
     fn test_engine_invalid_version() -> Result<()> {
-        // FIXME: this is going to change, logging stuff for testing.
-        let pkg = NodeProvider::get_nix_node_pkg(
-            &PackageJson {
-                name: Some(String::default()),
-                main: None,
-                scripts: None,
-                workspaces: None,
-                engines: engines_node("15"),
-            },
-            &Environment::default(),
+        // this test now defaults to lts
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    main: None,
+                    scripts: None,
+                    workspaces: None,
+                    engines: engines_node("15"),
+                },
+                &Environment::default()
+            )
+            .unwrap()
+            .name,
+            "nodejs"
         );
-        println!("{:?}", pkg);
-        assert!(NodeProvider::get_nix_node_pkg(
-            &PackageJson {
-                name: Some(String::default()),
-                main: None,
-                scripts: None,
-                workspaces: None,
-                engines: engines_node("15"),
-            },
-            &Environment::default()
-        )
-        .is_err());
 
         Ok(())
     }
