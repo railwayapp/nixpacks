@@ -7,11 +7,10 @@ use crate::nixpacks::{
     nix::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
-use anyhow::{bail, Result};
+use anyhow::Result;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
 pub const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
 
 #[derive(Serialize, Deserialize, Default, Debug)]
@@ -143,6 +142,7 @@ impl NodeProvider {
         if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
+        println!("No package could be matched, defaulting to {DEFAULT_NODE_PKG_NAME}");
 
         Ok(Pkg::new(DEFAULT_NODE_PKG_NAME))
     }
@@ -198,20 +198,15 @@ impl NodeProvider {
     }
 }
 
-fn version_number_to_pkg(version: &u32) -> Result<String> {
-    if AVAILABLE_NODE_VERSIONS.contains(version) {
-        Ok(format!("nodejs-{}_x", version))
-    } else {
-        // FIXME: this logic really needs to be improved, and should default to something
-        bail!("Node version {} is not available", version);
-    }
+fn version_number_to_pkg(version: &u32) -> String {
+    format!("nodejs-{}_x", version)
 }
 
 fn parse_regex_into_pkg(re: &Regex, node_version: &str) -> Option<String> {
     let matches: Vec<_> = re.captures_iter(node_version).collect();
     if let Some(m) = matches.get(0) {
         match m[1].parse::<u32>() {
-            Ok(version) => return version_number_to_pkg(&version).ok(),
+            Ok(version) => return Some(version_number_to_pkg(&version)),
             Err(_e) => {}
         }
     }
