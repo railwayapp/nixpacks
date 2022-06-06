@@ -202,7 +202,7 @@ fn version_number_to_pkg(version: &u32) -> String {
     if version % 2 == 1 {
         String::from("nodejs")
     } else {
-    format!("nodejs-{}_x", version)
+        format!("nodejs-{}_x", version)
     }
 }
 
