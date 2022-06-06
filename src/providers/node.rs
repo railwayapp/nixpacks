@@ -142,7 +142,7 @@ impl NodeProvider {
         if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
-        println!("No package could be matched, defaulting to {DEFAULT_NODE_PKG_NAME}");
+        println!("No node version could be matched, defaulting to {DEFAULT_NODE_PKG_NAME}");
 
         Ok(Pkg::new(DEFAULT_NODE_PKG_NAME))
     }
