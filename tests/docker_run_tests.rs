@@ -118,8 +118,6 @@ fn test_node() {
 fn test_node_custom_version() {
     let name = simple_build("./examples/node-custom-version");
     let output = run_image(name);
-    // FIXME: remove this
-    dbg!(output.clone());
     assert!(output.contains("Node version: v18"));
 }
 
