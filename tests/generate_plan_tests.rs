@@ -498,6 +498,8 @@ fn test_dart() -> Result<()> {
         plan.start.unwrap().cmd,
         Some("./bin/console_simple.exe".to_string())
     );
+
+    Ok(())
 }
 
 #[test]
