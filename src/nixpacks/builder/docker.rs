@@ -273,6 +273,20 @@ impl DockerBuilder {
             ),
         };
 
+        let nix_variables = setup_phase.nix_environment_variables.unwrap_or_default();
+        let nix_cmd = if !nix_variables.is_empty() {
+            format!(
+                "{} nix-env -if environment.nix",
+                nix_variables
+                    .iter()
+                    .map(|(key, val)| format!("{}={}", key, val))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )
+        } else {
+            "nix-env -if environment.nix".to_string()
+        };
+
         let dockerfile = formatdoc! {"
           FROM {base_image}
 
@@ -280,7 +294,7 @@ impl DockerBuilder {
 
           # Setup
           {setup_copy_cmd}
-          RUN nix-env -if environment.nix
+          RUN {nix_cmd}
           {assets_copy_cmd}
 
           # Load environment variables

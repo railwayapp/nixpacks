@@ -1,14 +1,29 @@
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    phase::{BuildPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
-use indoc::formatdoc;
 
-static DEFAULT_SWIFT_VERSION: &str = "5.6.1";
+static DEFAULT_SWIFT_VERSION: &str = "5.5.3";
+
+// From: https://lazamar.co.uk/nix-versions/?channel=nixpkgs-unstable&package=swift
+static AVAILABLE_SWIFT_VERSIONS: &[(&str, &str)] = &[
+    ("3.1", "aeaa79dc82980869a88a5955ea3cd3e1944b7d80"),
+    ("3.1.1", "8414d8386b9a6b855b291fb3f01a4e3b04c08bbb"),
+    ("4.0.3", "2c9d2d65266c2c3aca1e4c80215de8bee5295b04"),
+    ("4.1", "92a047a6c4d46a222e9c323ea85882d0a7a13af8"),
+    ("4.1.3", "a3962299f14944a0e9ccf8fd84bd7be524b74cd6"),
+    ("4.2.1", "7ff8a16f0726342f0a25697867d8c1306d4da7b0"),
+    ("4.2.3", "3fa154fd7fed3d6a94322bf08a6def47d6f8e0f6"),
+    ("5.0.1", "4599f2bb9a5a6b1482e72521ead95cb24e0aa819"),
+    ("5.0.2", "a9eb3eed170fa916e0a8364e5227ee661af76fde"),
+    ("5.1.1", "9986226d5182c368b7be1db1ab2f7488508b5a87"),
+    ("5.4.2", "c82b46413401efa740a0b994f52e9903a4f6dcd5"),
+    ("5.5.2", "6d02a514db95d3179f001a5a204595f17b89cb32"),
+];
 
 pub struct SwiftProvider {}
 
@@ -22,33 +37,20 @@ impl Provider for SwiftProvider {
             || (app.includes_file("Package.swift") && app.includes_file("Package.resolved")))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        let pkgs = vec![Pkg::new("python38"), Pkg::new("wget")];
+    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+        let mut setup_phase = SetupPhase::new(vec![Pkg::new("swift")]);
+        let mut variables = EnvironmentVariables::default();
+        let swift_version = SwiftProvider::get_swift_version(app)?;
+        let rev = version_number_to_rev(&swift_version)?;
 
-        Ok(Some(SetupPhase::new(pkgs)))
-    }
+        if let Some(rev) = rev {
+            setup_phase.set_archive(format!("https://github.com/NixOS/nixpkgs/archive/{}.tar.gz", rev));
+        }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let version = SwiftProvider::get_swift_version(&app)?;
-        let (download_url, name) = SwiftProvider::make_download_url(version);
+        variables.insert("NIXPKGS_ALLOW_BROKEN".to_string(), 1.to_string());
+        setup_phase.set_nix_environment_variables(variables);
 
-        // https://forums.swift.org/t/which-clang-package-should-we-install/20542/14
-        let install_cmd = formatdoc! {"
-        sudo apt-get update && \
-        sudo apt-get install -y build-essential clang libsqlite3-0 libncurses6 libcurl4 libxml2 libatomic1 libedit2 libsqlite3-0 libcurl4 libxml2 libbsd0 libc6-dev && \
-        wget -q {download_url} && \
-        tar -xf {name}.tar.gz && \
-        sudo mv {name} /usr/share/swift
-        ",
-        name = name,
-        download_url = download_url
-        };
-
-        let mut install_phase = InstallPhase::new(install_cmd);
-
-        install_phase.add_path("/usr/share/swift/usr/bin".to_string());
-
-        Ok(Some(install_phase))
+        Ok(Some(setup_phase))
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
@@ -113,21 +115,14 @@ impl SwiftProvider {
             Ok(DEFAULT_SWIFT_VERSION.to_string())
         }
     }
+}
 
-    fn make_download_url(version: String) -> (String, String) {
-        #[cfg(target_arch = "x86_64")]
-        let (download_url, name) = (
-            format!("https://download.swift.org/swift-{version}-release/ubuntu2004/swift-{version}-RELEASE/swift-{version}-RELEASE-ubuntu20.04.tar.gz", version = version), 
-            format!("swift-{}-RELEASE-ubuntu20.04", version)
-        );
+fn version_number_to_rev<'a>(version: &'a str) -> Result<Option<String>> {
+    let matched_version = AVAILABLE_SWIFT_VERSIONS.iter().find(|(ver, _rev)| *ver == version);
 
-        #[cfg(target_arch = "aarch64")]
-        let (download_url, name) = (
-            format!("https://download.swift.org/swift-{version}-release/ubuntu2004/swift-{version}-RELEASE/swift-{version}-RELEASE-ubuntu20.04-aarch64.tar.gz", version = version), 
-            format!("swift-{}-RELEASE-ubuntu20.04-aarch64", version)
-        );
-
-        (download_url, name)
+    match matched_version {
+        Some((_ver, rev)) => Ok(Some(rev.to_string())),
+        None => Ok(None)
     }
 }
 

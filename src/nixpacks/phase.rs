@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::{
+    environment::EnvironmentVariables,
     images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
     nix::pkg::Pkg,
 };
@@ -16,6 +17,9 @@ pub struct SetupPhase {
 
     #[serde(rename = "baseImage")]
     pub base_image: String,
+
+    #[serde(rename = "nixEnvironmentVariables")]
+    pub nix_environment_variables: Option<EnvironmentVariables>,
 }
 
 impl SetupPhase {
@@ -25,6 +29,7 @@ impl SetupPhase {
             archive: None,
             only_include_files: None,
             base_image: DEFAULT_BASE_IMAGE.to_string(),
+            nix_environment_variables: None,
         }
     }
 
@@ -44,6 +49,10 @@ impl SetupPhase {
     pub fn set_archive(&mut self, archive: String) {
         self.archive = Some(archive);
     }
+
+    pub fn set_nix_environment_variables(&mut self, variables: EnvironmentVariables) {
+        self.nix_environment_variables = Some(variables);
+    }
 }
 
 impl Default for SetupPhase {
@@ -53,6 +62,7 @@ impl Default for SetupPhase {
             archive: Default::default(),
             only_include_files: Default::default(),
             base_image: DEFAULT_BASE_IMAGE.to_string(),
+            nix_environment_variables: Default::default(),
         }
     }
 }
