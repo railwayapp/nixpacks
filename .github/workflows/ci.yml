@@ -102,7 +102,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: nextest
-          args: run --package nixpacks --test generate_plan_tests
+          args: run --package nixpacks --lib --test generate_plan_tests
       - name: List docker tests (prep test-docker)
         id: docker-prep
         run: |
