@@ -95,11 +95,14 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
       
-      - name: Run cargo test
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Run cargo nextest
         uses: actions-rs/cargo@v1
         with:
-          command: test
-          args: --package nixpacks --test generate_plan_tests
+          command: nextest
+          args: run --package nixpacks --test generate_plan_tests
       - name: List docker tests (prep test-docker)
         id: docker-prep
         run: |
@@ -128,9 +131,12 @@ jobs:
           override: true
 
       - uses: Swatinem/rust-cache@v1
-      
-      - name: Run cargo test
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Run cargo nextest
         uses: actions-rs/cargo@v1
         with:
-          command: test
-          args: --package nixpacks --test docker_run_tests -- ${{ matrix.tests }} --exact
+          command: nextest
+          args: run --package nixpacks --test docker_run_tests -- ${{ matrix.tests }} --exact
