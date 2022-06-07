@@ -59,3 +59,17 @@ impl DartProvider {
             .context("Reading pubspec.yaml")
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_get_pubspec() -> Result<()> {
+        let pubspec = DartProvider::get_pubspec(&App::new("./examples/dart")?)?;
+        assert_eq!(pubspec.name, "console_simple");
+        assert_eq!(pubspec.version, "1.0.0");
+
+        Ok(())
+    }
+}
