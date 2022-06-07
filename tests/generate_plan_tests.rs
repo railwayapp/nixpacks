@@ -499,6 +499,22 @@ fn test_swift() -> Result<()> {
         plan.start.unwrap().cmd,
         Some("./.build/release/swift".to_owned())
     );
+  
+    Ok(())
+}
+
+#[test]
+fn test_dart() -> Result<()> {
+    let plan = simple_gen_plan("./examples/dart");
+    assert_eq!(plan.install.unwrap().cmd, Some("dart pub get".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("dart compile exe bin/console_simple.dart".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./bin/console_simple.exe".to_string())
+    );
 
     Ok(())
 }
@@ -515,6 +531,34 @@ fn test_swift_vapor() -> Result<()> {
     assert_eq!(
         plan.start.unwrap().cmd,
         Some("./.build/release/Run".to_owned())
+    );
+  
+    Ok(())
+}
+
+#[test]
+fn test_java_maven() -> Result<()> {
+    let plan = simple_gen_plan("./examples/java-maven");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
+    );
+    Ok(())
+}
+
+fn test_java_maven_wrapper() -> Result<()> {
+    let plan = simple_gen_plan("./examples/java-maven-wrapper");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
     );
 
     Ok(())

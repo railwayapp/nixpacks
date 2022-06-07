@@ -14,9 +14,9 @@ use crate::nixpacks::{
 };
 use anyhow::Result;
 use providers::{
-    crystal::CrystalProvider, csharp::CSharpProvider, deno::DenoProvider, go::GolangProvider,
-    haskell::HaskellStackProvider, node::NodeProvider, python::PythonProvider, rust::RustProvider,
-    staticfile::StaticfileProvider, swift::SwiftProvider, Provider,
+    crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider,
+    go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider, node::NodeProvider,
+    python::PythonProvider, rust::RustProvider, staticfile::StaticfileProvider, swift::SwiftProvider, Provider,
 };
 
 mod chain;
@@ -35,6 +35,8 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &CrystalProvider {},
         &StaticfileProvider {},
         &SwiftProvider {},
+        &DartProvider {},
+        &JavaProvider {},
     ]
 }
 

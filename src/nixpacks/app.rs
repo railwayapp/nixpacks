@@ -34,7 +34,7 @@ impl App {
 
     /// Check if a file exists
     pub fn includes_file(&self, name: &str) -> bool {
-        fs::canonicalize(self.source.join(name)).is_ok()
+        self.source.join(name).is_file()
     }
 
     /// Returns a list of paths matching a glob pattern
@@ -97,6 +97,11 @@ impl App {
         }
 
         Ok(false)
+    }
+
+    /// Check if a directory exists
+    pub fn includes_directory(&self, name: &str) -> bool {
+        self.source.join(name).is_dir()
     }
 
     pub fn read_json<T>(&self, name: &str) -> Result<T>
