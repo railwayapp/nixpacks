@@ -11,7 +11,7 @@ use anyhow::Result;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
+const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs-16_x";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
 
 #[derive(Serialize, Deserialize, Default, Debug)]
