@@ -3,7 +3,7 @@ FROM debian:bullseye-20220509-slim
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get -y upgrade \
-  && apt-get install --no-install-recommends -y sudo locales curl xz-utils ca-certificates openssl make \
+  && apt-get install --no-install-recommends -y sudo locales curl xz-utils ca-certificates openssl make git \
   && apt-get clean && rm -rf /var/lib/apt/lists/* \
   && mkdir -m 0755 /nix && mkdir -m 0755 /etc/nix && groupadd -r nixbld && chown root /nix \
   && printf 'sandbox = false \nfilter-syscalls = false' > /etc/nix/nix.conf \
@@ -19,6 +19,7 @@ ENV \
   PATH=/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/bin:/sbin:/usr/bin:/usr/sbin \
   GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt \
   NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-  NIX_PATH=/nix/var/nix/profiles/per-user/root/channels
+  NIX_PATH=/nix/var/nix/profiles/per-user/root/channels \
+  NIXPKGS_ALLOW_BROKEN=1
 
 RUN nix-channel --update
