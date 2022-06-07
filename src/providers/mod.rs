@@ -11,6 +11,7 @@ pub mod dart;
 pub mod deno;
 pub mod go;
 pub mod haskell;
+pub mod java;
 pub mod node;
 pub mod python;
 pub mod rust;
