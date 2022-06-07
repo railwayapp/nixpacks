@@ -419,6 +419,13 @@ fn test_staticfile() {
 }
 
 #[test]
+fn test_dart() {
+    let name = simple_build("./examples/dart");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Dart"));
+}
+
+#[test]
 fn test_java_maven() {
     let name = simple_build("./examples/java-maven");
     let output = run_image(name, None);

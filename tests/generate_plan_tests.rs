@@ -487,6 +487,22 @@ fn test_staticfile() -> Result<()> {
 }
 
 #[test]
+fn test_dart() -> Result<()> {
+    let plan = simple_gen_plan("./examples/dart");
+    assert_eq!(plan.install.unwrap().cmd, Some("dart pub get".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("dart compile exe bin/console_simple.dart".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./bin/console_simple.exe".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_java_maven() -> Result<()> {
     let plan = simple_gen_plan("./examples/java-maven");
     assert_eq!(
@@ -500,7 +516,6 @@ fn test_java_maven() -> Result<()> {
     Ok(())
 }
 
-#[test]
 fn test_java_maven_wrapper() -> Result<()> {
     let plan = simple_gen_plan("./examples/java-maven-wrapper");
     assert_eq!(
