@@ -44,10 +44,7 @@ impl Provider for SwiftProvider {
         let rev = version_number_to_rev(&swift_version)?;
 
         if let Some(rev) = rev {
-            setup_phase.set_archive(format!(
-                "https://github.com/NixOS/nixpkgs/archive/{}.tar.gz",
-                rev
-            ));
+            setup_phase.set_archive(rev.to_string());
         }
 
         variables.insert("NIXPKGS_ALLOW_BROKEN".to_string(), 1.to_string());
