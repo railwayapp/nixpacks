@@ -1,0 +1,38 @@
+on:
+  push:
+    branches:
+    - main
+    path-ignore:
+    - 'docs/**'
+  pull_request:
+    path-ignore:
+    - 'docs/**'
+
+name: Test
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:      
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+          
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - uses: Swatinem/rust-cache@v1
+
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
