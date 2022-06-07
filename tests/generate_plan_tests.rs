@@ -550,6 +550,7 @@ fn test_java_maven() -> Result<()> {
     Ok(())
 }
 
+#[test]
 fn test_java_maven_wrapper() -> Result<()> {
     let plan = simple_gen_plan("./examples/java-maven-wrapper");
     assert_eq!(

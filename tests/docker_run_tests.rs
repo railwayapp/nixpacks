@@ -422,7 +422,10 @@ fn test_swift() {
     let name = simple_build("./examples/swift");
     let output = run_image(name, None);
 
-    assert!(output.contains("Hello from swift"))
+    assert!(output.contains("Hello from swift"));
+}
+
+#[test]
 fn test_dart() {
     let name = simple_build("./examples/dart");
     let output = run_image(name, None);
