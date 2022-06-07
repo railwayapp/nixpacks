@@ -499,7 +499,7 @@ fn test_swift() -> Result<()> {
         plan.start.unwrap().cmd,
         Some("./.build/release/swift".to_owned())
     );
-  
+
     Ok(())
 }
 
@@ -532,7 +532,7 @@ fn test_swift_vapor() -> Result<()> {
         plan.start.unwrap().cmd,
         Some("./.build/release/Run".to_owned())
     );
-  
+
     Ok(())
 }
 

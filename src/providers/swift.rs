@@ -44,7 +44,10 @@ impl Provider for SwiftProvider {
         let rev = version_number_to_rev(&swift_version)?;
 
         if let Some(rev) = rev {
-            setup_phase.set_archive(format!("https://github.com/NixOS/nixpkgs/archive/{}.tar.gz", rev));
+            setup_phase.set_archive(format!(
+                "https://github.com/NixOS/nixpkgs/archive/{}.tar.gz",
+                rev
+            ));
         }
 
         variables.insert("NIXPKGS_ALLOW_BROKEN".to_string(), 1.to_string());
@@ -118,11 +121,13 @@ impl SwiftProvider {
 }
 
 fn version_number_to_rev<'a>(version: &'a str) -> Result<Option<String>> {
-    let matched_version = AVAILABLE_SWIFT_VERSIONS.iter().find(|(ver, _rev)| *ver == version);
+    let matched_version = AVAILABLE_SWIFT_VERSIONS
+        .iter()
+        .find(|(ver, _rev)| *ver == version);
 
     match matched_version {
         Some((_ver, rev)) => Ok(Some(rev.to_string())),
-        None => Ok(None)
+        None => Ok(None),
     }
 }
 

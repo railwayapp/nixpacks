@@ -16,7 +16,8 @@ use anyhow::Result;
 use providers::{
     crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider,
     go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider, node::NodeProvider,
-    python::PythonProvider, rust::RustProvider, staticfile::StaticfileProvider, swift::SwiftProvider, Provider,
+    python::PythonProvider, rust::RustProvider, staticfile::StaticfileProvider,
+    swift::SwiftProvider, Provider,
 };
 
 mod chain;
