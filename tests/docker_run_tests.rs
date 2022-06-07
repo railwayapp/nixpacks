@@ -245,21 +245,21 @@ fn test_node_no_lockfile() {
 
 #[test]
 fn test_yarn_custom_version() {
-    let name = simple_build("./examples/yarn-custom-node-version");
+    let name = simple_build("./examples/node-yarn-custom-node-version");
     let output = run_image(name, None);
     assert!(output.contains("Node version: v14"));
 }
 
 #[test]
 fn test_yarn_berry() {
-    let name = simple_build("./examples/yarn-berry");
+    let name = simple_build("./examples/node-yarn-berry");
     let output = run_image(name, None);
     assert!(output.contains("Hello from Yarn v2+"));
 }
 
 #[test]
 fn test_yarn_prisma() {
-    let name = simple_build("./examples/yarn-prisma");
+    let name = simple_build("./examples/node-yarn-prisma");
     let output = run_image(name, None);
     assert!(output.contains("My post content"));
 }
@@ -392,7 +392,7 @@ fn test_crystal() {
 fn test_cowsay() {
     let name = Uuid::new_v4().to_string();
     create_docker_image(
-        "./examples/hello",
+        "./examples/shell-hello",
         Vec::new(),
         &GeneratePlanOptions {
             pin_pkgs: true,
