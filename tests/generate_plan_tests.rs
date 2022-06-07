@@ -107,7 +107,7 @@ fn test_yarn_custom_version() -> Result<()> {
 }
 
 #[test]
-fn pnpm() -> Result<()> {
+fn test_pnpm() -> Result<()> {
     let plan = simple_gen_plan("./examples/pnpm");
     assert_eq!(plan.build.unwrap().cmd, Some("pnpm run build".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("pnpm run start".to_string()));
@@ -516,6 +516,7 @@ fn test_java_maven() -> Result<()> {
     Ok(())
 }
 
+#[test]
 fn test_java_maven_wrapper() -> Result<()> {
     let plan = simple_gen_plan("./examples/java-maven-wrapper");
     assert_eq!(
