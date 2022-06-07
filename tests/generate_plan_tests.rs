@@ -485,3 +485,31 @@ fn test_staticfile() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_java_maven() -> Result<()> {
+    let plan = simple_gen_plan("./examples/java-maven");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_java_maven_wrapper() -> Result<()> {
+    let plan = simple_gen_plan("./examples/java-maven-wrapper");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
+    );
+    Ok(())
+}
