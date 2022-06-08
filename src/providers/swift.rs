@@ -40,16 +40,12 @@ impl Provider for SwiftProvider {
 
     fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         let mut setup_phase = SetupPhase::new(vec![Pkg::new("binutils"), Pkg::new("swift")]);
-        let mut variables = EnvironmentVariables::default();
         let swift_version = SwiftProvider::get_swift_version(app)?;
         let rev = version_number_to_rev(&swift_version)?;
 
         if let Some(rev) = rev {
             setup_phase.set_archive(rev);
         }
-
-        variables.insert("NIXPKGS_ALLOW_BROKEN".to_string(), 1.to_string());
-        setup_phase.set_nix_environment_variables(variables);
 
         Ok(Some(setup_phase))
     }
