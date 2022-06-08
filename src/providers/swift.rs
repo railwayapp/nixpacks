@@ -52,6 +52,8 @@ impl Provider for SwiftProvider {
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         // Vapor requires zlib & some system libraries
+        // The glibc headers that nix installs is wonky
+        // So we need to symlink the broken headers
         let install_cmd = "\
         swift package resolve && \
         sudo apt install -y zlib1g-dev libc6-dev && \
