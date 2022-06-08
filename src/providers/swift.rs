@@ -56,8 +56,8 @@ impl Provider for SwiftProvider {
         // So we need to symlink the broken headers
         let install_cmd = "\
         swift package resolve && \
-        sudo apt update && \
-        sudo apt install -y zlib1g-dev libc6-dev && \
+        sudo apt-get update && \
+        sudo apt-get install -y zlib1g-dev libc6-dev && \
         sudo ln -s /usr/include/zlib.h /usr/local/include/zlib.h && \
         sudo ln -s /usr/include/zconf.h /usr/local/include/zconf.h && \
         sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/libz.so && \
