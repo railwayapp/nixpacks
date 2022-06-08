@@ -108,7 +108,7 @@ fn test_yarn_custom_version() -> Result<()> {
 
 #[test]
 fn pnpm() -> Result<()> {
-    let plan = simple_gen_plan("./examples/pnpm");
+    let plan = simple_gen_plan("./examples/node-pnpm");
     assert_eq!(plan.build.unwrap().cmd, Some("pnpm run build".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("pnpm run start".to_string()));
     assert_eq!(
@@ -125,7 +125,7 @@ fn pnpm() -> Result<()> {
 
 #[test]
 fn test_pnpm_custom_version() -> Result<()> {
-    let plan = simple_gen_plan("./examples/pnpm-custom-node-version");
+    let plan = simple_gen_plan("./examples/node-pnpm-custom-node-version");
     assert_eq!(
         plan.setup.unwrap().pkgs,
         vec![
@@ -435,7 +435,7 @@ fn test_crystal() -> Result<()> {
 #[test]
 fn test_overriding_environment_variables() -> Result<()> {
     let plan = generate_build_plan(
-        "./examples/variables",
+        "./examples/node-variables",
         vec!["NODE_ENV=test"],
         &GeneratePlanOptions::default(),
     )?;

@@ -266,14 +266,14 @@ fn test_yarn_prisma() {
 
 #[test]
 fn test_pnpm() {
-    let name = simple_build("./examples/pnpm");
+    let name = simple_build("./examples/node-pnpm");
     let output = run_image(name, None);
     assert!(output.contains("Hello from PNPM"));
 }
 
 #[test]
 fn test_pnpm_custom_version() {
-    let name = simple_build("./examples/pnpm-custom-node-version");
+    let name = simple_build("./examples/node-pnpm-custom-node-version");
     let output = run_image(name, None);
     assert!(output.contains("Hello from PNPM"));
 }
