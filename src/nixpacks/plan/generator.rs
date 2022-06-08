@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::HashMap, fs};
 
 use super::{BuildPlan, PlanGenerator};
 use crate::{
@@ -11,7 +11,7 @@ use crate::{
     },
     providers::Provider,
 };
-use anyhow::{Context, Ok, Result};
+use anyhow::{bail, Context, Ok, Result};
 
 // https://status.nixos.org/
 static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
@@ -165,11 +165,20 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
             .or(env_build_cmd)
             .or(build_phase.cmd);
 
+        // Release process type
+        if let Some(release_cmd) = self.get_procfile_release_cmd(app)? {
+            let build_cmd = build_phase.cmd.unwrap_or_default();
+            if build_cmd.is_empty() {
+                build_phase.cmd = Some(release_cmd);
+            } else {
+                build_phase.cmd = Some(format!("{} && {}", build_cmd, release_cmd));
+            }
+        }
         Ok(build_phase)
     }
 
     fn get_start_phase(&self, app: &App, environment: &Environment) -> Result<StartPhase> {
-        let procfile_cmd = self.parse_procfile(app)?;
+        let procfile_cmd = self.get_procfile_start_cmd(app)?;
 
         let mut start_phase = match self.matched_provider {
             Some(provider) => provider.start(app, environment)?.unwrap_or_default(),
@@ -231,16 +240,32 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         Ok(static_assets)
     }
 
-    fn parse_procfile(&self, app: &App) -> Result<Option<String>> {
+    fn get_procfile_start_cmd(&self, app: &App) -> Result<Option<String>> {
         if app.includes_file("Procfile") {
-            let contents = app.read_file("Procfile")?;
-
-            // Better error handling
-            if contents.starts_with("web: ") {
-                return Ok(Some(contents.replace("web: ", "").trim().to_string()));
+            let mut procfile: HashMap<String, String> =
+                app.read_yaml("Procfile").context("Reading Procfile")?;
+            procfile.remove("release");
+            if procfile.len() > 1 {
+                bail!("Procfile contains more than one process types. Please specify only one.");
+            } else if procfile.is_empty() {
+                Ok(None)
+            } else {
+                let process = Vec::from_iter(procfile.values())[0].to_string();
+                Ok(Some(process))
             }
-
+        } else {
             Ok(None)
+        }
+    }
+    fn get_procfile_release_cmd(&self, app: &App) -> Result<Option<String>> {
+        if app.includes_file("Procfile") {
+            let procfile: HashMap<String, String> =
+                app.read_yaml("Procfile").context("Reading Procfile")?;
+            if let Some(release) = procfile.get("release") {
+                Ok(Some(release.to_string()))
+            } else {
+                Ok(None)
+            }
         } else {
             Ok(None)
         }
