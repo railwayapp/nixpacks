@@ -313,7 +313,7 @@ fn test_django() {
     attach_container_to_network(n.name, container_name.clone());
 
     // Build the Django example
-    let name = simple_build("./examples/django");
+    let name = simple_build("./examples/python-django");
 
     // Run the Django example on the attached network
     let output = run_image(
