@@ -107,7 +107,7 @@ fn test_yarn_custom_version() -> Result<()> {
 }
 
 #[test]
-fn pnpm() -> Result<()> {
+fn test_pnpm() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-pnpm");
     assert_eq!(plan.build.unwrap().cmd, Some("pnpm run build".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("pnpm run start".to_string()));
@@ -482,6 +482,50 @@ fn test_staticfile() -> Result<()> {
     assert_eq!(
         plan.start.unwrap().cmd,
         Some("[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\" /assets/nginx.conf && nginx -c /assets/nginx.conf".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_dart() -> Result<()> {
+    let plan = simple_gen_plan("./examples/dart");
+    assert_eq!(plan.install.unwrap().cmd, Some("dart pub get".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("dart compile exe bin/console_simple.dart".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./bin/console_simple.exe".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_java_maven() -> Result<()> {
+    let plan = simple_gen_plan("./examples/java-maven");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_java_maven_wrapper() -> Result<()> {
+    let plan = simple_gen_plan("./examples/java-maven-wrapper");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
     );
     Ok(())
 }
