@@ -169,14 +169,14 @@ mod tests {
 
     #[test]
     fn test_creates_app() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         assert_eq!(app.paths.len(), 5);
         Ok(())
     }
 
     #[test]
     fn test_read_file() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         assert_eq!(
             app.read_file("index.ts")?.trim_end(),
             "console.log(\"Hello from NPM\");"
@@ -186,7 +186,7 @@ mod tests {
 
     #[test]
     fn test_read_json_file() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         let value: Map<String, Value> = app.read_json("package.json")?;
         assert!(value.get("name").is_some());
         assert_eq!(value.get("name").unwrap(), "npm");
@@ -195,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_read_structured_json_file() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         let value: TestPackageJson = app.read_json("package.json")?;
         assert_eq!(value.name, "npm");
         assert_eq!(value.scripts.get("build").unwrap(), "tsc -p tsconfig.json");
@@ -248,7 +248,7 @@ mod tests {
 
     #[test]
     fn test_strip_source_path() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         let path_to_strip = app.source.join("foo/bar.txt");
         assert_eq!(
             &app.strip_source_path(&path_to_strip).unwrap(),
@@ -259,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_strip_source_path_no_source_prefix() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         assert_eq!(
             &app.strip_source_path(Path::new("no/prefix.txt"))?,
             Path::new("no/prefix.txt")
@@ -269,7 +269,7 @@ mod tests {
 
     #[test]
     fn test_static_asset_path() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         assert_eq!(&app.asset_path("hi.txt"), "/assets/hi.txt");
         Ok(())
     }
