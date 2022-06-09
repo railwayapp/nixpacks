@@ -207,7 +207,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
                 img => Some(img.to_owned()),
             };
         }
-        
+
         Ok(start_phase)
     }
 
