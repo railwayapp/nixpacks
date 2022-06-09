@@ -2,9 +2,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
     utils.url = "github:gytis-ivaskevicius/flake-utils-plus";
+    rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = inputs@{ self, utils, ... }:
+  outputs = inputs@{ self, utils, rust-overlay, ... }:
     utils.lib.mkFlake rec {
       inherit self inputs;
 
@@ -16,11 +17,13 @@
         "x86_64-linux"
       ];
 
+      sharedOverlays = [ (import rust-overlay) ];
+
       outputsBuilder = channels: with channels; {
         packages = with nixpkgs; { 
           inherit (nixpkgs) package-from-overlays;
 
-          nixpacks = rustPlatform.buildRustPackage rec {
+          nixpacks = rustPlatform.buildRustPackage {
             pname = "nixpacks";
             version = "v0.0.20";
             doCheck = true;
@@ -52,7 +55,9 @@
           name = "nixpacks";
 
           buildInputs = with nixpkgs; [
-            rustc cargo rustfmt clippy docker
+            # rust overlay already comes with complete toolchains
+            # see more at https://github.com/oxalica/rust-overlay
+            rust-bin.stable.latest.complete docker
           ];
         };
       };
