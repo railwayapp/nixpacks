@@ -171,6 +171,7 @@ impl NodeProvider {
             install_cmd = "npm ci";
         }
         if NodeProvider::uses_canvas(app) {
+            // Add util-linux package to LD_LIBRARY_PATH
             return format!(
                 "echo \'for pkg in $(ls /nix/store | grep \"util-linux-.*-lib$\"); do export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:\"/nix/store/$pkg/lib\"; done\' >> /etc/profile && {}",
                 install_cmd
