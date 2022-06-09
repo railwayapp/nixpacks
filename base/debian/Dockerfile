@@ -9,9 +9,10 @@ RUN apt-get update && apt-get -y upgrade \
   && printf 'sandbox = false \nfilter-syscalls = false' > /etc/nix/nix.conf \
   && for n in $(seq 1 10); do useradd -c "Nix build user $n" -d /var/empty -g nixbld -G nixbld -M -N -r -s "$(command -v nologin)" "nixbld$n"; done
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+SHELL ["/bin/bash", "-ol", "pipefail", "-c"]
 RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash \
-    && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old
+    && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old \
+    && printf 'if [ -d $HOME/.nix-profile/etc/profile.d ]; then\n for i in $HOME/.nix-profile/etc/profile.d/*.sh; do\n if [ -r $i ]; then\n . $i\n fi\n done\n fi' >> /root/.profile
 
 ENV \
   ENV=/etc/profile \
@@ -20,6 +21,7 @@ ENV \
   GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt \
   NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
   NIX_PATH=/nix/var/nix/profiles/per-user/root/channels \
-  NIXPKGS_ALLOW_BROKEN=1
+  NIXPKGS_ALLOW_BROKEN=1 \
+  LD_LIBRARY_PATH=/usr/lib
 
 RUN nix-channel --update
