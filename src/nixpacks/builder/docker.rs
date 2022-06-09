@@ -213,10 +213,14 @@ impl DockerBuilder {
             .map(|cmd| format!("RUN {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
-        let path_env = if let Some(paths) = install_phase.paths {
-            format!("ENV PATH {}:$PATH", paths.join(":"))
+        let (build_path, run_path) = if let Some(paths) = install_phase.paths {
+            let joined_paths = paths.join(":");
+            (
+                format!("ENV PATH {}:$PATH", joined_paths),
+                format!("RUN printf '\\nPATH={joined_paths}:$PATH' >> /root/.profile"),
+            )
         } else {
-            "".to_string()
+            ("".to_string(), "".to_string())
         };
 
         // Files to copy for install phase
@@ -289,7 +293,9 @@ impl DockerBuilder {
           # Install
           {install_copy_cmd}
           {install_cmd}
-          {path_env}
+
+          {build_path}
+          {run_path}
 
           # Build
           {build_copy_cmd}
