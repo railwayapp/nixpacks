@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::Provider;
 use crate::nixpacks::{
-    app::{App, StaticAssets},
+    app::App,
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
@@ -37,12 +37,6 @@ impl Provider for NodeProvider {
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let packages = NodeProvider::get_nix_packages(app, env)?;
         Ok(Some(SetupPhase::new(packages)))
-    }
-
-    fn static_assets(&self, _app: &App, _env: &Environment) -> Result<Option<StaticAssets>> {
-        let mut assets = StaticAssets::new();
-        assets.insert(".profile".to_string(), "for pkg in $(ls /nix/store | grep \"util-linux-.*-lib$\"); do export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:\"/nix/store/$pkg/lib\"; done".to_string());
-        Ok(Some(assets))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
@@ -178,8 +172,7 @@ impl NodeProvider {
         }
         if NodeProvider::uses_canvas(app) {
             return format!(
-                "cat {} >> /etc/profile && {}",
-                app.asset_path(".profile"),
+                "echo \'for pkg in $(ls /nix/store | grep \"util-linux-.*-lib$\"); do export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:\"/nix/store/$pkg/lib\"; done\' >> /etc/profile && {}",
                 install_cmd
             );
         }
