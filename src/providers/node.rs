@@ -36,7 +36,12 @@ impl Provider for NodeProvider {
 
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let packages = NodeProvider::get_nix_packages(app, env)?;
-        Ok(Some(SetupPhase::new(packages)))
+        let mut setup_phase = SetupPhase::new(packages);
+        if NodeProvider::uses_canvas(app) {
+            setup_phase.add_library("libuuid".to_string());
+            setup_phase.add_library("libGL".to_string());
+        }
+        Ok(Some(setup_phase))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
@@ -170,13 +175,6 @@ impl NodeProvider {
         } else if app.includes_file("package-lock.json") {
             install_cmd = "npm ci";
         }
-        if NodeProvider::uses_canvas(app) {
-            // Add util-linux package to LD_LIBRARY_PATH
-            return format!(
-                "echo \'for pkg in $(ls /nix/store | grep \"util-linux-.*-lib$\"); do export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:\"/nix/store/$pkg/lib\"; done\' >> /etc/profile && {}",
-                install_cmd
-            );
-        }
         install_cmd.to_string()
     }
 
@@ -199,9 +197,6 @@ impl NodeProvider {
                 yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
             }
             pkg.push(yarn_pkg);
-        }
-        if NodeProvider::uses_canvas(app) {
-            pkg.push(Pkg::new("util-linux"));
         }
         Ok(pkg)
     }
