@@ -25,11 +25,16 @@
             version = "v0.0.20";
             doCheck = true;
             src = ./.;
-            nativeBuildInputs = [ clippy ];
+            checkInputs = [ rustfmt clippy ];
             # skip `cargo test` due tests FHS dependency
             checkPhase = ''
+              runHook preCheck
+
               cargo check
+              rustfmt --check src/**/*.rs
               cargo clippy
+
+              runHook postCheck
             '';
             cargoLock = {
               lockFile = ./Cargo.lock;
