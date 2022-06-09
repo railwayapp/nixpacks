@@ -13,6 +13,8 @@ pub fn create_nix_expression(plan: &BuildPlan) -> String {
         .collect::<Vec<String>>()
         .join(" ");
 
+    let libraries = setup_phase.libraries.unwrap_or_default().join(" ");
+
     let nix_archive = setup_phase.archive.clone();
     let pkg_import = match nix_archive {
         Some(archive) => format!(
@@ -28,6 +30,7 @@ pub fn create_nix_expression(plan: &BuildPlan) -> String {
             overlays.push(overlay.to_string());
         }
     }
+
     let overlays_string = overlays
         .iter()
         .map(|url| format!("(import (builtins.fetchTarball \"{}\"))", url))
@@ -37,23 +40,25 @@ pub fn create_nix_expression(plan: &BuildPlan) -> String {
     let nix_expression = formatdoc! {"
             {{ }}:
 
-            let
-              pkgs = {pkg_import} {{ 
-                overlays = [
-                  {overlays}
-                ];
-              }};
+            let pkgs = {pkg_import} {{ overlays = [ {overlays_string} ]; }};
             in with pkgs;
-            buildEnv {{
-              name = \"env\";
-              paths = [
-                {pkgs}
-              ];
-            }}
-        ",
-    pkg_import=pkg_import,
-    pkgs=nixpkgs,
-    overlays=overlays_string};
+              let
+                APPEND_LIBRARY_PATH = \"${{lib.makeLibraryPath [ {libraries} ] }}\";
+                myLibraries = writeText \"libraries\" ''
+                  export LD_LIBRARY_PATH=\"${{APPEND_LIBRARY_PATH}}:$LD_LIBRARY_PATH\"
+                '';
+              in
+                buildEnv {{
+                  name = \"env\";
+                  paths = [
+                    (runCommand \"libraries\" {{ }} ''
+                      mkdir -p $out/etc/profile.d
+                      cp ${{myLibraries}} $out/etc/profile.d/libraries.sh
+                    '')
+                    {nixpkgs}
+                  ];
+                }}
+        "};
 
     nix_expression
 }
