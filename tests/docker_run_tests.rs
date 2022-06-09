@@ -238,7 +238,7 @@ fn test_node_custom_version() {
 
 #[test]
 fn test_node_no_lockfile() {
-    let name = simple_build("./examples/node-no-lockfile");
+    let name = simple_build("./examples/node-no-lockfile-canvas");
     let output = run_image(name, None);
     assert!(output.contains("Hello from Node"));
 }
