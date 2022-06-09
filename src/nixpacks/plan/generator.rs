@@ -9,7 +9,7 @@ use crate::{
         phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
         NIX_PACKS_VERSION,
     },
-    providers::{node::NodeProvider, Provider},
+    providers::Provider,
 };
 use anyhow::{bail, Context, Ok, Result};
 
@@ -206,9 +206,6 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
                 img if img.is_empty() => None,
                 img => Some(img.to_owned()),
             };
-        }
-        if NodeProvider::uses_canvas(app) {
-            start_phase.cmd = Some(format!("for pkg in $(ls /nix/store | grep \"util-linux-.*-lib$\"); do export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:\"/nix/store/$pkg/lib\"; done && {}", start_phase.cmd.unwrap_or_default()));
         }
         Ok(start_phase)
     }

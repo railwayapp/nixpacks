@@ -9,7 +9,7 @@ RUN apt-get update && apt-get -y upgrade \
   && printf 'sandbox = false \nfilter-syscalls = false' > /etc/nix/nix.conf \
   && for n in $(seq 1 10); do useradd -c "Nix build user $n" -d /var/empty -g nixbld -G nixbld -M -N -r -s "$(command -v nologin)" "nixbld$n"; done
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+SHELL ["/bin/bash", "-ol", "pipefail", "-c"]
 RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash \
     && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old
 
