@@ -176,8 +176,12 @@ impl NodeProvider {
         } else if app.includes_file("package-lock.json") {
             install_cmd = "npm ci";
         }
-        if NodeProvider::uses_canvas(app){
-            return format!("cat {} >> /etc/profile && {}", app.asset_path(".profile"), install_cmd);
+        if NodeProvider::uses_canvas(app) {
+            return format!(
+                "cat {} >> /etc/profile && {}",
+                app.asset_path(".profile"),
+                install_cmd
+            );
         }
         install_cmd.to_string()
     }
