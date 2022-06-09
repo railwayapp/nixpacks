@@ -213,10 +213,15 @@ impl DockerBuilder {
             .map(|cmd| format!("RUN {}", cmd))
             .unwrap_or_else(|| "".to_string());
 
-        let paths_string = format!(
-            "PATH={}:$PATH",
-            install_phase.paths.unwrap_or_default().join(":")
-        );
+        let (build_path, run_path) = if let Some(paths) = install_phase.paths {
+            let joined_paths = paths.join(":");
+            (
+                format!("ENV PATH {}:$PATH", joined_paths),
+                format!("RUN printf '\\nPATH={joined_paths}:$PATH' >> /root/.profile"),
+            )
+        } else {
+            ("".to_string(), "".to_string())
+        };
 
         // Files to copy for install phase
         // If none specified, copy over the entire app
@@ -288,7 +293,9 @@ impl DockerBuilder {
           # Install
           {install_copy_cmd}
           {install_cmd}
-          RUN printf '\\n{paths_string}' >> /root/.profile
+
+          {build_path}
+          {run_path}
 
           # Build
           {build_copy_cmd}
