@@ -1,5 +1,6 @@
 pub mod app;
 pub mod builder;
+mod cache;
 pub mod environment;
 mod files;
 pub mod images;

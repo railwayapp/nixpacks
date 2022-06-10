@@ -19,6 +19,7 @@ pub struct DockerBuilderOptions {
     pub tags: Vec<String>,
     pub labels: Vec<String>,
     pub quiet: bool,
+    pub cache_key: Option<String>,
 }
 
 pub struct DockerBuilder {
@@ -56,6 +57,8 @@ impl Builder for DockerBuilder {
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
             let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), dest);
+
+            println!("{:?}", docker_build_cmd);
 
             // Execute docker build
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
@@ -99,7 +102,7 @@ impl DockerBuilder {
 
         // Add user defined tags and labels to the image
         for t in self.options.tags.clone() {
-            docker_build_cmd.arg("-t").arg(t);
+            docker_build_cmd.arg("-t").arg(format!("{name}:{}", t));
         }
         for l in self.options.labels.clone() {
             docker_build_cmd.arg("--label").arg(l);
