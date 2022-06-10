@@ -77,6 +77,7 @@ impl Provider for SwiftProvider {
         QTDIR=~/nix-profile \
         swift build -c release --static-swift-stdlib
         "
+        .trim()
         .to_string();
 
         Ok(Some(BuildPhase::new(build_cmd)))

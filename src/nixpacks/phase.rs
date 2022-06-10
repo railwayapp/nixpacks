@@ -52,7 +52,6 @@ impl SetupPhase {
         self.archive = Some(archive);
     }
 
-
     pub fn set_nix_environment_variables(&mut self, variables: EnvironmentVariables) {
         self.nix_environment_variables = Some(variables);
     }

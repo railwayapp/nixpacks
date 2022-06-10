@@ -492,7 +492,7 @@ fn test_swift() -> Result<()> {
 
     assert_eq!(
         plan.build.unwrap().cmd,
-        Some("swift build -c release --static-swift-stdlib".to_owned())
+        Some("CC=clang++ CPATH=~/.nix-profile/include LIBRARY_PATH=~/.nix-profile/lib QTDIR=~/nix-profile swift build -c release --static-swift-stdlib".to_owned())
     );
 
     assert_eq!(
