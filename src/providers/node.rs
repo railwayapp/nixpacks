@@ -36,7 +36,12 @@ impl Provider for NodeProvider {
 
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let packages = NodeProvider::get_nix_packages(app, env)?;
-        Ok(Some(SetupPhase::new(packages)))
+        let mut setup_phase = SetupPhase::new(packages);
+        if NodeProvider::uses_canvas(app) {
+            setup_phase.add_library("libuuid".to_string());
+            setup_phase.add_library("libGL".to_string());
+        }
+        Ok(Some(setup_phase))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
@@ -177,24 +182,34 @@ impl NodeProvider {
     pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
-
+        let mut pkgs = vec![node_pkg.clone()];
         if NodeProvider::get_package_manager(app) == "pnpm" {
             let mut pnpm_pkg = Pkg::new("nodePackages.pnpm");
             // Only override the node package if not the default one
             if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
                 pnpm_pkg = pnpm_pkg.set_override("nodejs", node_pkg.name.as_str());
             }
-            Ok(vec![node_pkg, pnpm_pkg])
+            pkgs.push(pnpm_pkg);
         } else if NodeProvider::get_package_manager(app) == "yarn" {
             let mut yarn_pkg = Pkg::new("yarn");
             // Only override the node package if not the default one
             if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
                 yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
             }
-            Ok(vec![node_pkg, yarn_pkg])
-        } else {
-            Ok(vec![node_pkg])
+            pkgs.push(yarn_pkg);
         }
+        Ok(pkgs)
+    }
+
+    pub fn uses_canvas(app: &App) -> bool {
+        let package_json = app.read_file("package.json").unwrap_or_default();
+        let lock_json = app.read_file("package-lock.json").unwrap_or_default();
+        let yarn_lock = app.read_file("yarn.lock").unwrap_or_default();
+        let pnpm_yaml = app.read_file("pnpm-lock.yaml").unwrap_or_default();
+        package_json.contains("\"canvas\"")
+            || lock_json.contains("/canvas/")
+            || yarn_lock.contains("/canvas/")
+            || pnpm_yaml.contains("/canvas/")
     }
 }
 
