@@ -531,7 +531,7 @@ fn test_swift_vapor() -> Result<()> {
 
     assert_eq!(
         plan.start.unwrap().cmd,
-        Some("./.build/release/Run".to_owned())
+        Some("./Run".to_owned())
     );
 
     Ok(())
