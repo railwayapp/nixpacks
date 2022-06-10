@@ -490,15 +490,14 @@ fn test_staticfile() -> Result<()> {
 fn test_swift() -> Result<()> {
     let plan = simple_gen_plan("./examples/swift");
 
-    assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("CC=clang++ CPATH=~/.nix-profile/include LIBRARY_PATH=~/.nix-profile/lib QTDIR=~/nix-profile swift build -c release --static-swift-stdlib".to_owned())
-    );
+    assert!(plan
+        .build
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("swift build -c release --static-swift-stdlib"));
 
-    assert_eq!(
-        plan.start.unwrap().cmd,
-        Some("./.build/release/swift".to_owned())
-    );
+    assert_eq!(plan.start.unwrap().cmd, Some("./swift".to_owned()));
 
     Ok(())
 }
@@ -523,10 +522,12 @@ fn test_dart() -> Result<()> {
 fn test_swift_vapor() -> Result<()> {
     let plan = simple_gen_plan("./examples/swift-vapor");
 
-    assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("CC=clang++ CPATH=~/.nix-profile/include LIBRARY_PATH=~/.nix-profile/lib QTDIR=~/nix-profile swift build -c release --static-swift-stdlib".to_owned())
-    );
+    assert!(plan
+        .build
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("swift build -c release --static-swift-stdlib"));
 
     assert_eq!(
         plan.start.unwrap().cmd,
