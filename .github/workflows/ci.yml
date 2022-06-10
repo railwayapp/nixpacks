@@ -2,7 +2,11 @@ on:
   push:
     branches:
     - main
+    paths-ignore:
+    - 'docs/**'
   pull_request:
+    paths-ignore:
+    - 'docs/**'
 
 name: CI
 
@@ -32,36 +36,6 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-
-  test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    steps:      
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.1
-        with:
-          access_token: ${{ github.token }}
-          
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-
-      - uses: Swatinem/rust-cache@v1
-
-      - name: Install cargo-nextest
-        uses: taiki-e/install-action@nextest
-
-      - name: Run cargo nextest
-        uses: actions-rs/cargo@v1
-        with:
-          command: nextest
-          args: run
 
   lints:
     name: Lints
@@ -97,3 +71,67 @@ jobs:
           command: clippy
           # Set linting rules for clippy
           args: --all-targets --all-features -- -D clippy::wildcard_dependencies 
+
+  test-plan:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.docker-prep.outputs.matrix }}
+    steps:      
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+        
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - uses: Swatinem/rust-cache@v1
+      
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --package nixpacks --lib --test generate_plan_tests
+      - name: List docker tests (prep test-docker)
+        id: docker-prep
+        # generate list of tests in json format for test-docker
+        run: |
+          echo "::set-output name=matrix::{\"tests\":[\"$(cargo test -q --package nixpacks --test docker_run_tests -- --list --format=terse | sed -z 's/: test\n/\", \"/g' | sed 's/...$//')]}"
+
+  test-docker:
+    needs: test-plan
+    name: Docker Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.test-plan.outputs.matrix)}}
+    steps:      
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+        
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - uses: Swatinem/rust-cache@v1
+
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --package nixpacks --test docker_run_tests -- ${{ matrix.tests }} --exact
