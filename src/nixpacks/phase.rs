@@ -11,6 +11,7 @@ use super::{
 pub struct SetupPhase {
     pub pkgs: Vec<Pkg>,
     pub archive: Option<String>,
+    pub libraries: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
@@ -26,6 +27,7 @@ impl SetupPhase {
     pub fn new(pkgs: Vec<Pkg>) -> Self {
         Self {
             pkgs,
+            libraries: None,
             archive: None,
             only_include_files: None,
             base_image: DEFAULT_BASE_IMAGE.to_string(),
@@ -50,8 +52,18 @@ impl SetupPhase {
         self.archive = Some(archive);
     }
 
+
     pub fn set_nix_environment_variables(&mut self, variables: EnvironmentVariables) {
         self.nix_environment_variables = Some(variables);
+    }
+
+    pub fn add_library(&mut self, lib: String) {
+        if let Some(mut libraries) = self.libraries.clone() {
+            libraries.push(lib);
+            self.libraries = Some(libraries);
+        } else {
+            self.libraries = Some(vec![lib]);
+        }
     }
 }
 
@@ -59,6 +71,7 @@ impl Default for SetupPhase {
     fn default() -> Self {
         Self {
             pkgs: Default::default(),
+            libraries: Default::default(),
             archive: Default::default(),
             only_include_files: Default::default(),
             base_image: DEFAULT_BASE_IMAGE.to_string(),
