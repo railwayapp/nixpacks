@@ -6,7 +6,7 @@ on:
       - "v*.*.*"
 
 env:
-  AWK_CMD: '{sub(/${{ env.REGEX }}/, "v0.0.21"); print}'
+  AWK_CMD: '{sub(/${{ env.REGEX }}/, ${{ env.NIXPACKS_VERSION }}); print}'
   FLAKE_FILE: flake.nix
   GIT_AUTHOR_NAME: ${{ github.repository_owner }}
   GIT_AUTHOR_EMAIL: ${{ github.repository_owner }}@users.noreply.github.com
@@ -21,14 +21,17 @@ jobs:
         shell: bash
         if: env.NIXPACKS_VERSION == ''
         run: |
-          echo ${}
           echo "NIXPACKS_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "version is: ${{ env.NIXPACKS_VERSION }}"
 
       - uses: actions/checkout@v3
         with:
-          ref: auto-update/nixpacks-flake
+          ref: main
           fetch-depth: 1
+
+      - name: Create update branch
+        run: |
+          git checkout -b auto-update/nixpacks-flake
 
       - name: Update version in flake.nix and get old version
         run: |
