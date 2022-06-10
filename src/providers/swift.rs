@@ -69,14 +69,19 @@ impl Provider for SwiftProvider {
         Ok(Some(install_phase))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        let build_cmd = "\
+    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+        let name = SwiftProvider::get_executable_name(app)?;
+        let build_cmd = format!(
+            "\
         CC=clang++ \
         CPATH=~/.nix-profile/include \
         LIBRARY_PATH=~/.nix-profile/lib \
-        QTDIR=~/nix-profile \
-        swift build -c release --static-swift-stdlib
+        QTDIR=~/.nix-profile \
+        swift build -c release --static-swift-stdlib && \
+        cp ./.build/release/{name} ./{name} && \
+        rm -rf ./.build
         "
+        )
         .trim()
         .to_string();
 
@@ -85,13 +90,8 @@ impl Provider for SwiftProvider {
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         let name = SwiftProvider::get_executable_name(app)?;
-        let binary_file = format!("./.build/release/{}", name);
-        let mut start_phase = StartPhase::new(format!("./{}", name));
 
-        start_phase.run_in_slim_image();
-        start_phase.add_file_dependency(binary_file);
-
-        Ok(Some(start_phase))
+        Ok(Some(StartPhase::new(format!("./{}", name))))
     }
 }
 
