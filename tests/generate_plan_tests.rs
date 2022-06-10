@@ -529,10 +529,7 @@ fn test_swift_vapor() -> Result<()> {
         .unwrap()
         .contains("swift build -c release --static-swift-stdlib"));
 
-    assert_eq!(
-        plan.start.unwrap().cmd,
-        Some("./Run".to_owned())
-    );
+    assert_eq!(plan.start.unwrap().cmd, Some("./Run".to_owned()));
 
     Ok(())
 }
