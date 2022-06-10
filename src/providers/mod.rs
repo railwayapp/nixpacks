@@ -7,9 +7,11 @@ use anyhow::Result;
 
 pub mod crystal;
 pub mod csharp;
+pub mod dart;
 pub mod deno;
 pub mod go;
 pub mod haskell;
+pub mod java;
 pub mod node;
 pub mod python;
 pub mod ruby;

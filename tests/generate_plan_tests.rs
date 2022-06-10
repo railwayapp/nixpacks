@@ -33,7 +33,7 @@ fn test_node_no_lockfile() -> Result<()> {
 
 #[test]
 fn test_npm() -> Result<()> {
-    let plan = simple_gen_plan("./examples/npm");
+    let plan = simple_gen_plan("./examples/node-npm");
     assert_eq!(plan.build.unwrap().cmd, Some("npm run build".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
     assert_eq!(
@@ -67,7 +67,7 @@ fn test_node_custom_version() -> Result<()> {
 
 #[test]
 fn test_yarn() -> Result<()> {
-    let plan = simple_gen_plan("./examples/yarn");
+    let plan = simple_gen_plan("./examples/node-yarn");
     assert_eq!(plan.build.unwrap().cmd, Some("yarn run build".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("yarn run start".to_string()));
     assert_eq!(
@@ -84,7 +84,7 @@ fn test_yarn() -> Result<()> {
 
 #[test]
 fn test_yarn_berry() -> Result<()> {
-    let plan = simple_gen_plan("./examples/yarn-berry");
+    let plan = simple_gen_plan("./examples/node-yarn-berry");
     assert_eq!(
         plan.install.unwrap().cmd,
         Some("yarn set version berry && yarn install --immutable --check-cache".to_string())
@@ -94,7 +94,7 @@ fn test_yarn_berry() -> Result<()> {
 
 #[test]
 fn test_yarn_custom_version() -> Result<()> {
-    let plan = simple_gen_plan("./examples/yarn-custom-node-version");
+    let plan = simple_gen_plan("./examples/node-yarn-custom-node-version");
     assert_eq!(
         plan.setup.unwrap().pkgs,
         vec![
@@ -107,8 +107,8 @@ fn test_yarn_custom_version() -> Result<()> {
 }
 
 #[test]
-fn pnpm() -> Result<()> {
-    let plan = simple_gen_plan("./examples/pnpm");
+fn test_pnpm() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-pnpm");
     assert_eq!(plan.build.unwrap().cmd, Some("pnpm run build".to_string()));
     assert_eq!(plan.start.unwrap().cmd, Some("pnpm run start".to_string()));
     assert_eq!(
@@ -125,7 +125,7 @@ fn pnpm() -> Result<()> {
 
 #[test]
 fn test_pnpm_custom_version() -> Result<()> {
-    let plan = simple_gen_plan("./examples/pnpm-custom-node-version");
+    let plan = simple_gen_plan("./examples/node-pnpm-custom-node-version");
     assert_eq!(
         plan.setup.unwrap().pkgs,
         vec![
@@ -248,7 +248,7 @@ fn test_procfile() -> Result<()> {
 #[test]
 fn test_custom_pkgs() -> Result<()> {
     let plan = generate_build_plan(
-        "./examples/hello",
+        "./examples/shell-hello",
         Vec::new(),
         &GeneratePlanOptions {
             custom_start_cmd: Some("./start.sh".to_string()),
@@ -265,7 +265,7 @@ fn test_custom_pkgs() -> Result<()> {
 #[test]
 fn test_pin_archive() -> Result<()> {
     let plan = generate_build_plan(
-        "./examples/hello",
+        "./examples/shell-hello",
         Vec::new(),
         &GeneratePlanOptions {
             pin_pkgs: true,
@@ -435,7 +435,7 @@ fn test_crystal() -> Result<()> {
 #[test]
 fn test_overriding_environment_variables() -> Result<()> {
     let plan = generate_build_plan(
-        "./examples/variables",
+        "./examples/node-variables",
         vec!["NODE_ENV=test"],
         &GeneratePlanOptions::default(),
     )?;
@@ -450,7 +450,7 @@ fn test_overriding_environment_variables() -> Result<()> {
 #[test]
 fn test_config_from_environment_variables() -> Result<()> {
     let plan = generate_build_plan(
-        "./examples/hello",
+        "./examples/shell-hello",
         vec![
             "NIXPACKS_PKGS=cowsay ripgrep",
             "NIXPACKS_INSTALL_CMD=install",
@@ -482,6 +482,50 @@ fn test_staticfile() -> Result<()> {
     assert_eq!(
         plan.start.unwrap().cmd,
         Some("[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\" /assets/nginx.conf && nginx -c /assets/nginx.conf".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_dart() -> Result<()> {
+    let plan = simple_gen_plan("./examples/dart");
+    assert_eq!(plan.install.unwrap().cmd, Some("dart pub get".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("dart compile exe bin/console_simple.dart".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./bin/console_simple.exe".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_java_maven() -> Result<()> {
+    let plan = simple_gen_plan("./examples/java-maven");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_java_maven_wrapper() -> Result<()> {
+    let plan = simple_gen_plan("./examples/java-maven-wrapper");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
     );
     Ok(())
 }
