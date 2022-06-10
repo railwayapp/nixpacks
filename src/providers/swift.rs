@@ -85,8 +85,13 @@ impl Provider for SwiftProvider {
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         let name = SwiftProvider::get_executable_name(app)?;
+        let binary_file = format!("./.build/release/{}", name);
+        let mut start_phase = StartPhase::new(format!("./{}", name));
 
-        Ok(Some(StartPhase::new(format!("./.build/release/{}", name))))
+        start_phase.run_in_slim_image();
+        start_phase.add_file_dependency(binary_file);
+
+        Ok(Some(start_phase))
     }
 }
 
