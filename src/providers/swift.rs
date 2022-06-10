@@ -43,6 +43,7 @@ impl Provider for SwiftProvider {
             Pkg::new("coreutils"),
             Pkg::new("swift"),
             Pkg::new("clang"),
+            Pkg::new("zlib"),
             Pkg::new("zlib.dev"),
         ]);
 
