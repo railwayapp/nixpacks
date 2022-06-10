@@ -39,7 +39,13 @@ impl Provider for SwiftProvider {
     }
 
     fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        let mut setup_phase = SetupPhase::new(vec![Pkg::new("binutils"), Pkg::new("swift")]);
+        let mut setup_phase = SetupPhase::new(vec![
+            Pkg::new("coreutils"),
+            Pkg::new("swift"),
+            Pkg::new("clang"),
+            Pkg::new("zlib.dev"),
+        ]);
+
         let swift_version = SwiftProvider::get_swift_version(app)?;
         let rev = version_number_to_rev(&swift_version)?;
 
@@ -51,23 +57,7 @@ impl Provider for SwiftProvider {
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        // Vapor requires zlib & some system libraries
-        // The glibc headers that nix installs is wonky
-        // So we need to symlink the broken headers
-        let install_cmd = "\
-        swift package resolve && \
-        sudo apt-get update && \
-        sudo apt-get install -y zlib1g-dev libc6-dev && \
-        sudo ln -s /usr/include/zlib.h /usr/local/include/zlib.h && \
-        sudo ln -s /usr/include/zconf.h /usr/local/include/zconf.h && \
-        sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/libz.so && \
-        sudo ln -s /usr/include/x86_64-linux-gnu/bits /usr/include/bits && \
-        sudo mkdir /usr/include/sys && \
-        sudo ln -s /usr/include/x86_64-linux-gnu/sys/wait.h /usr/include/sys/wait.h
-        "
-        .to_string();
-
-        let mut install_phase = InstallPhase::new(install_cmd);
+        let mut install_phase = InstallPhase::new("swift package resolve".to_string());
 
         install_phase.add_file_dependency("Package.swift".to_string());
 
@@ -78,12 +68,17 @@ impl Provider for SwiftProvider {
         Ok(Some(install_phase))
     }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        let name = SwiftProvider::get_executable_name(app)?;
+    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+        let build_cmd = "\
+        CC=clang++ \
+        CPATH=~/.nix-profile/include \
+        LIBRARY_PATH=~/.nix-profile/lib \
+        QTDIR=~/nix-profile \
+        swift build -c release --static-swift-stdlib
+        "
+        .to_string();
 
-        Ok(Some(BuildPhase::new(
-            format!("swift build -c release --static-swift-stdlib -Xlinker -I/usr/include/ && chmod +x ./.build/release/{}", name),
-        )))
+        Ok(Some(BuildPhase::new(build_cmd)))
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
