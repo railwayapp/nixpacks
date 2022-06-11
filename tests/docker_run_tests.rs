@@ -431,3 +431,10 @@ fn test_java_maven() {
     let output = run_image(name, None);
     assert!(output.contains("Built with Spring Boot"));
 }
+
+#[test]
+fn test_ruby_sintara() {
+    let name = simple_build("./examples/ruby-sintara");
+    let output = run_image(name, None);
+    assert!(output.contains("Sintara"));
+}
