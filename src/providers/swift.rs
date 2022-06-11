@@ -45,6 +45,7 @@ impl Provider for SwiftProvider {
             Pkg::new("clang"),
             Pkg::new("zlib"),
             Pkg::new("zlib.dev"),
+            Pkg::new("glibc.dev"),
         ]);
 
         let swift_version = SwiftProvider::get_swift_version(app)?;
