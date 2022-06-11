@@ -115,7 +115,7 @@ fn simple_build(path: &str) -> String {
         },
         &DockerBuilderOptions {
             name: Some(name.clone()),
-            quiet: true,
+            quiet: false,
             ..Default::default()
         },
     )
