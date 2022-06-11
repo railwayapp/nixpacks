@@ -22,6 +22,7 @@ pub struct GeneratePlanOptions {
     pub custom_build_cmd: Option<String>,
     pub custom_start_cmd: Option<String>,
     pub custom_pkgs: Vec<Pkg>,
+    pub custom_libs: Vec<String>,
     pub pin_pkgs: bool,
     pub plan_path: Option<String>,
 }
@@ -116,6 +117,19 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         let mut pkgs = [self.options.custom_pkgs.clone(), env_var_pkgs].concat();
         setup_phase.add_pkgs(&mut pkgs);
 
+        let env_var_libs = environment
+            .get_config_variable("LIBS")
+            .map(|lib_string| {
+                lib_string
+                    .split(' ')
+                    .map(|s| s.to_string())
+                    .collect::<Vec<String>>()
+            })
+            .unwrap_or_default();
+
+        // Add custom user libraries
+        let libs = [self.options.custom_libs.clone(), env_var_libs].concat();
+        setup_phase.add_libraries(libs);
         if self.options.pin_pkgs {
             setup_phase.set_archive(NIXPKGS_ARCHIVE.to_string())
         }
