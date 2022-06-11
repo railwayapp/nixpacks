@@ -129,7 +129,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
 
         // Add custom user libraries
         let libs = [self.options.custom_libs.clone(), env_var_libs].concat();
-        setup_phase.add_library(libs);
+        setup_phase.add_libraries(libs);
         if self.options.pin_pkgs {
             setup_phase.set_archive(NIXPKGS_ARCHIVE.to_string())
         }
