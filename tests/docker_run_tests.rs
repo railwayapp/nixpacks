@@ -350,7 +350,7 @@ fn test_rust_custom_version() {
         },
         &DockerBuilderOptions {
             name: Some(name.clone()),
-            quiet: true,
+            quiet: false,
             ..Default::default()
         },
     )
@@ -433,8 +433,8 @@ fn test_java_maven() {
 }
 
 #[test]
-fn test_ruby_sintara() {
-    let name = simple_build("./examples/ruby-sintara");
+fn test_ruby_sinatra() {
+    let name = simple_build("./examples/ruby-sinatra/");
     let output = run_image(name, None);
-    assert!(output.contains("Sintara"));
+    assert!(output.contains("Hello from Sinatra"));
 }
