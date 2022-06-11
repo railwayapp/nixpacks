@@ -95,6 +95,14 @@ fn main() -> Result<()> {
                 .global(true),
         )
         .arg(
+            Arg::new("libs")
+                .long("libs")
+                .help("Provide additional nix libraries to install in the environment")
+                .takes_value(true)
+                .multiple_values(true)
+                .global(true),
+        )
+        .arg(
             Arg::new("pin")
                 .long("pin")
                 .help("Pin the nixpkgs")
@@ -118,6 +126,15 @@ fn main() -> Result<()> {
         Some(values) => values.map(Pkg::new).collect::<Vec<_>>(),
         None => Vec::new(),
     };
+    let libs = matches
+        .value_of("libs")
+        .map(|lib_string| {
+            lib_string
+                .split(' ')
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>()
+        })
+        .unwrap_or_default();
     let pin_pkgs = matches.is_present("pin");
 
     let envs: Vec<_> = match matches.values_of("env") {
@@ -132,6 +149,7 @@ fn main() -> Result<()> {
         custom_start_cmd: start_cmd,
         custom_build_cmd: build_cmd,
         custom_pkgs: pkgs,
+        custom_libs: libs,
         pin_pkgs,
         plan_path,
     };
