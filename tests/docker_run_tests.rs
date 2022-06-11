@@ -419,8 +419,10 @@ fn test_staticfile() {
 
 #[test]
 fn test_swift() {
-    // todo
-    assert!(true);
+    let name = simple_build("./examples/swift");
+    let output = run_image(name, None);
+
+    assert!(output.contains("Hello from swift"));
 }
 
 #[test]

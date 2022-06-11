@@ -298,7 +298,7 @@ impl DockerBuilder {
 
           # Setup
           {setup_copy_cmd}
-          RUN {nix_cmd}
+          RUN {nix_cmd} || true
           {assets_copy_cmd}
 
           # Load environment variables
