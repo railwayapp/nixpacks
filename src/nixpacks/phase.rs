@@ -47,12 +47,11 @@ impl SetupPhase {
         self.archive = Some(archive);
     }
 
-    pub fn add_library(&mut self, lib: String) {
-        if let Some(mut libraries) = self.libraries.clone() {
-            libraries.push(lib);
-            self.libraries = Some(libraries);
+    pub fn add_libraries(&mut self, lib: Vec<String>) {
+        if let Some(libraries) = self.libraries.clone() {
+            self.libraries = Some([libraries, lib].concat());
         } else {
-            self.libraries = Some(vec![lib]);
+            self.libraries = Some(lib);
         }
     }
 }

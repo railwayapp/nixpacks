@@ -38,8 +38,7 @@ impl Provider for NodeProvider {
         let packages = NodeProvider::get_nix_packages(app, env)?;
         let mut setup_phase = SetupPhase::new(packages);
         if NodeProvider::uses_canvas(app) {
-            setup_phase.add_library("libuuid".to_string());
-            setup_phase.add_library("libGL".to_string());
+            setup_phase.add_libraries(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
         Ok(Some(setup_phase))
     }
