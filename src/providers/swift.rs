@@ -99,8 +99,12 @@ impl SwiftProvider {
     fn get_swift_version(app: &App) -> Result<String> {
         if app.includes_file(".swift-version") {
             let contents = app.read_file(".swift-version")?;
+            let version = contents.split('\n').collect::<Vec<_>>();
 
-            Ok(contents.trim().to_string())
+            match version.first() {
+                Some(v) => Ok(v.trim().to_string()),
+                None => bail!("Your .swift-version file is empty"),
+            }
         } else if app.includes_file("Package.swift") {
             let contents = app.read_file("Package.swift")?;
             let version = contents
