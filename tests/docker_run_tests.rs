@@ -419,7 +419,7 @@ fn test_staticfile() {
 
 #[test]
 fn test_swift() {
-    let name = simple_build("./examples/swift");
+    let name = simple_build("./examples/swift-custom-version");
     let output = run_image(name, None);
 
     assert!(output.contains("Hello from swift"));
