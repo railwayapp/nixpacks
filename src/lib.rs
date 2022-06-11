@@ -16,7 +16,8 @@ use anyhow::Result;
 use providers::{
     crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider,
     go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider, node::NodeProvider,
-    python::PythonProvider, rust::RustProvider, staticfile::StaticfileProvider, Provider,
+    python::PythonProvider, ruby::RubyProvider, rust::RustProvider, staticfile::StaticfileProvider,
+    Provider,
 };
 
 mod chain;
@@ -25,17 +26,18 @@ pub mod providers;
 
 pub fn get_providers() -> Vec<&'static dyn Provider> {
     vec![
-        &GolangProvider {},
-        &DenoProvider {},
-        &NodeProvider {},
-        &RustProvider {},
-        &PythonProvider {},
-        &HaskellStackProvider {},
-        &CSharpProvider {},
         &CrystalProvider {},
-        &StaticfileProvider {},
+        &CSharpProvider {},
         &DartProvider {},
+        &DenoProvider {},
+        &GolangProvider {},
+        &HaskellStackProvider {},
         &JavaProvider {},
+        &RubyProvider {},
+        &NodeProvider {},
+        &PythonProvider {},
+        &RustProvider {},
+        &StaticfileProvider {},
     ]
 }
 
