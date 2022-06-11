@@ -110,7 +110,7 @@ fn simple_build(path: &str) -> String {
         path,
         Vec::new(),
         &GeneratePlanOptions {
-            pin_pkgs: true,
+            pin_pkgs: false,
             ..Default::default()
         },
         &DockerBuilderOptions {
@@ -419,8 +419,9 @@ fn test_staticfile() {
 
 #[test]
 fn test_swift() {
-    // todo
-    assert!(true);
+    let name = simple_build("./examples/swift");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from swift"));
 }
 
 #[test]
