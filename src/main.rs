@@ -95,6 +95,14 @@ fn main() -> Result<()> {
                 .global(true),
         )
         .arg(
+            Arg::new("apt")
+                .long("apt")
+                .help("Provide additional apt packages to install in the environment")
+                .takes_value(true)
+                .multiple_values(true)
+                .global(true),
+        )
+        .arg(
             Arg::new("libs")
                 .long("libs")
                 .help("Provide additional nix libraries to install in the environment")
@@ -135,6 +143,15 @@ fn main() -> Result<()> {
                 .collect::<Vec<String>>()
         })
         .unwrap_or_default();
+    let apt_pkgs = matches
+        .value_of("apt")
+        .map(|lib_string| {
+            lib_string
+                .split(' ')
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>()
+        })
+        .unwrap_or_default();
     let pin_pkgs = matches.is_present("pin");
 
     let envs: Vec<_> = match matches.values_of("env") {
@@ -150,6 +167,7 @@ fn main() -> Result<()> {
         custom_build_cmd: build_cmd,
         custom_pkgs: pkgs,
         custom_libs: libs,
+        custom_apt_pkgs: apt_pkgs,
         pin_pkgs,
         plan_path,
     };
