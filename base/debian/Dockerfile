@@ -22,6 +22,9 @@ ENV \
   NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
   NIX_PATH=/nix/var/nix/profiles/per-user/root/channels \
   NIXPKGS_ALLOW_BROKEN=1 \
-  LD_LIBRARY_PATH=/usr/lib
+  LD_LIBRARY_PATH=/usr/lib \
+  CPATH=~/.nix-profile/include:$CPATH \
+  LIBRARY_PATH=~/.nix-profile/lib:$LIBRARY_PATH \
+  QTDIR=~/.nix-profile:$QTDIR
 
 RUN nix-channel --update
