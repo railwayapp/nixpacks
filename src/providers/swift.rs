@@ -155,10 +155,7 @@ impl SwiftProvider {
             .iter()
             .find(|(ver, _rev)| *ver == version);
 
-        match matched_version {
-            Some((_ver, rev)) => Some(rev.to_string()),
-            None => None,
-        }
+        matched_version.map(|(_ver, rev)| rev.to_string())
     }
 }
 
