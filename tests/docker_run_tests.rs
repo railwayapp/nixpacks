@@ -292,7 +292,6 @@ fn test_fsharp() {
     assert!(output.contains("Hello world from F#"));
 }
 
-
 #[test]
 fn test_python() {
     let name = simple_build("./examples/python");

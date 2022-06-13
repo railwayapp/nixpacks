@@ -218,7 +218,6 @@ fn test_csharp_api() -> Result<()> {
     Ok(())
 }
 
-
 #[test]
 fn test_fsharp_api() -> Result<()> {
     let plan = simple_gen_plan("./examples/fsharp-api");

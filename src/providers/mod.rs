@@ -7,9 +7,9 @@ use anyhow::Result;
 
 pub mod crystal;
 pub mod csharp;
-pub mod fsharp;
 pub mod dart;
 pub mod deno;
+pub mod fsharp;
 pub mod go;
 pub mod haskell;
 pub mod java;
