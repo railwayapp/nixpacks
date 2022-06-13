@@ -222,15 +222,15 @@ mod tests {
 
     #[test]
     fn test_find_files() -> Result<()> {
-        let app = App::new("./examples/monorepo")?;
+        let app = App::new("./examples/node-monorepo")?;
         let m = app.find_files("**/*.tsx").unwrap();
         let dir = env::current_dir().unwrap();
         assert_eq!(
             m,
             vec![
-                dir.join("examples/monorepo/packages/client/pages/_app.tsx")
+                dir.join("examples/node-monorepo/packages/client/pages/_app.tsx")
                     .canonicalize()?,
-                dir.join("examples/monorepo/packages/client/pages/index.tsx")
+                dir.join("examples/node-monorepo/packages/client/pages/index.tsx")
                     .canonicalize()?
             ]
         );
@@ -239,7 +239,7 @@ mod tests {
 
     #[test]
     fn test_find_match() -> Result<()> {
-        let app = App::new("./examples/monorepo")?;
+        let app = App::new("./examples/node-monorepo")?;
         let re = Regex::new(r"className")?;
         let m = app.find_match(&re, "**/*.tsx").unwrap();
         assert!(m);
