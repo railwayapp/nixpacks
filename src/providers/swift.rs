@@ -24,6 +24,7 @@ static AVAILABLE_SWIFT_VERSIONS: &[(&str, &str)] = &[
     ("5.4", "c82b46413401efa740a0b994f52e9903a4f6dcd5"),
     ("5.4.2", "c82b46413401efa740a0b994f52e9903a4f6dcd5"),
     ("5.5.2", "6d02a514db95d3179f001a5a204595f17b89cb32"),
+    ("5.5.3", "bf972dc380f36a3bf83db052380e55f0eaa7dcb6"),
 ];
 
 pub struct SwiftProvider {}
@@ -48,7 +49,7 @@ impl Provider for SwiftProvider {
         ]);
 
         let swift_version = SwiftProvider::get_swift_version(app)?;
-        let rev = version_number_to_rev(&swift_version)?;
+        let rev = SwiftProvider::version_number_to_rev(&swift_version);
 
         if let Some(rev) = rev {
             setup_phase.set_archive(rev);
@@ -148,16 +149,16 @@ impl SwiftProvider {
 
         Ok(names[1].to_string())
     }
-}
 
-fn version_number_to_rev(version: &str) -> Result<Option<String>> {
-    let matched_version = AVAILABLE_SWIFT_VERSIONS
-        .iter()
-        .find(|(ver, _rev)| *ver == version);
+    fn version_number_to_rev(version: &str) -> Option<String> {
+        let matched_version = AVAILABLE_SWIFT_VERSIONS
+            .iter()
+            .find(|(ver, _rev)| *ver == version);
 
-    match matched_version {
-        Some((_ver, rev)) => Ok(Some(rev.to_string())),
-        None => Ok(None),
+        match matched_version {
+            Some((_ver, rev)) => Some(rev.to_string()),
+            None => None,
+        }
     }
 }
 
