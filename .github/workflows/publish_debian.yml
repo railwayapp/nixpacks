@@ -62,7 +62,7 @@ jobs:
         with:
           base: main
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: bump base to debian-${{ steps.date.outputs.date }}
+          commit-message: Bump base image
           branch: debian-${{ steps.date.outputs.date }}
           delete-branch: true
           title: Bump base image to `debian-${{ steps.date.outputs.date }}`
