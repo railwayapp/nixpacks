@@ -142,7 +142,7 @@ impl SwiftProvider {
 
         let mut names = path.split('/').collect::<Vec<_>>();
 
-        // Safe to unwrap, because the path was filtered by the glob expression
+        // Safe to unwrap now, path was filtered by glob
         let pos = names.iter().position(|&n| n == "Sources").unwrap();
 
         names.drain(0..pos);
