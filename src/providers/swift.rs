@@ -74,9 +74,6 @@ impl Provider for SwiftProvider {
         let build_cmd = format!(
             "\
         CC=clang++ \
-        CPATH=~/.nix-profile/include \
-        LIBRARY_PATH=~/.nix-profile/lib \
-        QTDIR=~/.nix-profile \
         swift build -c release --static-swift-stdlib && \
         cp ./.build/release/{name} ./{name} && \
         rm -rf ./.build
