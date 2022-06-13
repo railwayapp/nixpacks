@@ -19,7 +19,6 @@ pub struct PackageJson {
     pub name: Option<String>,
     pub scripts: Option<HashMap<String, String>>,
     pub engines: Option<HashMap<String, String>>,
-    pub workspaces: Option<Vec<String>>,
     pub main: Option<String>,
 }
 
@@ -249,7 +248,6 @@ mod test {
                     name: Some(String::default()),
                     main: None,
                     scripts: None,
-                    workspaces: None,
                     engines: None
                 },
                 &Environment::default()
@@ -268,7 +266,6 @@ mod test {
                     name: Some(String::default()),
                     main: None,
                     scripts: None,
-                    workspaces: None,
                     engines: engines_node("*")
                 },
                 &Environment::default()
@@ -287,7 +284,6 @@ mod test {
                     name: Some(String::default()),
                     main: None,
                     scripts: None,
-                    workspaces: None,
                     engines: engines_node("14"),
                 },
                 &Environment::default()
@@ -306,7 +302,6 @@ mod test {
                     name: Some(String::default()),
                     main: None,
                     scripts: None,
-                    workspaces: None,
                     engines: engines_node("12.x"),
                 },
                 &Environment::default()
@@ -320,7 +315,6 @@ mod test {
                     name: Some(String::default()),
                     main: None,
                     scripts: None,
-                    workspaces: None,
                     engines: engines_node("14.X"),
                 },
                 &Environment::default()
@@ -339,7 +333,6 @@ mod test {
                     name: Some(String::default()),
                     main: None,
                     scripts: None,
-                    workspaces: None,
                     engines: engines_node(">=14.10.3 <16"),
                 },
                 &Environment::default()
@@ -358,7 +351,6 @@ mod test {
                     name: Some(String::default()),
                     main: None,
                     scripts: None,
-                    workspaces: None,
                     engines: None,
                 },
                 &Environment::new(HashMap::from([(
@@ -381,7 +373,6 @@ mod test {
                     name: Some(String::default()),
                     main: None,
                     scripts: None,
-                    workspaces: None,
                     engines: engines_node("15"),
                 },
                 &Environment::default()

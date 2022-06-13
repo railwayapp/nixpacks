@@ -16,7 +16,8 @@ jobs:
   debian:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      pull-requests: write
       packages: write
       id-token: write
 
@@ -37,15 +38,31 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Get current date
+      
+      - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +%s)"
-      - 
-        name: Build and push
+      
+      - name: Build and push
         uses: docker/build-push-action@v3
         with:
           context: base/debian
           platforms: linux/arm64, linux/amd64, linux/386
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name == 'push' }}
           tags: ghcr.io/railwayapp/nixpacks:debian, ghcr.io/railwayapp/nixpacks:latest, ghcr.io/railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
+      
+      - name: Bump base image
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          sed -i 's/nixpacks:debian-.*/nixpacks:debian-${{ steps.date.outputs.date }}";/g' src/nixpacks/images.rs
+      
+      - name: Create Pull Request
+        if: ${{ github.event_name == 'push' }}
+        uses: peter-evans/create-pull-request@v4
+        with:
+          base: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Bump base image
+          branch: debian-${{ steps.date.outputs.date }}
+          delete-branch: true
+          title: Bump base image to `debian-${{ steps.date.outputs.date }}`

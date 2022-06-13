@@ -195,6 +195,15 @@ impl DockerBuilder {
         }
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
 
+        let mut apt_get_cmd = "".to_string();
+        if !setup_phase.apt_pkgs.clone().unwrap_or_default().is_empty() {
+            let apt_pkgs = setup_phase.apt_pkgs.unwrap_or_default().join(" ");
+            println!(
+                "WARNING: Using apt for installing packages will break build reproducibility."
+            );
+            apt_get_cmd = format!("RUN apt-get update && apt-get install -y {}", apt_pkgs);
+        }
+
         // -- Static Assets
         let assets_copy_cmd = if !static_assets.is_empty() {
             static_assets
@@ -285,6 +294,7 @@ impl DockerBuilder {
           # Setup
           {setup_copy_cmd}
           RUN nix-env -if environment.nix
+          {apt_get_cmd}
           {assets_copy_cmd}
 
           # Load environment variables

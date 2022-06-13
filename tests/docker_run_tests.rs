@@ -286,6 +286,13 @@ fn test_csharp() {
 }
 
 #[test]
+fn test_fsharp() {
+    let name = simple_build("./examples/fsharp-cli");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello world from F#"));
+}
+
+#[test]
 fn test_python() {
     let name = simple_build("./examples/python");
     let output = run_image(name, None);
