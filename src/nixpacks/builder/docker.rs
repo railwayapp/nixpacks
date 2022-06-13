@@ -195,8 +195,11 @@ impl DockerBuilder {
         }
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
 
-        let apt_pkgs = setup_phase.apt_pkgs.unwrap_or_default().join(" ");
-        let apt_get_cmd = format!("RUN apt-get update && apt-get install -y {}", apt_pkgs);
+        let mut apt_get_cmd = "".to_string();
+        if !setup_phase.apt_pkgs.clone().unwrap_or_default().is_empty() {
+            let apt_pkgs = setup_phase.apt_pkgs.unwrap_or_default().join(" ");
+            apt_get_cmd = format!("RUN apt-get update && apt-get install -y {}", apt_pkgs);
+        }
 
         // -- Static Assets
         let assets_copy_cmd = if !static_assets.is_empty() {

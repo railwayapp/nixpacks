@@ -58,7 +58,6 @@ impl SetupPhase {
     }
 
     pub fn add_apt_pkgs(&mut self, apt_pkgs: Vec<String>) {
-        println!("{:?}",apt_pkgs);
         if let Some(apt_packages) = self.apt_pkgs.clone() {
             self.apt_pkgs = Some([apt_packages, apt_pkgs].concat());
         } else {
