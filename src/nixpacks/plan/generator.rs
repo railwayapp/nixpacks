@@ -142,7 +142,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
             })
             .unwrap_or_default();
 
-        // Add custom user libraries
+        // Add custom apt packages
         let apt_pkgs = [self.options.custom_apt_pkgs.clone(), env_var_apt_pkgs].concat();
         setup_phase.add_apt_pkgs(apt_pkgs);
 
