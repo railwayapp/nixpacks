@@ -219,6 +219,25 @@ fn test_csharp_api() -> Result<()> {
 }
 
 #[test]
+fn test_fsharp_api() -> Result<()> {
+    let plan = simple_gen_plan("./examples/fsharp-api");
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("dotnet restore".to_string())
+    );
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("dotnet publish --no-restore -c Release -o out".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./out/fsharp-api".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_csharp_cli() -> Result<()> {
     let plan = simple_gen_plan("./examples/csharp-cli");
     assert_eq!(
