@@ -65,4 +65,4 @@ jobs:
           commit-message: bump base to debian-${{ steps.date.outputs.date }}
           branch: debian-${{ steps.date.outputs.date }}
           delete-branch: true
-          title: Bump base image to debian-${{ steps.date.outputs.date }}
+          title: Bump base image to `debian-${{ steps.date.outputs.date }}`
