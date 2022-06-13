@@ -134,24 +134,14 @@ fn main() -> Result<()> {
         Some(values) => values.map(Pkg::new).collect::<Vec<_>>(),
         None => Vec::new(),
     };
-    let libs = matches
-        .value_of("libs")
-        .map(|lib_string| {
-            lib_string
-                .split(' ')
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>()
-        })
-        .unwrap_or_default();
-    let apt_pkgs = matches
-        .value_of("apt")
-        .map(|lib_string| {
-            lib_string
-                .split(' ')
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>()
-        })
-        .unwrap_or_default();
+    let libs = match matches.values_of("libs") {
+        Some(values) => values.map(String::from).collect::<Vec<String>>(),
+        None => Vec::new(),
+    };
+    let apt_pkgs = match matches.values_of("apt") {
+        Some(values) => values.map(String::from).collect::<Vec<String>>(),
+        None => Vec::new(),
+    };
     let pin_pkgs = matches.is_present("pin");
 
     let envs: Vec<_> = match matches.values_of("env") {
