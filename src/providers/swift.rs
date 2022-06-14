@@ -35,8 +35,7 @@ impl Provider for SwiftProvider {
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("Package.swift")
-            || (app.includes_file("Package.swift") && app.includes_file("Package.resolved")))
+        Ok(app.includes_file("Package.swift"))
     }
 
     fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
