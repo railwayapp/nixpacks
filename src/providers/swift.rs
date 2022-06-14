@@ -50,6 +50,8 @@ impl Provider for SwiftProvider {
 
         if let Some(rev) = rev {
             setup_phase.set_archive(rev);
+        } else {
+            setup_phase.set_archive("c82b46413401efa740a0b994f52e9903a4f6dcd5".to_string());
         }
 
         Ok(Some(setup_phase))
