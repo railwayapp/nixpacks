@@ -7,7 +7,7 @@ use crate::nixpacks::{
 };
 use anyhow::{bail, Result};
 
-static DEFAULT_SWIFT_VERSION: &str = "5.5.3";
+static DEFAULT_SWIFT_VERSION: &str = "5.4.2";
 
 // From: https://lazamar.co.uk/nix-versions/?channel=nixpkgs-unstable&package=swift
 static AVAILABLE_SWIFT_VERSIONS: &[(&str, &str)] = &[
@@ -23,8 +23,6 @@ static AVAILABLE_SWIFT_VERSIONS: &[(&str, &str)] = &[
     ("5.1.1", "9986226d5182c368b7be1db1ab2f7488508b5a87"),
     ("5.4", "c82b46413401efa740a0b994f52e9903a4f6dcd5"),
     ("5.4.2", "c82b46413401efa740a0b994f52e9903a4f6dcd5"),
-    ("5.5.2", "6d02a514db95d3179f001a5a204595f17b89cb32"),
-    ("5.5.3", "bf972dc380f36a3bf83db052380e55f0eaa7dcb6"),
 ];
 
 pub struct SwiftProvider {}

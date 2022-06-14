@@ -110,7 +110,7 @@ fn simple_build(path: &str) -> String {
         path,
         Vec::new(),
         &GeneratePlanOptions {
-            pin_pkgs: false,
+            pin_pkgs: true,
             ..Default::default()
         },
         &DockerBuilderOptions {
@@ -426,7 +426,23 @@ fn test_staticfile() {
 
 #[test]
 fn test_swift() {
-    let name = simple_build("./examples/swift");
+    let name = Uuid::new_v4().to_string();
+
+    create_docker_image(
+        "./examples/swift",
+        Vec::new(),
+        &GeneratePlanOptions {
+            pin_pkgs: false,
+            ..Default::default()
+        },
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
     let output = run_image(name, None);
     assert!(output.contains("Hello from swift"));
 }
