@@ -51,7 +51,15 @@ impl Provider for SwiftProvider {
         if let Some(rev) = rev {
             setup_phase.set_archive(rev);
         } else {
-            setup_phase.set_archive("c82b46413401efa740a0b994f52e9903a4f6dcd5".to_string());
+            // Safe to unwrap, "5.4.2" exists on `AVAILABLE_SWIFT_VERSIONS`
+            setup_phase.set_archive(
+                AVAILABLE_SWIFT_VERSIONS
+                    .iter()
+                    .find(|(ver, _rev)| *ver == DEFAULT_SWIFT_VERSION)
+                    .unwrap()
+                    .1
+                    .to_string(),
+            );
         }
 
         Ok(Some(setup_phase))
