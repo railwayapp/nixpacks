@@ -10,6 +10,8 @@ use super::{
 pub struct SetupPhase {
     pub pkgs: Vec<Pkg>,
     pub archive: Option<String>,
+    pub libraries: Option<Vec<String>>,
+    pub apt_pkgs: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
@@ -22,6 +24,8 @@ impl SetupPhase {
     pub fn new(pkgs: Vec<Pkg>) -> Self {
         Self {
             pkgs,
+            libraries: None,
+            apt_pkgs: None,
             archive: None,
             only_include_files: None,
             base_image: DEFAULT_BASE_IMAGE.to_string(),
@@ -44,12 +48,30 @@ impl SetupPhase {
     pub fn set_archive(&mut self, archive: String) {
         self.archive = Some(archive);
     }
+
+    pub fn add_libraries(&mut self, lib: Vec<String>) {
+        if let Some(libraries) = self.libraries.clone() {
+            self.libraries = Some([libraries, lib].concat());
+        } else {
+            self.libraries = Some(lib);
+        }
+    }
+
+    pub fn add_apt_pkgs(&mut self, apt_pkgs: Vec<String>) {
+        if let Some(apt_packages) = self.apt_pkgs.clone() {
+            self.apt_pkgs = Some([apt_packages, apt_pkgs].concat());
+        } else {
+            self.apt_pkgs = Some(apt_pkgs);
+        }
+    }
 }
 
 impl Default for SetupPhase {
     fn default() -> Self {
         Self {
             pkgs: Default::default(),
+            libraries: Default::default(),
+            apt_pkgs: Default::default(),
             archive: Default::default(),
             only_include_files: Default::default(),
             base_image: DEFAULT_BASE_IMAGE.to_string(),

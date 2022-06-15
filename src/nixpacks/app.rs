@@ -34,7 +34,7 @@ impl App {
 
     /// Check if a file exists
     pub fn includes_file(&self, name: &str) -> bool {
-        fs::canonicalize(self.source.join(name)).is_ok()
+        self.source.join(name).is_file()
     }
 
     /// Returns a list of paths matching a glob pattern
@@ -97,6 +97,11 @@ impl App {
         }
 
         Ok(false)
+    }
+
+    /// Check if a directory exists
+    pub fn includes_directory(&self, name: &str) -> bool {
+        self.source.join(name).is_dir()
     }
 
     pub fn read_json<T>(&self, name: &str) -> Result<T>
@@ -164,14 +169,14 @@ mod tests {
 
     #[test]
     fn test_creates_app() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         assert_eq!(app.paths.len(), 5);
         Ok(())
     }
 
     #[test]
     fn test_read_file() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         assert_eq!(
             app.read_file("index.ts")?.trim_end(),
             "console.log(\"Hello from NPM\");"
@@ -181,7 +186,7 @@ mod tests {
 
     #[test]
     fn test_read_json_file() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         let value: Map<String, Value> = app.read_json("package.json")?;
         assert!(value.get("name").is_some());
         assert_eq!(value.get("name").unwrap(), "npm");
@@ -190,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_read_structured_json_file() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         let value: TestPackageJson = app.read_json("package.json")?;
         assert_eq!(value.name, "npm");
         assert_eq!(value.scripts.get("build").unwrap(), "tsc -p tsconfig.json");
@@ -217,15 +222,15 @@ mod tests {
 
     #[test]
     fn test_find_files() -> Result<()> {
-        let app = App::new("./examples/monorepo")?;
+        let app = App::new("./examples/node-monorepo")?;
         let m = app.find_files("**/*.tsx").unwrap();
         let dir = env::current_dir().unwrap();
         assert_eq!(
             m,
             vec![
-                dir.join("examples/monorepo/packages/client/pages/_app.tsx")
+                dir.join("examples/node-monorepo/packages/client/pages/_app.tsx")
                     .canonicalize()?,
-                dir.join("examples/monorepo/packages/client/pages/index.tsx")
+                dir.join("examples/node-monorepo/packages/client/pages/index.tsx")
                     .canonicalize()?
             ]
         );
@@ -234,7 +239,7 @@ mod tests {
 
     #[test]
     fn test_find_match() -> Result<()> {
-        let app = App::new("./examples/monorepo")?;
+        let app = App::new("./examples/node-monorepo")?;
         let re = Regex::new(r"className")?;
         let m = app.find_match(&re, "**/*.tsx").unwrap();
         assert!(m);
@@ -243,7 +248,7 @@ mod tests {
 
     #[test]
     fn test_strip_source_path() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         let path_to_strip = app.source.join("foo/bar.txt");
         assert_eq!(
             &app.strip_source_path(&path_to_strip).unwrap(),
@@ -254,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_strip_source_path_no_source_prefix() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         assert_eq!(
             &app.strip_source_path(Path::new("no/prefix.txt"))?,
             Path::new("no/prefix.txt")
@@ -264,7 +269,7 @@ mod tests {
 
     #[test]
     fn test_static_asset_path() -> Result<()> {
-        let app = App::new("./examples/npm")?;
+        let app = App::new("./examples/node-npm")?;
         assert_eq!(&app.asset_path("hi.txt"), "/assets/hi.txt");
         Ok(())
     }

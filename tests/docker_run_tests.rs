@@ -83,7 +83,6 @@ fn run_image(name: String, cfg: Option<Config>) -> String {
     cmd.stdout(Stdio::piped());
 
     let mut child = cmd.spawn().unwrap();
-
     let secs = Duration::from_secs(5);
 
     let _status_code = match child.wait_timeout(secs).unwrap() {
@@ -238,42 +237,42 @@ fn test_node_custom_version() {
 
 #[test]
 fn test_node_no_lockfile() {
-    let name = simple_build("./examples/node-no-lockfile");
+    let name = simple_build("./examples/node-no-lockfile-canvas");
     let output = run_image(name, None);
-    assert!(output.contains("Hello from Node"));
+    assert!(output.contains("Hello from Node canvas"));
 }
 
 #[test]
 fn test_yarn_custom_version() {
-    let name = simple_build("./examples/yarn-custom-node-version");
+    let name = simple_build("./examples/node-yarn-custom-node-version");
     let output = run_image(name, None);
     assert!(output.contains("Node version: v14"));
 }
 
 #[test]
 fn test_yarn_berry() {
-    let name = simple_build("./examples/yarn-berry");
+    let name = simple_build("./examples/node-yarn-berry");
     let output = run_image(name, None);
     assert!(output.contains("Hello from Yarn v2+"));
 }
 
 #[test]
 fn test_yarn_prisma() {
-    let name = simple_build("./examples/yarn-prisma");
+    let name = simple_build("./examples/node-yarn-prisma");
     let output = run_image(name, None);
     assert!(output.contains("My post content"));
 }
 
 #[test]
 fn test_pnpm() {
-    let name = simple_build("./examples/pnpm");
+    let name = simple_build("./examples/node-pnpm");
     let output = run_image(name, None);
     assert!(output.contains("Hello from PNPM"));
 }
 
 #[test]
 fn test_pnpm_custom_version() {
-    let name = simple_build("./examples/pnpm-custom-node-version");
+    let name = simple_build("./examples/node-pnpm-custom-node-version");
     let output = run_image(name, None);
     assert!(output.contains("Hello from PNPM"));
 }
@@ -283,6 +282,13 @@ fn test_csharp() {
     let name = simple_build("./examples/csharp-cli");
     let output = run_image(name, None);
     assert!(output.contains("Hello world from C#"));
+}
+
+#[test]
+fn test_fsharp() {
+    let name = simple_build("./examples/fsharp-cli");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello world from F#"));
 }
 
 #[test]
@@ -313,7 +319,7 @@ fn test_django() {
     attach_container_to_network(n.name, container_name.clone());
 
     // Build the Django example
-    let name = simple_build("./examples/django");
+    let name = simple_build("./examples/python-django");
 
     // Run the Django example on the attached network
     let output = run_image(
@@ -392,7 +398,7 @@ fn test_crystal() {
 fn test_cowsay() {
     let name = Uuid::new_v4().to_string();
     create_docker_image(
-        "./examples/hello",
+        "./examples/shell-hello",
         Vec::new(),
         &GeneratePlanOptions {
             pin_pkgs: true,
@@ -416,4 +422,41 @@ fn test_staticfile() {
     let name = simple_build("./examples/staticfile");
     let output = run_image(name, None);
     assert!(output.contains("start worker process"));
+}
+
+#[test]
+fn test_swift() {
+    let name = Uuid::new_v4().to_string();
+
+    create_docker_image(
+        "./examples/swift",
+        Vec::new(),
+        &GeneratePlanOptions {
+            pin_pkgs: false,
+            ..Default::default()
+        },
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from swift"));
+}
+
+#[test]
+fn test_dart() {
+    let name = simple_build("./examples/dart");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Dart"));
+}
+
+#[test]
+fn test_java_maven() {
+    let name = simple_build("./examples/java-maven");
+    let output = run_image(name, None);
+    assert!(output.contains("Built with Spring Boot"));
 }
