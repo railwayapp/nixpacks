@@ -94,8 +94,7 @@ impl Provider for PhpProvider {
     ) -> anyhow::Result<Option<crate::nixpacks::phase::BuildPhase>> {
         if let Ok(true) = NodeProvider::has_script(app, "prod") {
             return Ok(Some(BuildPhase::new(
-                NodeProvider::get_package_manager(app)
-                    + " run prod",
+                NodeProvider::get_package_manager(app) + " run prod",
             )));
         }
         Ok(None)
