@@ -493,13 +493,13 @@ fn test_php_vanilla() -> Result<()> {
         plan.install.unwrap().cmd,
         Some("mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx".to_string())
     );
-    assert_eq!(
-        plan.build.unwrap().cmd,
-        None
-    );
-    assert!(
-        plan.start.unwrap().cmd.unwrap().contains("nginx -c /nginx.conf")
-    );
+    assert_eq!(plan.build.unwrap().cmd, None);
+    assert!(plan
+        .start
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("nginx -c /nginx.conf"));
     Ok(())
 }
 
@@ -508,14 +508,17 @@ fn test_php_laravel() -> Result<()> {
     let plan = simple_gen_plan("./examples/php-laravel");
     assert_eq!(
         plan.install.unwrap().cmd,
-        Some("mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx && composer install && npm i".to_string())
+        Some(
+            "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx && composer install && npm i"
+                .to_string()
+        )
     );
-    assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("npm run prod".to_string())
-    );
-    assert!(
-        plan.start.unwrap().cmd.unwrap().contains("nginx -c /nginx.conf")
-    );
+    assert_eq!(plan.build.unwrap().cmd, Some("npm run prod".to_string()));
+    assert!(plan
+        .start
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("nginx -c /nginx.conf"));
     Ok(())
 }

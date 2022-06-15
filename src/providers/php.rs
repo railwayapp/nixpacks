@@ -3,9 +3,10 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::nixpacks::{
+    app::App,
     environment::EnvironmentVariables,
     nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase}, app::App,
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 
 use super::{node::NodeProvider, Provider};
@@ -32,7 +33,7 @@ impl Provider for PhpProvider {
     ) -> anyhow::Result<Option<crate::nixpacks::phase::SetupPhase>> {
         let nodejs = NodeProvider {};
 
-        let php_pkg = match self.get_php_package(&app) {
+        let php_pkg = match self.get_php_package(app) {
             Ok(Some(php_package)) => php_package,
             _ => "php".to_string(),
         };
@@ -40,9 +41,9 @@ impl Provider for PhpProvider {
             Pkg::new(&php_pkg),
             Pkg::new("perl"),
             Pkg::new("nginx"),
-            Pkg::new(&format!("{}Packages.composer", &php_pkg))
+            Pkg::new(&format!("{}Packages.composer", &php_pkg)),
         ];
-        if let Ok(php_extensions) = self.get_php_extensions(&app) {
+        if let Ok(php_extensions) = self.get_php_extensions(app) {
             for extension in php_extensions {
                 pkgs.push(Pkg::new(&format!("{}Extensions.{}", &php_pkg, extension)));
             }
@@ -93,7 +94,8 @@ impl Provider for PhpProvider {
     ) -> anyhow::Result<Option<crate::nixpacks::phase::BuildPhase>> {
         if let Ok(true) = NodeProvider::has_script(app, "prod") {
             return Ok(Some(BuildPhase::new(
-                NodeProvider::get_package_manager(app).unwrap_or("npm".to_string()) + " run prod",
+                NodeProvider::get_package_manager(app).unwrap_or_else(|_| "npm".to_string())
+                    + " run prod",
             )));
         }
         Ok(None)
@@ -130,11 +132,15 @@ impl Provider for PhpProvider {
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::environment::EnvironmentVariables>> {
         let mut vars = EnvironmentVariables::new();
-        vars.insert("PHP_VERSION".to_string(), self.get_php_version(app).unwrap_or("8.1".to_string()));
+        vars.insert(
+            "PHP_VERSION".to_string(),
+            self.get_php_version(app)
+                .unwrap_or_else(|_| "8.1".to_string()),
+        );
         if app.includes_file("artisan") {
             vars.insert("IS_LARAVEL".to_string(), "yes".to_string());
         }
-        return Ok(Some(vars));
+        Ok(Some(vars))
     }
 }
 

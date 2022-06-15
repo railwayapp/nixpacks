@@ -1,17 +1,20 @@
-use crate::{nixpacks::{
-    app::App,
-    builder::{
-        docker::{DockerBuilder, DockerBuilderOptions},
-        Builder,
+use crate::{
+    nixpacks::{
+        app::App,
+        builder::{
+            docker::{DockerBuilder, DockerBuilderOptions},
+            Builder,
+        },
+        environment::Environment,
+        logger::Logger,
+        nix::pkg::Pkg,
+        plan::{
+            generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
+            BuildPlan, PlanGenerator,
+        },
     },
-    environment::Environment,
-    logger::Logger,
-    nix::pkg::Pkg,
-    plan::{
-        generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
-        BuildPlan, PlanGenerator,
-    },
-}, providers::php::PhpProvider};
+    providers::php::PhpProvider,
+};
 use anyhow::Result;
 use providers::{
     crystal::CrystalProvider, csharp::CSharpProvider, deno::DenoProvider, go::GolangProvider,
