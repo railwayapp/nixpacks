@@ -39,6 +39,7 @@ impl Provider for PhpProvider {
         let mut pkgs = vec![
             Pkg::new(&php_pkg),
             Pkg::new("perl"),
+            Pkg::new("nginx"),
             Pkg::new(&format!("{}Packages.composer", &php_pkg))
         ];
         if let Ok(php_extensions) = self.get_php_extensions(&app) {
@@ -62,7 +63,7 @@ impl Provider for PhpProvider {
         env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::InstallPhase>> {
         let mut cmd = String::new();
-        cmd.push_str("sudo apt-get update && sudo apt-get install -y nginx");
+        cmd.push_str("mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx");
         let nodejs = NodeProvider {};
         if app.includes_file("composer.json") {
             cmd.push_str(" && composer install");
@@ -104,9 +105,10 @@ impl Provider for PhpProvider {
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::StartPhase>> {
         Ok(Some(StartPhase::new(format!(
-            "perl {} {} /etc/nginx/nginx.conf && nginx -c /etc/nginx/nginx.conf",
+            "perl {} {} /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
             app.asset_path("transform-config.pl"),
-            app.asset_path("nginx.template.conf")
+            app.asset_path("nginx.template.conf"),
+            app.asset_path("php-fpm.conf"),
         ))))
     }
 
@@ -117,7 +119,8 @@ impl Provider for PhpProvider {
     ) -> anyhow::Result<Option<crate::nixpacks::app::StaticAssets>> {
         Ok(Some(static_asset_list! {
             "nginx.template.conf" => include_str!("php/nginx.template.conf"),
-            "transform-config.pl" => include_str!("php/transform-config.pl")
+            "transform-config.pl" => include_str!("php/transform-config.pl"),
+            "php-fpm.conf" => include_str!("php/php-fpm.conf")
         }))
     }
 
@@ -127,7 +130,7 @@ impl Provider for PhpProvider {
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::environment::EnvironmentVariables>> {
         let mut vars = EnvironmentVariables::new();
-        vars.insert("PHP_VERSION".to_string(), self.get_php_version(app)?);
+        vars.insert("PHP_VERSION".to_string(), self.get_php_version(app).unwrap_or("8.1".to_string()));
         if app.includes_file("artisan") {
             vars.insert("IS_LARAVEL".to_string(), "yes".to_string());
         }

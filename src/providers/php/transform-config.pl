@@ -14,6 +14,15 @@ sub if_stmt {
     }
 }
 
+sub get_nix_path {
+    my $exe = $_[0];
+    my $path = `which $exe`;
+    $path =~ s/\n//;
+    my $storePath = `nix-store -q $path`;
+    $storePath =~ s/\n//;
+    return $storePath;
+}
+
 if ($#ARGV != 1) {
     print STDERR "Usage: $0 <config-file> <output-file>\n";
     exit 1;
@@ -35,6 +44,9 @@ while (<FH>) {
 
     # Variables
     s/\$\{(\w+)\}/$ENV{$1}/eg;
+    
+    # Nix paths
+    s/\$\!\{(\w+)\}/get_nix_path($1)/eg;
 
     $out .= $_;
 }
