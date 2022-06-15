@@ -6,7 +6,15 @@ use std::{
 };
 
 use super::Builder;
-use crate::nixpacks::{app, files, logger::Logger, nix, plan::BuildPlan, NIX_PACKS_VERSION};
+use crate::nixpacks::{
+    app,
+    cache::{Cache, DockerCache},
+    files,
+    logger::Logger,
+    nix,
+    plan::BuildPlan,
+    NIX_PACKS_VERSION,
+};
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use tempdir::TempDir;
@@ -25,6 +33,7 @@ pub struct DockerBuilderOptions {
 pub struct DockerBuilder {
     logger: Logger,
     options: DockerBuilderOptions,
+    cache: DockerCache,
 }
 
 impl Builder for DockerBuilder {
@@ -69,6 +78,10 @@ impl Builder for DockerBuilder {
 
             self.logger.log_section("Successfully Built!");
 
+            // Save cache
+            println!("Saving cache to {name}");
+            self.cache.save_cached_value(name.clone(), name.clone())?;
+
             println!("\nRun:");
             println!("  docker run -it {}", name);
         } else {
@@ -82,7 +95,12 @@ impl Builder for DockerBuilder {
 
 impl DockerBuilder {
     pub fn new(logger: Logger, options: DockerBuilderOptions) -> DockerBuilder {
-        DockerBuilder { logger, options }
+        let cache = DockerCache::new("test_cache");
+        DockerBuilder {
+            logger,
+            options,
+            cache,
+        }
     }
 
     fn get_docker_build_cmd(&self, plan: &BuildPlan, name: &str, dest: &str) -> Command {
