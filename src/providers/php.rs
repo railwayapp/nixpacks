@@ -105,7 +105,7 @@ impl Provider for PhpProvider {
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::StartPhase>> {
         Ok(Some(StartPhase::new(format!(
-            "perl {} {} /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
+            "([ -e /app/storage ] && chmod -R ugo+w /app/storage); perl {} {} /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
             app.asset_path("transform-config.pl"),
             app.asset_path("nginx.template.conf"),
             app.asset_path("php-fpm.conf"),
