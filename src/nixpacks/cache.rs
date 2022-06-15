@@ -57,6 +57,7 @@ impl Cache<String> for DockerCache {
 
                 // If exists, get sha256 of cache_key Docker image
                 // Compare hash to sha256 of cached image
+                // TODO: Compare cache value
 
                 Ok(Some(cache_key.clone()))
             }
@@ -65,9 +66,9 @@ impl Cache<String> for DockerCache {
 
     fn save_cached_value(&self, cache_key: CacheKey, value: String) -> Result<()> {
         // Get sha256 of cache_key Docker image
-        let sha256 = "000000".to_string();
-
-        let cache_value = CachedDockerImage { sha256 };
+        let cache_value = CachedDockerImage {
+            sha256: value.clone(),
+        };
 
         // Save to /{cache_location}/{cache_key}
         let cache_path = self.get_cache_path(&cache_key);

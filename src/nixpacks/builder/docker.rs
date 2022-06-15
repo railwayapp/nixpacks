@@ -2,7 +2,7 @@ use std::{
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, ExitStatus},
 };
 
 use super::Builder;
@@ -12,10 +12,11 @@ use crate::nixpacks::{
     files,
     logger::Logger,
     nix,
+    phase::SetupPhase,
     plan::BuildPlan,
     NIX_PACKS_VERSION,
 };
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::{anyhow, bail, Context, Ok, Result};
 use indoc::formatdoc;
 use tempdir::TempDir;
 use uuid::Uuid;
@@ -55,10 +56,13 @@ impl Builder for DockerBuilder {
         let dest = dir.to_str().context("Invalid temp directory path")?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
 
+        let value = self.cache.get_cached_value(&name.clone())?;
+        println!("HIT: {:?}", value);
+
         // Write everything to destination
         self.write_app(app_src, dest).context("Writing app")?;
         self.write_assets(plan, dest).context("Writing assets")?;
-        self.write_dockerfile(plan, dest)
+        self.write_dockerfile(plan, value, dest)
             .context("Writing Dockerfile")?;
         self.write_nix_expression(plan, dest)
             .context("Writing NIx expression")?;
@@ -80,6 +84,10 @@ impl Builder for DockerBuilder {
 
             // Save cache
             println!("Saving cache to {name}");
+
+            let hash = self.get_sha256_of_image(name.clone())?;
+            println!("HASH: {hash}");
+
             self.cache.save_cached_value(name.clone(), name.clone())?;
 
             println!("\nRun:");
@@ -100,6 +108,32 @@ impl DockerBuilder {
             logger,
             options,
             cache,
+        }
+    }
+
+    fn get_sha256_of_image(&self, name: String) -> Result<String> {
+        let output = Command::new("docker")
+            .arg("images")
+            .arg("--no-trunc")
+            .arg("--quiet")
+            .arg(name)
+            .output()
+            .context("failed to get sha256 hash of image")?;
+
+        if output.status.success() {
+            // TODO: Handle multiple lines of hashes
+
+            match String::from_utf8_lossy(&output.stdout)
+                .to_string()
+                .strip_prefix("sha256:")
+                .map(|s| s.to_string())
+            {
+                Some(hash) => Ok(hash),
+                None => bail!("failed to parse Docker output"),
+            }
+        } else {
+            // Failed to get sha256 of container
+            bail!("failed to get sha256 hash of image")
         }
     }
 
@@ -133,8 +167,13 @@ impl DockerBuilder {
         files::recursive_copy_dir(app_src, &dest)
     }
 
-    fn write_dockerfile(&self, plan: &BuildPlan, dest: &str) -> Result<()> {
-        let dockerfile = self.create_dockerfile(plan);
+    fn write_dockerfile(
+        &self,
+        plan: &BuildPlan,
+        cached_base_image: Option<String>,
+        dest: &str,
+    ) -> Result<()> {
+        let dockerfile = self.create_dockerfile(plan, cached_base_image);
 
         let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
@@ -177,7 +216,7 @@ impl DockerBuilder {
         Ok(())
     }
 
-    fn create_dockerfile(&self, plan: &BuildPlan) -> String {
+    fn create_dockerfile(&self, plan: &BuildPlan, cached_base_image: Option<String>) -> String {
         let app_dir = "/app/";
         let assets_dir = app::ASSETS_DIR;
 
@@ -210,6 +249,8 @@ impl DockerBuilder {
         };
 
         // -- Setup
+        let base_image = cached_base_image.unwrap_or_else(|| setup_phase.base_image);
+
         let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
         if let Some(mut setup_file_deps) = setup_phase.only_include_files {
             setup_files.append(&mut setup_file_deps);
@@ -336,7 +377,6 @@ impl DockerBuilder {
           {run_image_setup}
           {start_cmd}
         ",
-        base_image=setup_phase.base_image,
         install_copy_cmd=get_copy_command(&install_files, app_dir),
         build_copy_cmd=get_copy_command(&build_files, app_dir)};
 
