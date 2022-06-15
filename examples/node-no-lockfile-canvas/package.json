@@ -4,5 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
+  },
+  "dependencies": {
+    "canvas": "^2.9.1"
   }
 }

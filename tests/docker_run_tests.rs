@@ -83,7 +83,6 @@ fn run_image(name: String, cfg: Option<Config>) -> String {
     cmd.stdout(Stdio::piped());
 
     let mut child = cmd.spawn().unwrap();
-
     let secs = Duration::from_secs(5);
 
     let _status_code = match child.wait_timeout(secs).unwrap() {
@@ -238,9 +237,9 @@ fn test_node_custom_version() {
 
 #[test]
 fn test_node_no_lockfile() {
-    let name = simple_build("./examples/node-no-lockfile");
+    let name = simple_build("./examples/node-no-lockfile-canvas");
     let output = run_image(name, None);
-    assert!(output.contains("Hello from Node"));
+    assert!(output.contains("Hello from Node canvas"));
 }
 
 #[test]
@@ -283,6 +282,13 @@ fn test_csharp() {
     let name = simple_build("./examples/csharp-cli");
     let output = run_image(name, None);
     assert!(output.contains("Hello world from C#"));
+}
+
+#[test]
+fn test_fsharp() {
+    let name = simple_build("./examples/fsharp-cli");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello world from F#"));
 }
 
 #[test]
@@ -416,6 +422,29 @@ fn test_staticfile() {
     let name = simple_build("./examples/staticfile");
     let output = run_image(name, None);
     assert!(output.contains("start worker process"));
+}
+
+#[test]
+fn test_swift() {
+    let name = Uuid::new_v4().to_string();
+
+    create_docker_image(
+        "./examples/swift",
+        Vec::new(),
+        &GeneratePlanOptions {
+            pin_pkgs: false,
+            ..Default::default()
+        },
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from swift"));
 }
 
 #[test]

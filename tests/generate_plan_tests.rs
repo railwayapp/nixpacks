@@ -23,7 +23,7 @@ fn test_node() -> Result<()> {
 
 #[test]
 fn test_node_no_lockfile() -> Result<()> {
-    let plan = simple_gen_plan("./examples/node-no-lockfile");
+    let plan = simple_gen_plan("./examples/node-no-lockfile-canvas");
     assert_eq!(plan.install.unwrap().cmd, Some("npm i".to_string()));
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
@@ -213,6 +213,25 @@ fn test_csharp_api() -> Result<()> {
     assert_eq!(
         plan.start.unwrap().cmd,
         Some("./out/csharp-api".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_fsharp_api() -> Result<()> {
+    let plan = simple_gen_plan("./examples/fsharp-api");
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("dotnet restore".to_string())
+    );
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("dotnet publish --no-restore -c Release -o out".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./out/fsharp-api".to_string())
     );
 
     Ok(())
@@ -487,6 +506,22 @@ fn test_staticfile() -> Result<()> {
 }
 
 #[test]
+fn test_swift() -> Result<()> {
+    let plan = simple_gen_plan("./examples/swift");
+
+    assert!(plan
+        .build
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("swift build -c release --static-swift-stdlib"));
+
+    assert_eq!(plan.start.unwrap().cmd, Some("./swift".to_owned()));
+
+    Ok(())
+}
+
+#[test]
 fn test_dart() -> Result<()> {
     let plan = simple_gen_plan("./examples/dart");
     assert_eq!(plan.install.unwrap().cmd, Some("dart pub get".to_string()));
@@ -498,6 +533,22 @@ fn test_dart() -> Result<()> {
         plan.start.unwrap().cmd,
         Some("./bin/console_simple.exe".to_string())
     );
+
+    Ok(())
+}
+
+#[test]
+fn test_swift_vapor() -> Result<()> {
+    let plan = simple_gen_plan("./examples/swift-vapor");
+
+    assert!(plan
+        .build
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("swift build -c release --static-swift-stdlib"));
+
+    assert_eq!(plan.start.unwrap().cmd, Some("./Run".to_owned()));
 
     Ok(())
 }
@@ -527,5 +578,6 @@ fn test_java_maven_wrapper() -> Result<()> {
         plan.start.unwrap().cmd,
         Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
     );
+
     Ok(())
 }

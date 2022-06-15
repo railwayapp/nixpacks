@@ -9,6 +9,7 @@ pub mod crystal;
 pub mod csharp;
 pub mod dart;
 pub mod deno;
+pub mod fsharp;
 pub mod go;
 pub mod haskell;
 pub mod java;
@@ -16,6 +17,7 @@ pub mod node;
 pub mod python;
 pub mod rust;
 pub mod staticfile;
+pub mod swift;
 
 pub trait Provider {
     fn name(&self) -> &str;

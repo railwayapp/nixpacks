@@ -12,7 +12,7 @@ RUN apt-get update && apt-get -y upgrade \
 SHELL ["/bin/bash", "-ol", "pipefail", "-c"]
 RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash \
     && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old \
-    && printf 'if [ -d $HOME/.nix-profile/etc/profile.d ]; then\n for i in $HOME/.nix-profile/etc/profile.d/*.sh; do\n if [ -r $i ]; then\n . $i\n fi\n done\n fi' >> /root/.profile
+    && printf 'if [ -d $HOME/.nix-profile/etc/profile.d ]; then\n for i in $HOME/.nix-profile/etc/profile.d/*.sh; do\n if [ -r $i ]; then\n . $i\n fi\n done\n fi\n' >> /root/.profile
 
 ENV \
   ENV=/etc/profile \
@@ -22,6 +22,9 @@ ENV \
   NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
   NIX_PATH=/nix/var/nix/profiles/per-user/root/channels \
   NIXPKGS_ALLOW_BROKEN=1 \
-  LD_LIBRARY_PATH=/usr/lib
+  LD_LIBRARY_PATH=/usr/lib \
+  CPATH=~/.nix-profile/include:$CPATH \
+  LIBRARY_PATH=~/.nix-profile/lib:$LIBRARY_PATH \
+  QTDIR=~/.nix-profile:$QTDIR
 
 RUN nix-channel --update
