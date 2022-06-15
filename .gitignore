@@ -54,5 +54,10 @@ testing
 nix-testing
 test
 
+
 # Ignore nix build
 result
+
+# Github Codespaces
+.devcontainer/
+.vscode/
