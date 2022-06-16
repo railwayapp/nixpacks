@@ -251,7 +251,7 @@ detect_target() {
 
 
 confirm() {
-  if [ -z "${FORCE-}" ]; then
+  if [ -z "${FORCE-}" ] || [ t 0 ]; then
     printf "%s " "${MAGENTA}?${NO_COLOR} $* ${BOLD}[y/N]${NO_COLOR}"
     set +e
     read -r yn </dev/tty
