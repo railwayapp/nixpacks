@@ -25,7 +25,7 @@ pub struct DockerBuilderOptions {
     pub tags: Vec<String>,
     pub labels: Vec<String>,
     pub quiet: bool,
-    pub cache_key: Option<String>,
+    pub no_cache: bool,
 }
 
 pub struct DockerBuilder {
@@ -53,13 +53,18 @@ impl Builder for DockerBuilder {
         let dest = dir.to_str().context("Invalid temp directory path")?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
 
-        let cached_value = self.cache.get_cached_value(&name)?;
+        let cached_value = if !self.options.no_cache {
+            self.cache.get_cached_value(&name)?
+        } else {
+            None
+        };
+
         let cached_docker_image = match cached_value {
             None => None,
             Some(value) => {
                 // Compare the hash in the cache to the hash of the actual image
                 if utils::compare_hashes(&value.sha256, &value.name)? {
-                    Some(value.name)
+                    Some(format!("{}", value.name))
                 } else {
                     None
                 }
@@ -83,8 +88,6 @@ impl Builder for DockerBuilder {
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
             let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), dest);
-
-            println!("{:?}", docker_build_cmd);
 
             // Execute docker build
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
@@ -120,7 +123,7 @@ impl Builder for DockerBuilder {
 
 impl DockerBuilder {
     pub fn new(logger: Logger, options: DockerBuilderOptions) -> DockerBuilder {
-        let cache = DockerCache::new("test_cache");
+        let cache = DockerCache::new(".nixpacks-cache");
         DockerBuilder {
             logger,
             options,

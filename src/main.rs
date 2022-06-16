@@ -53,7 +53,7 @@ fn main() -> Result<()> {
                         .takes_value(true)
                         .multiple_values(true),
                 )
-                .arg(Arg::new("cache-key").long("cache-key").takes_value(true)),
+                .arg(Arg::new("no-cache").long("no-cache").takes_value(false)),
         )
         .arg(
             Arg::new("plan")
@@ -175,7 +175,7 @@ fn main() -> Result<()> {
             let path = matches.value_of("PATH").expect("required");
             let name = matches.value_of("name").map(|n| n.to_string());
             let out_dir = matches.value_of("out").map(|n| n.to_string());
-            let cache_key = matches.value_of("cache-key").map(|n| n.to_string());
+            let no_cache = matches.is_present("no-cache");
 
             let tags = matches
                 .values_of("tag")
@@ -193,7 +193,7 @@ fn main() -> Result<()> {
                 labels,
                 out_dir,
                 quiet: false,
-                cache_key,
+                no_cache,
             };
 
             create_docker_image(path, envs, plan_options, build_options)?;

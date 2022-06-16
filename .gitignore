@@ -57,3 +57,6 @@ test
 # Github Codespaces
 .devcontainer/
 .vscode/
+
+# Nixpacks cache
+.nixpacks-cache

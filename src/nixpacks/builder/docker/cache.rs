@@ -39,7 +39,9 @@ impl DockerCache {
     }
 
     fn get_cache_path(&self, cache_key: &CacheKey) -> PathBuf {
-        self.cache_location.clone().join(cache_key)
+        self.cache_location
+            .clone()
+            .join(format!("{cache_key}.json"))
     }
 }
 
@@ -48,15 +50,7 @@ impl Cache<CachedDockerImage> for DockerCache {
         // Look up /{cache_location}/{cache_key}
         match self.get_cache_value(cache_key)? {
             None => Ok(None),
-            Some(cache_value) => {
-                println!("CACHED VALUE: {:?}", cache_value);
-
-                // If exists, get sha256 of cache_key Docker image
-                // Compare hash to sha256 of cached image
-                // TODO: Compare cache value
-
-                Ok(Some(cache_value))
-            }
+            Some(cache_value) => Ok(Some(cache_value)),
         }
     }
 

@@ -7,17 +7,15 @@ pub fn get_sha256_of_image(name: &String) -> Result<String> {
         .arg("images")
         .arg("--no-trunc")
         .arg("--quiet")
-        .arg(name)
+        .arg(format!("{name}:latest"))
         .output()
         .context("failed to get sha256 hash of image")?;
 
     if output.status.success() {
-        // TODO: Handle multiple lines of hashes
-
         match String::from_utf8_lossy(&output.stdout)
             .to_string()
             .strip_prefix("sha256:")
-            .map(|s| s.to_string())
+            .map(|s| s.trim().to_string())
         {
             Some(hash) => Ok(hash),
             None => bail!("failed to parse Docker output"),
