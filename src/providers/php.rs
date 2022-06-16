@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::nixpacks::{
     app::{App, StaticAssets},
-    environment::{EnvironmentVariables, Environment},
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -20,11 +20,7 @@ impl Provider for PhpProvider {
         "php"
     }
 
-    fn detect(
-        &self,
-        app: &App,
-        _env: &Environment,
-    ) -> anyhow::Result<bool> {
+    fn detect(&self, app: &App, _env: &Environment) -> anyhow::Result<bool> {
         Ok(app.includes_file("composer.json") || app.includes_file("index.php"))
     }
 
@@ -143,7 +139,7 @@ impl Provider for PhpProvider {
 impl PhpProvider {
     fn get_php_package(&self, app: &App) -> anyhow::Result<String> {
         let version = self.get_php_version(app)?;
-        Ok(format!("php{}", version.replace(".", "")))
+        Ok(format!("php{}", version.replace('.', "")))
     }
     fn get_php_version(&self, app: &App) -> anyhow::Result<String> {
         let composer_json: ComposerJson = app.read_json("composer.json")?;
@@ -157,7 +153,10 @@ impl PhpProvider {
                 } else if v.contains("7.4") {
                     "7.4".to_string()
                 } else {
-                    println!("Warning: PHP version {} is not available, using PHP {}", v, DEFAULT_PHP_VERSION);
+                    println!(
+                        "Warning: PHP version {} is not available, using PHP {}",
+                        v, DEFAULT_PHP_VERSION
+                    );
                     DEFAULT_PHP_VERSION.to_string()
                 }
             }
