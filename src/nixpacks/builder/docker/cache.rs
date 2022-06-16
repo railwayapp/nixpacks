@@ -55,16 +55,8 @@ impl Cache<CachedDockerImage> for DockerCache {
     }
 
     fn save_cached_value(&self, cache_key: CacheKey, value: CachedDockerImage) -> Result<()> {
-        // Get sha256 of cache_key Docker image
-        // let cache_value = CachedDockerImage {
-        //     sha256: value.clone(),
-        // };
-
         // Save to /{cache_location}/{cache_key}
         let cache_path = self.get_cache_path(&cache_key);
-
-        println!("Caching {:?} to {cache_key}", value);
-
         fs::write(cache_path, serde_json::to_string_pretty(&value)?)?;
 
         Ok(())
