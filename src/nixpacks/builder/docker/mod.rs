@@ -1,25 +1,22 @@
+use super::Builder;
+use crate::nixpacks::{
+    app, builder::docker::cache::CachedDockerImage, cache::Cache, files, logger::Logger, nix,
+    plan::BuildPlan, NIX_PACKS_VERSION,
+};
+use anyhow::{bail, Context, Ok, Result};
+use cache::DockerCache;
+use indoc::formatdoc;
 use std::{
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
-    process::{Command, ExitStatus},
+    process::Command,
 };
-
-use super::Builder;
-use crate::nixpacks::{
-    app,
-    cache::{Cache, DockerCache},
-    files,
-    logger::Logger,
-    nix,
-    phase::SetupPhase,
-    plan::BuildPlan,
-    NIX_PACKS_VERSION,
-};
-use anyhow::{anyhow, bail, Context, Ok, Result};
-use indoc::formatdoc;
 use tempdir::TempDir;
 use uuid::Uuid;
+
+mod cache;
+mod utils;
 
 #[derive(Clone, Default, Debug)]
 pub struct DockerBuilderOptions {
@@ -56,13 +53,29 @@ impl Builder for DockerBuilder {
         let dest = dir.to_str().context("Invalid temp directory path")?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
 
-        let value = self.cache.get_cached_value(&name.clone())?;
-        println!("HIT: {:?}", value);
+        let cached_value = self.cache.get_cached_value(&name)?;
+        let cached_docker_image = match cached_value {
+            None => None,
+            Some(value) => {
+                // Compare the hash in the cache to the hash of the actual image
+                if utils::compare_hashes(&value.sha256, &value.name)? {
+                    Some(value.name)
+                } else {
+                    None
+                }
+            }
+        };
+
+        if cached_docker_image.is_some() {
+            println!("Cache: HIT");
+        } else {
+            println!("Cache: MISS");
+        }
 
         // Write everything to destination
         self.write_app(app_src, dest).context("Writing app")?;
         self.write_assets(plan, dest).context("Writing assets")?;
-        self.write_dockerfile(plan, value, dest)
+        self.write_dockerfile(plan, cached_docker_image, dest)
             .context("Writing Dockerfile")?;
         self.write_nix_expression(plan, dest)
             .context("Writing NIx expression")?;
@@ -83,12 +96,16 @@ impl Builder for DockerBuilder {
             self.logger.log_section("Successfully Built!");
 
             // Save cache
+            let hash = utils::get_sha256_of_image(&name)?;
             println!("Saving cache to {name}");
 
-            let hash = self.get_sha256_of_image(name.clone())?;
-            println!("HASH: {hash}");
-
-            self.cache.save_cached_value(name.clone(), name.clone())?;
+            self.cache.save_cached_value(
+                name.clone(),
+                CachedDockerImage {
+                    name: name.clone(),
+                    sha256: hash,
+                },
+            )?;
 
             println!("\nRun:");
             println!("  docker run -it {}", name);
@@ -108,32 +125,6 @@ impl DockerBuilder {
             logger,
             options,
             cache,
-        }
-    }
-
-    fn get_sha256_of_image(&self, name: String) -> Result<String> {
-        let output = Command::new("docker")
-            .arg("images")
-            .arg("--no-trunc")
-            .arg("--quiet")
-            .arg(name)
-            .output()
-            .context("failed to get sha256 hash of image")?;
-
-        if output.status.success() {
-            // TODO: Handle multiple lines of hashes
-
-            match String::from_utf8_lossy(&output.stdout)
-                .to_string()
-                .strip_prefix("sha256:")
-                .map(|s| s.to_string())
-            {
-                Some(hash) => Ok(hash),
-                None => bail!("failed to parse Docker output"),
-            }
-        } else {
-            // Failed to get sha256 of container
-            bail!("failed to get sha256 hash of image")
         }
     }
 
@@ -249,7 +240,7 @@ impl DockerBuilder {
         };
 
         // -- Setup
-        let base_image = cached_base_image.unwrap_or_else(|| setup_phase.base_image);
+        let base_image = cached_base_image.unwrap_or(setup_phase.base_image);
 
         let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
         if let Some(mut setup_file_deps) = setup_phase.only_include_files {
