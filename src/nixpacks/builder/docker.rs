@@ -203,9 +203,12 @@ impl DockerBuilder {
         }
         let setup_cmd = setup_phase
             .cmd
-            .clone()
-            .map(|cmd| format!("RUN {}", cmd))
-            .unwrap_or_else(|| "".to_string());
+            .unwrap_or_default()
+            .iter()
+            .map(|c| format!("RUN {}", c))
+            .collect::<Vec<String>>()
+            .join("\n");
+
         // -- Static Assets
         let assets_copy_cmd = if !static_assets.is_empty() {
             static_assets

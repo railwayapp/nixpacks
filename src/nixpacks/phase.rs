@@ -12,7 +12,7 @@ pub struct SetupPhase {
     pub archive: Option<String>,
     pub libraries: Option<Vec<String>>,
     pub apt_pkgs: Option<Vec<String>>,
-    pub cmd: Option<String>,
+    pub cmd: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
@@ -68,10 +68,11 @@ impl SetupPhase {
     }
 
     pub fn add_cmd(&mut self, cmd: String) {
-        if let Some(new_cmd) = self.cmd.clone() {
-            self.cmd = Some(format!("{}\nRUN {}", new_cmd, cmd));
+        if let Some(mut cmds) = self.cmd.clone() {
+            cmds.push(cmd);
+            self.cmd = Some(cmds);
         } else {
-            self.cmd = Some(cmd);
+            self.cmd = Some(vec![cmd]);
         }
     }
 }
