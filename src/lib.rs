@@ -1,26 +1,29 @@
-use crate::nixpacks::{
-    app::App,
-    builder::{
-        docker::{DockerBuilder, DockerBuilderOptions},
-        Builder,
-    },
-    environment::Environment,
-    logger::Logger,
-    nix::pkg::Pkg,
-    plan::{
-        generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
-        BuildPlan, PlanGenerator,
+use crate::{
+    nixpacks::{
+        app::App,
+        builder::{
+            docker::{DockerBuilder, DockerBuilderOptions},
+            Builder,
+        },
+        environment::Environment,
+        logger::Logger,
+        nix::pkg::Pkg,
+        plan::{
+            generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
+            BuildPlan, PlanGenerator,
+        },
     },
 };
 use anyhow::Result;
 use providers::{
     crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider,
     fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
-    node::NodeProvider, python::PythonProvider, ruby::RubyProvider, rust::RustProvider,
+    node::NodeProvider, php::PhpProvider, python::PythonProvider, ruby::RubyProvider, rust::RustProvider,
     staticfile::StaticfileProvider, swift::SwiftProvider, Provider,
 };
 
 mod chain;
+#[macro_use]
 pub mod nixpacks;
 pub mod providers;
 
@@ -34,6 +37,7 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &GolangProvider {},
         &HaskellStackProvider {},
         &JavaProvider {},
+        &PhpProvider {},
         &RubyProvider {},
         &NodeProvider {},
         &PythonProvider {},
