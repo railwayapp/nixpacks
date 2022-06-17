@@ -62,26 +62,30 @@ impl Provider for RubyProvider {
         Ok(Some(install_phase))
     }
 
-    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        Ok(None)
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+        Ok(Some(StartPhase::new(self.get_start_command(app))))
     }
 }
 
 impl RubyProvider {
-    fn _detect_framework(&self, app: &App) -> String {
+    fn get_start_command(&self, app: &App) -> String {
         if app.includes_file("config.ru") {
-            "rack".to_string()
-        } else if app.includes_file("config/environment.rb ") {
-            "rails2".to_string()
-        } else if app.includes_file("config/application.rb ")
+            "bundle exec rackup config.ru -p $PORT".to_string()
+        } else if app.includes_file("config/application.rb")
             && app
-                .read_file("config/application.rb ")
+                .read_file("config/application.rb")
                 .unwrap_or_default()
                 .contains("Rails::Application")
         {
-            "rails3".to_string()
+            if app.includes_file("rails") {
+                "bundle exec rails server -b 0.0.0.0 -p $PORT".to_string()
+            } else {
+                "bundle exec bin/rails server -b 0.0.0.0 -p $PORT -e $RAILS_ENV".to_string()
+            }
+        } else if app.includes_file("config/environment.rb") && app.includes_directory("script") {
+            "bundle exec ruby script/server -p $PORT".to_string()
         } else {
-            "ruby".to_string()
+            "bundle exec rake".to_string()
         }
     }
 
