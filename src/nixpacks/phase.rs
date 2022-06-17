@@ -12,6 +12,7 @@ pub struct SetupPhase {
     pub archive: Option<String>,
     pub libraries: Option<Vec<String>>,
     pub apt_pkgs: Option<Vec<String>>,
+    pub cmd: Option<String>,
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
@@ -29,6 +30,7 @@ impl SetupPhase {
             archive: None,
             only_include_files: None,
             base_image: DEFAULT_BASE_IMAGE.to_string(),
+            cmd: None,
         }
     }
 
@@ -64,6 +66,14 @@ impl SetupPhase {
             self.apt_pkgs = Some(apt_pkgs);
         }
     }
+
+    pub fn add_cmd(&mut self, cmd: String) {
+        if let Some(new_cmd) = self.cmd.clone() {
+            self.cmd = Some(format!("{}\nRUN {}", new_cmd, cmd));
+        } else {
+            self.cmd = Some(cmd);
+        }
+    }
 }
 
 impl Default for SetupPhase {
@@ -75,6 +85,7 @@ impl Default for SetupPhase {
             archive: Default::default(),
             only_include_files: Default::default(),
             base_image: DEFAULT_BASE_IMAGE.to_string(),
+            cmd: Default::default(),
         }
     }
 }

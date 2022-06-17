@@ -2,7 +2,6 @@ use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
     environment::Environment,
-    nix::pkg::Pkg,
     phase::{InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Ok, Result};
@@ -21,31 +20,21 @@ impl Provider for RubyProvider {
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let mut pkgs = vec![];
         if app.includes_file("package.json") {
-            pkgs.push(NodeProvider::get_nix_node_pkg(
-                &app.read_json("package.json")?,
-                env,
-            )?);
-            pkgs.push(Pkg::new("yarn"));
+            pkgs = NodeProvider::get_nix_packages(app, env)?
         }
         let mut setup_phase = SetupPhase::new(pkgs);
         setup_phase.add_apt_pkgs(vec!["procps".to_string()]);
+        setup_phase.add_cmd(
+            "curl -sSL https://get.rvm.io | bash -s stable && source /etc/profile.d/rvm.sh"
+                .to_string(),
+        );
+        setup_phase.add_cmd("rvm install ".to_string() + &self.get_ruby_version(app));
+        setup_phase.add_cmd("gem install ".to_string() + &self.get_bundler_version(app));
         Ok(Some(setup_phase))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let rvm_install_cmd =
-            "curl -sSL https://get.rvm.io | bash -s stable && source /etc/profile.d/rvm.sh"
-                .to_string();
-        let install_cmd = formatdoc!(
-            "{}
-            RUN rvm install {} 
-            RUN gem install {} 
-            RUN bundle install",
-            rvm_install_cmd,
-            self.get_ruby_version(app),
-            self.get_bundler_version(app)
-        );
-        let mut install_phase = InstallPhase::new(install_cmd);
+        let mut install_phase = InstallPhase::new("bundle install".to_string());
         install_phase.add_file_dependency("Gemfile".to_string());
         if app.includes_file("Gemfile.lock") {
             install_phase.add_file_dependency("Gemfile.lock".to_string());
@@ -53,11 +42,19 @@ impl Provider for RubyProvider {
         if app.includes_file("package.json") {
             install_phase.add_file_dependency("package.json".to_string());
             install_phase.cmd = Some(formatdoc!(
-                "
-                yarn install
-                RUN {}",
+                "{} && {}",
+                NodeProvider::get_install_command(app),
                 install_phase.cmd.unwrap()
             ));
+            if app.includes_file("package-lock.json") {
+                install_phase.add_file_dependency("package-lock.json".to_string());
+            }
+            if app.includes_file("yarn.lock") {
+                install_phase.add_file_dependency("yarn.lock".to_string());
+            }
+            if app.includes_file("pnpm-lock.yaml") {
+                install_phase.add_file_dependency("pnpm-lock.yaml".to_string());
+            }
         }
         Ok(Some(install_phase))
     }
@@ -92,12 +89,13 @@ impl RubyProvider {
     fn get_ruby_version(&self, app: &App) -> String {
         app.read_file(".ruby-version").unwrap_or_default()
     }
+
     fn get_bundler_version(&self, app: &App) -> String {
         if app.includes_file("Gemfile.lock") {
             let gemfile_lock = app.read_file("Gemfile.lock").unwrap_or_default();
             let array_lock: Vec<&str> = gemfile_lock.split('\n').collect();
             for line in 0..array_lock.len() {
-                if array_lock[line].contains("BUNDLED WITH") {
+                if array_lock[line].contains("BUNDLED WITH") && line + 1 < array_lock.len() {
                     return format!("bundler:{}", array_lock[line + 1].trim());
                 }
             }
