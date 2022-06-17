@@ -528,7 +528,7 @@ fn test_php_laravel() -> Result<()> {
     assert_eq!(
         plan.install.unwrap().cmd,
         Some(
-            "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx && composer install && npm i"
+            "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx && composer install && npm i --production=false"
                 .to_string()
         )
     );
