@@ -161,7 +161,7 @@ impl NodeProvider {
     }
 
     pub fn get_install_command(app: &App) -> String {
-        let mut install_cmd = "npm i";
+        let mut install_cmd = "npm i --production=false";
         if NodeProvider::get_package_manager(app) == "pnpm" {
             install_cmd = "pnpm i --frozen-lockfile -D -P";
         } else if NodeProvider::get_package_manager(app) == "yarn" {
@@ -171,7 +171,7 @@ impl NodeProvider {
                 install_cmd = "yarn install --frozen-lockfile --production=false";
             }
         } else if app.includes_file("package-lock.json") {
-            install_cmd = "npm ci";
+            install_cmd = "npm ci --production=false";
         }
         install_cmd.to_string()
     }
