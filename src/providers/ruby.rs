@@ -6,6 +6,7 @@ use crate::nixpacks::{
     phase::{InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Ok, Result};
+use indoc::formatdoc;
 pub struct RubyProvider {}
 
 impl Provider for RubyProvider {
@@ -18,29 +19,45 @@ impl Provider for RubyProvider {
     }
 
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
-        let mut pkgs = vec![Pkg::new("gcc"), self.get_nix_ruby_package(app)];
+        let mut pkgs = vec![];
         if app.includes_file("package.json") {
             pkgs.push(NodeProvider::get_nix_node_pkg(
                 &app.read_json("package.json")?,
                 env,
             )?);
+            pkgs.push(Pkg::new("yarn"));
         }
-        let setup_phase = SetupPhase::new(pkgs);
+        let mut setup_phase = SetupPhase::new(pkgs);
+        setup_phase.add_apt_pkgs(vec!["procps".to_string()]);
         Ok(Some(setup_phase))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let mut install_phase = InstallPhase::new(format!(
-            "gem install {} && bundle install",
+        let rvm_install_cmd =
+            "curl -sSL https://get.rvm.io | bash -s stable && source /etc/profile.d/rvm.sh"
+            .to_string();
+        let install_cmd = formatdoc!(
+            "{}
+            RUN rvm install {} 
+            RUN gem install {} 
+            RUN bundle install",
+            rvm_install_cmd,
+            self.get_ruby_version(app),
             self.get_bundler_version(app)
-        ));
+        );
+        let mut install_phase = InstallPhase::new(install_cmd);
         install_phase.add_file_dependency("Gemfile".to_string());
         if app.includes_file("Gemfile.lock") {
             install_phase.add_file_dependency("Gemfile.lock".to_string());
         }
         if app.includes_file("package.json") {
             install_phase.add_file_dependency("package.json".to_string());
-            install_phase.cmd = Some(format!("npm install && {}", install_phase.cmd.unwrap()));
+            install_phase.cmd = Some(formatdoc!(
+                "
+                yarn install
+                RUN {}",
+                install_phase.cmd.unwrap()
+            ));
         }
         Ok(Some(install_phase))
     }
@@ -68,15 +85,8 @@ impl RubyProvider {
     //     }
     // }
 
-    fn get_nix_ruby_package(&self, app: &App) -> Pkg {
-        let gemfile = app.read_file("Gemfile").unwrap_or_default();
-        if gemfile.contains("ruby \"3.0.") {
-            Pkg::new("ruby_3_0")
-        } else if gemfile.contains("ruby \"3.1.") {
-            Pkg::new("ruby_3_1")
-        } else {
-            Pkg::new("ruby")
-        }
+    fn get_ruby_version(&self, _app: &App) -> String {
+        "2.7.2".to_string()
     }
     fn get_bundler_version(&self, app: &App) -> String {
         if app.includes_file("Gemfile.lock") {
