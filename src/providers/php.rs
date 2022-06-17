@@ -129,6 +129,7 @@ impl Provider for PhpProvider {
         _env: &Environment,
     ) -> anyhow::Result<Option<EnvironmentVariables>> {
         let mut vars = EnvironmentVariables::new();
+        vars.insert("PORT".to_string(), "80".to_string());
         if app.includes_file("artisan") {
             vars.insert("IS_LARAVEL".to_string(), "yes".to_string());
         }
