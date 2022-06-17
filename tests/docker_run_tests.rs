@@ -460,3 +460,10 @@ fn test_java_maven() {
     let output = run_image(name, None);
     assert!(output.contains("Built with Spring Boot"));
 }
+
+#[test]
+fn test_pnpm_dev_deps() {
+    let name = simple_build("./examples/node-pnpm-dev-deps");
+    let output = run_image(name, None);
+    assert!(output.contains("false") && output.contains("true"));
+}
