@@ -14,6 +14,7 @@ pub mod go;
 pub mod haskell;
 pub mod java;
 pub mod node;
+pub mod php;
 pub mod python;
 pub mod rust;
 pub mod staticfile;

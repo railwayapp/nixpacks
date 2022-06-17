@@ -251,19 +251,21 @@ detect_target() {
 
 
 confirm() {
-  if [ -z "${FORCE-}" ]; then
-    printf "%s " "${MAGENTA}?${NO_COLOR} $* ${BOLD}[y/N]${NO_COLOR}"
-    set +e
-    read -r yn </dev/tty
-    rc=$?
-    set -e
-    if [ $rc -ne 0 ]; then
-      error "Error reading from prompt (please re-run with the '--yes' option)"
-      exit 1
-    fi
-    if [ "$yn" != "y" ] && [ "$yn" != "yes" ]; then
-      error 'Aborting (please answer "yes" to continue)'
-      exit 1
+  if [ -t 0 ]; then
+    if [ -z "${FORCE-}" ]; then
+      printf "%s " "${MAGENTA}?${NO_COLOR} $* ${BOLD}[y/N]${NO_COLOR}"
+      set +e
+      read -r yn </dev/tty
+      rc=$?
+      set -e
+      if [ $rc -ne 0 ]; then
+        error "Error reading from prompt (please re-run with the '--yes' option)"
+        exit 1
+      fi
+      if [ "$yn" != "y" ] && [ "$yn" != "yes" ]; then
+        error 'Aborting (please answer "yes" to continue)'
+        exit 1
+      fi
     fi
   fi
 }
