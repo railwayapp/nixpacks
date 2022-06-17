@@ -36,9 +36,7 @@ impl Provider for RubyProvider {
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let mut install_phase = InstallPhase::new("bundle install".to_string());
         install_phase.add_file_dependency("Gemfile".to_string());
-        if app.includes_file("Gemfile.lock") {
-            install_phase.add_file_dependency("Gemfile.lock".to_string());
-        }
+        add_file_if_included(app, &mut install_phase, "Gemfile.lock");
         if app.includes_file("package.json") {
             install_phase.add_file_dependency("package.json".to_string());
             install_phase.cmd = Some(formatdoc!(
@@ -46,15 +44,9 @@ impl Provider for RubyProvider {
                 NodeProvider::get_install_command(app),
                 install_phase.cmd.unwrap()
             ));
-            if app.includes_file("package-lock.json") {
-                install_phase.add_file_dependency("package-lock.json".to_string());
-            }
-            if app.includes_file("yarn.lock") {
-                install_phase.add_file_dependency("yarn.lock".to_string());
-            }
-            if app.includes_file("pnpm-lock.yaml") {
-                install_phase.add_file_dependency("pnpm-lock.yaml".to_string());
-            }
+            add_file_if_included(app, &mut install_phase, "package-lock.json");
+            add_file_if_included(app, &mut install_phase, "yarn.lock");
+            add_file_if_included(app, &mut install_phase, "pnpm-lock.yaml");
         }
         Ok(Some(install_phase))
     }
@@ -103,5 +95,11 @@ impl RubyProvider {
         } else {
             "bundler".to_string()
         }
+    }
+}
+
+fn add_file_if_included(app: &App, phase: &mut InstallPhase, file: &str) {
+    if app.includes_file(file) {
+        phase.add_file_dependency(file.to_string());
     }
 }
