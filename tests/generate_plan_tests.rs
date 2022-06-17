@@ -14,7 +14,7 @@ fn simple_gen_plan(path: &str) -> BuildPlan {
 #[test]
 fn test_node() -> Result<()> {
     let plan = simple_gen_plan("./examples/node");
-    assert_eq!(plan.install.unwrap().cmd, Some("npm ci".to_string()));
+    assert_eq!(plan.install.unwrap().cmd, Some("npm ci --production=false".to_string()));
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
 
@@ -24,7 +24,7 @@ fn test_node() -> Result<()> {
 #[test]
 fn test_node_no_lockfile() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-no-lockfile-canvas");
-    assert_eq!(plan.install.unwrap().cmd, Some("npm i".to_string()));
+    assert_eq!(plan.install.unwrap().cmd, Some("npm i --production=false".to_string()));
     assert_eq!(plan.build.unwrap().cmd, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
 
