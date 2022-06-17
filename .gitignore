@@ -53,3 +53,7 @@ tmp/
 testing
 nix-testing
 test
+
+# Github Codespaces
+.devcontainer/
+.vscode/

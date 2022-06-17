@@ -506,6 +506,22 @@ fn test_staticfile() -> Result<()> {
 }
 
 #[test]
+fn test_swift() -> Result<()> {
+    let plan = simple_gen_plan("./examples/swift");
+
+    assert!(plan
+        .build
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("swift build -c release --static-swift-stdlib"));
+
+    assert_eq!(plan.start.unwrap().cmd, Some("./swift".to_owned()));
+
+    Ok(())
+}
+
+#[test]
 fn test_dart() -> Result<()> {
     let plan = simple_gen_plan("./examples/dart");
     assert_eq!(plan.install.unwrap().cmd, Some("dart pub get".to_string()));
@@ -517,6 +533,22 @@ fn test_dart() -> Result<()> {
         plan.start.unwrap().cmd,
         Some("./bin/console_simple.exe".to_string())
     );
+
+    Ok(())
+}
+
+#[test]
+fn test_swift_vapor() -> Result<()> {
+    let plan = simple_gen_plan("./examples/swift-vapor");
+
+    assert!(plan
+        .build
+        .unwrap()
+        .cmd
+        .unwrap()
+        .contains("swift build -c release --static-swift-stdlib"));
+
+    assert_eq!(plan.start.unwrap().cmd, Some("./Run".to_owned()));
 
     Ok(())
 }
@@ -546,5 +578,6 @@ fn test_java_maven_wrapper() -> Result<()> {
         plan.start.unwrap().cmd,
         Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
     );
+
     Ok(())
 }

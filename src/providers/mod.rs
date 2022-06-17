@@ -18,6 +18,7 @@ pub mod python;
 pub mod ruby;
 pub mod rust;
 pub mod staticfile;
+pub mod swift;
 
 pub trait Provider {
     fn name(&self) -> &str;
