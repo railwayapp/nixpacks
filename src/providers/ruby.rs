@@ -35,7 +35,7 @@ impl Provider for RubyProvider {
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let rvm_install_cmd =
             "curl -sSL https://get.rvm.io | bash -s stable && source /etc/profile.d/rvm.sh"
-            .to_string();
+                .to_string();
         let install_cmd = formatdoc!(
             "{}
             RUN rvm install {} 
@@ -68,25 +68,25 @@ impl Provider for RubyProvider {
 }
 
 impl RubyProvider {
-    // fn detect_framework(&self, app: &App) -> String {
-    //     if app.includes_file("config.ru") {
-    //         "rack".to_string()
-    //     } else if app.includes_file("config/environment.rb ") {
-    //         "rails2".to_string()
-    //     } else if app.includes_file("config/application.rb ")
-    //         && app
-    //             .read_file("config/application.rb ")
-    //             .unwrap_or_default()
-    //             .contains("Rails::Application")
-    //     {
-    //         "rails3".to_string()
-    //     } else {
-    //         "ruby".to_string()
-    //     }
-    // }
+    fn _detect_framework(&self, app: &App) -> String {
+        if app.includes_file("config.ru") {
+            "rack".to_string()
+        } else if app.includes_file("config/environment.rb ") {
+            "rails2".to_string()
+        } else if app.includes_file("config/application.rb ")
+            && app
+                .read_file("config/application.rb ")
+                .unwrap_or_default()
+                .contains("Rails::Application")
+        {
+            "rails3".to_string()
+        } else {
+            "ruby".to_string()
+        }
+    }
 
-    fn get_ruby_version(&self, _app: &App) -> String {
-        "2.7.2".to_string()
+    fn get_ruby_version(&self, app: &App) -> String {
+        app.read_file(".ruby-version").unwrap_or_default()
     }
     fn get_bundler_version(&self, app: &App) -> String {
         if app.includes_file("Gemfile.lock") {

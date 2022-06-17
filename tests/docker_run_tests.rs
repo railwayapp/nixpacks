@@ -467,3 +467,10 @@ fn test_ruby_sinatra() {
     let output = run_image(name, None);
     assert!(output.contains("Hello from Sinatra"));
 }
+
+#[test]
+fn test_ruby_rails() {
+    let name = simple_build("./examples/ruby-rails/");
+    let output = run_image(name, None);
+    assert!(output.contains("Rails"));
+}

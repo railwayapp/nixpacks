@@ -196,11 +196,9 @@ impl DockerBuilder {
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
 
         let mut apt_get_cmd = "".to_string();
+        // using apt will break build reproducibility
         if !setup_phase.apt_pkgs.clone().unwrap_or_default().is_empty() {
             let apt_pkgs = setup_phase.apt_pkgs.unwrap_or_default().join(" ");
-            println!(
-                "WARNING: Using apt for installing packages will break build reproducibility."
-            );
             apt_get_cmd = format!("RUN apt-get update && apt-get install -y {}", apt_pkgs);
         }
 
