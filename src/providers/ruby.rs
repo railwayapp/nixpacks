@@ -4,8 +4,10 @@ use crate::nixpacks::{
     environment::Environment,
     phase::{InstallPhase, SetupPhase, StartPhase},
 };
-use anyhow::{Ok, Result};
+use anyhow::{bail, Ok, Result};
 use indoc::formatdoc;
+use regex::Regex;
+
 pub struct RubyProvider {}
 
 impl Provider for RubyProvider {
@@ -28,7 +30,7 @@ impl Provider for RubyProvider {
             "curl -sSL https://get.rvm.io | bash -s stable && source /etc/profile.d/rvm.sh"
                 .to_string(),
         );
-        setup_phase.add_cmd("rvm install ".to_string() + &self.get_ruby_version(app));
+        setup_phase.add_cmd("rvm install ".to_string() + &self.get_ruby_version(app).unwrap());
         setup_phase.add_cmd("gem install ".to_string() + &self.get_bundler_version(app));
         Ok(Some(setup_phase))
     }
@@ -78,8 +80,22 @@ impl RubyProvider {
         }
     }
 
-    fn get_ruby_version(&self, app: &App) -> String {
-        app.read_file(".ruby-version").unwrap_or_default()
+    fn get_ruby_version(&self, app: &App) -> Result<String> {
+        if app.includes_file(".ruby-version") {
+            return Ok(app.read_file(".ruby-version")?.trim().to_string());
+        }
+        let re_gemfile = Regex::new(r#"ruby (?:'|")(.*)(?:'|")[^>]"#).unwrap();
+        let gemfile = app.read_file("Gemfile").unwrap_or_default();
+        if let Some(value) = re_gemfile.captures(&gemfile) {
+            return Ok(format!("ruby-{}", value.get(1).unwrap().as_str()));
+        }
+        let re_gemfile_lock =
+            Regex::new(r#"ruby ((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))[^>]"#).unwrap();
+        let gemfile_lock = app.read_file("Gemfile.lock").unwrap_or_default();
+        if let Some(value) = re_gemfile_lock.captures(&gemfile_lock) {
+            return Ok(format!("ruby-{}", value.get(1).unwrap().as_str()));
+        }
+        bail!("Please specify ruby's version in .ruby-version file")
     }
 
     fn get_bundler_version(&self, app: &App) -> String {
