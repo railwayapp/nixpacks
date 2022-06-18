@@ -119,3 +119,45 @@ fn add_file_if_included(app: &App, phase: &mut InstallPhase, file: &str) {
         phase.add_file_dependency(file.to_string());
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::nixpacks::app::App;
+
+    #[test]
+    fn test_gemfile_version() -> Result<()> {
+        assert_eq!(
+            RubyProvider::get_ruby_version(
+                &RubyProvider {},
+                &App::new("./examples/ruby-gemfile")?
+            )?,
+            "ruby-2.7.2"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_gemfile_lock_version() -> Result<()> {
+        assert_eq!(
+            RubyProvider::get_ruby_version(
+                &RubyProvider {},
+                &App::new("./examples/ruby-gemfile-lock")?
+            )?,
+            "ruby-2.7.2"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_no_version() -> Result<()> {
+        assert!(RubyProvider::get_ruby_version(
+            &RubyProvider {},
+            &App::new("./examples/ruby-no-version")?,
+        )
+        .is_err());
+        Ok(())
+    }
+}
