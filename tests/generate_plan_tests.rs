@@ -638,9 +638,6 @@ fn test_ruby_sinatra() -> Result<()> {
         plan.install.unwrap().cmd,
         Some("bundle install".to_string())
     );
-    assert_eq!(
-        plan.start.unwrap().cmd,
-        Some("ruby app.rb".to_string())
-    );
+    assert_eq!(plan.start.unwrap().cmd, Some("ruby app.rb".to_string()));
     Ok(())
 }
