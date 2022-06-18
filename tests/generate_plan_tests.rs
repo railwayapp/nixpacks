@@ -616,3 +616,31 @@ fn test_java_maven_wrapper() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_ruby_rails() -> Result<()> {
+    let plan = simple_gen_plan("./examples/ruby-rails");
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("bundle install".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("bundle exec rackup config.ru -p ${PORT:-3000}".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_ruby_sinatra() -> Result<()> {
+    let plan = simple_gen_plan("./examples/ruby-sinatra");
+    assert_eq!(
+        plan.install.unwrap().cmd,
+        Some("bundle install".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("ruby app.rb".to_string())
+    );
+    Ok(())
+}
