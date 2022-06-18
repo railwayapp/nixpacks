@@ -41,7 +41,7 @@ impl Provider for StaticfileProvider {
     fn static_assets(&self, app: &App, env: &Environment) -> Result<Option<StaticAssets>> {
         let mut assets = StaticAssets::new();
 
-        let mut mime_types = "".to_string();
+        let mut mime_types = "include /nix/store/*-user-environment/conf/mime.types;".to_string();
         if app.includes_file("mime.types") {
             assets.insert("mime.types".to_string(), app.read_file("mime.types")?);
             mime_types = "include\tmime.types;".to_string();
