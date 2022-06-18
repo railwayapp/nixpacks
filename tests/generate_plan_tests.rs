@@ -626,7 +626,7 @@ fn test_ruby_rails() -> Result<()> {
     );
     assert_eq!(
         plan.start.unwrap().cmd,
-        Some("bundle exec rackup config.ru -p ${PORT:-3000}".to_string())
+        Some("bundle exec bin/rails server -b 0.0.0.0 -p ${PORT:-3000} -e $RAILS_ENV".to_string())
     );
     Ok(())
 }

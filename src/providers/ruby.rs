@@ -60,9 +60,7 @@ impl Provider for RubyProvider {
 
 impl RubyProvider {
     fn get_start_command(&self, app: &App) -> String {
-        if app.includes_file("config.ru") {
-            "bundle exec rackup config.ru -p ${PORT:-3000}".to_string()
-        } else if app.includes_file("config/application.rb")
+        if app.includes_file("config/application.rb")
             && app
                 .read_file("config/application.rb")
                 .unwrap_or_default()
@@ -75,6 +73,8 @@ impl RubyProvider {
             }
         } else if app.includes_file("config/environment.rb") && app.includes_directory("script") {
             "bundle exec ruby script/server -p ${PORT:-3000}".to_string()
+        } else if app.includes_file("config.ru") {
+            "bundle exec rackup config.ru -p ${PORT:-3000}".to_string()
         } else {
             "bundle exec rake".to_string()
         }
