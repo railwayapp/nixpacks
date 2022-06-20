@@ -20,7 +20,7 @@ use providers::{
     crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider,
     fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
     node::NodeProvider, python::PythonProvider, rust::RustProvider, staticfile::StaticfileProvider,
-    swift::SwiftProvider, Provider,
+    swift::SwiftProvider, zig::ZigProvider, Provider,
 };
 
 mod chain;
@@ -44,6 +44,7 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &SwiftProvider {},
         &DartProvider {},
         &JavaProvider {},
+        &ZigProvider {},
     ]
 }
 
