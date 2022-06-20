@@ -22,7 +22,10 @@ impl Provider for ZigProvider {
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::InstallPhase>> {
         Ok(if app.includes_file(".gitmodules") {
-            Some(InstallPhase::new("git submodule update --init".to_string()))
+            Some(InstallPhase::new(format!(
+                "bash {}",
+                app.asset_path("zig-install.sh")
+            )))
         } else {
             None
         })
@@ -51,6 +54,16 @@ impl Provider for ZigProvider {
                 .to_str()
                 .unwrap()
         ))))
+    }
+
+    fn static_assets(
+        &self,
+        _app: &crate::nixpacks::app::App,
+        _env: &crate::nixpacks::environment::Environment,
+    ) -> anyhow::Result<Option<crate::nixpacks::app::StaticAssets>> {
+        Ok(Some(static_asset_list!(
+            "zig-install.sh" => include_str!("zig/install-phase.sh")
+        )))
     }
 
     fn name(&self) -> &str {
