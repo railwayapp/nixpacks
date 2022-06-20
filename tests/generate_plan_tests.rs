@@ -616,3 +616,17 @@ fn test_java_maven_wrapper() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_zig() -> Result<()> {
+    let plan = simple_gen_plan("./examples/zig");
+    assert_eq!(
+        plan.build.unwrap().cmd,
+        Some("zig build -Drelease-safe=true".to_string())
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./zig-out/bin/zig".to_string())
+    );
+    Ok(())
+}

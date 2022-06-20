@@ -460,3 +460,10 @@ fn test_java_maven() {
     let output = run_image(name, None);
     assert!(output.contains("Built with Spring Boot"));
 }
+
+#[test]
+fn test_zig() {
+    let name = simple_build("./examples/zig");
+    let output = run_image(name, None);
+    assert!(output.contains("All your codebase are belong to us."));
+}
