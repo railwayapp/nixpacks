@@ -52,6 +52,8 @@ impl Provider for RustProvider {
             setup_phase.add_file_dependency(toolchain_file);
         }
 
+        setup_phase.add_apt_pkgs(vec!["musl-tools".to_string()]);
+
         Ok(Some(setup_phase))
     }
 
