@@ -168,11 +168,8 @@ impl RustProvider {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-
-    use crate::nixpacks::{app::App, environment::Environment, nix::pkg::Pkg};
-
     use super::*;
+    use std::collections::HashMap;
 
     #[test]
     fn test_no_version() -> Result<()> {

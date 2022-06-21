@@ -1,26 +1,23 @@
-use crate::{
-    nixpacks::{
-        app::App,
-        builder::{
-            docker::{DockerBuilder, DockerBuilderOptions},
-            Builder,
-        },
-        environment::Environment,
-        logger::Logger,
-        nix::pkg::Pkg,
-        plan::{
-            generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
-            BuildPlan, PlanGenerator,
-        },
+use crate::nixpacks::{
+    app::App,
+    builder::{
+        docker::{DockerBuilder, DockerBuilderOptions},
+        Builder,
     },
-    providers::php::PhpProvider,
+    environment::Environment,
+    logger::Logger,
+    nix::pkg::Pkg,
+    plan::{
+        generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
+        BuildPlan, PlanGenerator,
+    },
 };
 use anyhow::Result;
 use providers::{
     crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider,
     fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
-    node::NodeProvider, python::PythonProvider, rust::RustProvider, staticfile::StaticfileProvider,
-    swift::SwiftProvider, Provider,
+    node::NodeProvider, php::PhpProvider, python::PythonProvider, ruby::RubyProvider,
+    rust::RustProvider, staticfile::StaticfileProvider, swift::SwiftProvider, Provider,
 };
 
 mod chain;
@@ -30,20 +27,21 @@ pub mod providers;
 
 pub fn get_providers() -> Vec<&'static dyn Provider> {
     vec![
-        &PhpProvider {},
-        &GolangProvider {},
-        &DenoProvider {},
-        &NodeProvider {},
-        &RustProvider {},
-        &PythonProvider {},
-        &HaskellStackProvider {},
-        &CSharpProvider {},
-        &FSharpProvider {},
         &CrystalProvider {},
+        &CSharpProvider {},
+        &DartProvider {},
+        &DenoProvider {},
+        &FSharpProvider {},
+        &GolangProvider {},
+        &HaskellStackProvider {},
+        &JavaProvider {},
+        &PhpProvider {},
+        &RubyProvider {},
+        &NodeProvider {},
+        &PythonProvider {},
+        &RustProvider {},
         &StaticfileProvider {},
         &SwiftProvider {},
-        &DartProvider {},
-        &JavaProvider {},
     ]
 }
 

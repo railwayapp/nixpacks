@@ -356,7 +356,7 @@ fn test_rust_custom_version() {
         },
         &DockerBuilderOptions {
             name: Some(name.clone()),
-            quiet: true,
+            quiet: false,
             ..Default::default()
         },
     )
@@ -466,4 +466,18 @@ fn test_java_maven() {
     let name = simple_build("./examples/java-maven");
     let output = run_image(name, None);
     assert!(output.contains("Built with Spring Boot"));
+}
+
+#[test]
+fn test_ruby_sinatra() {
+    let name = simple_build("./examples/ruby-sinatra/");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Sinatra"));
+}
+
+#[test]
+fn test_ruby_rails() {
+    let name = simple_build("./examples/ruby-rails/");
+    let output = run_image(name, None);
+    assert!(output.contains("Rails"));
 }

@@ -14,8 +14,8 @@ fn simple_gen_plan(path: &str) -> BuildPlan {
 #[test]
 fn test_node() -> Result<()> {
     let plan = simple_gen_plan("./examples/node");
-    assert_eq!(plan.install.unwrap().cmd, Some("npm ci".to_string()));
-    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(plan.install.unwrap().cmds, Some(vec!["npm ci".to_string()]));
+    assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
 
     Ok(())
@@ -24,8 +24,8 @@ fn test_node() -> Result<()> {
 #[test]
 fn test_node_no_lockfile() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-no-lockfile-canvas");
-    assert_eq!(plan.install.unwrap().cmd, Some("npm i".to_string()));
-    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(plan.install.unwrap().cmds, Some(vec!["npm i".to_string()]));
+    assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
 
     Ok(())
@@ -34,7 +34,10 @@ fn test_node_no_lockfile() -> Result<()> {
 #[test]
 fn test_npm() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-npm");
-    assert_eq!(plan.build.unwrap().cmd, Some("npm run build".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["npm run build".to_string()])
+    );
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
     assert_eq!(
         plan.variables.clone().unwrap().get("NODE_ENV"),
@@ -51,7 +54,7 @@ fn test_npm() -> Result<()> {
 #[test]
 fn test_node_no_scripts() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-no-scripts");
-    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(plan.start.unwrap().cmd, Some("node index.js".to_string()));
 
     Ok(())
@@ -68,7 +71,10 @@ fn test_node_custom_version() -> Result<()> {
 #[test]
 fn test_yarn() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-yarn");
-    assert_eq!(plan.build.unwrap().cmd, Some("yarn run build".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["yarn run build".to_string()])
+    );
     assert_eq!(plan.start.unwrap().cmd, Some("yarn run start".to_string()));
     assert_eq!(
         plan.variables.clone().unwrap().get("NODE_ENV"),
@@ -86,8 +92,10 @@ fn test_yarn() -> Result<()> {
 fn test_yarn_berry() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-yarn-berry");
     assert_eq!(
-        plan.install.unwrap().cmd,
-        Some("yarn set version berry && yarn install --immutable --check-cache".to_string())
+        plan.install.unwrap().cmds,
+        Some(vec![
+            "yarn set version berry && yarn install --immutable --check-cache".to_string()
+        ])
     );
     Ok(())
 }
@@ -109,7 +117,10 @@ fn test_yarn_custom_version() -> Result<()> {
 #[test]
 fn test_pnpm() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-pnpm");
-    assert_eq!(plan.build.unwrap().cmd, Some("pnpm run build".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["pnpm run build".to_string()])
+    );
     assert_eq!(plan.start.unwrap().cmd, Some("pnpm run start".to_string()));
     assert_eq!(
         plan.variables.clone().unwrap().get("NODE_ENV"),
@@ -141,8 +152,8 @@ fn test_pnpm_custom_version() -> Result<()> {
 fn test_go() -> Result<()> {
     let plan = simple_gen_plan("./examples/go");
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("go build -o out main.go".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec!["go build -o out main.go".to_string()])
     );
     assert_eq!(plan.start.clone().unwrap().cmd, Some("./out".to_string()));
     assert!(plan.start.unwrap().run_image.is_some());
@@ -158,8 +169,8 @@ fn test_go_cgo_enabled() -> Result<()> {
         &GeneratePlanOptions::default(),
     )?;
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("go build -o out main.go".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec!["go build -o out main.go".to_string()])
     );
     assert_eq!(plan.start.clone().unwrap().cmd, Some("./out".to_string()));
     assert!(plan.start.unwrap().run_image.is_none());
@@ -170,7 +181,10 @@ fn test_go_cgo_enabled() -> Result<()> {
 #[test]
 fn test_go_mod() -> Result<()> {
     let plan = simple_gen_plan("./examples/go-mod");
-    assert_eq!(plan.build.unwrap().cmd, Some("go build -o out".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["go build -o out".to_string()])
+    );
     assert_eq!(plan.start.unwrap().cmd, Some("./out".to_string()));
 
     Ok(())
@@ -188,8 +202,8 @@ fn test_go_custom_version() -> Result<()> {
 fn test_deno() -> Result<()> {
     let plan = simple_gen_plan("./examples/deno");
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("deno cache src/index.ts".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec!["deno cache src/index.ts".to_string()])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
@@ -203,12 +217,14 @@ fn test_deno() -> Result<()> {
 fn test_csharp_api() -> Result<()> {
     let plan = simple_gen_plan("./examples/csharp-api");
     assert_eq!(
-        plan.install.unwrap().cmd,
-        Some("dotnet restore".to_string())
+        plan.install.unwrap().cmds,
+        Some(vec!["dotnet restore".to_string()])
     );
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("dotnet publish --no-restore -c Release -o out".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec![
+            "dotnet publish --no-restore -c Release -o out".to_string()
+        ])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
@@ -222,12 +238,14 @@ fn test_csharp_api() -> Result<()> {
 fn test_fsharp_api() -> Result<()> {
     let plan = simple_gen_plan("./examples/fsharp-api");
     assert_eq!(
-        plan.install.unwrap().cmd,
-        Some("dotnet restore".to_string())
+        plan.install.unwrap().cmds,
+        Some(vec!["dotnet restore".to_string()])
     );
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("dotnet publish --no-restore -c Release -o out".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec![
+            "dotnet publish --no-restore -c Release -o out".to_string()
+        ])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
@@ -241,12 +259,14 @@ fn test_fsharp_api() -> Result<()> {
 fn test_csharp_cli() -> Result<()> {
     let plan = simple_gen_plan("./examples/csharp-cli");
     assert_eq!(
-        plan.install.unwrap().cmd,
-        Some("dotnet restore".to_string())
+        plan.install.unwrap().cmds,
+        Some(vec!["dotnet restore".to_string()])
     );
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("dotnet publish --no-restore -c Release -o out".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec![
+            "dotnet publish --no-restore -c Release -o out".to_string()
+        ])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
@@ -299,12 +319,12 @@ fn test_pin_archive() -> Result<()> {
 #[test]
 fn test_custom_rust_version() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-custom-version");
-    assert!(plan
-        .build
-        .unwrap()
-        .cmd
-        .unwrap()
-        .contains("cargo build --release"));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            "cargo build --release --target x86_64-unknown-linux-musl".to_string()
+        ])
+    );
     assert_eq!(
         plan.setup
             .unwrap()
@@ -321,12 +341,12 @@ fn test_custom_rust_version() -> Result<()> {
 #[test]
 fn test_rust_rocket() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-rocket");
-    assert!(plan
-        .build
-        .unwrap()
-        .cmd
-        .unwrap()
-        .contains("cargo build --release"));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            "cargo build --release --target x86_64-unknown-linux-musl".to_string()
+        ])
+    );
     assert!(plan.start.clone().unwrap().cmd.is_some());
     assert_eq!(
         plan.start.clone().unwrap().cmd.unwrap(),
@@ -345,8 +365,8 @@ fn test_rust_rocket_no_musl() -> Result<()> {
         &GeneratePlanOptions::default(),
     )?;
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("cargo build --release".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec!["cargo build --release".to_string()])
     );
     assert!(plan
         .start
@@ -363,10 +383,10 @@ fn test_rust_rocket_no_musl() -> Result<()> {
 #[test]
 pub fn test_python() -> Result<()> {
     let plan = simple_gen_plan("./examples/python");
-    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(
-        plan.install.unwrap().cmd,
-        Some("python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt".to_string())
+        plan.install.unwrap().cmds,
+        Some(vec!["python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt".to_string()])
     );
     assert_eq!(plan.start.unwrap().cmd, Some("python main.py".to_string()));
 
@@ -376,10 +396,10 @@ pub fn test_python() -> Result<()> {
 #[test]
 pub fn test_python_poetry() -> Result<()> {
     let plan = simple_gen_plan("./examples/python-poetry");
-    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(
-        plan.install.unwrap().cmd,
-        Some("python -m venv /opt/venv && . /opt/venv/bin/activate && pip install poetry==$NIXPACKS_POETRY_VERSION && poetry install --no-dev --no-interaction --no-ansi".to_string())
+        plan.install.unwrap().cmds,
+        Some(vec!["python -m venv /opt/venv && . /opt/venv/bin/activate && pip install poetry==$NIXPACKS_POETRY_VERSION && poetry install --no-dev --no-interaction --no-ansi".to_string()])
     );
     assert_eq!(plan.start.unwrap().cmd, Some("python main.py".to_string()));
 
@@ -389,7 +409,7 @@ pub fn test_python_poetry() -> Result<()> {
 #[test]
 fn test_node_main_file() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-main-file");
-    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(
         plan.start.unwrap().cmd,
         Some("node src/index.js".to_string())
@@ -401,19 +421,12 @@ fn test_node_main_file() -> Result<()> {
 #[test]
 pub fn test_python_setuptools() -> Result<()> {
     let plan = simple_gen_plan("./examples/python-setuptools");
-    assert_eq!(plan.build.unwrap().cmd, None);
-
-    if let Some(install_cmd) = plan.install.unwrap().cmd {
-        assert!(install_cmd.contains("setuptools"));
-    } else {
-        return Err(anyhow::anyhow!("no install command"));
-    }
-
-    if let Some(start_cmd) = plan.start.unwrap().cmd {
-        assert!(start_cmd.contains("python -m"));
-    } else {
-        return Err(anyhow::anyhow!("no start command"));
-    }
+    assert_eq!(plan.install.unwrap().cmds, Some(vec!["python -m venv /opt/venv && . /opt/venv/bin/activate && pip install --upgrade build setuptools && pip install .".to_string()]));
+    assert_eq!(plan.build.unwrap().cmds, None);
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("python -m nixpacks-setuptools".to_string())
+    );
 
     Ok(())
 }
@@ -421,7 +434,7 @@ pub fn test_python_setuptools() -> Result<()> {
 #[test]
 fn test_node_main_file_doesnt_exist() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-main-file-not-exist");
-    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(plan.start.unwrap().cmd, Some("node index.js".to_string()));
 
     Ok(())
@@ -430,9 +443,15 @@ fn test_node_main_file_doesnt_exist() -> Result<()> {
 #[test]
 fn test_haskell_stack() -> Result<()> {
     let plan = simple_gen_plan("./examples/haskell-stack");
-    assert_eq!(plan.build.unwrap().cmd, Some("stack build".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["stack build".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cmds,
+        Some(vec!["stack setup".to_string()])
+    );
     assert!(plan.start.unwrap().cmd.unwrap().contains("stack exec"));
-    assert!(plan.install.unwrap().cmd.unwrap().contains("stack setup"));
     Ok(())
 }
 
@@ -440,12 +459,12 @@ fn test_haskell_stack() -> Result<()> {
 fn test_crystal() -> Result<()> {
     let plan = simple_gen_plan("./examples/crystal");
     assert_eq!(
-        plan.install.unwrap().cmd,
-        Some("shards install".to_string())
+        plan.install.unwrap().cmds,
+        Some(vec!["shards install".to_string()])
     );
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("shards build --release".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec!["shards build --release".to_string()])
     );
     assert_eq!(plan.start.unwrap().cmd, Some("./bin/crystal".to_string()));
     Ok(())
@@ -479,8 +498,11 @@ fn test_config_from_environment_variables() -> Result<()> {
         ],
         &GeneratePlanOptions::default(),
     )?;
-    assert_eq!(plan.install.unwrap().cmd, Some("install".to_string()));
-    assert_eq!(plan.build.unwrap().cmd, Some("build".to_string()));
+    assert_eq!(
+        plan.install.unwrap().cmds,
+        Some(vec!["install".to_string()])
+    );
+    assert_eq!(plan.build.unwrap().cmds, Some(vec!["build".to_string()]));
     assert_eq!(plan.start.clone().unwrap().cmd, Some("start".to_string()));
     assert_eq!(
         plan.setup.unwrap().pkgs,
@@ -495,8 +517,10 @@ fn test_config_from_environment_variables() -> Result<()> {
 fn test_staticfile() -> Result<()> {
     let plan = simple_gen_plan("./examples/staticfile");
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec![
+            "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string()
+        ])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
@@ -509,10 +533,12 @@ fn test_staticfile() -> Result<()> {
 fn test_php_vanilla() -> Result<()> {
     let plan = simple_gen_plan("./examples/php-vanilla");
     assert_eq!(
-        plan.install.unwrap().cmd,
-        Some("mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx".to_string())
+        plan.install.unwrap().cmds,
+        Some(vec![
+            "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx".to_string()
+        ])
     );
-    assert_eq!(plan.build.unwrap().cmd, None);
+    assert_eq!(plan.build.unwrap().cmds, None);
     assert!(plan
         .start
         .unwrap()
@@ -526,13 +552,17 @@ fn test_php_vanilla() -> Result<()> {
 fn test_php_laravel() -> Result<()> {
     let plan = simple_gen_plan("./examples/php-laravel");
     assert_eq!(
-        plan.install.unwrap().cmd,
-        Some(
-            "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx && composer install && npm i"
-                .to_string()
-        )
+        plan.install.unwrap().cmds,
+        Some(vec![
+            "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx".to_string(),
+            "composer install".to_string(),
+            "npm i".to_string()
+        ])
     );
-    assert_eq!(plan.build.unwrap().cmd, Some("npm run prod".to_string()));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["npm run prod".to_string()])
+    );
     assert!(plan
         .start
         .unwrap()
@@ -543,27 +573,15 @@ fn test_php_laravel() -> Result<()> {
 }
 
 #[test]
-fn test_swift() -> Result<()> {
-    let plan = simple_gen_plan("./examples/swift");
-
-    assert!(plan
-        .build
-        .unwrap()
-        .cmd
-        .unwrap()
-        .contains("swift build -c release --static-swift-stdlib"));
-
-    assert_eq!(plan.start.unwrap().cmd, Some("./swift".to_owned()));
-    Ok(())
-}
-
-#[test]
 fn test_dart() -> Result<()> {
     let plan = simple_gen_plan("./examples/dart");
-    assert_eq!(plan.install.unwrap().cmd, Some("dart pub get".to_string()));
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("dart compile exe bin/console_simple.dart".to_string())
+        plan.install.unwrap().cmds,
+        Some(vec!["dart pub get".to_string()])
+    );
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["dart compile exe bin/console_simple.dart".to_string()])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
@@ -574,15 +592,32 @@ fn test_dart() -> Result<()> {
 }
 
 #[test]
+fn test_swift() -> Result<()> {
+    let plan = simple_gen_plan("./examples/swift");
+
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            "CC=clang++ swift build -c release --static-swift-stdlib".to_string(),
+            "cp ./.build/release/swift ./swift && rm -rf ./.build".to_string()
+        ])
+    );
+
+    assert_eq!(plan.start.unwrap().cmd, Some("./swift".to_owned()));
+    Ok(())
+}
+
+#[test]
 fn test_swift_vapor() -> Result<()> {
     let plan = simple_gen_plan("./examples/swift-vapor");
 
-    assert!(plan
-        .build
-        .unwrap()
-        .cmd
-        .unwrap()
-        .contains("swift build -c release --static-swift-stdlib"));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            "CC=clang++ swift build -c release --static-swift-stdlib".to_string(),
+            "cp ./.build/release/Run ./Run && rm -rf ./.build".to_string()
+        ])
+    );
 
     assert_eq!(plan.start.unwrap().cmd, Some("./Run".to_owned()));
 
@@ -593,8 +628,8 @@ fn test_swift_vapor() -> Result<()> {
 fn test_java_maven() -> Result<()> {
     let plan = simple_gen_plan("./examples/java-maven");
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec!["mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string()])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
@@ -607,12 +642,37 @@ fn test_java_maven() -> Result<()> {
 fn test_java_maven_wrapper() -> Result<()> {
     let plan = simple_gen_plan("./examples/java-maven-wrapper");
     assert_eq!(
-        plan.build.unwrap().cmd,
-        Some("./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string())
+        plan.build.unwrap().cmds,
+        Some(vec!["./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install".to_string()])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
         Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
     );
+    Ok(())
+}
+
+#[test]
+fn test_ruby_rails() -> Result<()> {
+    let plan = simple_gen_plan("./examples/ruby-rails");
+    assert_eq!(
+        plan.install.unwrap().cmds,
+        Some(vec!["bundle install".to_string()])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("bundle exec bin/rails server -b 0.0.0.0 -p ${PORT:-3000} -e $RAILS_ENV".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_ruby_sinatra() -> Result<()> {
+    let plan = simple_gen_plan("./examples/ruby-sinatra");
+    assert_eq!(
+        plan.install.unwrap().cmds,
+        Some(vec!["bundle install".to_string()])
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("ruby app.rb".to_string()));
     Ok(())
 }

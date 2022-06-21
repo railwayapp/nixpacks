@@ -79,18 +79,12 @@ impl Provider for SwiftProvider {
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         let name = SwiftProvider::get_executable_name(app)?;
-        let build_cmd = format!(
-            "\
-        CC=clang++ \
-        swift build -c release --static-swift-stdlib && \
-        cp ./.build/release/{name} ./{name} && \
-        rm -rf ./.build
-        "
-        )
-        .trim()
-        .to_string();
-
-        Ok(Some(BuildPhase::new(build_cmd)))
+        let mut build_phase =
+            BuildPhase::new("CC=clang++ swift build -c release --static-swift-stdlib".to_string());
+        build_phase.add_cmd(format!(
+            "cp ./.build/release/{name} ./{name} && rm -rf ./.build"
+        ));
+        Ok(Some(build_phase))
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {

@@ -27,7 +27,7 @@ impl Provider for PythonProvider {
         "python"
     }
 
-    fn detect(&self, app: &crate::nixpacks::app::App, _env: &Environment) -> Result<bool> {
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
         Ok(app.includes_file("main.py")
             || app.includes_file("requirements.txt")
             || app.includes_file("pyproject.toml"))
