@@ -94,6 +94,7 @@ impl RubyProvider {
         bail!("Please specify ruby's version in .ruby-version file")
     }
 
+    // Iterate over Gemfile and find bundler's version (Line below BUNDLED WITH)
     fn get_bundler_version(&self, app: &App) -> String {
         if app.includes_file("Gemfile.lock") {
             let gemfile_lock = app.read_file("Gemfile.lock").unwrap_or_default();
