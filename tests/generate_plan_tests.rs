@@ -573,19 +573,6 @@ fn test_php_laravel() -> Result<()> {
 }
 
 #[test]
-fn test_swift() -> Result<()> {
-    let plan = simple_gen_plan("./examples/swift");
-
-    assert_eq!(
-        plan.build.unwrap().cmds,
-        Some(vec!["CC=clang++ swift build -c release --static-swift-stdlib && cp ./.build/release/swift ./swift && rm -rf ./.build".to_string()])
-    );
-
-    assert_eq!(plan.start.unwrap().cmd, Some("./swift".to_owned()));
-    Ok(())
-}
-
-#[test]
 fn test_dart() -> Result<()> {
     let plan = simple_gen_plan("./examples/dart");
     assert_eq!(
@@ -605,12 +592,31 @@ fn test_dart() -> Result<()> {
 }
 
 #[test]
+fn test_swift() -> Result<()> {
+    let plan = simple_gen_plan("./examples/swift");
+
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            "CC=clang++ swift build -c release --static-swift-stdlib".to_string(),
+            "cp ./.build/release/swift ./swift && rm -rf ./.build".to_string()
+        ])
+    );
+
+    assert_eq!(plan.start.unwrap().cmd, Some("./swift".to_owned()));
+    Ok(())
+}
+
+#[test]
 fn test_swift_vapor() -> Result<()> {
     let plan = simple_gen_plan("./examples/swift-vapor");
 
     assert_eq!(
         plan.build.unwrap().cmds,
-        Some(vec!["CC=clang++ swift build -c release --static-swift-stdlib && cp ./.build/release/Run ./Run && rm -rf ./.build".to_string()])
+        Some(vec![
+            "CC=clang++ swift build -c release --static-swift-stdlib".to_string(),
+            "cp ./.build/release/Run ./Run && rm -rf ./.build".to_string()
+        ])
     );
 
     assert_eq!(plan.start.unwrap().cmd, Some("./Run".to_owned()));
