@@ -28,23 +28,32 @@ pub trait PlanGenerator {
 impl BuildPlan {
     pub fn get_build_string(&self) -> String {
         let setup_phase = self.setup.clone();
-        let packages_string = get_phase_string(
-            "Packages",
-            setup_phase.map(|setup| {
-                setup
-                    .pkgs
-                    .iter()
-                    .map(|pkg| pkg.to_pretty_string())
-                    .collect::<Vec<_>>()
-                    .join("\n    -> ")
-            }),
+        let nix_pkgs = setup_phase
+            .clone()
+            .unwrap_or_default()
+            .pkgs
+            .iter()
+            .map(|pkg| pkg.to_pretty_string())
+            .collect::<Vec<_>>();
+        let apt_pkgs = setup_phase
+            .clone()
+            .unwrap_or_default()
+            .apt_pkgs
+            .clone()
+            .unwrap_or_default();
+        let pkgs = [nix_pkgs, apt_pkgs].concat();
+        let packages_string = get_phase_string("Packages", Some(pkgs.join("\n    -> ")));
+        let install_phase = self.install.clone();
+        let install_string = get_phase_string(
+            "Install",
+            install_phase.map(|install| install.cmds.unwrap_or_default().join("\n    -> ")),
         );
 
-        let install_phase = self.install.clone();
-        let install_string = get_phase_string("Install", install_phase.and_then(|build| build.cmd));
-
         let build_phase = self.build.clone();
-        let build_string = get_phase_string("Build", build_phase.and_then(|build| build.cmd));
+        let build_string = get_phase_string(
+            "Build",
+            build_phase.map(|build| build.cmds.unwrap_or_default().join("\n    -> ")),
+        );
 
         let start_phase = self.start.clone();
         let start_string = get_phase_string("Start", start_phase.and_then(|start| start.cmd));
@@ -64,6 +73,9 @@ impl BuildPlan {
 fn get_phase_string(phase: &str, content: Option<String>) -> String {
     match &content {
         Some(content) => {
+            if content.is_empty() {
+                return format!("=> {}\n    -> Skipping", phase);
+            }
             format!("=> {}\n    -> {}", phase, content.trim())
         }
         None => {
