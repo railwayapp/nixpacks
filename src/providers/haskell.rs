@@ -29,10 +29,13 @@ impl Provider for HaskellStackProvider {
         _app: &crate::nixpacks::app::App,
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::SetupPhase>> {
-        let mut setup_phase = SetupPhase::new(vec![
-            Pkg::new("stack"),
+        let mut setup_phase = SetupPhase::new(vec![Pkg::new("stack")]);
+        setup_phase.add_apt_pkgs(vec![
+            "libgmp-dev".to_string(),
+            "gcc".to_string(),
+            "binutils".to_string(),
+            "make".to_string(),
         ]);
-        setup_phase.add_apt_pkgs(vec!["libgmp-dev".to_string(), "gcc".to_string(), "binutils".to_string(), "make".to_string()]);
         Ok(Some(setup_phase))
     }
 
