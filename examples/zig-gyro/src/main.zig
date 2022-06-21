@@ -1,13 +1,11 @@
 const std = @import("std");
-const zzz = @import("zzz");
+const uri = @import("uri");
 
 pub fn main() anyerror!void {
     const stdout = std.io.getStdOut();
     _ = nosuspend stdout.write("Hello from Zig\n") catch return;
 
-    var tree = zzz.ZTree(1, 100){};
-    _ = try tree.appendText("hello: world");
-    tree.show();
+    _ = nosuspend stdout.write("The URI scheme of GitHub is " ++ ((try uri.parse("https://github.com/railwayapp/nixpacks")).scheme orelse "") ++ ".\n") catch return;
 }
 
 test "basic test" {

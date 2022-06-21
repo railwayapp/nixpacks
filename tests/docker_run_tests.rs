@@ -480,6 +480,7 @@ fn test_zig_gyro() {
     let name = simple_build("./examples/zig-gyro");
     let output = run_image(name, None);
     assert!(output.contains("Hello from Zig"));
+    assert!(output.contains("The URI scheme of GitHub is https."));
 }
 
 #[test]
