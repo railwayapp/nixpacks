@@ -668,7 +668,7 @@ fn test_zig() -> Result<()> {
 
 #[test]
 fn test_zig_gyro() -> Result<()> {
-    let plan = simple_gen_plan("./examples/zig");
+    let plan = simple_gen_plan("./examples/zig-gyro");
     assert_eq!(
         plan.build.unwrap().cmds,
         Some(vec!["zig build -Drelease-safe=true".to_string()])
