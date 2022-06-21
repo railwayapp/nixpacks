@@ -12,7 +12,7 @@ pub struct SetupPhase {
     pub archive: Option<String>,
     pub libraries: Option<Vec<String>>,
     pub apt_pkgs: Option<Vec<String>>,
-    pub cmd: Option<Vec<String>>,
+    pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
@@ -30,7 +30,7 @@ impl SetupPhase {
             archive: None,
             only_include_files: None,
             base_image: DEFAULT_BASE_IMAGE.to_string(),
-            cmd: None,
+            cmds: None,
         }
     }
 
@@ -68,11 +68,11 @@ impl SetupPhase {
     }
 
     pub fn add_cmd(&mut self, cmd: String) {
-        if let Some(mut cmds) = self.cmd.clone() {
+        if let Some(mut cmds) = self.cmds.clone() {
             cmds.push(cmd);
-            self.cmd = Some(cmds);
+            self.cmds = Some(cmds);
         } else {
-            self.cmd = Some(vec![cmd]);
+            self.cmds = Some(vec![cmd]);
         }
     }
 }
@@ -86,7 +86,7 @@ impl Default for SetupPhase {
             archive: Default::default(),
             only_include_files: Default::default(),
             base_image: DEFAULT_BASE_IMAGE.to_string(),
-            cmd: Default::default(),
+            cmds: Default::default(),
         }
     }
 }
@@ -94,7 +94,7 @@ impl Default for SetupPhase {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct InstallPhase {
-    pub cmd: Option<String>,
+    pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
@@ -105,7 +105,7 @@ pub struct InstallPhase {
 impl InstallPhase {
     pub fn new(cmd: String) -> Self {
         Self {
-            cmd: Some(cmd),
+            cmds: Some(vec![cmd]),
             only_include_files: None,
             paths: None,
         }
@@ -128,12 +128,21 @@ impl InstallPhase {
             self.paths = Some(vec![path]);
         }
     }
+
+    pub fn add_cmd(&mut self, cmd: String) {
+        if let Some(mut cmds) = self.cmds.clone() {
+            cmds.push(cmd);
+            self.cmds = Some(cmds);
+        } else {
+            self.cmds = Some(vec![cmd]);
+        }
+    }
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct BuildPhase {
-    pub cmd: Option<String>,
+    pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
@@ -142,7 +151,7 @@ pub struct BuildPhase {
 impl BuildPhase {
     pub fn new(cmd: String) -> Self {
         Self {
-            cmd: Some(cmd),
+            cmds: Some(vec![cmd]),
             only_include_files: None,
         }
     }
@@ -153,6 +162,15 @@ impl BuildPhase {
             self.only_include_files = Some(files);
         } else {
             self.only_include_files = Some(vec![file]);
+        }
+    }
+
+    pub fn add_cmd(&mut self, cmd: String) {
+        if let Some(mut cmds) = self.cmds.clone() {
+            cmds.push(cmd);
+            self.cmds = Some(cmds);
+        } else {
+            self.cmds = Some(vec![cmd]);
         }
     }
 }

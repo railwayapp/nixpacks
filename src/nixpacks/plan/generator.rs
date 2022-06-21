@@ -18,8 +18,8 @@ static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
-    pub custom_install_cmd: Option<String>,
-    pub custom_build_cmd: Option<String>,
+    pub custom_install_cmd: Option<Vec<String>>,
+    pub custom_build_cmd: Option<Vec<String>>,
     pub custom_start_cmd: Option<String>,
     pub custom_pkgs: Vec<Pkg>,
     pub custom_libs: Vec<String>,
@@ -159,19 +159,22 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
             None => InstallPhase::default(),
         };
 
-        let env_install_cmd = environment.get_config_variable("INSTALL_CMD").cloned();
+        let mut env_install_cmd = None;
+        if let Some(install_cmd) = environment.get_config_variable("INSTALL_CMD").cloned() {
+            env_install_cmd = Some(vec![install_cmd]);
+        }
 
         // Start command priority
         // - custom install command
         // - environment variable
         // - provider
 
-        install_phase.cmd = self
+        install_phase.cmds = self
             .options
             .custom_install_cmd
             .clone()
             .or(env_install_cmd)
-            .or(install_phase.cmd);
+            .or(install_phase.cmds);
 
         Ok(install_phase)
     }
@@ -182,27 +185,29 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
             None => BuildPhase::default(),
         };
 
-        let env_build_cmd = environment.get_config_variable("BUILD_CMD").cloned();
+        let mut env_build_cmd = None;
+        if let Some(build_cmd) = environment.get_config_variable("BUILD_CMD").cloned() {
+            env_build_cmd = Some(vec![build_cmd]);
+        }
 
         // Build command priority
         // - custom build command
         // - environment variable
         // - provider
-        build_phase.cmd = self
+        build_phase.cmds = self
             .options
             .custom_build_cmd
             .clone()
             .or(env_build_cmd)
-            .or(build_phase.cmd);
+            .or(build_phase.cmds);
 
         // Release process type
         if let Some(release_cmd) = self.get_procfile_release_cmd(app)? {
-            let build_cmd = build_phase.cmd.unwrap_or_default();
-            if build_cmd.is_empty() {
-                build_phase.cmd = Some(release_cmd);
-            } else {
-                build_phase.cmd = Some(format!("{} && {}", build_cmd, release_cmd));
-            }
+            build_phase
+                .cmds
+                .clone()
+                .unwrap_or_default()
+                .push(release_cmd);
         }
         Ok(build_phase)
     }

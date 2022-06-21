@@ -5,7 +5,6 @@ use crate::nixpacks::{
     phase::{InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{bail, Ok, Result};
-use indoc::formatdoc;
 use regex::Regex;
 
 pub struct RubyProvider {}
@@ -37,18 +36,20 @@ impl Provider for RubyProvider {
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let mut install_phase = InstallPhase::new("bundle install".to_string());
-        install_phase.add_file_dependency("Gemfile".to_string());
-        add_file_if_included(app, &mut install_phase, "Gemfile.lock");
+        install_phase.add_file_dependency("Gemfile*".to_string());
         if app.includes_file("package.json") {
             install_phase.add_file_dependency("package.json".to_string());
-            install_phase.cmd = Some(formatdoc!(
-                "{} && {}",
-                NodeProvider::get_install_command(app),
-                install_phase.cmd.unwrap()
-            ));
-            add_file_if_included(app, &mut install_phase, "package-lock.json");
-            add_file_if_included(app, &mut install_phase, "yarn.lock");
-            add_file_if_included(app, &mut install_phase, "pnpm-lock.yaml");
+            install_phase
+                .cmds
+                .clone()
+                .unwrap_or_default()
+                .insert(0, NodeProvider::get_install_command(app));
+
+            for file in ["package.json", "package-lock.json"].iter() {
+                if app.includes_file(file) {
+                    install_phase.add_file_dependency(file.to_string());
+                }
+            }
         }
         Ok(Some(install_phase))
     }
@@ -60,12 +61,7 @@ impl Provider for RubyProvider {
 
 impl RubyProvider {
     fn get_start_command(&self, app: &App) -> String {
-        if app.includes_file("config/application.rb")
-            && app
-                .read_file("config/application.rb")
-                .unwrap_or_default()
-                .contains("Rails::Application")
-        {
+        if self.is_rails_app(app) {
             if app.includes_file("rails") {
                 "bundle exec rails server -b 0.0.0.0 -p ${PORT:-3000}".to_string()
             } else {
@@ -112,11 +108,13 @@ impl RubyProvider {
             "bundler".to_string()
         }
     }
-}
 
-fn add_file_if_included(app: &App, phase: &mut InstallPhase, file: &str) {
-    if app.includes_file(file) {
-        phase.add_file_dependency(file.to_string());
+    fn is_rails_app(&self, app: &App) -> bool {
+        app.includes_file("config/application.rb")
+            && app
+                .read_file("config/application.rb")
+                .unwrap_or_default()
+                .contains("Rails::Application")
     }
 }
 

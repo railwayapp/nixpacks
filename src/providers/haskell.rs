@@ -29,10 +29,11 @@ impl Provider for HaskellStackProvider {
         _app: &crate::nixpacks::app::App,
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![
+        let mut setup_phase = SetupPhase::new(vec![
             Pkg::new("stack"),
-            Pkg::new("apt"),
-        ])))
+        ]);
+        setup_phase.add_apt_pkgs(vec!["libgmp-dev".to_string(), "gcc".to_string(), "binutils".to_string(), "make".to_string()]);
+        Ok(Some(setup_phase))
     }
 
     fn install(
@@ -40,7 +41,7 @@ impl Provider for HaskellStackProvider {
         _app: &crate::nixpacks::app::App,
         _env: &crate::nixpacks::environment::Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::InstallPhase>> {
-        Ok(Some(InstallPhase::new("sudo apt-get update && sudo apt-get install -y libgmp-dev gcc binutils make && stack setup".to_string())))
+        Ok(Some(InstallPhase::new("stack setup".to_string())))
     }
 
     fn build(

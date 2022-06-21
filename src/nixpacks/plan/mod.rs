@@ -41,10 +41,16 @@ impl BuildPlan {
         );
 
         let install_phase = self.install.clone();
-        let install_string = get_phase_string("Install", install_phase.and_then(|build| build.cmd));
+        let install_string = get_phase_string(
+            "Install",
+            install_phase.map(|install| install.cmds.unwrap_or_default().join("\n")),
+        );
 
         let build_phase = self.build.clone();
-        let build_string = get_phase_string("Build", build_phase.and_then(|build| build.cmd));
+        let build_string = get_phase_string(
+            "Build",
+            build_phase.map(|build| build.cmds.unwrap_or_default().join("\n")),
+        );
 
         let start_phase = self.start.clone();
         let start_string = get_phase_string("Start", start_phase.and_then(|start| start.cmd));

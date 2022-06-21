@@ -61,28 +61,16 @@ impl Provider for PhpProvider {
         app: &App,
         env: &Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::phase::InstallPhase>> {
-        let mut cmd = String::new();
-        cmd.push_str("mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx");
+        let mut install_phase =
+            InstallPhase::new("mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx".to_string());
         let nodejs = NodeProvider {};
         if app.includes_file("composer.json") {
-            cmd.push_str(" && composer install");
+            install_phase.add_cmd("composer install".to_string());
         };
         if nodejs.detect(app, env)? {
-            if !cmd.is_empty() {
-                cmd.push_str(" && ");
-            }
-            cmd.push_str(
-                nodejs
-                    .install(app, env)?
-                    .as_ref()
-                    .unwrap()
-                    .cmd
-                    .as_ref()
-                    .unwrap()
-                    .as_str(),
-            );
+            install_phase.add_cmd(NodeProvider::get_install_command(app));
         }
-        Ok(Some(InstallPhase::new(cmd)))
+        Ok(Some(install_phase))
     }
 
     fn build(

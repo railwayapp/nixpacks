@@ -202,7 +202,7 @@ impl DockerBuilder {
             apt_get_cmd = format!("RUN apt-get update && apt-get install -y {}", apt_pkgs);
         }
         let setup_cmd = setup_phase
-            .cmd
+            .cmds
             .unwrap_or_default()
             .iter()
             .map(|c| format!("RUN {}", c))
@@ -222,10 +222,12 @@ impl DockerBuilder {
 
         // -- Install
         let install_cmd = install_phase
-            .cmd
-            .clone()
-            .map(|cmd| format!("RUN {}", cmd))
-            .unwrap_or_else(|| "".to_string());
+            .cmds
+            .unwrap_or_default()
+            .iter()
+            .map(|c| format!("RUN {}", c))
+            .collect::<Vec<String>>()
+            .join("\n");
 
         let (build_path, run_path) = if let Some(paths) = install_phase.paths {
             let joined_paths = paths.join(":");
@@ -246,10 +248,12 @@ impl DockerBuilder {
 
         // -- Build
         let build_cmd = build_phase
-            .cmd
-            .clone()
-            .map(|cmd| format!("RUN {}", cmd))
-            .unwrap_or_else(|| "".to_string());
+            .cmds
+            .unwrap_or_default()
+            .iter()
+            .map(|c| format!("RUN {}", c))
+            .collect::<Vec<String>>()
+            .join("\n");
 
         let build_files = build_phase.only_include_files.unwrap_or_else(|| {
             // Only copy over the entire app if we haven't already in the install phase
