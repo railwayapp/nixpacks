@@ -36,10 +36,8 @@ impl BuildPlan {
             .map(|pkg| pkg.to_pretty_string())
             .collect::<Vec<_>>();
         let apt_pkgs = setup_phase
-            .clone()
             .unwrap_or_default()
             .apt_pkgs
-            .clone()
             .unwrap_or_default();
         let pkgs = [nix_pkgs, apt_pkgs].concat();
         let packages_string = get_phase_string("Packages", Some(pkgs.join("\n    -> ")));

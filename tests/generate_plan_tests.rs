@@ -667,6 +667,28 @@ fn test_zig() -> Result<()> {
 }
 
 #[test]
+fn test_zig_gyro() -> Result<()> {
+    let plan = simple_gen_plan("./examples/zig");
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["zig build -Drelease-safe=true".to_string()])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./zig-out/bin/zig-gyro".to_string())
+    );
+    assert!(plan
+        .install
+        .unwrap()
+        .cmds
+        .unwrap()
+        .get(0)
+        .unwrap()
+        .contains("mkdir /gyro"));
+    Ok(())
+}
+
+#[test]
 fn test_ruby_rails() -> Result<()> {
     let plan = simple_gen_plan("./examples/ruby-rails");
     assert_eq!(

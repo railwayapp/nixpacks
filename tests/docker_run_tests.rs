@@ -472,7 +472,14 @@ fn test_java_maven() {
 fn test_zig() {
     let name = simple_build("./examples/zig");
     let output = run_image(name, None);
-    assert!(output.contains("All your codebase are belong to us."));
+    assert!(output.contains("Hello from Zig"));
+}
+
+#[test]
+fn test_zig_gyro() {
+    let name = simple_build("./examples/zig-gyro");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Zig"));
 }
 
 #[test]
