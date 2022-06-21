@@ -122,7 +122,6 @@ impl RubyProvider {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::nixpacks::app::App;
 
     #[test]
     fn test_gemfile_version() -> Result<()> {
