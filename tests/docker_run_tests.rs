@@ -367,6 +367,13 @@ fn test_rust_custom_version() {
 }
 
 #[test]
+fn test_rust_ring() {
+    let name = simple_build("./examples/rust-ring");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from rust"));
+}
+
+#[test]
 fn test_go() {
     let name = simple_build("./examples/go");
     let output = run_image(name, None);
