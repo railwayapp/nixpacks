@@ -28,26 +28,21 @@ pub trait PlanGenerator {
 impl BuildPlan {
     pub fn get_build_string(&self) -> String {
         let setup_phase = self.setup.clone();
-        let mut packages_string = get_phase_string(
-            "Packages",
-            setup_phase.map(|setup| {
-                setup
-                    .pkgs
-                    .iter()
-                    .map(|pkg| pkg.to_pretty_string())
-                    .collect::<Vec<_>>()
-                    .join("\n    -> ")
-            }),
-        );
-
-        let apt_packages = self
-            .setup
+        let nix_pkgs = setup_phase
             .clone()
-            .map(|setup| setup.apt_pkgs.unwrap_or_default().join("\n    -> "));
-
-        if !apt_packages.clone().unwrap_or_default().is_empty() {
-            packages_string = packages_string + "\n    -> " + &apt_packages.unwrap_or_default();
-        }
+            .unwrap_or_default()
+            .pkgs
+            .iter()
+            .map(|pkg| pkg.to_pretty_string())
+            .collect::<Vec<_>>();
+        let apt_pkgs = setup_phase
+            .clone()
+            .unwrap_or_default()
+            .apt_pkgs
+            .clone()
+            .unwrap_or_default();
+        let pkgs = [nix_pkgs, apt_pkgs].concat();
+        let packages_string = get_phase_string("Packages", Some(pkgs.join("\n    -> ")));
         let install_phase = self.install.clone();
         let install_string = get_phase_string(
             "Install",
