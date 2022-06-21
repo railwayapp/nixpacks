@@ -28,7 +28,7 @@ pub trait PlanGenerator {
 impl BuildPlan {
     pub fn get_build_string(&self) -> String {
         let setup_phase = self.setup.clone();
-        let packages_string = get_phase_string(
+        let mut packages_string = get_phase_string(
             "Packages",
             setup_phase.map(|setup| {
                 setup
@@ -40,16 +40,24 @@ impl BuildPlan {
             }),
         );
 
+        let apt_packages = self
+            .setup
+            .clone()
+            .map(|setup| setup.apt_pkgs.unwrap_or_default().join("\n    -> "));
+
+        if !apt_packages.clone().unwrap_or_default().is_empty() {
+            packages_string = packages_string + "\n    -> " + &apt_packages.unwrap_or_default();
+        }
         let install_phase = self.install.clone();
         let install_string = get_phase_string(
             "Install",
-            install_phase.map(|install| install.cmds.unwrap_or_default().join("\n")),
+            install_phase.map(|install| install.cmds.unwrap_or_default().join("\n    -> ")),
         );
 
         let build_phase = self.build.clone();
         let build_string = get_phase_string(
             "Build",
-            build_phase.map(|build| build.cmds.unwrap_or_default().join("\n")),
+            build_phase.map(|build| build.cmds.unwrap_or_default().join("\n    -> ")),
         );
 
         let start_phase = self.start.clone();
@@ -70,6 +78,9 @@ impl BuildPlan {
 fn get_phase_string(phase: &str, content: Option<String>) -> String {
     match &content {
         Some(content) => {
+            if content.is_empty() {
+                return format!("=> {}\n    -> Skipping", phase);
+            }
             format!("=> {}\n    -> {}", phase, content.trim())
         }
         None => {
