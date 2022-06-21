@@ -356,7 +356,7 @@ fn test_rust_custom_version() {
         },
         &DockerBuilderOptions {
             name: Some(name.clone()),
-            quiet: true,
+            quiet: false,
             ..Default::default()
         },
     )
@@ -364,6 +364,13 @@ fn test_rust_custom_version() {
 
     let output = run_image(name, None);
     assert!(output.contains("cargo 1.56.0"));
+}
+
+#[test]
+fn test_rust_ring() {
+    let name = simple_build("./examples/rust-ring");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from rust"));
 }
 
 #[test]
@@ -466,4 +473,18 @@ fn test_zig() {
     let name = simple_build("./examples/zig");
     let output = run_image(name, None);
     assert!(output.contains("All your codebase are belong to us."));
+}
+
+#[test]
+fn test_ruby_sinatra() {
+    let name = simple_build("./examples/ruby-sinatra/");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Sinatra"));
+}
+
+#[test]
+fn test_ruby_rails() {
+    let name = simple_build("./examples/ruby-rails/");
+    let output = run_image(name, None);
+    assert!(output.contains("Rails"));
 }
