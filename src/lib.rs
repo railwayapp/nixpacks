@@ -16,29 +16,32 @@ use anyhow::Result;
 use providers::{
     crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider,
     fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
-    node::NodeProvider, python::PythonProvider, rust::RustProvider, staticfile::StaticfileProvider,
-    swift::SwiftProvider, Provider,
+    node::NodeProvider, php::PhpProvider, python::PythonProvider, ruby::RubyProvider,
+    rust::RustProvider, staticfile::StaticfileProvider, swift::SwiftProvider, Provider,
 };
 
 mod chain;
+#[macro_use]
 pub mod nixpacks;
 pub mod providers;
 
 pub fn get_providers() -> Vec<&'static dyn Provider> {
     vec![
-        &GolangProvider {},
-        &DenoProvider {},
-        &NodeProvider {},
-        &RustProvider {},
-        &PythonProvider {},
-        &HaskellStackProvider {},
-        &CSharpProvider {},
-        &FSharpProvider {},
         &CrystalProvider {},
+        &CSharpProvider {},
+        &DartProvider {},
+        &DenoProvider {},
+        &FSharpProvider {},
+        &GolangProvider {},
+        &HaskellStackProvider {},
+        &JavaProvider {},
+        &PhpProvider {},
+        &RubyProvider {},
+        &NodeProvider {},
+        &PythonProvider {},
+        &RustProvider {},
         &StaticfileProvider {},
         &SwiftProvider {},
-        &DartProvider {},
-        &JavaProvider {},
     ]
 }
 

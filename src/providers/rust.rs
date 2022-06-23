@@ -52,6 +52,10 @@ impl Provider for RustProvider {
             setup_phase.add_file_dependency(toolchain_file);
         }
 
+        if !env.is_config_variable_truthy("NO_MUSL") {
+            setup_phase.add_apt_pkgs(vec!["musl-tools".to_string()]);
+        }
+
         Ok(Some(setup_phase))
     }
 
@@ -164,11 +168,8 @@ impl RustProvider {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-
-    use crate::nixpacks::{app::App, environment::Environment, nix::pkg::Pkg};
-
     use super::*;
+    use std::collections::HashMap;
 
     #[test]
     fn test_no_version() -> Result<()> {

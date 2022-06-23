@@ -127,8 +127,8 @@ fn main() -> Result<()> {
         )
         .get_matches();
 
-    let install_cmd = matches.value_of("install_cmd").map(|s| s.to_string());
-    let build_cmd = matches.value_of("build_cmd").map(|s| s.to_string());
+    let install_cmd = matches.value_of("install_cmd").map(|s| vec![s.to_string()]);
+    let build_cmd = matches.value_of("build_cmd").map(|s| vec![s.to_string()]);
     let start_cmd = matches.value_of("start_cmd").map(|s| s.to_string());
     let pkgs = match matches.values_of("pkgs") {
         Some(values) => values.map(Pkg::new).collect::<Vec<_>>(),

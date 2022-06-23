@@ -196,13 +196,18 @@ impl DockerBuilder {
         let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
 
         let mut apt_get_cmd = "".to_string();
+        // using apt will break build reproducibility
         if !setup_phase.apt_pkgs.clone().unwrap_or_default().is_empty() {
             let apt_pkgs = setup_phase.apt_pkgs.unwrap_or_default().join(" ");
-            println!(
-                "WARNING: Using apt for installing packages will break build reproducibility."
-            );
             apt_get_cmd = format!("RUN apt-get update && apt-get install -y {}", apt_pkgs);
         }
+        let setup_cmd = setup_phase
+            .cmds
+            .unwrap_or_default()
+            .iter()
+            .map(|c| format!("RUN {}", c))
+            .collect::<Vec<String>>()
+            .join("\n");
 
         // -- Static Assets
         let assets_copy_cmd = if !static_assets.is_empty() {
@@ -217,10 +222,12 @@ impl DockerBuilder {
 
         // -- Install
         let install_cmd = install_phase
-            .cmd
-            .clone()
-            .map(|cmd| format!("RUN {}", cmd))
-            .unwrap_or_else(|| "".to_string());
+            .cmds
+            .unwrap_or_default()
+            .iter()
+            .map(|c| format!("RUN {}", c))
+            .collect::<Vec<String>>()
+            .join("\n");
 
         let (build_path, run_path) = if let Some(paths) = install_phase.paths {
             let joined_paths = paths.join(":");
@@ -241,10 +248,12 @@ impl DockerBuilder {
 
         // -- Build
         let build_cmd = build_phase
-            .cmd
-            .clone()
-            .map(|cmd| format!("RUN {}", cmd))
-            .unwrap_or_else(|| "".to_string());
+            .cmds
+            .unwrap_or_default()
+            .iter()
+            .map(|c| format!("RUN {}", c))
+            .collect::<Vec<String>>()
+            .join("\n");
 
         let build_files = build_phase.only_include_files.unwrap_or_else(|| {
             // Only copy over the entire app if we haven't already in the install phase
@@ -295,6 +304,8 @@ impl DockerBuilder {
           {setup_copy_cmd}
           RUN nix-env -if environment.nix
           {apt_get_cmd}
+          {setup_cmd}
+          
           {assets_copy_cmd}
 
           # Load environment variables
