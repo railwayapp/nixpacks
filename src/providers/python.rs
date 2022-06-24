@@ -1,6 +1,8 @@
 use std::{collections::HashMap, fs};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context, Ok, Result};
+
+use std::result::Result::Ok as OkResult;
 
 use regex::Regex;
 use serde::Deserialize;
@@ -17,7 +19,7 @@ use crate::{
 
 use super::Provider;
 
-pub const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
+const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
 
 const POETRY_VERSION: &'static &str = &"1.1.13";
 pub struct PythonProvider {}
@@ -95,7 +97,7 @@ impl Provider for PythonProvider {
         }
 
         if app.includes_file("pyproject.toml") {
-            if let Ok(meta) = PythonProvider::parse_pyproject(app) {
+            if let OkResult(meta) = PythonProvider::parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
                     return Ok(Some(StartPhase::new(match entry_point {
                         EntryPoint::Command(cmd) => cmd,
@@ -203,15 +205,16 @@ impl PythonProvider {
         }
 
         match custom_version.map(|s| s.trim().to_string()) {
-            Some(custom_version) => {
-                if custom_version == "2" || custom_version == "2.7" {
-                    Ok(Pkg::new("python27Full"))
-                } else if custom_version == "3" || custom_version == "3.8" {
-                    Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME))
-                } else {
-                    bail!("Only the latest version of Python `2` or `3` are supported.")
-                }
-            }
+            Some(custom_version) => match custom_version.as_str() {
+                "3.11" => Ok(Pkg::new("python311")),
+                "3.10" => Ok(Pkg::new("python310Full")),
+                "3.9" => Ok(Pkg::new("python39")),
+                "3.8" => Ok(Pkg::new("python38")),
+                "3.7" => Ok(Pkg::new("python37")),
+                "2.7" => Ok(Pkg::new("python27Full")),
+                "2" => Ok(Pkg::new("python27Full")),
+                _ => Ok(Pkg::new("python38")),
+            },
             None => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
         }
     }
