@@ -18,12 +18,6 @@ use crate::{
 use super::Provider;
 
 const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
-// const AVAILABLE_PYTHON_VERSIONS: &[(&str, &str)] = &[
-//     ("3.8", "python38"),
-//     ("3.9", "python39"),
-//     ("3.10", "python310full"),
-//     ("3.11", "python311"),
-// ];
 
 const POETRY_VERSION: &'static &str = &"1.1.13";
 pub struct PythonProvider {}
