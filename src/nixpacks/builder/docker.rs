@@ -1,5 +1,4 @@
 use std::{
-    char::CharTryFromError,
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},

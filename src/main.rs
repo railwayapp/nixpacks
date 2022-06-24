@@ -56,7 +56,6 @@ fn main() -> Result<()> {
                 .arg(
                     Arg::new("buildkit")
                         .long("buildkit")
-                        .short('k')
                         .help("Forces docker to use buildkit")
                         .takes_value(false),
                 ),
