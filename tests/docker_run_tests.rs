@@ -469,6 +469,21 @@ fn test_java_maven() {
 }
 
 #[test]
+fn test_zig() {
+    let name = simple_build("./examples/zig");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Zig"));
+}
+
+#[test]
+fn test_zig_gyro() {
+    let name = simple_build("./examples/zig-gyro");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Zig"));
+    assert!(output.contains("The URI scheme of GitHub is https."));
+}
+
+#[test]
 fn test_ruby_sinatra() {
     let name = simple_build("./examples/ruby-sinatra/");
     let output = run_image(name, None);
