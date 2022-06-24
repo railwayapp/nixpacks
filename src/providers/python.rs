@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context, Ok, Result};
 
 use regex::Regex;
 use serde::Deserialize;
@@ -17,7 +17,13 @@ use crate::{
 
 use super::Provider;
 
-pub const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
+const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
+// const AVAILABLE_PYTHON_VERSIONS: &[(&str, &str)] = &[
+//     ("3.8", "python38"),
+//     ("3.9", "python39"),
+//     ("3.10", "python310full"),
+//     ("3.11", "python311"),
+// ];
 
 const POETRY_VERSION: &'static &str = &"1.1.13";
 pub struct PythonProvider {}
@@ -172,6 +178,8 @@ impl PythonProvider {
 
     fn get_django_app_name(app: &App, _env: &Environment) -> Result<String> {
         // Look for the settings.py file
+        println!("Getting Django Name");
+
         let paths = app.find_files("/**/settings.py").unwrap();
 
         // Generate regex to find the application name
@@ -203,15 +211,16 @@ impl PythonProvider {
         }
 
         match custom_version.map(|s| s.trim().to_string()) {
-            Some(custom_version) => {
-                if custom_version == "2" || custom_version == "2.7" {
-                    Ok(Pkg::new("python27Full"))
-                } else if custom_version == "3" || custom_version == "3.8" {
-                    Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME))
-                } else {
-                    bail!("Only the latest version of Python `2` or `3` are supported.")
-                }
-            }
+            Some(custom_version) => match custom_version.as_str() {
+                "3.11" => return Ok(Pkg::new("python311")),
+                "3.10" => return Ok(Pkg::new("python310Full")),
+                "3.9" => return Ok(Pkg::new("python39")),
+                "3.8" => return Ok(Pkg::new("python38")),
+                "3.7" => return Ok(Pkg::new("python37")),
+                "2.7" => return Ok(Pkg::new("python27Full")),
+                "2" => return Ok(Pkg::new("python27Full")),
+                _ => return Ok(Pkg::new("python38")),
+            },
             None => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
         }
     }
