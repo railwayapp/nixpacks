@@ -95,7 +95,9 @@ impl Provider for PythonProvider {
         }
 
         if app.includes_file("pyproject.toml") {
-            if let Ok(meta) = PythonProvider::parse_pyproject(app) {
+            let meta_res = PythonProvider::parse_pyproject(app)
+            if meta_res.is_ok() {
+                let meta = meta_res.unwrap();
                 if let Some(entry_point) = meta.entry_point {
                     return Ok(Some(StartPhase::new(match entry_point {
                         EntryPoint::Command(cmd) => cmd,
