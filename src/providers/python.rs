@@ -2,6 +2,8 @@ use std::{collections::HashMap, fs};
 
 use anyhow::{bail, Context, Ok, Result};
 
+use std::result::Result::Ok as OkResult;
+
 use regex::Regex;
 use serde::Deserialize;
 
@@ -95,9 +97,7 @@ impl Provider for PythonProvider {
         }
 
         if app.includes_file("pyproject.toml") {
-            let meta_res = PythonProvider::parse_pyproject(app)
-            if meta_res.is_ok() {
-                let meta = meta_res.unwrap();
+            if let OkResult(meta) = PythonProvider::parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
                     return Ok(Some(StartPhase::new(match entry_point {
                         EntryPoint::Command(cmd) => cmd,
