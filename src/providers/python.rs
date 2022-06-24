@@ -172,7 +172,6 @@ impl PythonProvider {
 
     fn get_django_app_name(app: &App, _env: &Environment) -> Result<String> {
         // Look for the settings.py file
-        println!("Getting Django Name");
 
         let paths = app.find_files("/**/settings.py").unwrap();
 
