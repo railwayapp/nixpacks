@@ -174,7 +174,6 @@ impl PythonProvider {
 
     fn get_django_app_name(app: &App, _env: &Environment) -> Result<String> {
         // Look for the settings.py file
-
         let paths = app.find_files("/**/settings.py").unwrap();
 
         // Generate regex to find the application name
