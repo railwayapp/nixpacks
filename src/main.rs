@@ -52,6 +52,12 @@ fn main() -> Result<()> {
                         .help("Additional labels to add to the output image")
                         .takes_value(true)
                         .multiple_values(true),
+                )
+                .arg(
+                    Arg::new("buildkit")
+                        .long("buildkit")
+                        .help("Forces docker to use buildkit")
+                        .takes_value(false),
                 ),
         )
         .arg(
@@ -185,11 +191,14 @@ fn main() -> Result<()> {
                 .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
                 .unwrap_or_default();
 
+            let force_buildkit = matches.is_present("buildkit");
+
             let build_options = &DockerBuilderOptions {
                 name,
                 tags,
                 labels,
                 out_dir,
+                force_buildkit,
                 quiet: false,
             };
 

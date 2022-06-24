@@ -19,6 +19,7 @@ pub struct DockerBuilderOptions {
     pub tags: Vec<String>,
     pub labels: Vec<String>,
     pub quiet: bool,
+    pub force_buildkit: bool,
 }
 
 pub struct DockerBuilder {
@@ -84,6 +85,10 @@ impl DockerBuilder {
 
     fn get_docker_build_cmd(&self, plan: &BuildPlan, name: &str, dest: &str) -> Command {
         let mut docker_build_cmd = Command::new("docker");
+
+        if self.options.force_buildkit {
+            docker_build_cmd.env("DOCKER_BUILDKIT", "1");
+        }
         docker_build_cmd.arg("build").arg(dest).arg("-t").arg(name);
 
         if self.options.quiet {
