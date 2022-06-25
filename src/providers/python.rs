@@ -206,9 +206,11 @@ impl PythonProvider {
 
         let python_regex = Regex::new(r"^(\d)\.(\d+)(?:\.\d+)?$")?;
 
-        let matches = python_regex.captures(custom_version);
+        let custom_version = custom_version.unwrap();
 
-        fn as_default<'t>(v: Option<Match<'t>>) -> &str {
+        let matches = python_regex.captures(&custom_version);
+
+        fn as_default(v: Option<Match>) -> &str {
             match v {
                 Some(m) => m.as_str(),
                 None => "0",
