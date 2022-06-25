@@ -206,7 +206,7 @@ impl PythonProvider {
 
         let python_regex = Regex::new(r"^(\d)\.(\d+)(?:\.\d+)?$")?;
 
-        let matches = python_regex.captures(custom_version)
+        let matches = python_regex.captures(custom_version);
 
         match matches {
             None => return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
@@ -216,9 +216,9 @@ impl PythonProvider {
                     match m.get(2) {
                         Some(s) => s.as_str(),
                         None => "0",
-                    }, 
+                    },
                 );
-        
+
                 match python_version {
                     ("3", "11") => Ok(Pkg::new("python311")),
                     ("3", "10") => Ok(Pkg::new("python310Full")),
@@ -230,7 +230,7 @@ impl PythonProvider {
                     ("2", "0") => Ok(Pkg::new("python27Full")),
                     _ => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
                 }
-            },
+            }
         }
     }
 
