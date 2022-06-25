@@ -196,35 +196,44 @@ impl PythonProvider {
     }
 
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
-        println!("GETING PYTHON");
+        // Fetch version from configs
         let mut custom_version = env
             .get_config_variable("PYTHON_VERSION")
             .map(|s| s.to_string());
 
+        // If not from configs, get it from the .python-version file
         if custom_version.is_none() && app.includes_file(".python-version") {
             custom_version = Some(app.read_file(".python-version")?);
         }
 
-        let python_regex = Regex::new(r"^(\d)\.(\d+)(?:\.\d+)?$")?;
-
+        // If it's still none, return default
+        if custom_version.is_none() {
+            return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
+        }
         let custom_version = custom_version.unwrap();
 
+        // Regex for reading Python versions (e.g. 3.8.0 or 3.8 or 3)
+        let python_regex = Regex::new(r"^(\d)\.(\d+)(?:\.\d+)?$")?;
+
+        // Capture matches
         let matches = python_regex.captures(custom_version.as_str().trim());
 
+        // If no matches, just use default
+        if matches.is_none() {
+            return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
+        }
+        let matches = matches.unwrap();
+
+        // Fetch python versions into tuples with defaults
         fn as_default(v: Option<Match>) -> &str {
             match v {
                 Some(m) => m.as_str(),
                 None => "_",
             }
         }
-
-        if matches.is_none() {
-            return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
-        }
-        let matches = matches.unwrap();
-
         let python_version = (as_default(matches.get(1)), as_default(matches.get(2)));
 
+        // Match major and minor versions
         match python_version {
             ("3", "11") => Ok(Pkg::new("python311")),
             ("3", "10") => Ok(Pkg::new("python310Full")),
