@@ -204,18 +204,33 @@ impl PythonProvider {
             custom_version = Some(app.read_file(".python-version")?);
         }
 
-        match custom_version.map(|s| s.trim().to_string()) {
-            Some(custom_version) => match custom_version.as_str() {
-                "3.11" => Ok(Pkg::new("python311")),
-                "3.10" => Ok(Pkg::new("python310Full")),
-                "3.9" => Ok(Pkg::new("python39")),
-                "3.8" => Ok(Pkg::new("python38")),
-                "3.7" => Ok(Pkg::new("python37")),
-                "2.7" => Ok(Pkg::new("python27Full")),
-                "2" => Ok(Pkg::new("python27Full")),
-                _ => Ok(Pkg::new("python38")),
+        let python_regex = Regex::new(r"^(\d)\.(\d+)(?:\.\d+)?$")?;
+
+        let matches = python_regex.captures(custom_version)
+
+        match matches {
+            None => return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
+            Some(m) => {
+                let python_version = (
+                    m.get(1).unwrap().as_str(),
+                    match m.get(2) {
+                        Some(s) => s.as_str(),
+                        None => "0",
+                    }, 
+                );
+        
+                match python_version {
+                    ("3", "11") => Ok(Pkg::new("python311")),
+                    ("3", "10") => Ok(Pkg::new("python310Full")),
+                    ("3", "9") => Ok(Pkg::new("python39")),
+                    ("3", "8") => Ok(Pkg::new("python38")),
+                    ("3", "7") => Ok(Pkg::new("python37")),
+                    ("3", "0") => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
+                    ("2", "7") => Ok(Pkg::new("python27Full")),
+                    ("2", "0") => Ok(Pkg::new("python27Full")),
+                    _ => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
+                }
             },
-            None => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
         }
     }
 
