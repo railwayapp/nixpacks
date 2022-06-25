@@ -207,13 +207,13 @@ impl PythonProvider {
         match custom_version.map(|s| s.trim().to_string()) {
             Some(custom_version) => match custom_version.as_str() {
                 "3.11" => Ok(Pkg::new("python311")),
-                "3.10" => Ok(Pkg::new("python310Full")),
-                "3.9" => Ok(Pkg::new("python39")),
-                "3.8" => Ok(Pkg::new("python38")),
-                "3.7" => Ok(Pkg::new("python37")),
+                "3.10" => Ok(Pkg::new("python310")),
+                "3.9" => Ok(Pkg::new("python39Full")),
+                "3.8" => Ok(Pkg::new("python38Full")),
+                "3.7" => Ok(Pkg::new("python37Full")),
                 "2.7" => Ok(Pkg::new("python27Full")),
                 "2" => Ok(Pkg::new("python27Full")),
-                _ => Ok(Pkg::new("python38")),
+                _ => Ok(Pkg::new("python38Full")),
             },
             None => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
         }
