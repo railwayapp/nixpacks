@@ -219,17 +219,11 @@ impl PythonProvider {
         }
 
         if matches.is_none() {
-            println!("NO MATCHES");
             return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
         }
-
-        println!("GOT MATCHES");
-
         let matches = matches.unwrap();
 
         let python_version = (as_default(matches.get(1)), as_default(matches.get(2)));
-
-        println!("Using python version: {:?}", python_version);
 
         match python_version {
             ("3", "11") => Ok(Pkg::new("python311")),
