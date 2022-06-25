@@ -196,6 +196,7 @@ impl PythonProvider {
     }
 
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
+        println!("GETING PYTHON");
         let mut custom_version = env
             .get_config_variable("PYTHON_VERSION")
             .map(|s| s.to_string());
@@ -208,7 +209,7 @@ impl PythonProvider {
 
         let custom_version = custom_version.unwrap();
 
-        let matches = python_regex.captures(&custom_version);
+        let matches = python_regex.captures(custom_version.as_str().trim());
 
         fn as_default(v: Option<Match>) -> &str {
             match v {
@@ -218,12 +219,17 @@ impl PythonProvider {
         }
 
         if matches.is_none() {
+            println!("NO MATCHES");
             return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
         }
 
+        println!("GOT MATCHES");
+
         let matches = matches.unwrap();
 
-        let python_version = (as_default(matches.get(1)), as_default(matches.get(1)));
+        let python_version = (as_default(matches.get(1)), as_default(matches.get(2)));
+
+        println!("Using python version: {:?}", python_version);
 
         match python_version {
             ("3", "11") => Ok(Pkg::new("python311")),
