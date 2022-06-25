@@ -214,7 +214,7 @@ impl PythonProvider {
         fn as_default(v: Option<Match>) -> &str {
             match v {
                 Some(m) => m.as_str(),
-                None => "0",
+                None => "_",
             }
         }
 
@@ -231,9 +231,9 @@ impl PythonProvider {
             ("3", "9") => Ok(Pkg::new("python39")),
             ("3", "8") => Ok(Pkg::new("python38")),
             ("3", "7") => Ok(Pkg::new("python37")),
-            ("3", "0") => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
+            ("3", "_") => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
             ("2", "7") => Ok(Pkg::new("python27Full")),
-            ("2", "0") => Ok(Pkg::new("python27Full")),
+            ("2", "_") => Ok(Pkg::new("python27Full")),
             _ => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
         }
     }
