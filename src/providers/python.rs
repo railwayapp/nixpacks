@@ -4,7 +4,7 @@ use anyhow::{bail, Context, Ok, Result};
 
 use std::result::Result::Ok as OkResult;
 
-use regex::Regex;
+use regex::{Match, Regex};
 use serde::Deserialize;
 
 use crate::{
@@ -208,16 +208,17 @@ impl PythonProvider {
 
         let matches = python_regex.captures(custom_version);
 
+        fn as_default<'t>(v: Option<Match<'t>>) -> &str {
+            match v {
+                Some(m) => m.as_str(),
+                None => "0",
+            }
+        }
+
         match matches {
             None => return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
             Some(m) => {
-                let python_version = (
-                    m.get(1).unwrap().as_str(),
-                    match m.get(2) {
-                        Some(s) => s.as_str(),
-                        None => "0",
-                    },
-                );
+                let python_version = (as_default(m.get(1)), as_default(m.get(1)));
 
                 match python_version {
                     ("3", "11") => Ok(Pkg::new("python311")),
