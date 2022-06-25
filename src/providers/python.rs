@@ -215,23 +215,24 @@ impl PythonProvider {
             }
         }
 
-        match matches {
-            None => return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
-            Some(m) => {
-                let python_version = (as_default(m.get(1)), as_default(m.get(1)));
+        if matches.is_none() {
+            return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
+        }
 
-                match python_version {
-                    ("3", "11") => Ok(Pkg::new("python311")),
-                    ("3", "10") => Ok(Pkg::new("python310Full")),
-                    ("3", "9") => Ok(Pkg::new("python39")),
-                    ("3", "8") => Ok(Pkg::new("python38")),
-                    ("3", "7") => Ok(Pkg::new("python37")),
-                    ("3", "0") => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
-                    ("2", "7") => Ok(Pkg::new("python27Full")),
-                    ("2", "0") => Ok(Pkg::new("python27Full")),
-                    _ => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
-                }
-            }
+        let matches = matches.unwrap();
+
+        let python_version = (as_default(matches.get(1)), as_default(matches.get(1)));
+
+        match python_version {
+            ("3", "11") => Ok(Pkg::new("python311")),
+            ("3", "10") => Ok(Pkg::new("python310Full")),
+            ("3", "9") => Ok(Pkg::new("python39")),
+            ("3", "8") => Ok(Pkg::new("python38")),
+            ("3", "7") => Ok(Pkg::new("python37")),
+            ("3", "0") => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
+            ("2", "7") => Ok(Pkg::new("python27Full")),
+            ("2", "0") => Ok(Pkg::new("python27Full")),
+            _ => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
         }
     }
 
