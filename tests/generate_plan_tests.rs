@@ -344,7 +344,7 @@ fn test_rust_rocket() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-rocket");
     let cmd = format!(
         "cargo build --release --target {}-unknown-linux-musl",
-        std::env::consts::ARCH
+        consts::ARCH
     );
     assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
     assert!(plan.start.clone().unwrap().cmd.is_some());
