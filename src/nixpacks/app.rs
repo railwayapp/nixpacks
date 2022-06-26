@@ -57,7 +57,7 @@ impl App {
             .into_iter()
             .filter_map(|result| result.ok()) // remove bad ones
             .map(|dir| dir.into_path()) // convert to paths
-            .filter(|path| glob.is_match(path)) // find matches
+            .filter(|path| glob.is_match(path) && self.includes_file(path.to_str().unwrap())) // find matches
             .collect();
 
         Ok(relative_paths)
