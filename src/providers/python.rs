@@ -236,13 +236,13 @@ impl PythonProvider {
         // Match major and minor versions
         match python_version {
             ("3", "11") => Ok(Pkg::new("python311")),
-            ("3", "10") => Ok(Pkg::new("python310Full")),
+            ("3", "10") => Ok(Pkg::new("python310")),
             ("3", "9") => Ok(Pkg::new("python39")),
             ("3", "8") => Ok(Pkg::new("python38")),
             ("3", "7") => Ok(Pkg::new("python37")),
             ("3", "_") => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
-            ("2", "7") => Ok(Pkg::new("python27Full")),
-            ("2", "_") => Ok(Pkg::new("python27Full")),
+            ("2", "7") => Ok(Pkg::new("python27")),
+            ("2", "_") => Ok(Pkg::new("python27")),
             _ => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
         }
     }
@@ -321,7 +321,7 @@ mod test {
                 &App::new("./examples/python-2")?,
                 &Environment::default()
             )?,
-            Pkg::new("python27Full")
+            Pkg::new("python27")
         );
 
         Ok(())
@@ -337,7 +337,7 @@ mod test {
                     "2.7".to_string()
                 )]))
             )?,
-            Pkg::new("python27Full")
+            Pkg::new("python27")
         );
 
         Ok(())
