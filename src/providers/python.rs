@@ -321,7 +321,7 @@ mod test {
                 &App::new("./examples/python-2")?,
                 &Environment::default()
             )?,
-            Pkg::new("python27Full")
+            Pkg::new("python27")
         );
 
         Ok(())
@@ -337,7 +337,7 @@ mod test {
                     "2.7".to_string()
                 )]))
             )?,
-            Pkg::new("python27Full")
+            Pkg::new("python27")
         );
 
         Ok(())
