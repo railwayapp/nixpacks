@@ -1,0 +1,54 @@
+name: Tag
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Get merged PR
+        uses: actions-ecosystem/action-get-merged-pull-request@v1
+        id: get-merged-pull-request
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get PR label
+        uses: actions-ecosystem/action-release-label@v1
+        id: release-label
+        if: ${{ steps.get-merged-pull-request.outputs.title != null }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: ${{ steps.get-merged-pull-request.outputs.labels }}
+
+      - name: Get latest tag
+        uses: actions-ecosystem/action-get-latest-tag@v1
+        id: get-latest-tag
+        if: ${{ steps.release-label.outputs.level != null }}
+        with:
+          semver_only: true
+
+      - name: Bump tag semver
+        uses: actions-ecosystem/action-bump-semver@v1
+        id: bump-semver
+        if: ${{ steps.release-label.outputs.level != null }}
+        with:
+          current_version: ${{ steps.get-latest-tag.outputs.tag }}
+          level: ${{ steps.release-label.outputs.level }}
+
+      - name: Create tag
+        uses: actions/github-script@v5
+        if: ${{ steps.bump-semver.outputs.new_version != null }}
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ steps.bump-semver.outputs.new_version }}',
+              sha: context.sha
+            })
