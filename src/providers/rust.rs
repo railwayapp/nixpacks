@@ -106,10 +106,7 @@ impl RustProvider {
     fn get_target(_app: &App, env: &Environment) -> Result<Option<String>> {
         // All the user to use the default target instead of compiling with musl
         if !env.is_config_variable_truthy("NO_MUSL") {
-            match ARCH {
-                "aarch64" => Ok(Some("aarch64-unknown-linux-musl".to_string())),
-                _ => Ok(Some("x86_64-unknown-linux-musl".to_string())),
-            }
+            Ok(Some(format!("{}-unknown-linux-musl", ARCH)))
         } else {
             Ok(None)
         }

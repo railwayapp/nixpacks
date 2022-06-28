@@ -6,6 +6,7 @@ use nixpacks::{
         plan::{generator::GeneratePlanOptions, BuildPlan},
     },
 };
+use std::env::consts::ARCH;
 
 fn simple_gen_plan(path: &str) -> BuildPlan {
     generate_build_plan(path, Vec::new(), &GeneratePlanOptions::default()).unwrap()
@@ -341,12 +342,8 @@ fn test_custom_rust_version() -> Result<()> {
 #[test]
 fn test_rust_rocket() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-rocket");
-    assert_eq!(
-        plan.build.unwrap().cmds,
-        Some(vec![
-            "cargo build --release --target x86_64-unknown-linux-musl".to_string()
-        ])
-    );
+    let cmd = format!("cargo build --release --target {}-unknown-linux-musl", ARCH);
+    assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
     assert!(plan.start.clone().unwrap().cmd.is_some());
     assert_eq!(
         plan.start.clone().unwrap().cmd.unwrap(),
