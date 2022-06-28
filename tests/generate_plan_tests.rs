@@ -663,6 +663,7 @@ fn test_zig() -> Result<()> {
     Ok(())
 }
 
+#[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "i386"))]
 #[test]
 fn test_zig_gyro() -> Result<()> {
     let plan = simple_gen_plan("./examples/zig-gyro");
