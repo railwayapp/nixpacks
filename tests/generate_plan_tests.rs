@@ -320,12 +320,8 @@ fn test_pin_archive() -> Result<()> {
 #[test]
 fn test_custom_rust_version() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-custom-version");
-    assert_eq!(
-        plan.build.unwrap().cmds,
-        Some(vec![
-            "cargo build --release --target x86_64-unknown-linux-musl".to_string()
-        ])
-    );
+    let cmd = format!("cargo build --release --target {}-unknown-linux-musl", ARCH);
+    assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
     assert_eq!(
         plan.setup
             .unwrap()
