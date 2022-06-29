@@ -66,6 +66,10 @@ impl Provider for PhpProvider {
             return Ok(Some(BuildPhase::new(
                 NodeProvider::get_package_manager(app) + " run prod",
             )));
+        } else if let Ok(true) = NodeProvider::has_script(app, "build") {
+            return Ok(Some(BuildPhase::new(
+                NodeProvider::get_package_manager(app) + " run build",
+            )));
         }
         Ok(None)
     }
