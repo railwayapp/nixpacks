@@ -57,8 +57,6 @@ impl Provider for DenoProvider {
         if app.includes_file("deno.json") {
             let deno_json: DenoJson = app.read_json("deno.json")?;
 
-            println!("{:?}", deno_json);
-
             if let Some(tasks) = deno_json.tasks {
                 if let Some(start) = tasks.start {
                     return Ok(Some(StartPhase::new(start)));
