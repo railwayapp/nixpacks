@@ -30,7 +30,7 @@ pub struct GeneratePlanOptions {
 
 pub struct NixpacksBuildPlanGenerator<'a> {
     providers: Vec<&'a dyn Provider>,
-    matched_provider: Option<&'a dyn Provider>,
+    matched_providers: Vec<&'a dyn Provider>,
     options: GeneratePlanOptions,
 }
 
@@ -86,7 +86,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
     ) -> NixpacksBuildPlanGenerator {
         NixpacksBuildPlanGenerator {
             providers,
-            matched_provider: None,
+            matched_providers: vec![],
             options,
         }
     }
@@ -95,7 +95,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         for provider in self.providers.clone() {
             let matches = provider.detect(app, environment)?;
             if matches {
-                self.matched_provider = Some(provider);
+                self.matched_providers.push(provider);
                 break;
             }
         }
@@ -104,9 +104,14 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
     }
 
     fn get_setup_phase(&self, app: &App, environment: &Environment) -> Result<SetupPhase> {
-        let mut setup_phase: SetupPhase = match self.matched_provider {
-            Some(provider) => provider.setup(app, environment)?.unwrap_or_default(),
-            None => SetupPhase::default(),
+        let mut setup_phase: SetupPhase = match self.matched_providers.len() {
+            0 => SetupPhase::default(),
+            _ => self.matched_providers.iter().map(|provider| {
+                provider
+                    .setup(app, environment)
+                    .unwrap_or_default()
+                    .unwrap_or_default()
+            }),
         };
 
         let env_var_pkgs = environment
