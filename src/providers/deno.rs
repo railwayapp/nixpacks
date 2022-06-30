@@ -12,7 +12,6 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Default, Debug)]
-
 pub struct DenoTasks {
     pub start: Option<String>,
 }
