@@ -38,8 +38,18 @@ At the moment Nixpacks supports the following languages out of the box
 - [Node, NPM, and Yarn](./docs/node.md)
 - [Go](./docs/go.md)
 - [Rust](./docs/rust.md)
-- [Deno](./docs/deno.md)
+- [Deno/Fresh](./docs/deno.md)
 - [Haskell with Stack](./docs/haskell-stack.md)
+- [Zig](./docs/zig.md)
+- [Ruby/Rails](./docs/ruby.md)
+- [Python/Django](./docs/python.md)
+- [PHP/Laravel](./docs/php.md)
+- [Dart](./docs/dart.md)
+- [C#/DotNet](./docs/csharp.md)
+- [F#](./docs/fsharp.md)
+- [Java/Spring](./docs/java.md)
+- [StaticHTML](./docs/static.md)
+- [Crystal](./docs/crystal.md)
 
 # Installation
 
