@@ -26,7 +26,7 @@ impl Provider for RubyProvider {
         let mut setup_phase = SetupPhase::new(pkgs);
         setup_phase.add_apt_pkgs(vec!["procps".to_string()]);
         setup_phase.add_cmd(
-            "curl -sSL https://get.rvm.io | bash -s stable && source /etc/profile.d/rvm.sh"
+            "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh"
                 .to_string(),
         );
         setup_phase.add_cmd("rvm install ".to_string() + &self.get_ruby_version(app).unwrap());
