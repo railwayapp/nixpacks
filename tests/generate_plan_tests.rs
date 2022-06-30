@@ -217,10 +217,7 @@ fn test_deno() -> Result<()> {
 #[test]
 fn test_deno_fresh() -> Result<()> {
     let plan = simple_gen_plan("./examples/deno-fresh");
-    assert_eq!(
-        plan.build.unwrap().cmds,
-        Some(vec!["deno cache src/index.ts".to_string()])
-    );
+    assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(
         plan.start.unwrap().cmd,
         Some("deno run --allow-all src/index.ts".to_string())
