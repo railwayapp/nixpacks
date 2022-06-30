@@ -54,13 +54,15 @@ impl Provider for DenoProvider {
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         // First check for a deno.json and see if we can rip the start command from there
-        let deno_json: DenoJson = app.read_json("deno.json")?;
+        if app.includes_file("deno.json") {
+            let deno_json: DenoJson = app.read_json("deno.json")?;
 
-        println!("{:?}", deno_json);
+            println!("{:?}", deno_json);
 
-        if let Some(tasks) = deno_json.tasks {
-            if let Some(start) = tasks.start {
-                return Ok(Some(StartPhase::new(start)));
+            if let Some(tasks) = deno_json.tasks {
+                if let Some(start) = tasks.start {
+                    return Ok(Some(StartPhase::new(start)));
+                }
             }
         }
 
