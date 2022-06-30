@@ -220,7 +220,7 @@ fn test_deno_fresh() -> Result<()> {
     assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(
         plan.start.unwrap().cmd,
-        Some("deno run --allow-all src/index.ts".to_string())
+        Some("deno run -A dev.ts".to_string())
     );
 
     Ok(())
