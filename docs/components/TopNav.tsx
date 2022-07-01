@@ -9,7 +9,7 @@ export const TopNav: React.FC<{
   return (
     <nav
       className={`flex items-center justify-between px-8 py-4 ${
-        coloured ? "bg-primary" : "border-b border-gray-100"
+        coloured ? "bg-indigo-300" : "border-b border-gray-100"
       }`}
     >
       <Link href="/" className="flex">

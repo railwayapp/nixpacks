@@ -51,4 +51,8 @@ export const sidebarItems: SidebarSection[] = [
     title: "CLI Reference",
     href: "/docs/cli",
   },
+  {
+    title: "Railway",
+    href: "/docs/railway",
+  },
 ];

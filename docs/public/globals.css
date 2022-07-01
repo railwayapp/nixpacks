@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --primary: #ffaf19;
+  --primary: #859eff;
   --bg: white;
   --fg: #333;
 
@@ -16,8 +16,7 @@ body {
   margin: 0;
   padding: 0;
   line-height: 1.5;
-  font-family: "IBM Plex Mono", monospace;
-  font-family: "IBM Plex Sans", sans-serif;
+  font-family: "Inter", sans-serif;
 
   -webkit-font-smoothing: antialiased;
 }

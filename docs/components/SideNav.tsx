@@ -7,20 +7,20 @@ export const SideNav = () => {
   const router = useRouter();
 
   return (
-    <nav className="sidenav bg-amber-50 border-r border-amber-100 sticky py-8 w-[300px]">
+    <nav className="sidenav text-sm bg-gray-50 border-r border-none sticky py-8 w-[300px]">
       {sidebarItems.map((item) => {
         const active = item.href != null && router.pathname === item.href;
 
         return (
-          <div key={item.title} className="mb-3">
+          <div key={item.title} className="mb-2">
             <p className="font-semibold">
               <Link href={item.href} passHref>
                 <a
                   className={`block font-semibold border-r-2 cursor-pointer px-4 py-2 ${
                     active
-                      ? "bg-amber-100 border-amber-500"
+                      ? "bg-indigo-100 border-indigo-500 text-indigo-600"
                       : "border-transparent"
-                  } hover:bg-amber-200`}
+                  } hover:bg-indigo-100`}
                 >
                   {item.title}
                 </a>
@@ -35,11 +35,11 @@ export const SideNav = () => {
                     <li key={link.href}>
                       <Link {...link} passHref>
                         <a
-                          className={`block px-4 py-2 border-r-2 cursor-pointer ${
+                          className={`block text-gray-500 px-4 py-2 border-r-2 cursor-pointer ${
                             active
-                              ? "bg-amber-100 border-amber-500"
+                              ? "bg-indigo-100 border-indigo-500 text-indigo-600"
                               : "border-transparent"
-                          } hover:bg-amber-200`}
+                          } hover:bg-indigo-100`}
                         >
                           {link.text}
                         </a>
