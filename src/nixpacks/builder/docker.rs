@@ -56,7 +56,7 @@ impl Builder for DockerBuilder {
 
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
-            let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), dest);
+            let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), dest)?;
 
             // Execute docker build
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
@@ -83,8 +83,12 @@ impl DockerBuilder {
         DockerBuilder { logger, options }
     }
 
-    fn get_docker_build_cmd(&self, plan: &BuildPlan, name: &str, dest: &str) -> Command {
+    fn get_docker_build_cmd(&self, plan: &BuildPlan, name: &str, dest: &str) -> Result<Command> {
         let mut docker_build_cmd = Command::new("docker");
+
+        if docker_build_cmd.status().is_err() {
+            bail!("Please install Docker first https://docs.docker.com/engine/install/")
+        }
 
         if self.options.force_buildkit {
             docker_build_cmd.env("DOCKER_BUILDKIT", "1");
@@ -110,7 +114,7 @@ impl DockerBuilder {
             docker_build_cmd.arg("--label").arg(l);
         }
 
-        docker_build_cmd
+        Ok(docker_build_cmd)
     }
 
     fn write_app(&self, app_src: &str, dest: &str) -> Result<()> {
