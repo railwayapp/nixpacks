@@ -25,7 +25,7 @@ export const Hero: React.FC = () => {
       </h2>
 
       <div className="flex gap-4 mt-12 actions">
-        <ButtonLink href="/docs">Get Started</ButtonLink>
+        <ButtonLink href="/docs/getting-started">Get Started</ButtonLink>
         <ButtonLink href="https://github.com/railwayapp/nixpacks">
           <div className="flex items-center space-x-2">
             <GitHub className="w-5 h-5" />
