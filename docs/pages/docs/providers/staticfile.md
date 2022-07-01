@@ -4,4 +4,30 @@ title: Staticfile
 
 # {% $markdoc.frontmatter.title %}
 
-HTML will be served via Nginx if a `Staticfile` OR a `public` folder OR an `index` folder OR a `dist` folder OR an `index.html` file is found.
+The Staticfile provider allows you to server a single directory via [NGINX](https://www.nginx.com/).
+
+Staticfile is detected if
+
+- a `Staticfile` file is found at the app root
+- `./public` directory exists
+- `./index` directory exists
+- `./dist` directory exists
+- `./index.html` file exists
+
+if this provider is matched for one of these reasons, then that directory/file will be served.
+
+## Setup
+
+NGINX is installed.
+
+## Install
+
+_None_
+
+## Build
+
+The NGINX config is copied to the correct location.
+
+## Start
+
+NGINX is started and the directory/file is served.

@@ -21,7 +21,7 @@ export const Hero: React.FC = () => {
 
       <h1 className="mt-16 mb-6 font-bold mt-18 text-7xl">Nixpacks</h1>
       <h2 className="text-2xl font-semibold">
-        App source + Nix packages + Docker = Image
+        Build container images without Dockerfiles
       </h2>
 
       <div className="flex gap-4 mt-12 actions">

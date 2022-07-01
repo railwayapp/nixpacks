@@ -43,7 +43,7 @@ export const TopNav: React.FC<{
         </Link>
 
         <section className="flex gap-6 text-gray-500">
-          <Link href="/docs" passHref>
+          <Link href="/docs/getting-started" passHref>
             <a
               className={`hidden md:block hover:text-fg ${
                 pathname.startsWith("/docs") ? "text-fg" : ""

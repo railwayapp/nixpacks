@@ -31,7 +31,7 @@ export const sidebarItems: ISidebarSection[] = [
       { href: "/docs/providers/rust", text: "Rust" },
       { href: "/docs/providers/staticfile", text: "Staticfile" },
       { href: "/docs/providers/swift", text: "Swift" },
-      { href: "/docs/providers/zig", text: "Zig" },
+      { href: "/docs/providers/zig-lang", text: "Zig" },
     ],
   },
   {

@@ -5,6 +5,8 @@ module.exports =
     pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdoc"],
 
     async redirects() {
-      return [{ source: "/", destination: "/docs", permanent: false }];
+      return [
+        { source: "/", destination: "/docs/getting-started", permanent: false },
+      ];
     },
   });
