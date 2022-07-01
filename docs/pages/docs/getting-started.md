@@ -31,7 +31,7 @@ nixpacks build ./path/to/app --name my-app \
                              --start-cmd "echo hello | cowsay"
 ```
 
-## 3. Run the built image
+## 3. Run the image
 
 ```
 docker run -it my-app
