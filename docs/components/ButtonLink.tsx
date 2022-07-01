@@ -1,5 +1,5 @@
 import NextLink from "next/link";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 
 const isExternalLink = (href?: string): boolean =>
   href == null ||
@@ -10,7 +10,10 @@ const isExternalLink = (href?: string): boolean =>
 const useIsExternalLink = (href?: string) =>
   useMemo(() => isExternalLink(href), [href]);
 
-export const ButtonLink = ({ children, href, ...props }) => {
+export const ButtonLink: React.FC<{
+  href: string;
+  children?: React.ReactNode;
+}> = ({ children, href, ...props }) => {
   const isExternal = useIsExternalLink(href);
 
   return (

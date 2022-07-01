@@ -1,5 +1,7 @@
-import * as React from "react";
+import React from "react";
 
-export const Section = ({ children }) => {
+export const Section: React.FC<{ children?: React.ReactNode }> = ({
+  children,
+}) => {
   return <div className="section">{children}</div>;
 };

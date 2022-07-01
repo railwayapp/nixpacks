@@ -1,8 +1,10 @@
 import Prism from "prismjs";
+import React from "react";
 
-import * as React from "react";
-
-export function CodeBlock({ children, language }) {
+export const CodeBlock: React.FC<{
+  language?: string;
+  children?: React.ReactNode;
+}> = ({ children, language }) => {
   const ref = React.useRef(null);
 
   React.useEffect(() => {
@@ -16,4 +18,4 @@ export function CodeBlock({ children, language }) {
       </pre>
     </div>
   );
-}
+};

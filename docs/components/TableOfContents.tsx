@@ -1,9 +1,9 @@
 import React from "react";
 import Link from "next/link";
 
-export function TableOfContents({ toc }) {
+export const TableOfContents: React.FC<{ toc: any }> = ({ toc }) => {
   const items = toc.filter(
-    (item) => item.id && (item.level === 2 || item.level === 3)
+    (item: any) => item.id && (item.level === 2 || item.level === 3)
   );
 
   if (items.length <= 1) {
@@ -13,7 +13,7 @@ export function TableOfContents({ toc }) {
   return (
     <nav className="toc">
       <ul className="flex column">
-        {items.map((item) => {
+        {items.map((item: any) => {
           const href = `#${item.id}`;
           const active =
             typeof window !== "undefined" && window.location.hash === href;
@@ -68,4 +68,4 @@ export function TableOfContents({ toc }) {
       </style>
     </nav>
   );
-}
+};
