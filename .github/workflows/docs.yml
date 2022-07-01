@@ -34,6 +34,7 @@ jobs:
 
       - name: Install packages
         run: yarn install --frozen-lockfile --prefer-offline
+        working-directory: ./docs
 
       - name: Lint
         run: yarn lint
