@@ -53,6 +53,10 @@ export default function MyApp({ Component, pageProps }: AppProps) {
     }
   }
 
+  if (!isHome) {
+    title = `${title} | Nixpacks`;
+  }
+
   const toc = pageProps.markdoc?.content
     ? collectHeadings(pageProps.markdoc.content)
     : [];

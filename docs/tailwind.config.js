@@ -36,6 +36,9 @@ module.exports = {
             code: {
               fontSize: theme("fontSize.sm"),
               color: theme("colors.fg"),
+              backgroundColor: "hsl(230, 1%, 98%)",
+              padding: `2px 4px`,
+              borderRadius: theme("borderRadius.sm"),
               "&::before": { display: "none" },
               "&::after": { display: "none" },
             },
