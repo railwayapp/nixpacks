@@ -215,6 +215,18 @@ fn test_deno() -> Result<()> {
 }
 
 #[test]
+fn test_deno_fresh() -> Result<()> {
+    let plan = simple_gen_plan("./examples/deno-fresh");
+    assert_eq!(plan.build.unwrap().cmds, None);
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("deno run -A dev.ts".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_csharp_api() -> Result<()> {
     let plan = simple_gen_plan("./examples/csharp-api");
     assert_eq!(
