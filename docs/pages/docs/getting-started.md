@@ -22,6 +22,15 @@ nixpacks build ./path/to/app --name my-app
 
 This creates an image with the name `my-app`.
 
+Nixpacks allows you to customize all options that are used to build the image. For example, you can add additional system packages and specify the build and start commands.
+
+```
+nixpacks build ./path/to/app --name my-app \
+                             --pkgs cowsay \
+                             --build-cmd ./build.sh \
+                             --start-cmd "echo hello | cowsay"
+```
+
 ## 3. Run the built image
 
 ```
