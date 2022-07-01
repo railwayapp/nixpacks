@@ -6,11 +6,15 @@ import { Section } from "./Section";
 import { ChevronDown, ChevronRight } from "react-feather";
 
 export const SideNav = () => {
-  const router = useRouter();
-
   return (
-    <nav className="sidenav text-sm mt-20 pb-4 px-4 w-[240px]">
-      <div className="sticky top-[calc(5rem+var(--top-nav-height)+4px)]">
+    <nav className="sidenav text-sm px-4 w-[240px]">
+      <div
+        className="sticky py-4 overflow-y-auto"
+        style={{
+          height: "calc(100vh - var(--top-nav-height) - 4px)",
+          top: "calc(var(--top-nav-height) + 4px)",
+        }}
+      >
         <ul className="space-y-1">
           {sidebarItems.map((item) => (
             <SidebarSection key={item.text} section={item} />
@@ -49,7 +53,7 @@ const SidebarSection: React.FC<{
           </button>
 
           {isOpen && section.links != null && (
-            <ul className="space-y-1 ml-4">
+            <ul className="ml-4 space-y-1">
               {section.links.map((link) => (
                 <li key={link.href}>
                   <SidebarLink text={link.text} href={link.href} />

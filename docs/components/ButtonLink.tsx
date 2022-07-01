@@ -10,14 +10,14 @@ const isExternalLink = (href?: string): boolean =>
 const useIsExternalLink = (href?: string) =>
   useMemo(() => isExternalLink(href), [href]);
 
-export const Link = ({ children, href, ...props }) => {
+export const ButtonLink = ({ children, href, ...props }) => {
   const isExternal = useIsExternalLink(href);
 
   return (
     <NextLink href={href} passHref>
       <a
         {...props}
-        className="bg-white px-4 py-2 rounded hover:bg-teal-500 hover:text-white hover:font-semibold"
+        className="px-4 py-2 bg-white rounded hover:bg-teal-500 hover:text-white"
         {...(isExternal && { target: "_blank" })}
       >
         {children}

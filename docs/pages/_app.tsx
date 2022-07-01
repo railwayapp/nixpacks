@@ -93,7 +93,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
 
             <main
               className={`prose w-full max-w-4xl px-8 pt-20 pb-40 ${
-                isHome ? "prose-lg" : ""
+                isHome ? "prose-lg mx-auto" : ""
               }`}
             >
               <Component {...pageProps} />

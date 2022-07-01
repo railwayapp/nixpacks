@@ -1,23 +1,29 @@
 import * as React from "react";
-import { Link } from "./Link";
+import { GitHub } from "react-feather";
+import { ButtonLink } from "./ButtonLink";
 
 export const Hero: React.FC = () => {
   return (
-    <div className="not-prose hero bg-teal-200 flex flex-col items-center pt-40 pb-[calc(10rem + var(--top-nav-height))]">
+    <div className="not-prose hero bg-fuchsia-400 flex flex-col items-center pt-36 pb-[calc(9rem + var(--top-nav-height))]">
       <img
         src="/box.svg"
         alt="Nixpacks Logo"
-        className="logo w-40 h-40 mb-16"
+        className="w-40 h-40 mb-16 logo"
       />
 
-      <h1 className="mb-6 text-7xl font-bold">Nixpacks</h1>
+      <h1 className="mb-6 font-bold text-7xl">Nixpacks</h1>
       <h2 className="text-2xl font-semibold">
         App source + Nix packages + Docker = Image
       </h2>
 
-      <div className="actions mt-12 flex gap-4">
-        <Link href="/docs">Get Started</Link>
-        <Link href="https://github.com/railwayapp/nixpacks">GitHub</Link>
+      <div className="flex gap-4 mt-12 actions">
+        <ButtonLink href="/docs">Get Started</ButtonLink>
+        <ButtonLink href="https://github.com/railwayapp/nixpacks">
+          <div className="flex items-center space-x-2">
+            <img src="/icons/github.svg" alt="" className="w-5" />{" "}
+            <span>GitHub</span>
+          </div>
+        </ButtonLink>
       </div>
 
       <style jsx>

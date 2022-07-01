@@ -1,7 +1,7 @@
-import React from 'react';
-import Link from 'next/link';
+import React from "react";
+import Link from "next/link";
 
-export function TableOfContents({toc}) {
+export function TableOfContents({ toc }) {
   const items = toc.filter(
     (item) => item.id && (item.level === 2 || item.level === 3)
   );
@@ -16,16 +16,16 @@ export function TableOfContents({toc}) {
         {items.map((item) => {
           const href = `#${item.id}`;
           const active =
-            typeof window !== 'undefined' && window.location.hash === href;
+            typeof window !== "undefined" && window.location.hash === href;
           return (
             <li
               key={item.title}
               className={[
-                active ? 'active' : undefined,
-                item.level === 3 ? 'padded' : undefined,
+                active ? "active" : undefined,
+                item.level === 3 ? "padded" : undefined,
               ]
                 .filter(Boolean)
-                .join(' ')}
+                .join(" ")}
             >
               <Link href={href} passHref>
                 <a>{item.title}</a>

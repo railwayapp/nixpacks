@@ -22,5 +22,5 @@ body {
 }
 
 ::selection {
-  @apply bg-amber-300;
+  @apply bg-fuchsia-200;
 }

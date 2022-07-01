@@ -22,7 +22,7 @@ View all build options with
 nixpacks build --help
 ```
 
-### Build Options
+### Options
 
 |                             |                                                                |
 | :-------------------------- | :------------------------------------------------------------- |
