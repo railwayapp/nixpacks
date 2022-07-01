@@ -4,4 +4,4 @@ title: Zig
 
 # {% $markdoc.frontmatter.title %}
 
-asdfasdf
+Zig is detected if a `*.zig` or `gyro.zzz` file is found.

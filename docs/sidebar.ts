@@ -16,11 +16,8 @@ export const sidebarItems: SidebarSection[] = [
     links: [
       { href: "/docs/getting-started", text: "Get Started" },
       { href: "/docs/install", text: "Installation" },
+      { href: "/docs/how-it-works", text: "How it Works" },
     ],
-  },
-  {
-    title: "Concepts",
-    href: "/docs/concepts",
   },
   {
     title: "Configuration",
@@ -30,14 +27,15 @@ export const sidebarItems: SidebarSection[] = [
     title: "Language Support",
     href: "/docs/providers",
     links: [
-      { href: "/docs/providers/node", text: "Node" },
       { href: "/docs/providers/crystal", text: "Crystal" },
-      { href: "/docs/providers/csharp", text: "C#" },
+      { href: "/docs/providers/csharp", text: "C#/.NET" },
       { href: "/docs/providers/dart", text: "Dart" },
       { href: "/docs/providers/deno", text: "Deno" },
+      { href: "/docs/providers/fsharp", text: "F#" },
       { href: "/docs/providers/go", text: "Go" },
       { href: "/docs/providers/haskell", text: "Haskell" },
       { href: "/docs/providers/java", text: "Java" },
+      { href: "/docs/providers/node", text: "Node" },
       { href: "/docs/providers/php", text: "PHP" },
       { href: "/docs/providers/python", text: "Python" },
       { href: "/docs/providers/ruby", text: "Ruby" },

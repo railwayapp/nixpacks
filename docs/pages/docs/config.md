@@ -1,5 +1,5 @@
 ---
-title: Config
+title: Configuration
 ---
 
 # {% $markdoc.frontmatter.title %}

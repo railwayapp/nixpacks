@@ -7,7 +7,7 @@ export const SideNav = () => {
   const router = useRouter();
 
   return (
-    <nav className="sidenav text-sm bg-gray-50 border-r border-none sticky py-8 w-[300px]">
+    <nav className="sidenav text-sm bg-gray-50 border-r border-none py-8 w-[300px]">
       {sidebarItems.map((item) => {
         const active = item.href != null && router.pathname === item.href;
 
@@ -18,7 +18,7 @@ export const SideNav = () => {
                 <a
                   className={`block font-semibold border-r-2 cursor-pointer px-4 py-2 ${
                     active
-                      ? "bg-indigo-100 border-indigo-500 text-indigo-600"
+                      ? "bg-indigo-100 border-indigo-500 text-indigo-700"
                       : "border-transparent"
                   } hover:bg-indigo-100`}
                 >
@@ -37,7 +37,7 @@ export const SideNav = () => {
                         <a
                           className={`block text-gray-500 px-4 py-2 border-r-2 cursor-pointer ${
                             active
-                              ? "bg-indigo-100 border-indigo-500 text-indigo-600"
+                              ? "bg-indigo-100 border-indigo-500 text-indigo-700"
                               : "border-transparent"
                           } hover:bg-indigo-100`}
                         >

@@ -1,4 +1,8 @@
-# Fsharp Support
+---
+title: F#
+---
+
+# {% $markdoc.frontmatter.title %}
 
 Fsharp is detected if a `*.fsproj` file is found.
 

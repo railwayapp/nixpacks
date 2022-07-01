@@ -8,7 +8,7 @@ export const TopNav: React.FC<{
 }> = ({ coloured, children }) => {
   return (
     <nav
-      className={`flex items-center justify-between px-8 py-4 ${
+      className={`flex items-center justify-between px-8 py-5 shadow-sm ${
         coloured ? "bg-indigo-300" : "border-b border-gray-100"
       }`}
     >
