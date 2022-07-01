@@ -17,7 +17,7 @@ export const Link = ({ children, href, ...props }) => {
     <NextLink href={href} passHref>
       <a
         {...props}
-        className="bg-white border-2 border-white px-4 py-2 rounded hover:bg-indigo-300 hover:border-white"
+        className="bg-white px-4 py-2 rounded hover:bg-teal-500 hover:text-white hover:font-semibold"
         {...(isExternal && { target: "_blank" })}
       >
         {children}

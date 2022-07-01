@@ -9,7 +9,7 @@ export const SideNav = () => {
   const router = useRouter();
 
   return (
-    <nav className="sidenav text-sm mt-20 px-4 w-[240px]">
+    <nav className="sidenav text-sm mt-20 pb-4 px-4 w-[240px]">
       <div className="sticky top-[calc(5rem+var(--top-nav-height)+4px)]">
         <ul className="space-y-1">
           {sidebarItems.map((item) => (
@@ -26,7 +26,7 @@ const getSidebarItemStyles = (active?: boolean) =>
     active
       ? "bg-fuchsia-100 border-fuchsia-500 text-fuchsia-700 font-semibold"
       : "text-gray-500"
-  } hover:bg-fuchsia-100`;
+  } hover:bg-fuchsia-100 hover:text-fuchsia-700`;
 
 const SidebarSection: React.FC<{
   section: ISidebarSection;

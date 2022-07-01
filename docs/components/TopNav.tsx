@@ -8,7 +8,7 @@ export const TopNav: React.FC<{
   return (
     <div
       className={`w-full sticky top-0 bg-bg z-10 ${
-        coloured ? "bg-indigo-300" : "shadow"
+        coloured ? "bg-teal-200" : "shadow"
       }`}
     >
       <nav

@@ -1,6 +1,9 @@
 import * as React from "react";
 
-export const Callout = ({ title, children }) => {
+export const Callout: React.FC<{
+  title: string;
+  children: React.ReactNode;
+}> = ({ title, children }) => {
   return (
     <div className="callout">
       <strong>{title}</strong>
