@@ -1,18 +1,14 @@
-import React from "react";
+import type { AppProps } from "next/app";
 import Head from "next/head";
-import Link from "next/link";
-
-import { Hero, SideNav, TableOfContents, TopNav } from "../components";
-
+import { useRouter } from "next/router";
 import "prismjs";
+import { Hero, SideNav, TopNav } from "../components";
+
 // Import other Prism themes here
 import "prismjs/components/prism-bash.min";
-import "prismjs/themes/prism.css";
+import "../public/prism-one-light.css";
 
 import "../public/globals.css";
-
-import type { AppProps } from "next/app";
-import { useRouter } from "next/router";
 
 const TITLE = "Nixpacks";
 const DESCRIPTION = "App source + Nix packages + Docker = Image";

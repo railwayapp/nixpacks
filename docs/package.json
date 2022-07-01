@@ -3,7 +3,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "clean": "rm -rf .next"
   },
   "dependencies": {
     "@headlessui/react": "^1.6.5",
