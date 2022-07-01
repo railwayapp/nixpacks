@@ -1,31 +1,20 @@
-export interface SidebarSection {
-  title: string;
-  href: string;
-  links?: SidebarLink[];
-}
-
-export interface SidebarLink {
-  href: string;
+export type ISidebarSection = {
   text: string;
-}
+  href?: string;
+  links?: ISidebarItem[];
+};
 
-export const sidebarItems: SidebarSection[] = [
+export type ISidebarItem = { text: string; href: string };
+
+export const sidebarItems: ISidebarSection[] = [
+  { href: "/docs", text: "Introduction" },
+  { href: "/docs/getting-started", text: "Getting Started" },
+  { href: "/docs/install", text: "Installation" },
+  { href: "/docs/how-it-works", text: "How it Works" },
+  { text: "Configuration", href: "/docs/config" },
+  { text: "CLI Reference", href: "/docs/cli" },
   {
-    title: "Overview",
-    href: "/docs",
-    links: [
-      { href: "/docs/getting-started", text: "Get Started" },
-      { href: "/docs/install", text: "Installation" },
-      { href: "/docs/how-it-works", text: "How it Works" },
-    ],
-  },
-  {
-    title: "Configuration",
-    href: "/docs/config",
-  },
-  {
-    title: "Language Support",
-    href: "/docs/providers",
+    text: "Language Support",
     links: [
       { href: "/docs/providers/crystal", text: "Crystal" },
       { href: "/docs/providers/csharp", text: "C#/.NET" },
@@ -45,12 +34,5 @@ export const sidebarItems: SidebarSection[] = [
       { href: "/docs/providers/zig", text: "Zig" },
     ],
   },
-  {
-    title: "CLI Reference",
-    href: "/docs/cli",
-  },
-  {
-    title: "Railway",
-    href: "/docs/railway",
-  },
+  { text: "Railway", href: "/docs/railway" },
 ];

@@ -14,10 +14,10 @@ import "../public/globals.css";
 import type { AppProps } from "next/app";
 import { useRouter } from "next/router";
 
-const TITLE = "Markdoc";
-const DESCRIPTION = "A powerful, flexible, Markdown-based authoring framework";
+const TITLE = "Nixpacks";
+const DESCRIPTION = "App source + Nix packages + Docker = Image";
 
-function collectHeadings(node, sections = []) {
+function collectHeadings(node: any, sections: any[] = []) {
   if (node) {
     if (node.name === "Heading") {
       const title = node.children[0];
@@ -47,7 +47,6 @@ export default function MyApp({ Component, pageProps }: AppProps) {
 
   let title = TITLE;
   let description = DESCRIPTION;
-  const noSidebar = markdoc?.frontmatter?.noSidebar;
 
   if (markdoc) {
     if (markdoc.frontmatter.title) {
@@ -74,21 +73,25 @@ export default function MyApp({ Component, pageProps }: AppProps) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className="app grid gap-0 grid-rows-[auto_1fr] min-h-screen">
+      <div className={`app grid gap-0 grid-rows-[auto_1fr] min-h-screen`}>
         <TopNav coloured={isHome}>
           <Link href="/docs" passHref>
             <a className="hover:underline">Docs</a>
           </Link>
         </TopNav>
 
-        <div className={`page grid ${!isHome ? "grid-cols-[auto_1fr]" : ""}`}>
-          {!isHome && <SideNav />}
-
+        <div className={`page`}>
           {isHome && <Hero />}
 
-          <div>
+          <div
+            className={`max-w-[90rem] mx-auto grid gap-8 ${
+              !isHome ? "grid-cols-[auto_minmax(0px,1fr)]" : ""
+            }`}
+          >
+            {!isHome && <SideNav />}
+
             <main
-              className={`prose w-full max-w-4xl mx-auto px-8 pt-20 pb-40 ${
+              className={`prose w-full max-w-4xl px-8 pt-20 pb-40 ${
                 isHome ? "prose-lg" : ""
               }`}
             >

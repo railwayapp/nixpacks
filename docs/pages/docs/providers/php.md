@@ -6,7 +6,7 @@ title: PHP
 
 Php is detected if a `composer.json` OR `index.php` file is found.
 
-**Install**:
+## Install
 
 If composer.json
 
@@ -20,14 +20,15 @@ If package.json
 [yarn|pnpm|npm] install
 ```
 
-**Build**
+## Build
+
 if package.json
 
 ```
 [yarn|pnpm|npm] [prod|build]
 ```
 
-**Start**
+## Start
 
 ```
 {nginx_start_serving_cmd}

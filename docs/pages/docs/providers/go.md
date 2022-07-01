@@ -6,7 +6,7 @@ title: Go
 
 Go is detected if a `main.go` file is found.
 
-**Install**:
+## Install
 
 If a `go.mod` file is found
 
@@ -14,13 +14,13 @@ If a `go.mod` file is found
 go get
 ```
 
-**Build**
+## Build
 
 ```
 go build -o out
 ```
 
-**Start**
+## Start
 
 ```
 ./out

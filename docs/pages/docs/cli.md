@@ -13,7 +13,7 @@ Create an image from an app source directory. The resulting image can then be ru
 For example
 
 ```sh
-nixpacks build ./path/to/app --name my-app --env "HELLO=world" --pkgs cowsay
+nixpacks build ./path/to/app --name my-app
 ```
 
 View all build options with
@@ -21,6 +21,27 @@ View all build options with
 ```sh
 nixpacks build --help
 ```
+
+### Build Options
+
+|                             |                                                                |
+| :-------------------------- | :------------------------------------------------------------- |
+| `--install-cmd <cmd>`, `-i` | Specify the install command                                    |
+| `--build-cmd <cmd>`, `-b`   | Specify the buildcommand                                       |
+| `--start-cmd <cmd>`, `-s`   | Specify the install command                                    |
+| `--name <name>`             | Name for the built image                                       |
+| `--env <envs...>`           | Provide environment variables to your build.                   |
+| `--pkgs <pkgs...>`, `-p`    | Provide additional Nix packages to install in the environment  |
+| `--apt <pkgs...>`           | Provide additional apt packages to install in the environment  |
+| `--libs <libs...>`          | Provide additional Nix libraries to install in the environment |
+| `--tag <tag...>`, `-t`      | Additional tags to add to the output image                     |
+| `--label <labels...>`, `-l` | Additional labels to add to the output image                   |
+| `--buildkit`                | Forces Docker to use buildkit                                  |
+| `--out <dir>`, `-o`         | Save output directory instead of building it with Docker       |
+
+#### Environment Variables
+
+Environment variables can be provided in the format `FOO` or `FOO=bar`. If no equal sign is present then the value is pulled from the current environment.
 
 ## Plan
 

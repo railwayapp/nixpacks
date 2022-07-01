@@ -6,19 +6,19 @@ title: Dart
 
 Dart is detected if a `pubsec.yaml` file is found.
 
-**Install**:
+## Install
 
 ```
 dart pub get
 ```
 
-**Build**
+## Build
 
 ```
 dart compile exec bin/{pubsec}.dart
 ```
 
-**Start**
+## Start
 
 ```
 ./bin/{}.exe

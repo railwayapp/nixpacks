@@ -11,7 +11,8 @@
     "next": "^12.2.0",
     "prismjs": "^1.28.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-feather": "^2.0.10"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.2",

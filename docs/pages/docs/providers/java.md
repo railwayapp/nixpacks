@@ -6,19 +6,19 @@ title: Java
 
 Java is detected if a `pom.[xml|atom|clj|groovy|rb|scala|yaml|yml]` file is found.
 
-**Install**:
+## Install
 
 ```
 Skipped
 ```
 
-**Build**
+## Build
 
 ```
 /bin/maven -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install
 ```
 
-**Start**
+## Start
 
 ```
 {start_command_from_pom.*}

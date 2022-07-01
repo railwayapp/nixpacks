@@ -6,7 +6,7 @@ title: Python
 
 Python is detected if a `main.py` OR `requirements.txt` OR `pyproject.toml` file is found.
 
-**Install**:
+## Install
 
 if `requirements.txt`
 
@@ -26,13 +26,13 @@ if `pyproject.toml` (w/ `poetry.lock`)
 poetry install --no-dev --no-interactive --no-ansi
 ```
 
-**Build**
+## Build
 
 ```
 go build -o out
 ```
 
-**Start**
+## Start
 
 if Django Application
 
