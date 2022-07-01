@@ -1,6 +1,7 @@
 import * as React from "react";
 import { ButtonLink } from "./ButtonLink";
 import { GitHub } from "./icons/GitHub";
+import Image from "next/image";
 
 export const Hero: React.FC = () => {
   return (
@@ -10,13 +11,15 @@ export const Hero: React.FC = () => {
         paddingBottom: "calc(10rem + var(--top-nav-height))",
       }}
     >
-      <img
+      <Image
         src="/box.svg"
         alt="Nixpacks Logo"
-        className="w-40 h-40 mb-16 logo"
+        className="logo"
+        width={160}
+        height={160}
       />
 
-      <h1 className="mb-6 font-bold text-7xl">Nixpacks</h1>
+      <h1 className="mt-16 mb-6 font-bold mt-18 text-7xl">Nixpacks</h1>
       <h2 className="text-2xl font-semibold">
         App source + Nix packages + Docker = Image
       </h2>

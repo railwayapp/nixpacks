@@ -55,8 +55,9 @@ export const TopNav: React.FC<{
 
           <a
             href={GITHUB_URL}
-            target="_blank"
             className="flex items-center space-x-2 hover:text-fg text-fg"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <GitHub className="w-5 h-5" />
           </a>
