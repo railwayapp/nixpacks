@@ -13,3 +13,5 @@ The core principles of Nixpacks are
 - 🚀 **Easily extendible**: New providers (languages) should be able to be easily added to nixpacks with minimal knowledge of Nix and Docker.
 
 [Get started with Nixpacks](/docs/getting-started)
+
+[Release changelog](https://github.com/railwayapp/nixpacks/releases)
