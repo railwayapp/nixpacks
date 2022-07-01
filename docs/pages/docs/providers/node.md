@@ -8,7 +8,7 @@ The Node provider supports NPM, Yarn, Yarn 2, and PNPM.
 
 ## Variables
 
-The NPM, Yarn and PNPM providers all have the following environment variables set:
+The Node provider sets the following environment variables:
 
 - `NODE_ENV=production`
 - `NPM_CONFIG_PRODUCTION=false`: Ensure that dev deps are always installed

@@ -3,7 +3,7 @@ import { Link } from "./Link";
 
 export const Hero: React.FC = () => {
   return (
-    <div className="not-prose hero bg-indigo-300 flex flex-col items-center pt-40 pb-[calc(10rem + var(--top-nav-height))]">
+    <div className="not-prose hero bg-teal-300 flex flex-col items-center pt-40 pb-[calc(10rem + var(--top-nav-height))]">
       <img
         src="/box.svg"
         alt="Nixpacks Logo"

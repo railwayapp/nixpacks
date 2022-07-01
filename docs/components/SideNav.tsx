@@ -24,9 +24,9 @@ export const SideNav = () => {
 const getSidebarItemStyles = (active?: boolean) =>
   `flex justify-between items-center cursor-pointer px-2 py-[6px] rounded ${
     active
-      ? "bg-indigo-100 border-indigo-500 text-indigo-700 font-semibold"
+      ? "bg-fuchsia-100 border-fuchsia-500 text-fuchsia-700 font-semibold"
       : "text-gray-500"
-  } hover:bg-indigo-100`;
+  } hover:bg-fuchsia-100`;
 
 const SidebarSection: React.FC<{
   section: ISidebarSection;
