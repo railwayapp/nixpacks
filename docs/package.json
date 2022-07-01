@@ -6,6 +6,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@headlessui/react": "^1.6.5",
     "@markdoc/markdoc": "^0.1.3",
     "@markdoc/next.js": "^0.1.5",
     "next": "^12.2.0",

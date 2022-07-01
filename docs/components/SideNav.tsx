@@ -5,23 +5,31 @@ import { sidebarItems, ISidebarSection } from "../sidebar";
 import { Section } from "./Section";
 import { ChevronDown, ChevronRight } from "react-feather";
 
-export const SideNav = () => {
+export const SideNav: React.FC<{ className?: string }> = ({ className }) => {
   return (
-    <nav className="sidenav text-sm px-4 w-[240px]">
+    <nav className={`sidenav text-sm px-4 w-[240px] ${className ?? ""}`}>
       <div
-        className="sticky py-4 overflow-y-auto"
+        className="sticky pt-8 pb-4 overflow-y-auto"
         style={{
           height: "calc(100vh - var(--top-nav-height) - 4px)",
           top: "calc(var(--top-nav-height) + 4px)",
         }}
       >
-        <ul className="space-y-1">
-          {sidebarItems.map((item) => (
-            <SidebarSection key={item.text} section={item} />
-          ))}
-        </ul>
+        <SidebarContent />
       </div>
     </nav>
+  );
+};
+
+export const SidebarContent: React.FC<{ className?: string }> = ({
+  className,
+}) => {
+  return (
+    <ul className={`space-y-1 ${className ?? ""}`}>
+      {sidebarItems.map((item) => (
+        <SidebarSection key={item.text} section={item} />
+      ))}
+    </ul>
   );
 };
 

@@ -75,24 +75,20 @@ export default function MyApp({ Component, pageProps }: AppProps) {
       </Head>
 
       <div className={`app grid gap-0 grid-rows-[auto_1fr] min-h-screen`}>
-        <TopNav coloured={isHome}>
-          <Link href="/docs" passHref>
-            <a className="hover:underline">Docs</a>
-          </Link>
-        </TopNav>
+        <TopNav />
 
         <div className={`page`}>
           {isHome && <Hero />}
 
           <div
             className={`max-w-[90rem] mx-auto grid gap-8 ${
-              !isHome ? "grid-cols-[auto_minmax(0px,1fr)]" : ""
+              !isHome ? "grid-cols-1 md:grid-cols-[auto_minmax(0px,1fr)]" : ""
             }`}
           >
-            {!isHome && <SideNav />}
+            {!isHome && <SideNav className="hidden md:block" />}
 
             <main
-              className={`prose w-full max-w-4xl px-8 pt-20 pb-40 ${
+              className={`prose w-full max-w-4xl px-8 py-12 md:pt-20 md:pb-40 ${
                 isHome ? "prose-lg mx-auto" : ""
               }`}
             >
