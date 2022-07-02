@@ -3,7 +3,7 @@ use std::{fs, io, path::Path};
 use walkdir::WalkDir;
 
 pub fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) -> Result<()> {
-    let walker = WalkDir::new(&source).follow_links(true);
+    let walker = WalkDir::new(&source).follow_links(false);
     for entry in walker {
         let entry = entry?;
 
