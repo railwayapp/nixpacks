@@ -20,6 +20,7 @@ pub mod ruby;
 pub mod rust;
 pub mod staticfile;
 pub mod swift;
+pub mod zig;
 
 pub trait Provider {
     fn name(&self) -> &str;

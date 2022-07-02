@@ -9,6 +9,17 @@ use crate::nixpacks::{
 };
 use anyhow::{Context, Result};
 use regex::Regex;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct DenoTasks {
+    pub start: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct DenoJson {
+    pub tasks: Option<DenoTasks>,
+}
 
 pub struct DenoProvider {}
 
@@ -41,6 +52,18 @@ impl Provider for DenoProvider {
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+        // First check for a deno.json and see if we can rip the start command from there
+        if app.includes_file("deno.json") {
+            let deno_json: DenoJson = app.read_json("deno.json")?;
+
+            if let Some(tasks) = deno_json.tasks {
+                if let Some(start) = tasks.start {
+                    return Ok(Some(StartPhase::new(start)));
+                }
+            }
+        }
+
+        // Barring that, just try and start the index with sane defaults
         match DenoProvider::get_start_file(app)? {
             Some(start_file) => Ok(Some(StartPhase::new(format!(
                 "deno run --allow-all {}",

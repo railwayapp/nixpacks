@@ -6,6 +6,7 @@ use nixpacks::{
         plan::{generator::GeneratePlanOptions, BuildPlan},
     },
 };
+use std::env::consts::ARCH;
 
 fn simple_gen_plan(path: &str) -> BuildPlan {
     generate_build_plan(path, Vec::new(), &GeneratePlanOptions::default()).unwrap()
@@ -214,6 +215,18 @@ fn test_deno() -> Result<()> {
 }
 
 #[test]
+fn test_deno_fresh() -> Result<()> {
+    let plan = simple_gen_plan("./examples/deno-fresh");
+    assert_eq!(plan.build.unwrap().cmds, None);
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("deno run -A dev.ts".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_csharp_api() -> Result<()> {
     let plan = simple_gen_plan("./examples/csharp-api");
     assert_eq!(
@@ -319,12 +332,8 @@ fn test_pin_archive() -> Result<()> {
 #[test]
 fn test_custom_rust_version() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-custom-version");
-    assert_eq!(
-        plan.build.unwrap().cmds,
-        Some(vec![
-            "cargo build --release --target x86_64-unknown-linux-musl".to_string()
-        ])
-    );
+    let cmd = format!("cargo build --release --target {}-unknown-linux-musl", ARCH);
+    assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
     assert_eq!(
         plan.setup
             .unwrap()
@@ -341,12 +350,8 @@ fn test_custom_rust_version() -> Result<()> {
 #[test]
 fn test_rust_rocket() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-rocket");
-    assert_eq!(
-        plan.build.unwrap().cmds,
-        Some(vec![
-            "cargo build --release --target x86_64-unknown-linux-musl".to_string()
-        ])
-    );
+    let cmd = format!("cargo build --release --target {}-unknown-linux-musl", ARCH);
+    assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
     assert!(plan.start.clone().unwrap().cmd.is_some());
     assert_eq!(
         plan.start.clone().unwrap().cmd.unwrap(),
@@ -649,6 +654,43 @@ fn test_java_maven_wrapper() -> Result<()> {
         plan.start.unwrap().cmd,
         Some("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar".to_string())
     );
+    Ok(())
+}
+
+#[test]
+fn test_zig() -> Result<()> {
+    let plan = simple_gen_plan("./examples/zig");
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["zig build -Drelease-safe=true".to_string()])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./zig-out/bin/zig".to_string())
+    );
+    Ok(())
+}
+
+#[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "i386"))]
+#[test]
+fn test_zig_gyro() -> Result<()> {
+    let plan = simple_gen_plan("./examples/zig-gyro");
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["zig build -Drelease-safe=true".to_string()])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./zig-out/bin/zig-gyro".to_string())
+    );
+    assert!(plan
+        .install
+        .unwrap()
+        .cmds
+        .unwrap()
+        .get(0)
+        .unwrap()
+        .contains("mkdir /gyro"));
     Ok(())
 }
 

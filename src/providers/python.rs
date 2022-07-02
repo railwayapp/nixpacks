@@ -1,8 +1,10 @@
 use std::{collections::HashMap, fs};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context, Ok, Result};
 
-use regex::Regex;
+use std::result::Result::Ok as OkResult;
+
+use regex::{Match, Regex};
 use serde::Deserialize;
 
 use crate::{
@@ -17,7 +19,7 @@ use crate::{
 
 use super::Provider;
 
-pub const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
+const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
 
 const POETRY_VERSION: &'static &str = &"1.1.13";
 pub struct PythonProvider {}
@@ -95,7 +97,7 @@ impl Provider for PythonProvider {
         }
 
         if app.includes_file("pyproject.toml") {
-            if let Ok(meta) = PythonProvider::parse_pyproject(app) {
+            if let OkResult(meta) = PythonProvider::parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
                     return Ok(Some(StartPhase::new(match entry_point {
                         EntryPoint::Command(cmd) => cmd,
@@ -194,25 +196,54 @@ impl PythonProvider {
     }
 
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
+        // Fetch version from configs
         let mut custom_version = env
             .get_config_variable("PYTHON_VERSION")
             .map(|s| s.to_string());
 
+        // If not from configs, get it from the .python-version file
         if custom_version.is_none() && app.includes_file(".python-version") {
             custom_version = Some(app.read_file(".python-version")?);
         }
 
-        match custom_version.map(|s| s.trim().to_string()) {
-            Some(custom_version) => {
-                if custom_version == "2" || custom_version == "2.7" {
-                    Ok(Pkg::new("python27Full"))
-                } else if custom_version == "3" || custom_version == "3.8" {
-                    Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME))
-                } else {
-                    bail!("Only the latest version of Python `2` or `3` are supported.")
-                }
+        // If it's still none, return default
+        if custom_version.is_none() {
+            return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
+        }
+        let custom_version = custom_version.unwrap();
+
+        // Regex for reading Python versions (e.g. 3.8.0 or 3.8 or 3)
+        let python_regex = Regex::new(r"^(\d)\.(\d+)(?:\.\d+)?$")?;
+
+        // Capture matches
+        let matches = python_regex.captures(custom_version.as_str().trim());
+
+        // If no matches, just use default
+        if matches.is_none() {
+            return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
+        }
+        let matches = matches.unwrap();
+
+        // Fetch python versions into tuples with defaults
+        fn as_default(v: Option<Match>) -> &str {
+            match v {
+                Some(m) => m.as_str(),
+                None => "_",
             }
-            None => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
+        }
+        let python_version = (as_default(matches.get(1)), as_default(matches.get(2)));
+
+        // Match major and minor versions
+        match python_version {
+            ("3", "11") => Ok(Pkg::new("python311")),
+            ("3", "10") => Ok(Pkg::new("python310")),
+            ("3", "9") => Ok(Pkg::new("python39")),
+            ("3", "8") => Ok(Pkg::new("python38")),
+            ("3", "7") => Ok(Pkg::new("python37")),
+            ("3", "_") => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
+            ("2", "7") => Ok(Pkg::new("python27")),
+            ("2", "_") => Ok(Pkg::new("python27")),
+            _ => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
         }
     }
 
@@ -290,7 +321,7 @@ mod test {
                 &App::new("./examples/python-2")?,
                 &Environment::default()
             )?,
-            Pkg::new("python27Full")
+            Pkg::new("python27")
         );
 
         Ok(())
@@ -306,7 +337,7 @@ mod test {
                     "2.7".to_string()
                 )]))
             )?,
-            Pkg::new("python27Full")
+            Pkg::new("python27")
         );
 
         Ok(())

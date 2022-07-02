@@ -1,20 +1,24 @@
-# Haskell Support through Stack
+---
+title: Haskell
+---
+
+# {% $markdoc.frontmatter.title %}
 
 Haskell with Stack is detected if your project has a `package.yaml` file and any `.hs` source files.
 
-**Install**:
+## Install
 
 ```sh
-sudo apt-get update && sudo apt-get install -y libgmp-dev gcc binutils make && stack setup
+stack setup
 ```
 
-**Build**:
+## Build
 
 ```sh
 stack build
 ```
 
-**Run**:
+## Start
 
 Assumes that `package.yaml` has a list of `executables`.
 
