@@ -86,8 +86,8 @@ impl DockerBuilder {
     fn get_docker_build_cmd(&self, plan: &BuildPlan, name: &str, dest: &str) -> Result<Command> {
         let mut docker_build_cmd = Command::new("docker");
 
-        if docker_build_cmd.status().is_err() {
-            bail!("Please install Docker first https://docs.docker.com/engine/install/")
+        if docker_build_cmd.output().is_err() {
+            bail!("Please install Docker to build the app https://docs.docker.com/engine/install/")
         }
 
         if self.options.force_buildkit {
