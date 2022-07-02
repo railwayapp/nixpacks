@@ -1,0 +1,47 @@
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - 'docs/**'
+  pull_request:
+    paths:
+    - 'docs/**'
+
+name: Docs
+
+env:
+  CI: true
+
+jobs:
+  build:
+    name: Lint + Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node
+        uses: actions/setup-node@v3
+        with:
+          cache-dependency-path: "docs/yarn.lock"
+          cache: "yarn"
+
+      - name: Cache Node Modules
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/**/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Install packages
+        run: yarn install --frozen-lockfile --prefer-offline
+        working-directory: ./docs
+
+      - name: Lint
+        run: yarn lint
+        working-directory: ./docs
+
+      - name: Build
+        run: yarn build
+        working-directory: ./docs

@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #859eff;
+  --bg: white;
+  --fg: #333;
+
+  --top-nav-height: 60px;
+}
+
+body {
+  color: var(--fg);
+  background-color: var(--bg);
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  font-family: "Inter", sans-serif;
+  overflow-y: scroll;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  @apply bg-fuchsia-200;
+}
