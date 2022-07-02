@@ -47,7 +47,7 @@ poetry install --no-dev --no-interactive --no-ansi
 if Django Application
 
 ```
-python manage.py migrate && gunicorn {app_name}
+python manage.py migrate && gunicorn {app_name}.wsgi
 ```
 
 if `pyproject.toml`
