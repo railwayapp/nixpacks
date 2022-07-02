@@ -1,6 +1,6 @@
 # Nixpacks Docs
 
-Available at [nixpacks.up.railway.app](https://nixpacks.up.railway.app)
+Available at [nixpacks.com](https://nixpacks.com)
 
 ## Contributing
 
@@ -19,3 +19,7 @@ yarn dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see the result
+
+## Deploying
+
+Every commit to `main` is deployed on [Railway](https://railway.app).
