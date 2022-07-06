@@ -232,7 +232,7 @@ impl DockerBuilder {
 
         // -- Install
         let install_cache_mount =
-            get_cache_mount(&self.options.cache_key, &&install_phase.cache_directories);
+            get_cache_mount(&self.options.cache_key, &install_phase.cache_directories);
 
         let install_cmd = install_phase
             .cmds
@@ -261,7 +261,7 @@ impl DockerBuilder {
 
         // -- Build
         let build_cache_mount =
-            get_cache_mount(&self.options.cache_key, &&install_phase.cache_directories);
+            get_cache_mount(&self.options.cache_key, &build_phase.cache_directories);
 
         let build_cmd = build_phase
             .cmds
