@@ -15,7 +15,14 @@ fn simple_gen_plan(path: &str) -> BuildPlan {
 #[test]
 fn test_node() -> Result<()> {
     let plan = simple_gen_plan("./examples/node");
-    assert_eq!(plan.install.unwrap().cmds, Some(vec!["npm ci".to_string()]));
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["npm ci".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.npm".to_string()])
+    );
     assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
 
@@ -70,8 +77,28 @@ fn test_node_custom_version() -> Result<()> {
 }
 
 #[test]
+fn test_node_monorepo() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-monorepo");
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["yarn install --frozen-lockfile".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/.yarn-cache".to_string()])
+    );
+    assert_eq!(plan.build.unwrap().cmds, None);
+
+    Ok(())
+}
+
+#[test]
 fn test_yarn() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-yarn");
+    assert_eq!(
+        plan.install.unwrap().cmds,
+        Some(vec!["yarn install --frozen-lockfile".to_string()])
+    );
     assert_eq!(
         plan.build.unwrap().cmds,
         Some(vec!["yarn run build".to_string()])
@@ -118,6 +145,14 @@ fn test_yarn_custom_version() -> Result<()> {
 #[test]
 fn test_pnpm() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-pnpm");
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["pnpm i --frozen-lockfile".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.cache/pnpm".to_string()])
+    );
     assert_eq!(
         plan.build.unwrap().cmds,
         Some(vec!["pnpm run build".to_string()])

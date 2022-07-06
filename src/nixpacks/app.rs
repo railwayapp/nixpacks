@@ -155,6 +155,7 @@ impl App {
         Ok(yaml_file)
     }
 
+    /// Convert an absolute path to a path relative to the app source directory
     pub fn strip_source_path(&self, abs_path: &Path) -> Result<PathBuf> {
         let source_str = match self.source.to_str() {
             Some(s) => s,

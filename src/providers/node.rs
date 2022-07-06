@@ -64,12 +64,24 @@ impl Provider for NodeProvider {
     }
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+        let mut build_phase = BuildPhase::default();
+
         if NodeProvider::has_script(app, "build")? {
             let pkg_manager = NodeProvider::get_package_manager(app);
-            Ok(Some(BuildPhase::new(pkg_manager + " run build")))
-        } else {
-            Ok(None)
+            build_phase.add_cmd(format!("{} run build", pkg_manager));
         }
+
+        let next_cache_dirs = NodeProvider::find_next_packages(app)?;
+        for dir in next_cache_dirs {
+            let next_cache_dir = ".next/cache";
+            build_phase.add_cache_directory(if dir == "" {
+                next_cache_dir.to_string()
+            } else {
+                format!("{}/{}", dir, next_cache_dir)
+            });
+        }
+
+        Ok(Some(build_phase))
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
@@ -225,6 +237,29 @@ impl NodeProvider {
             || lock_json.contains("/canvas/")
             || yarn_lock.contains("/canvas/")
             || pnpm_yaml.contains("/canvas/")
+    }
+
+    pub fn find_next_packages(app: &App) -> Result<Vec<String>> {
+        // Find all package.json files
+        let package_json_files = app.find_files("**/package.json")?;
+
+        let mut cache_dirs: Vec<String> = vec![];
+
+        // Find package.json files with a "next build" build script and cache the associated .next/cache directory
+        for file in package_json_files {
+            let json: PackageJson = app.read_json(file.to_str().unwrap())?;
+            if let Some(scripts) = json.scripts {
+                if let Some(build_script) = scripts.get("build") {
+                    if build_script == "next build" {
+                        let relative = app.strip_source_path(file.as_path())?;
+                        cache_dirs
+                            .push(format!("{}", relative.parent().unwrap().to_str().unwrap()));
+                    }
+                }
+            }
+        }
+
+        Ok(cache_dirs)
     }
 }
 
@@ -397,6 +432,22 @@ mod test {
             .unwrap()
             .name,
             "nodejs"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_next_pacakges() -> Result<()> {
+        assert_eq!(
+            NodeProvider::find_next_packages(&App::new("./examples/node-monorepo")?)?,
+            vec!["packages/client".to_string()]
+        );
+        assert_eq!(
+            NodeProvider::find_next_packages(&App::new(
+                "./examples/node-monorepo/packages/client"
+            )?)?,
+            vec!["".to_string()]
         );
 
         Ok(())
