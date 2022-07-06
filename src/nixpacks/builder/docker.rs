@@ -231,7 +231,7 @@ impl DockerBuilder {
         };
 
         // -- Install
-        let cache_mount = match (
+        let install_cache_mount = match (
             self.options.cache_key.clone(),
             install_phase.cache_directories,
         ) {
@@ -247,7 +247,7 @@ impl DockerBuilder {
             .cmds
             .unwrap_or_default()
             .iter()
-            .map(|c| format!("RUN {} {}", cache_mount, c))
+            .map(|c| format!("RUN {} {}", install_cache_mount, c))
             .collect::<Vec<String>>()
             .join("\n");
 
@@ -269,11 +269,23 @@ impl DockerBuilder {
             .unwrap_or_else(|| vec![".".to_string()]);
 
         // -- Build
+        let build_cache_mount = match (
+            self.options.cache_key.clone(),
+            build_phase.cache_directories,
+        ) {
+            (Some(cache_key), Some(cache_directories)) => cache_directories
+                .iter()
+                .map(|dir| format!("--mount=type=cache,id={cache_key},target={dir}"))
+                .collect::<Vec<String>>()
+                .join(" "),
+            _ => "".to_string(),
+        };
+
         let build_cmd = build_phase
             .cmds
             .unwrap_or_default()
             .iter()
-            .map(|c| format!("RUN {}", c))
+            .map(|c| format!("RUN {} {}", build_cache_mount, c))
             .collect::<Vec<String>>()
             .join("\n");
 

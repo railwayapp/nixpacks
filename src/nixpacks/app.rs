@@ -42,6 +42,30 @@ impl App {
     /// # Errors
     /// Creating the Glob fails
     pub fn find_files(&self, pattern: &str) -> Result<Vec<PathBuf>> {
+        let directories = self
+            .find_glob(pattern)?
+            .into_iter()
+            .filter(|path| path.is_file())
+            .collect();
+
+        Ok(directories)
+    }
+
+    /// Returns a list of paths matching a glob pattern
+    ///
+    /// # Errors
+    /// Creating the Glob fails
+    pub fn find_directories(&self, pattern: &str) -> Result<Vec<PathBuf>> {
+        let directories = self
+            .find_glob(pattern)?
+            .into_iter()
+            .filter(|path| path.is_dir())
+            .collect();
+
+        Ok(directories)
+    }
+
+    fn find_glob(&self, pattern: &str) -> Result<Vec<PathBuf>> {
         let full_pattern = self.source.join(pattern);
 
         let pattern_str = match full_pattern.to_str() {
@@ -57,7 +81,7 @@ impl App {
             .into_iter()
             .filter_map(|result| result.ok()) // remove bad ones
             .map(|dir| dir.into_path()) // convert to paths
-            .filter(|path| glob.is_match(path) && path.is_file()) // find matches
+            .filter(|path| glob.is_match(path)) // find matches
             .collect();
 
         Ok(relative_paths)
