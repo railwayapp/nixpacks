@@ -68,18 +68,29 @@ impl Provider for RustProvider {
                 if let Some(name) = RustProvider::get_app_name(app)? {
                     // Copy the binary out of the target directory
                     build_phase.add_cmd(format!("cp target/{target}/release/{name} {name}"));
-
-                    // Cache target directory
-                    build_phase.add_cache_directory("target".to_string());
                 }
 
                 build_phase
             }
-            None => BuildPhase::new("cargo build --release".to_string()),
+            None => {
+                let mut build_phase = BuildPhase::new("cargo build --release".to_string());
+
+                if let Some(name) = RustProvider::get_app_name(app)? {
+                    // Copy the binary out of the target directory
+                    build_phase.add_cmd(format!("cp target/release/{name} {name}"));
+                }
+
+                build_phase
+            }
         };
 
         build_phase.add_cache_directory("/root/.cargo/git".to_string());
         build_phase.add_cache_directory("/root/.cargo/registry".to_string());
+
+        if RustProvider::get_app_name(app)?.is_some() {
+            // Cache target directory
+            build_phase.add_cache_directory("target".to_string());
+        }
 
         Ok(Some(build_phase))
     }
@@ -98,7 +109,7 @@ impl Provider for RustProvider {
 
                     start_phase
                 }
-                None => StartPhase::new(format!("./target/release/{name}")),
+                None => StartPhase::new(format!("./{name}")),
             };
 
             Ok(Some(start_phase))
