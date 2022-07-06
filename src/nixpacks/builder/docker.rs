@@ -91,7 +91,7 @@ impl DockerBuilder {
             bail!("Please install Docker to build the app https://docs.docker.com/engine/install/")
         }
 
-        if self.options.force_buildkit {
+        if self.options.cache_key.is_some() && self.options.force_buildkit {
             docker_build_cmd.env("DOCKER_BUILDKIT", "1");
         }
         docker_build_cmd.arg("build").arg(dest).arg("-t").arg(name);
@@ -260,9 +260,6 @@ impl DockerBuilder {
             .unwrap_or_else(|| vec![".".to_string()]);
 
         // -- Build
-
-        // TODO: Ensure BuildKit is enabled for Nixpacks
-
         let build_cache_mount =
             get_cache_mount(&self.options.cache_key, &&install_phase.cache_directories);
 
