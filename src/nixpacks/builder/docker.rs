@@ -20,6 +20,7 @@ pub struct DockerBuilderOptions {
     pub labels: Vec<String>,
     pub quiet: bool,
     pub force_buildkit: bool,
+    pub cache_key: Option<String>,
 }
 
 pub struct DockerBuilder {
@@ -230,11 +231,23 @@ impl DockerBuilder {
         };
 
         // -- Install
+        let cache_mount = match (
+            self.options.cache_key.clone(),
+            install_phase.cache_directories,
+        ) {
+            (Some(cache_key), Some(cache_directories)) => cache_directories
+                .iter()
+                .map(|dir| format!("--mount=type=cache,id={cache_key},target={dir}"))
+                .collect::<Vec<String>>()
+                .join(" "),
+            _ => "".to_string(),
+        };
+
         let install_cmd = install_phase
             .cmds
             .unwrap_or_default()
             .iter()
-            .map(|c| format!("RUN {}", c))
+            .map(|c| format!("RUN {} {}", cache_mount, c))
             .collect::<Vec<String>>()
             .join("\n");
 

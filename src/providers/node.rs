@@ -14,6 +14,10 @@ use serde::{Deserialize, Serialize};
 const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
 
+const YARN_CACHE_DIR: &'static &str = &"/.yarn-cache";
+const PNPM_CACHE_DIR: &'static &str = &"/root/.cache/pnpm";
+const NPM_CACHE_DIR: &'static &str = &"/root/.npm";
+
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
     pub name: Option<String>,
@@ -44,7 +48,19 @@ impl Provider for NodeProvider {
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let install_cmd = NodeProvider::get_install_command(app);
-        Ok(Some(InstallPhase::new(install_cmd)))
+
+        let mut install_phase = InstallPhase::new(install_cmd);
+
+        let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager == "yarn" {
+            install_phase.add_cache_directory(YARN_CACHE_DIR.to_string());
+        } else if package_manager == "pnpm" {
+            install_phase.add_cache_directory(PNPM_CACHE_DIR.to_string());
+        } else {
+            install_phase.add_cache_directory(NPM_CACHE_DIR.to_string());
+        }
+
+        Ok(Some(install_phase))
     }
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
@@ -81,6 +97,7 @@ impl NodeProvider {
         EnvironmentVariables::from([
             ("NODE_ENV".to_string(), "production".to_string()),
             ("NPM_CONFIG_PRODUCTION".to_string(), "false".to_string()),
+            ("YARN_CACHE_FOLDER".to_string(), YARN_CACHE_DIR.to_string()),
         ])
     }
 

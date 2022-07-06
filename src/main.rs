@@ -58,6 +58,12 @@ fn main() -> Result<()> {
                         .long("buildkit")
                         .help("Forces docker to use buildkit")
                         .takes_value(false),
+                )
+                .arg(
+                    Arg::new("cache-key")
+                        .long("cache-key")
+                        .help("Unique identifier to key cache by")
+                        .takes_value(true),
                 ),
         )
         .arg(
@@ -180,6 +186,7 @@ fn main() -> Result<()> {
             let path = matches.value_of("PATH").expect("required");
             let name = matches.value_of("name").map(|n| n.to_string());
             let out_dir = matches.value_of("out").map(|n| n.to_string());
+            let cache_key = matches.value_of("cache-key").map(|n| n.to_string());
 
             let tags = matches
                 .values_of("tag")
@@ -200,6 +207,7 @@ fn main() -> Result<()> {
                 out_dir,
                 force_buildkit,
                 quiet: false,
+                cache_key,
             };
 
             create_docker_image(path, envs, plan_options, build_options)?;
