@@ -367,8 +367,16 @@ fn test_pin_archive() -> Result<()> {
 #[test]
 fn test_custom_rust_version() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-custom-version");
-    let cmd = format!("cargo build --release --target {}-unknown-linux-musl", ARCH);
-    assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
+            format!(
+                "cp target/{}-unknown-linux-musl/release/rust-custom-version rust-custom-version",
+                ARCH
+            )
+        ])
+    );
     assert_eq!(
         plan.setup
             .unwrap()
@@ -385,8 +393,16 @@ fn test_custom_rust_version() -> Result<()> {
 #[test]
 fn test_rust_rocket() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-rocket");
-    let cmd = format!("cargo build --release --target {}-unknown-linux-musl", ARCH);
-    assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
+            format!(
+                "cp target/{}-unknown-linux-musl/release/rocket rocket",
+                ARCH
+            )
+        ])
+    );
     assert!(plan.start.clone().unwrap().cmd.is_some());
     assert_eq!(
         plan.start.clone().unwrap().cmd.unwrap(),
@@ -406,7 +422,10 @@ fn test_rust_rocket_no_musl() -> Result<()> {
     )?;
     assert_eq!(
         plan.build.unwrap().cmds,
-        Some(vec!["cargo build --release".to_string()])
+        Some(vec![
+            "cargo build --release".to_string(),
+            "cp target/release/rocket rocket".to_string()
+        ])
     );
     assert!(plan
         .start
@@ -414,7 +433,7 @@ fn test_rust_rocket_no_musl() -> Result<()> {
         .unwrap()
         .cmd
         .unwrap()
-        .contains("./target/release/rocket"));
+        .contains("./rocket"));
     assert!(plan.start.unwrap().run_image.is_none());
 
     Ok(())
