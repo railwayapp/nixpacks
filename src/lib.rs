@@ -41,8 +41,8 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &NodeProvider {},
         &PythonProvider {},
         &RustProvider {},
-        &StaticfileProvider {},
         &SwiftProvider {},
+        &StaticfileProvider {},
         &ZigProvider {},
     ]
 }
