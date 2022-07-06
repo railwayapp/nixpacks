@@ -231,17 +231,8 @@ impl DockerBuilder {
         };
 
         // -- Install
-        let install_cache_mount = match (
-            self.options.cache_key.clone(),
-            install_phase.cache_directories,
-        ) {
-            (Some(cache_key), Some(cache_directories)) => cache_directories
-                .iter()
-                .map(|dir| format!("--mount=type=cache,id={cache_key}-{dir},target={dir}"))
-                .collect::<Vec<String>>()
-                .join(" "),
-            _ => "".to_string(),
-        };
+        let install_cache_mount =
+            get_cache_mount(&self.options.cache_key, &&install_phase.cache_directories);
 
         let install_cmd = install_phase
             .cmds
@@ -272,17 +263,8 @@ impl DockerBuilder {
 
         // TODO: Ensure BuildKit is enabled for Nixpacks
 
-        let build_cache_mount = match (
-            self.options.cache_key.clone(),
-            build_phase.cache_directories,
-        ) {
-            (Some(cache_key), Some(cache_directories)) => cache_directories
-                .iter()
-                .map(|dir| format!("--mount=type=cache,id={cache_key}-{dir},target={dir}"))
-                .collect::<Vec<String>>()
-                .join(" "),
-            _ => "".to_string(),
-        };
+        let build_cache_mount =
+            get_cache_mount(&self.options.cache_key, &&install_phase.cache_directories);
 
         let build_cmd = build_phase
             .cmds
@@ -368,6 +350,17 @@ impl DockerBuilder {
         build_copy_cmd=get_copy_command(&build_files, app_dir)};
 
         dockerfile
+    }
+}
+
+fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<String>>) -> String {
+    match (cache_key, cache_directories) {
+        (Some(cache_key), Some(cache_directories)) => cache_directories
+            .iter()
+            .map(|dir| format!("--mount=type=cache,id={cache_key}-{dir},target={dir}"))
+            .collect::<Vec<String>>()
+            .join(" "),
+        _ => "".to_string(),
     }
 }
 
