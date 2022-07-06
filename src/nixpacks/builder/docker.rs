@@ -237,7 +237,7 @@ impl DockerBuilder {
         ) {
             (Some(cache_key), Some(cache_directories)) => cache_directories
                 .iter()
-                .map(|dir| format!("--mount=type=cache,id={cache_key},target={dir}"))
+                .map(|dir| format!("--mount=type=cache,id={cache_key}-{dir},target={dir}"))
                 .collect::<Vec<String>>()
                 .join(" "),
             _ => "".to_string(),
@@ -269,13 +269,16 @@ impl DockerBuilder {
             .unwrap_or_else(|| vec![".".to_string()]);
 
         // -- Build
+
+        // TODO: Ensure BuildKit is enabled for Nixpacks
+
         let build_cache_mount = match (
             self.options.cache_key.clone(),
             build_phase.cache_directories,
         ) {
             (Some(cache_key), Some(cache_directories)) => cache_directories
                 .iter()
-                .map(|dir| format!("--mount=type=cache,id={cache_key},target={dir}"))
+                .map(|dir| format!("--mount=type=cache,id={cache_key}-{dir},target={dir}"))
                 .collect::<Vec<String>>()
                 .join(" "),
             _ => "".to_string(),
