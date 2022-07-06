@@ -60,21 +60,37 @@ impl Provider for RustProvider {
     }
 
     fn build(&self, app: &App, env: &Environment) -> Result<Option<BuildPhase>> {
-        let build_phase = match RustProvider::get_target(app, env)? {
-            Some(target) => BuildPhase::new(format!("cargo build --release --target {target}")),
+        let mut build_phase = match RustProvider::get_target(app, env)? {
+            Some(target) => {
+                let mut build_phase =
+                    BuildPhase::new(format!("cargo build --release --target {target}"));
+
+                if let Some(name) = RustProvider::get_app_name(app)? {
+                    // Copy the binary out of the target directory
+                    build_phase.add_cmd(format!("cp target/{target}/release/{name} {name}"));
+
+                    // Cache target directory
+                    build_phase.add_cache_directory("target".to_string());
+                }
+
+                build_phase
+            }
             None => BuildPhase::new("cargo build --release".to_string()),
         };
+
+        build_phase.add_cache_directory("/root/.cargo/git".to_string());
+        build_phase.add_cache_directory("/root/.cargo/registry".to_string());
 
         Ok(Some(build_phase))
     }
 
     fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
-        if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
-            let name = toml_file.package.name;
+        let name = RustProvider::get_app_name(app)?;
 
+        if let Some(name) = name {
             let start_phase = match RustProvider::get_target(app, env)? {
-                Some(target) => {
-                    let binary_file = format!("./target/{target}/release/{name}");
+                Some(_) => {
+                    let binary_file = format!("./{name}");
                     let mut start_phase = StartPhase::new(format!("./{name}"));
 
                     start_phase.run_in_slim_image();
@@ -103,6 +119,15 @@ impl Provider for RustProvider {
 }
 
 impl RustProvider {
+    fn get_app_name(app: &App) -> Result<Option<String>> {
+        if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
+            let name = toml_file.package.name;
+            Ok(Some(name))
+        } else {
+            Ok(None)
+        }
+    }
+
     fn get_target(_app: &App, env: &Environment) -> Result<Option<String>> {
         // All the user to use the default target instead of compiling with musl
         if !env.is_config_variable_truthy("NO_MUSL") {
