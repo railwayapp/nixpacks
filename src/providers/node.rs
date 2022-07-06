@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use super::Provider;
 use crate::nixpacks::{
@@ -17,6 +17,8 @@ const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
 const YARN_CACHE_DIR: &'static &str = &"/.yarn-cache";
 const PNPM_CACHE_DIR: &'static &str = &"/root/.cache/pnpm";
 const NPM_CACHE_DIR: &'static &str = &"/root/.npm";
+const CYPRESS_CACHE_DIR: &'static &str = &"/root/.cache/Cypress";
+const NODE_MODULES_CACHE_DIR: &'static &str = &"./node_modules/.cache";
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
@@ -24,6 +26,9 @@ pub struct PackageJson {
     pub scripts: Option<HashMap<String, String>>,
     pub engines: Option<HashMap<String, String>>,
     pub main: Option<String>,
+    pub dependencies: Option<HashMap<String, String>>,
+    #[serde(rename = "devDependencies")]
+    pub dev_dependencies: Option<HashMap<String, String>>,
 }
 
 pub struct NodeProvider {}
@@ -51,6 +56,7 @@ impl Provider for NodeProvider {
 
         let mut install_phase = InstallPhase::new(install_cmd);
 
+        // Package manage cache directories
         let package_manager = NodeProvider::get_package_manager(app);
         if package_manager == "yarn" {
             install_phase.add_cache_directory(YARN_CACHE_DIR.to_string());
@@ -58,6 +64,13 @@ impl Provider for NodeProvider {
             install_phase.add_cache_directory(PNPM_CACHE_DIR.to_string());
         } else {
             install_phase.add_cache_directory(NPM_CACHE_DIR.to_string());
+        }
+
+        let all_deps = NodeProvider::get_all_deps(app)?;
+
+        // Cypress cache directory
+        if all_deps.get("cypress").is_some() {
+            install_phase.add_cache_directory(CYPRESS_CACHE_DIR.to_string());
         }
 
         Ok(Some(install_phase))
@@ -71,6 +84,7 @@ impl Provider for NodeProvider {
             build_phase.add_cmd(format!("{} run build", pkg_manager));
         }
 
+        // Next build cache directories
         let next_cache_dirs = NodeProvider::find_next_packages(app)?;
         for dir in next_cache_dirs {
             let next_cache_dir = ".next/cache";
@@ -80,6 +94,9 @@ impl Provider for NodeProvider {
                 format!("{}/{}", dir, next_cache_dir)
             });
         }
+
+        // Node modules cache directory
+        build_phase.add_cache_directory(NODE_MODULES_CACHE_DIR.to_string());
 
         Ok(Some(build_phase))
     }
@@ -248,18 +265,58 @@ impl NodeProvider {
         // Find package.json files with a "next build" build script and cache the associated .next/cache directory
         for file in package_json_files {
             let json: PackageJson = app.read_json(file.to_str().unwrap())?;
-            if let Some(scripts) = json.scripts {
-                if let Some(build_script) = scripts.get("build") {
-                    if build_script == "next build" {
-                        let relative = app.strip_source_path(file.as_path())?;
-                        cache_dirs
-                            .push(format!("{}", relative.parent().unwrap().to_str().unwrap()));
-                    }
-                }
+
+            let deps = NodeProvider::get_deps_from_package_json(&json);
+
+            if deps.contains("next") {
+                let relative = app.strip_source_path(file.as_path())?;
+                cache_dirs.push(format!("{}", relative.parent().unwrap().to_str().unwrap()));
             }
         }
 
         Ok(cache_dirs)
+    }
+
+    /// Finds all dependencies (dev and non-dev) of all package.json files in the app.
+    pub fn get_all_deps(app: &App) -> Result<HashSet<String>> {
+        // Find all package.json files
+        let package_json_files = app.find_files("**/package.json")?;
+
+        let mut all_deps: HashSet<String> = HashSet::new();
+
+        for file in package_json_files {
+            let json: PackageJson = app.read_json(file.to_str().unwrap())?;
+
+            all_deps.extend(NodeProvider::get_deps_from_package_json(&json));
+        }
+
+        Ok(all_deps)
+    }
+
+    pub fn get_deps_from_package_json(json: &PackageJson) -> HashSet<String> {
+        let mut all_deps: HashSet<String> = HashSet::new();
+
+        let deps = json
+            .dependencies
+            .clone()
+            .map(|deps| deps.keys().map(|k| k.to_string()).collect::<Vec<String>>())
+            .unwrap_or_default();
+
+        let dev_deps = json
+            .dev_dependencies
+            .clone()
+            .map(|dev_deps| {
+                dev_deps
+                    .keys()
+                    .map(|k| k.to_string())
+                    .collect::<Vec<String>>()
+            })
+            .unwrap_or_default();
+
+        all_deps.extend(deps.into_iter());
+        all_deps.extend(dev_deps.into_iter());
+
+        all_deps
     }
 }
 
