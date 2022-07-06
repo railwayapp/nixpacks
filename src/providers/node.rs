@@ -88,7 +88,7 @@ impl Provider for NodeProvider {
         let next_cache_dirs = NodeProvider::find_next_packages(app)?;
         for dir in next_cache_dirs {
             let next_cache_dir = ".next/cache";
-            build_phase.add_cache_directory(if dir == "" {
+            build_phase.add_cache_directory(if dir.is_empty() {
                 next_cache_dir.to_string()
             } else {
                 format!("{}/{}", dir, next_cache_dir)
@@ -270,7 +270,7 @@ impl NodeProvider {
 
             if deps.contains("next") {
                 let relative = app.strip_source_path(file.as_path())?;
-                cache_dirs.push(format!("{}", relative.parent().unwrap().to_str().unwrap()));
+                cache_dirs.push(relative.parent().unwrap().to_str().unwrap().to_string());
             }
         }
 
@@ -355,9 +355,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
-                    engines: None
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -373,9 +371,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
-                    engines: engines_node("*")
+                    engines: engines_node("*"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -391,9 +388,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
                     engines: engines_node("14"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -409,9 +405,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
                     engines: engines_node("12.x"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -422,9 +417,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
                     engines: engines_node("14.X"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -440,9 +434,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
                     engines: engines_node(">=14.10.3 <16"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -458,9 +451,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
-                    engines: None,
+                    ..Default::default()
                 },
                 &Environment::new(HashMap::from([(
                     "NIXPACKS_NODE_VERSION".to_string(),
@@ -480,9 +471,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
                     engines: engines_node("15"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )
