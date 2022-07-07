@@ -13,6 +13,10 @@ use serde::{Deserialize, Serialize};
 static RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
 static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
 
+const CARGO_GIT_CACHE_DIR: &'static &str = &"/root/.cargo/git";
+const CARGO_REGISTRY_CACHE_DIR: &'static &str = &"/root/.cargo/registry";
+const CARGO_TARGET_CACHE_DIR: &'static &str = &"target";
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CargoTomlPackage {
     pub name: String,
@@ -84,12 +88,12 @@ impl Provider for RustProvider {
             }
         };
 
-        build_phase.add_cache_directory("/root/.cargo/git".to_string());
-        build_phase.add_cache_directory("/root/.cargo/registry".to_string());
+        build_phase.add_cache_directory(CARGO_GIT_CACHE_DIR.to_string());
+        build_phase.add_cache_directory(CARGO_REGISTRY_CACHE_DIR.to_string());
 
         if RustProvider::get_app_name(app)?.is_some() {
             // Cache target directory
-            build_phase.add_cache_directory("target".to_string());
+            build_phase.add_cache_directory(CARGO_TARGET_CACHE_DIR.to_string());
         }
 
         Ok(Some(build_phase))
