@@ -228,24 +228,18 @@ impl NodeProvider {
         let mut pkgs = vec![node_pkg.clone()];
         let package_manager = NodeProvider::get_package_manager(app);
         if package_manager == "npm" {
-            if app
-                .read_file("package-lock.json")
-                .unwrap()
-                .contains("\"lockfileVersion\": 1")
-            {
+            let lockfile = app.read_file("package-lock.json").unwrap_or_default();
+            if lockfile.contains("\"lockfileVersion\": 1") {
                 pkgs.push(Pkg::new("railway.\"npm-6.x\""));
             } else {
                 pkgs.push(Pkg::new("railway.\"npm-8.x\""));
             }
         } else if package_manager == "pnpm" {
-            if app
-                .read_file("pnpm-lock.yaml")
-                .unwrap()
-                .starts_with("lockfileVersion: 5.4")
-            {
-                pkgs.push(Pkg::new("railway.\"pnpm-7.x\""));
-            } else {
+            let lockfile = app.read_file("pnpm-lock.yaml").unwrap_or_default();
+            if lockfile.starts_with("lockfileVersion: 5.3") {
                 pkgs.push(Pkg::new("railway.\"pnpm-6.x\""));
+            } else {
+                pkgs.push(Pkg::new("railway.\"pnpm-7.x\""));
             }
         } else if package_manager == "yarn" {
             pkgs.push(Pkg::new("railway.\"yarn-1.x\""));
