@@ -133,7 +133,10 @@ impl App {
         T: DeserializeOwned,
     {
         let contents = self.read_file(name)?;
-        let value: T = serde_json::from_str(contents.as_str())?;
+        let value: T = serde_json::from_str(contents.as_str()).with_context(|| {
+            let relative_path = self.strip_source_path(Path::new(name)).unwrap();
+            format!("Error reading {} as JSON", relative_path.to_str().unwrap())
+        })?;
         Ok(value)
     }
 
@@ -142,7 +145,10 @@ impl App {
         T: DeserializeOwned,
     {
         let contents = self.read_file(name)?;
-        let toml_file = toml::from_str(contents.as_str())?;
+        let toml_file = toml::from_str(contents.as_str()).with_context(|| {
+            let relative_path = self.strip_source_path(Path::new(name)).unwrap();
+            format!("Error reading {} as TOML", relative_path.to_str().unwrap())
+        })?;
         Ok(toml_file)
     }
 
