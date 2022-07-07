@@ -181,21 +181,30 @@ impl NodeProvider {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
         let mut pkgs = vec![node_pkg.clone()];
-        if NodeProvider::get_package_manager(app) == "pnpm" {
-            let mut pnpm_pkg = Pkg::new("nodePackages.pnpm");
-            // Only override the node package if not the default one
-            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
-                pnpm_pkg = pnpm_pkg.set_override("nodejs", node_pkg.name.as_str());
+        let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager == "npm" {
+            if app
+                .read_file("package-lock.json")
+                .unwrap()
+                .contains("\"lockfileVersion\": 1")
+            {
+                pkgs.push(Pkg::new("railway.\"npm-6.x\""));
+            } else {
+                pkgs.push(Pkg::new("railway.\"npm-8.x\""));
             }
-            pkgs.push(pnpm_pkg);
-        } else if NodeProvider::get_package_manager(app) == "yarn" {
-            let mut yarn_pkg = Pkg::new("yarn");
-            // Only override the node package if not the default one
-            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
-                yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
+        } else if package_manager == "pnpm" {
+            if app
+                .read_file("pnpm-lock.yaml")
+                .unwrap()
+                .starts_with("lockfileVersion: 5.4")
+            {
+                pkgs.push(Pkg::new("railway.\"pnpm-7.x\""));
+            } else {
+                pkgs.push(Pkg::new("railway.\"pnpm-6.x\""));
             }
-            pkgs.push(yarn_pkg);
-        }
+        } else if package_manager == "yarn" {
+            pkgs.push(Pkg::new("railway.\"yarn-1.x\""));
+        };
         Ok(pkgs)
     }
 

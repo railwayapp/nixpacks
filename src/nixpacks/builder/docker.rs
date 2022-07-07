@@ -309,6 +309,10 @@ impl DockerBuilder {
 
           WORKDIR {app_dir}
 
+          # Update channels
+          RUN nix-channel --add https://github.com/JuanM04/nix-channel/archive/main.tar.gz railway
+          RUN nix-channel --update
+
           # Setup
           {setup_copy_cmd}
           RUN nix-env -if environment.nix
