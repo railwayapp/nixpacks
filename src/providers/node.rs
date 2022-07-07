@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
 
-const YARN_CACHE_DIR: &'static &str = &"/.yarn-cache";
+const YARN_CACHE_DIR: &'static &str = &"/usr/local/share/.cache/yarn/v6";
 const PNPM_CACHE_DIR: &'static &str = &"/root/.cache/pnpm";
 const NPM_CACHE_DIR: &'static &str = &"/root/.npm";
 const CYPRESS_CACHE_DIR: &'static &str = &"/root/.cache/Cypress";
@@ -126,7 +126,6 @@ impl NodeProvider {
         EnvironmentVariables::from([
             ("NODE_ENV".to_string(), "production".to_string()),
             ("NPM_CONFIG_PRODUCTION".to_string(), "false".to_string()),
-            ("YARN_CACHE_FOLDER".to_string(), YARN_CACHE_DIR.to_string()),
         ])
     }
 
