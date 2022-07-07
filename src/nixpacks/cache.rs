@@ -1,5 +1,5 @@
 pub fn sanitize_cache_key(cache_key: String) -> String {
-    cache_key.replace("/", "-").replace(" ", "-")
+    cache_key.replace(" ", "-")
 }
 
 #[cfg(test)]
@@ -12,10 +12,6 @@ mod tests {
         assert_eq!(
             sanitize_cache_key("s p a c e s".to_string()),
             "s-p-a-c-e-s".to_string()
-        );
-        assert_eq!(
-            sanitize_cache_key("s/l/a/s/h/e/s".to_string()),
-            "s-l-a-s-h-e-s".to_string()
         );
     }
 }

@@ -18,7 +18,7 @@ const YARN_CACHE_DIR: &'static &str = &"/usr/local/share/.cache/yarn/v6";
 const PNPM_CACHE_DIR: &'static &str = &"/root/.cache/pnpm";
 const NPM_CACHE_DIR: &'static &str = &"/root/.npm";
 const CYPRESS_CACHE_DIR: &'static &str = &"/root/.cache/Cypress";
-const NODE_MODULES_CACHE_DIR: &'static &str = &"./node_modules/.cache";
+const NODE_MODULES_CACHE_DIR: &'static &str = &"node_modules/.cache";
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {

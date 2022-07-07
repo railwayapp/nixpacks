@@ -192,9 +192,14 @@ fn main() -> Result<()> {
             let mut cache_key = matches.value_of("cache-key").map(|n| n.to_string());
             let no_cache = matches.is_present("no-cache");
 
-            // Default to `path` as the cache-key if not disabled
+            // Default to absolute `path` of the source that is being built as the cache-key if not disabled
             if !no_cache && cache_key.is_none() {
-                cache_key = Some(path.to_owned());
+                let current_dir = env::current_dir()?;
+                let source = current_dir.join(path).canonicalize();
+                match source {
+                    Ok(source) => cache_key = Some(source.to_string_lossy().to_string()),
+                    _ => {}
+                }
             }
 
             println!("Cache key: {:?}", cache_key);
