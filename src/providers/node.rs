@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use super::Provider;
 use crate::nixpacks::{
@@ -14,12 +14,21 @@ use serde::{Deserialize, Serialize};
 const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
 
+const YARN_CACHE_DIR: &'static &str = &"/usr/local/share/.cache/yarn/v6";
+const PNPM_CACHE_DIR: &'static &str = &"/root/.cache/pnpm";
+const NPM_CACHE_DIR: &'static &str = &"/root/.npm";
+const CYPRESS_CACHE_DIR: &'static &str = &"/root/.cache/Cypress";
+const NODE_MODULES_CACHE_DIR: &'static &str = &"node_modules/.cache";
+
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
     pub name: Option<String>,
     pub scripts: Option<HashMap<String, String>>,
     pub engines: Option<HashMap<String, String>>,
     pub main: Option<String>,
+    pub dependencies: Option<HashMap<String, String>>,
+    #[serde(rename = "devDependencies")]
+    pub dev_dependencies: Option<HashMap<String, String>>,
 }
 
 pub struct NodeProvider {}
@@ -44,16 +53,52 @@ impl Provider for NodeProvider {
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let install_cmd = NodeProvider::get_install_command(app);
-        Ok(Some(InstallPhase::new(install_cmd)))
+
+        let mut install_phase = InstallPhase::new(install_cmd);
+
+        // Package manage cache directories
+        let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager == "yarn" {
+            install_phase.add_cache_directory(YARN_CACHE_DIR.to_string());
+        } else if package_manager == "pnpm" {
+            install_phase.add_cache_directory(PNPM_CACHE_DIR.to_string());
+        } else {
+            install_phase.add_cache_directory(NPM_CACHE_DIR.to_string());
+        }
+
+        let all_deps = NodeProvider::get_all_deps(app)?;
+
+        // Cypress cache directory
+        if all_deps.get("cypress").is_some() {
+            install_phase.add_cache_directory(CYPRESS_CACHE_DIR.to_string());
+        }
+
+        Ok(Some(install_phase))
     }
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+        let mut build_phase = BuildPhase::default();
+
         if NodeProvider::has_script(app, "build")? {
             let pkg_manager = NodeProvider::get_package_manager(app);
-            Ok(Some(BuildPhase::new(pkg_manager + " run build")))
-        } else {
-            Ok(None)
+            build_phase.add_cmd(format!("{} run build", pkg_manager));
         }
+
+        // Next build cache directories
+        let next_cache_dirs = NodeProvider::find_next_packages(app)?;
+        for dir in next_cache_dirs {
+            let next_cache_dir = ".next/cache";
+            build_phase.add_cache_directory(if dir.is_empty() {
+                next_cache_dir.to_string()
+            } else {
+                format!("{}/{}", dir, next_cache_dir)
+            });
+        }
+
+        // Node modules cache directory
+        build_phase.add_cache_directory(NODE_MODULES_CACHE_DIR.to_string());
+
+        Ok(Some(build_phase))
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
@@ -209,6 +254,69 @@ impl NodeProvider {
             || yarn_lock.contains("/canvas/")
             || pnpm_yaml.contains("/canvas/")
     }
+
+    pub fn find_next_packages(app: &App) -> Result<Vec<String>> {
+        // Find all package.json files
+        let package_json_files = app.find_files("**/package.json")?;
+
+        let mut cache_dirs: Vec<String> = vec![];
+
+        // Find package.json files with a "next build" build script and cache the associated .next/cache directory
+        for file in package_json_files {
+            let json: PackageJson = app.read_json(file.to_str().unwrap())?;
+
+            let deps = NodeProvider::get_deps_from_package_json(&json);
+
+            if deps.contains("next") {
+                let relative = app.strip_source_path(file.as_path())?;
+                cache_dirs.push(relative.parent().unwrap().to_str().unwrap().to_string());
+            }
+        }
+
+        Ok(cache_dirs)
+    }
+
+    /// Finds all dependencies (dev and non-dev) of all package.json files in the app.
+    pub fn get_all_deps(app: &App) -> Result<HashSet<String>> {
+        // Find all package.json files
+        let package_json_files = app.find_files("**/package.json")?;
+
+        let mut all_deps: HashSet<String> = HashSet::new();
+
+        for file in package_json_files {
+            let json: PackageJson = app.read_json(file.to_str().unwrap())?;
+
+            all_deps.extend(NodeProvider::get_deps_from_package_json(&json));
+        }
+
+        Ok(all_deps)
+    }
+
+    pub fn get_deps_from_package_json(json: &PackageJson) -> HashSet<String> {
+        let mut all_deps: HashSet<String> = HashSet::new();
+
+        let deps = json
+            .dependencies
+            .clone()
+            .map(|deps| deps.keys().map(|k| k.to_string()).collect::<Vec<String>>())
+            .unwrap_or_default();
+
+        let dev_deps = json
+            .dev_dependencies
+            .clone()
+            .map(|dev_deps| {
+                dev_deps
+                    .keys()
+                    .map(|k| k.to_string())
+                    .collect::<Vec<String>>()
+            })
+            .unwrap_or_default();
+
+        all_deps.extend(deps.into_iter());
+        all_deps.extend(dev_deps.into_iter());
+
+        all_deps
+    }
 }
 
 fn version_number_to_pkg(version: &u32) -> String {
@@ -246,9 +354,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
-                    engines: None
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -264,9 +370,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
-                    engines: engines_node("*")
+                    engines: engines_node("*"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -282,9 +387,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
                     engines: engines_node("14"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -300,9 +404,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
                     engines: engines_node("12.x"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -313,9 +416,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
                     engines: engines_node("14.X"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -331,9 +433,8 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
                     engines: engines_node(">=14.10.3 <16"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )?,
@@ -349,9 +450,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
-                    engines: None,
+                    ..Default::default()
                 },
                 &Environment::new(HashMap::from([(
                     "NIXPACKS_NODE_VERSION".to_string(),
@@ -371,15 +470,30 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    main: None,
-                    scripts: None,
                     engines: engines_node("15"),
+                    ..Default::default()
                 },
                 &Environment::default()
             )
             .unwrap()
             .name,
             "nodejs"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_next_pacakges() -> Result<()> {
+        assert_eq!(
+            NodeProvider::find_next_packages(&App::new("./examples/node-monorepo")?)?,
+            vec!["packages/client".to_string()]
+        );
+        assert_eq!(
+            NodeProvider::find_next_packages(&App::new(
+                "./examples/node-monorepo/packages/client"
+            )?)?,
+            vec!["".to_string()]
         );
 
         Ok(())

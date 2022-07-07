@@ -6,7 +6,9 @@ use std::{
 };
 
 use super::Builder;
-use crate::nixpacks::{app, files, logger::Logger, nix, plan::BuildPlan, NIX_PACKS_VERSION};
+use crate::nixpacks::{
+    app, cache::sanitize_cache_key, files, logger::Logger, nix, plan::BuildPlan, NIX_PACKS_VERSION,
+};
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use tempdir::TempDir;
@@ -19,7 +21,7 @@ pub struct DockerBuilderOptions {
     pub tags: Vec<String>,
     pub labels: Vec<String>,
     pub quiet: bool,
-    pub force_buildkit: bool,
+    pub cache_key: Option<String>,
 }
 
 pub struct DockerBuilder {
@@ -90,9 +92,9 @@ impl DockerBuilder {
             bail!("Please install Docker to build the app https://docs.docker.com/engine/install/")
         }
 
-        if self.options.force_buildkit {
-            docker_build_cmd.env("DOCKER_BUILDKIT", "1");
-        }
+        // Enable BuildKit for all builds
+        docker_build_cmd.env("DOCKER_BUILDKIT", "1");
+
         docker_build_cmd.arg("build").arg(dest).arg("-t").arg(name);
 
         if self.options.quiet {
@@ -230,11 +232,14 @@ impl DockerBuilder {
         };
 
         // -- Install
+        let install_cache_mount =
+            get_cache_mount(&self.options.cache_key, &install_phase.cache_directories);
+
         let install_cmd = install_phase
             .cmds
             .unwrap_or_default()
             .iter()
-            .map(|c| format!("RUN {}", c))
+            .map(|c| format!("RUN {} {}", install_cache_mount, c))
             .collect::<Vec<String>>()
             .join("\n");
 
@@ -256,11 +261,14 @@ impl DockerBuilder {
             .unwrap_or_else(|| vec![".".to_string()]);
 
         // -- Build
+        let build_cache_mount =
+            get_cache_mount(&self.options.cache_key, &build_phase.cache_directories);
+
         let build_cmd = build_phase
             .cmds
             .unwrap_or_default()
             .iter()
-            .map(|c| format!("RUN {}", c))
+            .map(|c| format!("RUN {} {}", build_cache_mount, c))
             .collect::<Vec<String>>()
             .join("\n");
 
@@ -343,6 +351,19 @@ impl DockerBuilder {
     }
 }
 
+fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<String>>) -> String {
+    let sanitized_cache_key = cache_key.clone().map(|key| sanitize_cache_key(key));
+
+    match (sanitized_cache_key, cache_directories) {
+        (Some(cache_key), Some(cache_directories)) => cache_directories
+            .iter()
+            .map(|dir| format!("--mount=type=cache,id={cache_key}-{dir},target={dir}"))
+            .collect::<Vec<String>>()
+            .join(" "),
+        _ => "".to_string(),
+    }
+}
+
 fn get_copy_command(files: &[String], app_dir: &str) -> String {
     if files.is_empty() {
         "".to_owned()
@@ -365,5 +386,32 @@ fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String 
                 .join(" "),
             app_dir
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_cache_mount() {
+        let cache_key = Some("cache_key".to_string());
+        let cache_directories = Some(vec!["dir1".to_string(), "dir2".to_string()]);
+
+        let expected = "--mount=type=cache,id=cache_key-dir1,target=dir1 --mount=type=cache,id=cache_key-dir2,target=dir2";
+        let actual = get_cache_mount(&cache_key, &cache_directories);
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_get_cache_mount_invalid_cache_key() {
+        let cache_key = Some("my cache key".to_string());
+        let cache_directories = Some(vec!["dir1".to_string(), "dir2".to_string()]);
+
+        let expected = "--mount=type=cache,id=my-cache-key-dir1,target=dir1 --mount=type=cache,id=my-cache-key-dir2,target=dir2";
+        let actual = get_cache_mount(&cache_key, &cache_directories);
+
+        assert_eq!(expected, actual);
     }
 }

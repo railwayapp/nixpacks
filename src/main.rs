@@ -1,3 +1,5 @@
+use std::env;
+
 use anyhow::Result;
 use clap::{arg, Arg, Command};
 use nixpacks::{
@@ -54,10 +56,17 @@ fn main() -> Result<()> {
                         .multiple_values(true),
                 )
                 .arg(
-                    Arg::new("buildkit")
-                        .long("buildkit")
-                        .help("Forces docker to use buildkit")
-                        .takes_value(false),
+                    Arg::new("cache-key")
+                        .long("cache-key")
+                        .help(
+                            "Unique identifier to key cache by. Defaults to the current directory",
+                        )
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::new("no-cache")
+                        .long("no-cache")
+                        .help("Disable building with the cache"),
                 ),
         )
         .arg(
@@ -180,6 +189,20 @@ fn main() -> Result<()> {
             let path = matches.value_of("PATH").expect("required");
             let name = matches.value_of("name").map(|n| n.to_string());
             let out_dir = matches.value_of("out").map(|n| n.to_string());
+            let mut cache_key = matches.value_of("cache-key").map(|n| n.to_string());
+            let no_cache = matches.is_present("no-cache");
+
+            // Default to absolute `path` of the source that is being built as the cache-key if not disabled
+            if !no_cache && cache_key.is_none() {
+                let current_dir = env::current_dir()?;
+                let source = current_dir.join(path).canonicalize();
+                match source {
+                    Ok(source) => cache_key = Some(source.to_string_lossy().to_string()),
+                    _ => {}
+                }
+            }
+
+            println!("Cache key: {:?}", cache_key);
 
             let tags = matches
                 .values_of("tag")
@@ -191,15 +214,13 @@ fn main() -> Result<()> {
                 .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
                 .unwrap_or_default();
 
-            let force_buildkit = matches.is_present("buildkit");
-
             let build_options = &DockerBuilderOptions {
                 name,
                 tags,
                 labels,
                 out_dir,
-                force_buildkit,
                 quiet: false,
+                cache_key,
             };
 
             create_docker_image(path, envs, plan_options, build_options)?;
