@@ -202,8 +202,6 @@ fn main() -> Result<()> {
                 }
             }
 
-            println!("Cache key: {:?}", cache_key);
-
             let tags = matches
                 .values_of("tag")
                 .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
