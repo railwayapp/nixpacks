@@ -85,7 +85,7 @@ fn test_node_monorepo() -> Result<()> {
     );
     assert_eq!(
         plan.install.unwrap().cache_directories,
-        Some(vec!["/.yarn-cache".to_string()])
+        Some(vec!["/usr/local/share/.cache/yarn/v6".to_string()])
     );
     assert_eq!(plan.build.unwrap().cmds, None);
 
