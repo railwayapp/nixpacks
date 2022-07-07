@@ -1,5 +1,5 @@
 pub fn sanitize_cache_key(cache_key: String) -> String {
-    cache_key.replace(" ", "-")
+    cache_key.replace(' ', "-")
 }
 
 #[cfg(test)]

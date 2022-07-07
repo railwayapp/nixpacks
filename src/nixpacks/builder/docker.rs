@@ -352,7 +352,7 @@ impl DockerBuilder {
 }
 
 fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<String>>) -> String {
-    let sanitized_cache_key = cache_key.clone().map(|key| sanitize_cache_key(key));
+    let sanitized_cache_key = cache_key.clone().map(sanitize_cache_key);
 
     match (sanitized_cache_key, cache_directories) {
         (Some(cache_key), Some(cache_directories)) => cache_directories
