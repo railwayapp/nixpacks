@@ -196,9 +196,8 @@ fn main() -> Result<()> {
             if !no_cache && cache_key.is_none() {
                 let current_dir = env::current_dir()?;
                 let source = current_dir.join(path).canonicalize();
-                match source {
-                    Ok(source) => cache_key = Some(source.to_string_lossy().to_string()),
-                    _ => {}
+                if let Ok(source) = source {
+                    cache_key = Some(source.to_string_lossy().to_string())
                 }
             }
 
