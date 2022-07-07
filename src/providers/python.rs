@@ -20,9 +20,7 @@ use crate::{
 use super::Provider;
 
 const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
-
 const POETRY_VERSION: &'static &str = &"1.1.13";
-
 const PIP_CACHE_DIR: &'static &str = &"/root/.cache/pip";
 
 pub struct PythonProvider {}
