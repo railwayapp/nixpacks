@@ -33,11 +33,7 @@ impl Provider for ZigProvider {
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let mut phase = InstallPhase {
-            cmds: None,
-            only_include_files: None,
-            paths: None,
-        };
+        let mut phase = InstallPhase::default();
         if app.includes_file(".gitmodules") {
             phase.add_cmd("git submodule update --init".to_string());
         }

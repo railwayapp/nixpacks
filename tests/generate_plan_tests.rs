@@ -15,7 +15,14 @@ fn simple_gen_plan(path: &str) -> BuildPlan {
 #[test]
 fn test_node() -> Result<()> {
     let plan = simple_gen_plan("./examples/node");
-    assert_eq!(plan.install.unwrap().cmds, Some(vec!["npm ci".to_string()]));
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["npm ci".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.npm".to_string()])
+    );
     assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
 
@@ -70,8 +77,28 @@ fn test_node_custom_version() -> Result<()> {
 }
 
 #[test]
+fn test_node_monorepo() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-monorepo");
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["yarn install --frozen-lockfile".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/usr/local/share/.cache/yarn/v6".to_string()])
+    );
+    assert_eq!(plan.build.unwrap().cmds, None);
+
+    Ok(())
+}
+
+#[test]
 fn test_yarn() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-yarn");
+    assert_eq!(
+        plan.install.unwrap().cmds,
+        Some(vec!["yarn install --frozen-lockfile".to_string()])
+    );
     assert_eq!(
         plan.build.unwrap().cmds,
         Some(vec!["yarn run build".to_string()])
@@ -118,6 +145,14 @@ fn test_yarn_custom_version() -> Result<()> {
 #[test]
 fn test_pnpm() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-pnpm");
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["pnpm i --frozen-lockfile".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.cache/pnpm".to_string()])
+    );
     assert_eq!(
         plan.build.unwrap().cmds,
         Some(vec!["pnpm run build".to_string()])
@@ -332,8 +367,16 @@ fn test_pin_archive() -> Result<()> {
 #[test]
 fn test_custom_rust_version() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-custom-version");
-    let cmd = format!("cargo build --release --target {}-unknown-linux-musl", ARCH);
-    assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
+            format!(
+                "cp target/{}-unknown-linux-musl/release/rust-custom-version rust-custom-version",
+                ARCH
+            )
+        ])
+    );
     assert_eq!(
         plan.setup
             .unwrap()
@@ -350,8 +393,16 @@ fn test_custom_rust_version() -> Result<()> {
 #[test]
 fn test_rust_rocket() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-rocket");
-    let cmd = format!("cargo build --release --target {}-unknown-linux-musl", ARCH);
-    assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
+            format!(
+                "cp target/{}-unknown-linux-musl/release/rocket rocket",
+                ARCH
+            )
+        ])
+    );
     assert!(plan.start.clone().unwrap().cmd.is_some());
     assert_eq!(
         plan.start.clone().unwrap().cmd.unwrap(),
@@ -371,7 +422,10 @@ fn test_rust_rocket_no_musl() -> Result<()> {
     )?;
     assert_eq!(
         plan.build.unwrap().cmds,
-        Some(vec!["cargo build --release".to_string()])
+        Some(vec![
+            "cargo build --release".to_string(),
+            "cp target/release/rocket rocket".to_string()
+        ])
     );
     assert!(plan
         .start
@@ -379,7 +433,7 @@ fn test_rust_rocket_no_musl() -> Result<()> {
         .unwrap()
         .cmd
         .unwrap()
-        .contains("./target/release/rocket"));
+        .contains("./rocket"));
     assert!(plan.start.unwrap().run_image.is_none());
 
     Ok(())
