@@ -188,8 +188,12 @@ fn test_pnpm_custom_version() -> Result<()> {
 fn test_go() -> Result<()> {
     let plan = simple_gen_plan("./examples/go");
     assert_eq!(
-        plan.build.unwrap().cmds,
+        plan.build.clone().unwrap().cmds,
         Some(vec!["go build -o out main.go".to_string()])
+    );
+    assert_eq!(
+        plan.build.unwrap().cache_directories,
+        Some(vec!["/root/.cache/go-build".to_string()])
     );
     assert_eq!(plan.start.clone().unwrap().cmd, Some("./out".to_string()));
     assert!(plan.start.unwrap().run_image.is_some());
