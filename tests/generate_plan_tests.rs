@@ -220,20 +220,6 @@ fn test_pnpm_v7() -> Result<()> {
 }
 
 #[test]
-fn test_node_v10() -> Result<()> {
-    let plan = simple_gen_plan("./examples/node-v10");
-    assert_eq!(
-        plan.setup.unwrap().pkgs,
-        vec![
-            Pkg::new("nodejs-10_x"),
-            Pkg::new("npm-6_x").from_overlay(NODE_OVERLAY)
-        ]
-    );
-
-    Ok(())
-}
-
-#[test]
 fn test_pnpm_custom_version() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-pnpm-custom-node-version");
     assert_eq!(
