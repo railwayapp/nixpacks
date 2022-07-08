@@ -16,12 +16,20 @@ body {
   margin: 0;
   padding: 0;
   line-height: 1.5;
-  font-family: "Inter", sans-serif;
   overflow-y: scroll;
 
   -webkit-font-smoothing: antialiased;
+
+  @apply font-sans;
 }
 
 ::selection {
   @apply bg-fuchsia-200;
+}
+
+.heading-anchor {
+  margin-top: calc(-1 * (var(--top-nav-height) + 2rem));
+  display: inline-block;
+  position: absolute;
+  width: 1px;
 }

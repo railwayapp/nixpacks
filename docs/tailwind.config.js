@@ -1,3 +1,29 @@
+const fontStack = [
+  "Inter",
+  "-apple-system",
+  "BlinkMacSystemFont",
+  "Segoe UI",
+  "Roboto",
+  "Oxygen-Sans",
+  "Ubuntu",
+  "Cantarell",
+  "Helvetica Neue",
+  "sans-serif",
+  "Apple Color Emoji",
+  "Segoe UI Emoji",
+  "Segoe UI Symbol",
+].join(",");
+
+const monoStack = [
+  "ui-monospace",
+  "SFMono-Regular",
+  "SF Mono",
+  "Consolas",
+  "Liberation Mono",
+  "Menlo",
+  "monospace",
+].join(",");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   mode: "jit",
@@ -7,6 +33,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: fontStack,
+        mono: monoStack,
+      },
       colors: {
         fg: "var(--fg)",
         bg: "var(--bg)",

@@ -30,6 +30,10 @@ The version can be overriden by
 
 Only a major version can be specified. For example, `14.x` or `14`.
 
+**Node Canvas**
+
+If [node-canvas](https://www.npmjs.com/package/canvas) is found in the `package.json` file, then the `libuuid` and `libGL` libraries are made available in the environment.
+
 ## Install
 
 All dependencies found in `packages.json` are installed with either NPM, Yarn, or PNPM.
@@ -38,10 +42,6 @@ All dependencies found in `packages.json` are installed with either NPM, Yarn, o
 
 The build script found in `package.json` if it exists.
 
-**Node Canvas**
-
-If [node-canvas](https://www.npmjs.com/package/canvas) is found in the `package.json` file, then the `libuuid` and `libGL` libraries are made available in the environment.
-
 ## Start
 
 The start command priority is
@@ -49,3 +49,12 @@ The start command priority is
 - Start script in `package.json`
 - Main file
 - `index.js`
+
+## Caching
+
+These directories are cached between builds
+
+- Install: Global NPM/Yarn/PNPM cache directories
+- Install (if Cypress detected): `~/.cache/Cypress`
+- Build: `node_modules/.cache`
+- Build (if NextJS detected): `.next/cache`

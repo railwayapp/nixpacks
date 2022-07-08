@@ -186,11 +186,11 @@ impl App {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use super::*;
+
     use serde::{Deserialize, Serialize};
     use serde_json::{Map, Value};
+    use std::collections::HashMap;
 
     #[derive(Serialize, Deserialize)]
     struct TestPackageJson {
