@@ -421,12 +421,12 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("12.x"),
+                    engines: engines_node("18.x"),
                     ..Default::default()
                 },
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-12_x")
+            Pkg::new("nodejs-18_x")
         );
 
         assert_eq!(
