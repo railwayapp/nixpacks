@@ -274,9 +274,7 @@ impl NodeProvider {
             }
 
             let json: PackageJson = app.read_json(file.to_str().unwrap())?;
-
             let deps = NodeProvider::get_deps_from_package_json(&json);
-
             if deps.contains("next") {
                 let relative = app.strip_source_path(file.as_path())?;
                 cache_dirs.push(relative.parent().unwrap().to_str().unwrap().to_string());
