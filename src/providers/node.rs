@@ -11,6 +11,8 @@ use anyhow::Result;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
+static NODE_OVERLAY: &str = "https://github.com/JuanM04/nix-channel/archive/main.tar.gz";
+
 const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
 
@@ -225,25 +227,30 @@ impl NodeProvider {
     pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+        let pm_pkg: Pkg;
         let mut pkgs = vec![node_pkg.clone()];
+
         let package_manager = NodeProvider::get_package_manager(app);
-        if package_manager == "npm" {
-            let lockfile = app.read_file("package-lock.json").unwrap_or_default();
-            if lockfile.contains("\"lockfileVersion\": 1") {
-                pkgs.push(Pkg::new("railway.\"npm-6.x\""));
-            } else {
-                pkgs.push(Pkg::new("railway.\"npm-8.x\""));
-            }
-        } else if package_manager == "pnpm" {
+        if package_manager == "pnpm" {
             let lockfile = app.read_file("pnpm-lock.yaml").unwrap_or_default();
             if lockfile.starts_with("lockfileVersion: 5.3") {
-                pkgs.push(Pkg::new("railway.\"pnpm-6.x\""));
+                pm_pkg = Pkg::new("pnpm-6_x");
             } else {
-                pkgs.push(Pkg::new("railway.\"pnpm-7.x\""));
+                pm_pkg = Pkg::new("pnpm-7_x");
             }
         } else if package_manager == "yarn" {
-            pkgs.push(Pkg::new("railway.\"yarn-1.x\""));
+            pm_pkg = Pkg::new("yarn-1_x");
+        } else {
+            // npm
+            let lockfile = app.read_file("package-lock.json").unwrap_or_default();
+            if lockfile.contains("\"lockfileVersion\": 1") {
+                pm_pkg = Pkg::new("npm-6_x");
+            } else {
+                pm_pkg = Pkg::new("npm-8_x");
+            }
         };
+        pkgs.push(pm_pkg.from_overlay(NODE_OVERLAY));
+
         Ok(pkgs)
     }
 

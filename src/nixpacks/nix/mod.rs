@@ -47,7 +47,6 @@ pub fn create_nix_expression(plan: &BuildPlan) -> String {
                 myLibraries = writeText \"libraries\" ''
                   export LD_LIBRARY_PATH=\"${{APPEND_LIBRARY_PATH}}:$LD_LIBRARY_PATH\"
                 '';
-                railway = import <railway> {{ }};
               in
                 buildEnv {{
                   name = \"env\";
