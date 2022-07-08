@@ -294,6 +294,15 @@ impl NodeProvider {
         let mut all_deps: HashSet<String> = HashSet::new();
 
         for file in package_json_files {
+            if file
+                .as_path()
+                .to_str()
+                .unwrap_or_default()
+                .contains("node_modules")
+            {
+                continue;
+            }
+
             let json: PackageJson = app.read_json(file.to_str().unwrap())?;
 
             all_deps.extend(NodeProvider::get_deps_from_package_json(&json));
