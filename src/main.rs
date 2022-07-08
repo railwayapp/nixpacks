@@ -1,4 +1,8 @@
-use std::env;
+use std::{
+    collections::hash_map::DefaultHasher,
+    env,
+    hash::{Hash, Hasher},
+};
 
 use anyhow::Result;
 use clap::{arg, Arg, Command};
@@ -195,11 +199,7 @@ fn main() -> Result<()> {
 
             // Default to absolute `path` of the source that is being built as the cache-key if not disabled
             if !no_cache && cache_key.is_none() {
-                let current_dir = env::current_dir()?;
-                let source = current_dir.join(path).canonicalize();
-                if let Ok(source) = source {
-                    cache_key = Some(source.to_string_lossy().to_string())
-                }
+                cache_key = get_default_cache_key(path)?;
             }
 
             let tags = matches
@@ -227,4 +227,33 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn get_default_cache_key(path: &str) -> Result<Option<String>> {
+    let current_dir = env::current_dir()?;
+    let source = current_dir.join(path).canonicalize();
+    if let Ok(source) = source {
+        let source_str = source.to_string_lossy().to_string();
+        let mut hasher = DefaultHasher::new();
+        source_str.hash(&mut hasher);
+
+        let encoded_source = base64::encode(hasher.finish().to_be_bytes())
+            .replace(|c: char| !c.is_alphanumeric(), "");
+
+        Ok(Some(encoded_source))
+    } else {
+        Ok(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_default_cache_key() {
+        let path = "./examples/node";
+        let cache_key = get_default_cache_key(path).unwrap();
+        assert_eq!(cache_key, Some("2UWr73QvCk".to_string()));
+    }
 }
