@@ -61,3 +61,9 @@ Otherwise
 ```
 python main.py
 ```
+
+## Caching
+
+These directories are cached between builds
+
+- Install: `~/.cache/pip`
