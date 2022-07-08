@@ -18,6 +18,7 @@ Nixpacks can be configured via environment variables. Most of these variables ar
 | `NIXPACKS_LIBS`               | Add additional Nix libraries to make available                                               |
 | `NIXPACKS_INSTALL_CACHE_DIRS` | Add additional directories to cache during the install phase                                 |
 | `NIXPACKS_BUILD_CACHE_DIRS`   | Add additional directories to cache during the build phase                                   |
+| `NIXPACKS_NO_CACHE`           | Disable caching for the build                                                                |
 
 ## Procfiles
 
