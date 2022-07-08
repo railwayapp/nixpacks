@@ -6,13 +6,13 @@ title: How It Works
 
 Nixpacks works in two steps
 
-## 1. Plan
+## Plan
 
 Analyze the app source directory and generates a reproducible build plan. This plan can be saved (in JSON format) and re-used at a later date to build the image in the exact same way every time.
 
 To create the plan, language providers are matched against the app source directory and suggest Nix packages, an install command, build command, and start command. All of these can be overwritten by the user.
 
-## 2. Build
+## Build
 
 The build step takes the build plan and creates an OCI compliant image (with Docker) that can be deployed and run anywhere. This happens in the following steps
 

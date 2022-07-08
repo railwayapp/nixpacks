@@ -8,6 +8,7 @@ const generateID = (children: any, attributes: any) => {
   return children
     .filter((child: any) => typeof child === "string")
     .join(" ")
+    .replace(/^\d+\.\s*/g, "")
     .replace(/[?]/g, "")
     .replace(/\s+/g, "-")
     .toLowerCase();
