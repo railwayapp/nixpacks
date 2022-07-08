@@ -9,7 +9,7 @@ Fsharp is detected if a `*.fsproj` file is found.
 ## Install
 
 ```
-donet restore
+dotnet restore
 ```
 
 ## Build
