@@ -46,7 +46,9 @@ const useActiveHeaderId = () => {
 
     const handleScroll = debounce(() => {
       const headings = Array.from(
-        document.querySelectorAll("main .heading .heading-anchor")
+        document.querySelectorAll(
+          "main h1.heading .heading-anchor,h2.heading .heading-anchor,h3.heading .heading-anchor"
+        )
       );
       const visibleHeadings = headings.filter(
         (h) => h.getBoundingClientRect().top >= 10
