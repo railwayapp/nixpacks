@@ -263,10 +263,18 @@ impl NodeProvider {
 
         // Find package.json files with a "next build" build script and cache the associated .next/cache directory
         for file in package_json_files {
+            // Don't find package.json files that are in node_modules
+            if file
+                .as_path()
+                .to_str()
+                .unwrap_or_default()
+                .contains("node_modules")
+            {
+                continue;
+            }
+
             let json: PackageJson = app.read_json(file.to_str().unwrap())?;
-
             let deps = NodeProvider::get_deps_from_package_json(&json);
-
             if deps.contains("next") {
                 let relative = app.strip_source_path(file.as_path())?;
                 cache_dirs.push(relative.parent().unwrap().to_str().unwrap().to_string());
@@ -284,6 +292,15 @@ impl NodeProvider {
         let mut all_deps: HashSet<String> = HashSet::new();
 
         for file in package_json_files {
+            if file
+                .as_path()
+                .to_str()
+                .unwrap_or_default()
+                .contains("node_modules")
+            {
+                continue;
+            }
+
             let json: PackageJson = app.read_json(file.to_str().unwrap())?;
 
             all_deps.extend(NodeProvider::get_deps_from_package_json(&json));
