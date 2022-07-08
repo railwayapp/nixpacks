@@ -263,7 +263,7 @@ impl NodeProvider {
 
         // Find package.json files with a "next build" build script and cache the associated .next/cache directory
         for file in package_json_files {
-            // Don't fine package.json files that are in node_modules
+            // Don't find package.json files that are in node_modules
             if file
                 .as_path()
                 .to_str()
