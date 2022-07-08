@@ -11,7 +11,7 @@ use anyhow::Result;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-pub const NODE_OVERLAY: &str = "https://github.com/JuanM04/nix-channel/archive/main.tar.gz";
+pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
 const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
