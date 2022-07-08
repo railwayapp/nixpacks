@@ -7,7 +7,8 @@ use std::{
 
 use super::Builder;
 use crate::nixpacks::{
-    app, cache::sanitize_cache_key, files, logger::Logger, nix, plan::BuildPlan, NIX_PACKS_VERSION,
+    app, cache::sanitize_cache_key, environment::Environment, files, logger::Logger, nix,
+    plan::BuildPlan, NIX_PACKS_VERSION,
 };
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
@@ -22,6 +23,7 @@ pub struct DockerBuilderOptions {
     pub labels: Vec<String>,
     pub quiet: bool,
     pub cache_key: Option<String>,
+    pub no_cache: bool,
 }
 
 pub struct DockerBuilder {
@@ -30,7 +32,7 @@ pub struct DockerBuilder {
 }
 
 impl Builder for DockerBuilder {
-    fn create_image(&self, app_src: &str, plan: &BuildPlan) -> Result<()> {
+    fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         self.logger
             .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
 
@@ -51,7 +53,7 @@ impl Builder for DockerBuilder {
         // Write everything to destination
         self.write_app(app_src, dest).context("Writing app")?;
         self.write_assets(plan, dest).context("Writing assets")?;
-        self.write_dockerfile(plan, dest)
+        self.write_dockerfile(plan, dest, env)
             .context("Writing Dockerfile")?;
         self.write_nix_expression(plan, dest)
             .context("Writing NIx expression")?;
@@ -123,8 +125,8 @@ impl DockerBuilder {
         files::recursive_copy_dir(app_src, &dest)
     }
 
-    fn write_dockerfile(&self, plan: &BuildPlan, dest: &str) -> Result<()> {
-        let dockerfile = self.create_dockerfile(plan);
+    fn write_dockerfile(&self, plan: &BuildPlan, dest: &str, env: &Environment) -> Result<()> {
+        let dockerfile = self.create_dockerfile(plan, env);
 
         let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
@@ -167,7 +169,7 @@ impl DockerBuilder {
         Ok(())
     }
 
-    fn create_dockerfile(&self, plan: &BuildPlan) -> String {
+    fn create_dockerfile(&self, plan: &BuildPlan, env: &Environment) -> String {
         let app_dir = "/app/";
         let assets_dir = app::ASSETS_DIR;
 
@@ -177,6 +179,12 @@ impl DockerBuilder {
         let start_phase = plan.start.clone().unwrap_or_default();
         let variables = plan.variables.clone().unwrap_or_default();
         let static_assets = plan.static_assets.clone().unwrap_or_default();
+
+        let cache_key = if !self.options.no_cache && !env.is_config_variable_truthy("NO_CACHE") {
+            self.options.cache_key.clone()
+        } else {
+            None
+        };
 
         // -- Variables
         let args_string = if !variables.is_empty() {
@@ -232,8 +240,7 @@ impl DockerBuilder {
         };
 
         // -- Install
-        let install_cache_mount =
-            get_cache_mount(&self.options.cache_key, &install_phase.cache_directories);
+        let install_cache_mount = get_cache_mount(&cache_key, &install_phase.cache_directories);
 
         let install_cmd = install_phase
             .cmds
@@ -261,8 +268,7 @@ impl DockerBuilder {
             .unwrap_or_else(|| vec![".".to_string()]);
 
         // -- Build
-        let build_cache_mount =
-            get_cache_mount(&self.options.cache_key, &build_phase.cache_directories);
+        let build_cache_mount = get_cache_mount(&cache_key, &build_phase.cache_directories);
 
         let build_cmd = build_phase
             .cmds

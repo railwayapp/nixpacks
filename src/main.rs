@@ -219,6 +219,7 @@ fn main() -> Result<()> {
                 out_dir,
                 quiet: false,
                 cache_key,
+                no_cache,
             };
 
             create_docker_image(path, envs, plan_options, build_options)?;
