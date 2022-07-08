@@ -93,7 +93,13 @@ fn test_node_no_scripts() -> Result<()> {
 #[test]
 fn test_node_custom_version() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-custom-version");
-    assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("nodejs-18_x")]);
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![
+            Pkg::new("nodejs-18_x"),
+            Pkg::new("npm-8_x").from_overlay(NODE_OVERLAY)
+        ]
+    );
 
     Ok(())
 }
