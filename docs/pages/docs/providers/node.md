@@ -49,3 +49,12 @@ The start command priority is
 - Start script in `package.json`
 - Main file
 - `index.js`
+
+## Caching
+
+These directories are cached between builds
+
+- Install: Global NPM/Yarn/PNPM cache directories
+- Install (if Cypress detected): `~/.cache/Cypress`
+- Build: `node_modules/.cache`
+- Build (if NextJS detected): `.next/cache`

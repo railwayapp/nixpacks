@@ -36,7 +36,8 @@ nixpacks build --help
 | `--libs <libs...>`          | Provide additional Nix libraries to install in the environment |
 | `--tag <tag...>`, `-t`      | Additional tags to add to the output image                     |
 | `--label <labels...>`, `-l` | Additional labels to add to the output image                   |
-| `--buildkit`                | Forces Docker to use buildkit                                  |
+| `--cache-key <key>`         | Unique identifier to use for the build cache                   |
+| `--no-cache`                | Disable caching for the build                                  |
 | `--out <dir>`, `-o`         | Save output directory instead of building it with Docker       |
 
 #### Environment Variables
