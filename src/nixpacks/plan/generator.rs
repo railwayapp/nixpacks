@@ -166,7 +166,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
 
         if let Some(install_cache_dirs) = environment.get_config_variable("INSTALL_CACHE_DIRS") {
             let custom_install_cache_dirs = install_cache_dirs
-                .split(",")
+                .split(',')
                 .map(|s| s.to_string())
                 .collect::<Vec<_>>();
 
@@ -204,7 +204,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
 
         if let Some(build_cache_dirs) = environment.get_config_variable("BUILD_CACHE_DIRS") {
             let custom_build_cache_dirs = build_cache_dirs
-                .split(",")
+                .split(',')
                 .map(|s| s.to_string())
                 .collect::<Vec<_>>();
 
