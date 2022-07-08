@@ -17,8 +17,6 @@ The Node provider sets the following environment variables:
 
 The following major versions are available
 
-- `10`
-- `12`
 - `14`
 - `16` (Default)
 - `18`
