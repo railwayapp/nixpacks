@@ -164,6 +164,18 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
             env_install_cmd = Some(vec![install_cmd]);
         }
 
+        if let Some(install_cache_dirs) = environment.get_config_variable("INSTALL_CACHE_DIRS") {
+            let custom_install_cache_dirs = install_cache_dirs
+                .split(',')
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>();
+
+            install_phase.cache_directories = match install_phase.cache_directories {
+                Some(dirs) => Some([dirs, custom_install_cache_dirs].concat()),
+                None => Some(custom_install_cache_dirs),
+            }
+        }
+
         // Start command priority
         // - custom install command
         // - environment variable
@@ -188,6 +200,18 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         let mut env_build_cmd = None;
         if let Some(build_cmd) = environment.get_config_variable("BUILD_CMD").cloned() {
             env_build_cmd = Some(vec![build_cmd]);
+        }
+
+        if let Some(build_cache_dirs) = environment.get_config_variable("BUILD_CACHE_DIRS") {
+            let custom_build_cache_dirs = build_cache_dirs
+                .split(',')
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>();
+
+            build_phase.cache_directories = match build_phase.cache_directories {
+                Some(dirs) => Some([dirs, custom_build_cache_dirs].concat()),
+                None => Some(custom_build_cache_dirs),
+            }
         }
 
         // Build command priority

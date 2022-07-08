@@ -157,6 +157,7 @@ fn main() -> Result<()> {
         Some(values) => values.map(String::from).collect::<Vec<String>>(),
         None => Vec::new(),
     };
+
     let pin_pkgs = matches.is_present("pin");
 
     let envs: Vec<_> = match matches.values_of("env") {

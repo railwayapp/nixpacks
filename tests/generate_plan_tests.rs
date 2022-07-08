@@ -558,19 +558,36 @@ fn test_config_from_environment_variables() -> Result<()> {
             "NIXPACKS_BUILD_CMD=build",
             "NIXPACKS_START_CMD=start",
             "NIXPACKS_RUN_IMAGE=alpine",
+            "NIXPACKS_INSTALL_CACHE_DIRS=/tmp,foobar",
+            "NIXPACKS_BUILD_CACHE_DIRS=/build,barbaz",
         ],
         &GeneratePlanOptions::default(),
     )?;
-    assert_eq!(
-        plan.install.unwrap().cmds,
-        Some(vec!["install".to_string()])
-    );
-    assert_eq!(plan.build.unwrap().cmds, Some(vec!["build".to_string()]));
-    assert_eq!(plan.start.clone().unwrap().cmd, Some("start".to_string()));
+
     assert_eq!(
         plan.setup.unwrap().pkgs,
         vec![Pkg::new("cowsay"), Pkg::new("ripgrep")]
     );
+
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["install".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/tmp".to_string(), "foobar".to_string()])
+    );
+
+    assert_eq!(
+        plan.build.clone().unwrap().cmds,
+        Some(vec!["build".to_string()])
+    );
+    assert_eq!(
+        plan.build.unwrap().cache_directories,
+        Some(vec!["/build".to_string(), "barbaz".to_string()])
+    );
+
+    assert_eq!(plan.start.clone().unwrap().cmd, Some("start".to_string()));
     assert_eq!(plan.start.unwrap().run_image, Some("alpine".to_string()));
 
     Ok(())
