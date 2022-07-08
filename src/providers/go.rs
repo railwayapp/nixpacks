@@ -9,9 +9,11 @@ use anyhow::Result;
 
 pub struct GolangProvider {}
 
-pub const BINARY_NAME: &'static &str = &"out";
+const BINARY_NAME: &'static &str = &"out";
 const AVAILABLE_GO_VERSIONS: &[(&str, &str)] = &[("1.17", "go"), ("1.18", "go_1_18")];
-pub const DEFAULT_GO_PKG_NAME: &'static &str = &"go";
+const DEFAULT_GO_PKG_NAME: &'static &str = &"go";
+
+const GO_BUILD_CACHE_DIR: &'static &str = &"/root/.cache/go-build";
 
 impl Provider for GolangProvider {
     fn name(&self) -> &str {
@@ -31,23 +33,23 @@ impl Provider for GolangProvider {
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         if app.includes_file("go.mod") {
-            return Ok(Some(InstallPhase::new("go get".to_string())));
+            let mut install_phase = InstallPhase::new("go get".to_string());
+            install_phase.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
+            return Ok(Some(install_phase));
         }
         Ok(None)
     }
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        if app.includes_file("go.mod") {
-            Ok(Some(BuildPhase::new(format!(
-                "go build -o {}",
-                BINARY_NAME
-            ))))
+        let mut build_phase = if app.includes_file("go.mod") {
+            BuildPhase::new(format!("go build -o {}", BINARY_NAME))
         } else {
-            Ok(Some(BuildPhase::new(format!(
-                "go build -o {} main.go",
-                BINARY_NAME
-            ))))
-        }
+            BuildPhase::new(format!("go build -o {} main.go", BINARY_NAME))
+        };
+
+        build_phase.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
+
+        Ok(Some(build_phase))
     }
 
     fn start(&self, _app: &App, env: &Environment) -> Result<Option<StartPhase>> {
