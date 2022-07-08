@@ -78,12 +78,10 @@ export const TableOfContents: React.FC<{
   );
 
   const { activeHeaderId, onChangeHash } = useActiveHeaderId();
-  console.log("ActiveHeaderId", activeHeaderId);
-
-  const isMounted = useIsMounted();
-
   const editPageURL = `${GITHUB_EDIT_URL}${currentFile}`;
 
+  // Don't render unless we are mounted so that we can use the window hash
+  const isMounted = useIsMounted();
   if (!isMounted || items.length <= 1) {
     return null;
   }
