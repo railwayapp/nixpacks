@@ -1,12 +1,12 @@
 use anyhow::anyhow;
+use anyhow::{bail, Context, Result};
+use globset::Glob;
+use rayon::prelude::*;
+use regex::Regex;
+use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 use std::path::Path;
 use std::{env, fs, path::PathBuf};
-
-use anyhow::{bail, Context, Result};
-use globset::Glob;
-use regex::Regex;
-use serde::de::DeserializeOwned;
 use walkdir::WalkDir;
 
 pub static ASSETS_DIR: &str = "/assets/";
@@ -44,7 +44,7 @@ impl App {
     pub fn find_files(&self, pattern: &str) -> Result<Vec<PathBuf>> {
         let directories = self
             .find_glob(pattern)?
-            .into_iter()
+            .into_par_iter()
             .filter(|path| path.is_file())
             .collect();
 
@@ -58,7 +58,7 @@ impl App {
     pub fn find_directories(&self, pattern: &str) -> Result<Vec<PathBuf>> {
         let directories = self
             .find_glob(pattern)?
-            .into_iter()
+            .into_par_iter()
             .filter(|path| path.is_dir())
             .collect();
 

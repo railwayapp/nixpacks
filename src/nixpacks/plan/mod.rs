@@ -5,8 +5,8 @@ use crate::nixpacks::{
 };
 use anyhow::Result;
 use indoc::formatdoc;
-use serde::{Deserialize, Serialize};
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub mod generator;
 

@@ -11,9 +11,9 @@ use crate::nixpacks::{
 };
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
+use rayon::prelude::*;
 use tempdir::TempDir;
 use uuid::Uuid;
-use rayon::prelude::*;
 
 #[derive(Clone, Default, Debug)]
 pub struct DockerBuilderOptions {

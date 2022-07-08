@@ -1,5 +1,4 @@
 use super::Provider;
-use std::fmt::Write as _;
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::Environment,
@@ -10,6 +9,7 @@ use anyhow::Result;
 use indoc::formatdoc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt::Write as _;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Staticfile {

@@ -1,6 +1,6 @@
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use rayon::prelude::*;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
