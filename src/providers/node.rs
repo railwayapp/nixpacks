@@ -243,7 +243,7 @@ impl NodeProvider {
         } else {
             // npm
             let lockfile = app.read_file("package-lock.json").unwrap_or_default();
-            if lockfile.contains("\"lockfileVersion\": 1") {
+            if node_pkg.name == "nodejs-10_x" || lockfile.contains("\"lockfileVersion\": 1") {
                 pm_pkg = Pkg::new("npm-6_x");
             } else {
                 pm_pkg = Pkg::new("npm-8_x");
