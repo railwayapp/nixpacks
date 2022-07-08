@@ -1,4 +1,5 @@
 use super::Provider;
+use std::fmt::Write as _;
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::Environment,
@@ -67,7 +68,7 @@ impl Provider for StaticfileProvider {
         let status_code = staticfile.status_code.unwrap_or_default();
         let mut error_page = "".to_string();
         for (key, value) in status_code {
-            error_page += &format!("\terror_page {} {};\n", key, value);
+            writeln!(error_page, "\terror_page {} {};", key, value)?;
         }
 
         let nginx_conf = formatdoc! {"
