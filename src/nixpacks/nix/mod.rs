@@ -1,5 +1,6 @@
 use super::plan::BuildPlan;
 use indoc::formatdoc;
+use rayon::prelude::*;
 
 pub mod pkg;
 
@@ -8,7 +9,7 @@ pub fn create_nix_expression(plan: &BuildPlan) -> String {
 
     let nixpkgs = setup_phase
         .pkgs
-        .iter()
+        .par_iter()
         .map(|p| p.to_nix_string())
         .collect::<Vec<String>>()
         .join(" ");
@@ -32,7 +33,7 @@ pub fn create_nix_expression(plan: &BuildPlan) -> String {
     }
 
     let overlays_string = overlays
-        .iter()
+        .par_iter()
         .map(|url| format!("(import (builtins.fetchTarball \"{}\"))", url))
         .collect::<Vec<String>>()
         .join("\n");

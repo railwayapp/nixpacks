@@ -6,6 +6,7 @@ use crate::nixpacks::{
 use anyhow::Result;
 use indoc::formatdoc;
 use serde::{Deserialize, Serialize};
+use rayon::prelude::*;
 
 pub mod generator;
 
@@ -32,7 +33,7 @@ impl BuildPlan {
             .clone()
             .unwrap_or_default()
             .pkgs
-            .iter()
+            .par_iter()
             .map(|pkg| pkg.to_pretty_string())
             .collect::<Vec<_>>();
         let apt_pkgs = setup_phase.unwrap_or_default().apt_pkgs.unwrap_or_default();

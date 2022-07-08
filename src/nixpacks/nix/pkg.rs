@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use rayon::prelude::*;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
@@ -22,7 +23,7 @@ impl Pkg {
         match &self.overrides {
             Some(overrides) => {
                 let override_string = overrides
-                    .iter()
+                    .par_iter()
                     .map(|(name, value)| format!("{} = {};", name, value))
                     .collect::<Vec<_>>()
                     .join(" ");
@@ -52,7 +53,7 @@ impl Pkg {
         match &self.overrides {
             Some(overrides) => {
                 let override_string = overrides
-                    .iter()
+                    .par_iter()
                     .map(|(name, value)| format!("{} = {}", name, value))
                     .collect::<Vec<_>>()
                     .join(", ");

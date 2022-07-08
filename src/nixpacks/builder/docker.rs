@@ -13,6 +13,7 @@ use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use tempdir::TempDir;
 use uuid::Uuid;
+use rayon::prelude::*;
 
 #[derive(Clone, Default, Debug)]
 pub struct DockerBuilderOptions {
@@ -184,13 +185,13 @@ impl DockerBuilder {
                 "ARG {}\nENV {}",
                 // Pull the variables in from docker `--build-arg`
                 variables
-                    .iter()
+                    .par_iter()
                     .map(|var| var.0.to_string())
                     .collect::<Vec<_>>()
                     .join(" "),
                 // Make the variables available at runtime
                 variables
-                    .iter()
+                    .par_iter()
                     .map(|var| format!("{}=${}", var.0, var.0))
                     .collect::<Vec<_>>()
                     .join(" ")
@@ -356,7 +357,7 @@ fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<St
 
     match (sanitized_cache_key, cache_directories) {
         (Some(cache_key), Some(cache_directories)) => cache_directories
-            .iter()
+            .par_iter()
             .map(|dir| format!("--mount=type=cache,id={cache_key}-{dir},target={dir}"))
             .collect::<Vec<String>>()
             .join(" "),
@@ -380,7 +381,7 @@ fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String 
             "COPY --from={} {} {}",
             from,
             files
-                .iter()
+                .par_iter()
                 .map(|f| f.replace("./", app_dir))
                 .collect::<Vec<_>>()
                 .join(" "),
