@@ -11,6 +11,8 @@ use anyhow::Result;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
+pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
+
 const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 
@@ -225,22 +227,30 @@ impl NodeProvider {
     pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+        let pm_pkg: Pkg;
         let mut pkgs = vec![node_pkg.clone()];
-        if NodeProvider::get_package_manager(app) == "pnpm" {
-            let mut pnpm_pkg = Pkg::new("nodePackages.pnpm");
-            // Only override the node package if not the default one
-            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
-                pnpm_pkg = pnpm_pkg.set_override("nodejs", node_pkg.name.as_str());
+
+        let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager == "pnpm" {
+            let lockfile = app.read_file("pnpm-lock.yaml").unwrap_or_default();
+            if lockfile.starts_with("lockfileVersion: 5.3") {
+                pm_pkg = Pkg::new("pnpm-6_x");
+            } else {
+                pm_pkg = Pkg::new("pnpm-7_x");
             }
-            pkgs.push(pnpm_pkg);
-        } else if NodeProvider::get_package_manager(app) == "yarn" {
-            let mut yarn_pkg = Pkg::new("yarn");
-            // Only override the node package if not the default one
-            if node_pkg.name != *DEFAULT_NODE_PKG_NAME {
-                yarn_pkg = yarn_pkg.set_override("nodejs", node_pkg.name.as_str());
+        } else if package_manager == "yarn" {
+            pm_pkg = Pkg::new("yarn-1_x");
+        } else {
+            // npm
+            let lockfile = app.read_file("package-lock.json").unwrap_or_default();
+            if lockfile.contains("\"lockfileVersion\": 1") {
+                pm_pkg = Pkg::new("npm-6_x");
+            } else {
+                pm_pkg = Pkg::new("npm-8_x");
             }
-            pkgs.push(yarn_pkg);
-        }
+        };
+        pkgs.push(pm_pkg.from_overlay(NODE_OVERLAY));
+
         Ok(pkgs)
     }
 
