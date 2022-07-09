@@ -19,6 +19,7 @@ use uuid::Uuid;
 pub struct DockerBuilderOptions {
     pub name: Option<String>,
     pub out_dir: Option<String>,
+    pub print_dockerfile: bool,
     pub tags: Vec<String>,
     pub labels: Vec<String>,
     pub quiet: bool,
@@ -33,11 +34,6 @@ pub struct DockerBuilder {
 
 impl Builder for DockerBuilder {
     fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
-        self.logger
-            .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
-
-        println!("{}", plan.get_build_string());
-
         let id = Uuid::new_v4();
 
         let dir = match &self.options.out_dir {
@@ -49,6 +45,18 @@ impl Builder for DockerBuilder {
         };
         let dest = dir.to_str().context("Invalid temp directory path")?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
+
+        // If printing the Dockerfile, don't write anything to disk
+        if self.options.print_dockerfile {
+            let dockerfile = self.create_dockerfile(plan, env);
+            println!("{dockerfile}");
+
+            return Ok(());
+        }
+
+        self.logger
+            .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
+        println!("{}", plan.get_build_string());
 
         // Write everything to destination
         self.write_app(app_src, dest).context("Writing app")?;
