@@ -167,8 +167,8 @@ impl NodeProvider {
 
         let pkg_node_version = package_json
             .engines
-            .as_ref()
-            .and_then(|engines| engines.get("node"));
+            .clone()
+            .and_then(|engines| engines.get("node").map(|v| v.to_owned()));
 
         let node_version = pkg_node_version.or(env_node_version);
 
@@ -184,7 +184,7 @@ impl NodeProvider {
 
         // Parse `18` or `18.x` into nodejs-18_x
         let re = Regex::new(r"^(\d+)\.?[x|X]?$").unwrap();
-        if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version) {
+        if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version.clone()) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
 
@@ -228,7 +228,7 @@ impl NodeProvider {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
         let pm_pkg: Pkg;
-        let mut pkgs = vec![node_pkg.clone()];
+        let mut pkgs = vec![node_pkg];
 
         let package_manager = NodeProvider::get_package_manager(app);
         if package_manager == "pnpm" {
@@ -355,8 +355,8 @@ fn version_number_to_pkg(version: &u32) -> String {
     }
 }
 
-fn parse_regex_into_pkg(re: &Regex, node_version: &str) -> Option<String> {
-    let matches: Vec<_> = re.captures_iter(node_version).collect();
+fn parse_regex_into_pkg(re: &Regex, node_version: String) -> Option<String> {
+    let matches: Vec<_> = re.captures_iter(node_version.as_str()).collect();
     if let Some(m) = matches.get(0) {
         match m[1].parse::<u32>() {
             Ok(version) => return Some(version_number_to_pkg(&version)),

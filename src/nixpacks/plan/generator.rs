@@ -160,7 +160,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         };
 
         let mut env_install_cmd = None;
-        if let Some(install_cmd) = environment.get_config_variable("INSTALL_CMD").cloned() {
+        if let Some(install_cmd) = environment.get_config_variable("INSTALL_CMD") {
             env_install_cmd = Some(vec![install_cmd]);
         }
 
@@ -198,7 +198,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         };
 
         let mut env_build_cmd = None;
-        if let Some(build_cmd) = environment.get_config_variable("BUILD_CMD").cloned() {
+        if let Some(build_cmd) = environment.get_config_variable("BUILD_CMD") {
             env_build_cmd = Some(vec![build_cmd]);
         }
 
@@ -244,7 +244,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
             None => StartPhase::default(),
         };
 
-        let env_start_cmd = environment.get_config_variable("START_CMD").cloned();
+        let env_start_cmd = environment.get_config_variable("START_CMD");
 
         // Start command priority
         // - custom start command
