@@ -12,7 +12,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
-const AVAILABLE_NODE_VERSIONS: &[u32] = &[10, 12, 14, 16, 18];
+const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 
 const YARN_CACHE_DIR: &'static &str = &"/usr/local/share/.cache/yarn/v6";
 const PNPM_CACHE_DIR: &'static &str = &"/root/.cache/pnpm";
@@ -180,7 +180,7 @@ impl NodeProvider {
             return Ok(Pkg::new(DEFAULT_NODE_PKG_NAME));
         }
 
-        // Parse `12` or `12.x` into nodejs-12_x
+        // Parse `18` or `18.x` into nodejs-18_x
         let re = Regex::new(r"^(\d+)\.?[x|X]?$").unwrap();
         if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version) {
             return Ok(Pkg::new(node_pkg.as_str()));
@@ -421,12 +421,12 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("12.x"),
+                    engines: engines_node("18.x"),
                     ..Default::default()
                 },
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-12_x")
+            Pkg::new("nodejs-18_x")
         );
 
         assert_eq!(
