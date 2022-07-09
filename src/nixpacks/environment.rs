@@ -118,9 +118,9 @@ mod tests {
     #[test]
     fn test_get_config_variable_strips_newlines() {
         let mut environment = Environment::default();
-        environment.set_variable("NIXPACKS_HELLO".to_string(), "hello\nworld".to_string());
+        environment.set_variable("NIXPACKS_BUILD_CMD".to_string(), "hello\nworld".to_string());
         assert_eq!(
-            environment.get_config_variable("HELLO"),
+            environment.get_config_variable("BUILD_CMD"),
             Some("helloworld".to_string())
         );
     }
