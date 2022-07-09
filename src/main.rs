@@ -44,6 +44,12 @@ fn main() -> Result<()> {
                         .takes_value(true),
                 )
                 .arg(
+                    Arg::new("dockerfile")
+                        .long("dockerfile")
+                        .help("Print the generated Dockerfile to stdout")
+                        .hide(true),
+                )
+                .arg(
                     Arg::new("tag")
                         .long("tag")
                         .short('t')
@@ -202,6 +208,8 @@ fn main() -> Result<()> {
                 cache_key = get_default_cache_key(path)?;
             }
 
+            let print_dockerfile = matches.is_present("dockerfile");
+
             let tags = matches
                 .values_of("tag")
                 .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
@@ -220,6 +228,7 @@ fn main() -> Result<()> {
                 quiet: false,
                 cache_key,
                 no_cache,
+                print_dockerfile,
             };
 
             create_docker_image(path, envs, plan_options, build_options)?;
