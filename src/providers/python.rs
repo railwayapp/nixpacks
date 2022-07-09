@@ -126,6 +126,7 @@ impl Provider for PythonProvider {
 
         Ok(None)
     }
+
     fn environment_variables(
         &self,
         app: &App,
