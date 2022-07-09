@@ -8,6 +8,8 @@ use indoc::formatdoc;
 use serde::{Deserialize, Serialize};
 
 pub mod generator;
+pub mod new_build_plan;
+mod topological_sort;
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
