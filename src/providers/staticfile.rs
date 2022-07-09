@@ -127,18 +127,19 @@ impl Provider for StaticfileProvider {
 
 impl StaticfileProvider {
     pub fn get_root(app: &App, env: &Environment, staticfile_root: String) -> String {
-        let mut root = "";
+        let mut root = "".to_string();
         if let Some(staticfile_root) = env.get_config_variable("STATICFILE_ROOT") {
             root = staticfile_root;
         } else if !staticfile_root.is_empty() {
-            root = &staticfile_root;
+            root = staticfile_root;
         } else if app.includes_directory("public") {
-            root = "public";
+            root = "public".to_string();
         } else if app.includes_directory("dist") {
-            root = "dist";
+            root = "dist".to_string();
         } else if app.includes_directory("index") {
-            root = "index";
+            root = "index".to_string();
         }
-        root.to_string()
+
+        root
     }
 }

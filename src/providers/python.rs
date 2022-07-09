@@ -210,9 +210,7 @@ impl PythonProvider {
 
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
         // Fetch version from configs
-        let mut custom_version = env
-            .get_config_variable("PYTHON_VERSION")
-            .map(|s| s.to_string());
+        let mut custom_version = env.get_config_variable("PYTHON_VERSION");
 
         // If not from configs, get it from the .python-version file
         if custom_version.is_none() && app.includes_file(".python-version") {
