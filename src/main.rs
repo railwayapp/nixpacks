@@ -46,7 +46,8 @@ fn main() -> Result<()> {
                 .arg(
                     Arg::new("dockerfile")
                         .long("dockerfile")
-                        .help("Print the generated Dockerfile to stdout"),
+                        .help("Print the generated Dockerfile to stdout")
+                        .hide(true),
                 )
                 .arg(
                     Arg::new("tag")
