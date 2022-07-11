@@ -212,7 +212,7 @@ fn test_bun() -> Result<()> {
         plan.setup.unwrap().pkgs,
         vec![
             Pkg::new("nodejs"),
-            Pkg::new("bun").from_overlay(NODE_OVERLAY)
+            Pkg::new("bun")
         ]
     );
     assert_eq!(
