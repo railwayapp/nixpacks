@@ -25,7 +25,7 @@ jobs:
         if: env.NIXPACKS_VERSION == ''
         run: |
           echo "NIXPACKS_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          echo "version is: ${{ env.NIXPACKS_VERSION }}"
+          echo "version is: ${{ NIXPACKS_VERSION }}"
 
       - uses: actions/checkout@v3
         with:
