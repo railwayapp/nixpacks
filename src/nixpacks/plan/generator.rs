@@ -14,7 +14,7 @@ use crate::{
 use anyhow::{bail, Context, Ok, Result};
 
 // https://status.nixos.org/
-static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
+static NIXPKGS_ARCHIVE: &str = "85deee6d6c8127d360096a5caa0aeb876b976496";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
