@@ -13,4 +13,4 @@ Fixes # (issue)
 - [ ] Did you read through [contribution guidelines](https://github.com/railwayapp/nixpacks/blob/main/CONTRIBUTING.md)?
 - [ ] Did your changes require updates to the documentation? Have you updated those accordingly?
 - [ ] Did you write tests to cover your changes? Did it pass locally when running `cargo test`?
-- [ ] Did you run `cargo fmt`, `cargo check` and `cargo clippy` locally to ensure that CI pass?
+- [ ] Have you run `cargo fmt`, `cargo check` and `cargo clippy` locally to ensure that CI pass?
