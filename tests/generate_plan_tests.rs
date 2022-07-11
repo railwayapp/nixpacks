@@ -304,7 +304,7 @@ fn test_bun_canvas() -> Result<()> {
         plan.install.unwrap().cache_directories,
         Some(vec!["/root/.bun".to_string()])
     );
-    assert_eq!(plan.start.unwrap().cmd, Some("bun index.ts".to_string()));
+    assert_eq!(plan.start.unwrap().cmd, Some("bun index.js".to_string()));
     assert_eq!(
         plan.variables.clone().unwrap().get("NODE_ENV"),
         Some(&"production".to_string())
