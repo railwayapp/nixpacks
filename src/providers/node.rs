@@ -19,6 +19,7 @@ const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 const YARN_CACHE_DIR: &'static &str = &"/usr/local/share/.cache/yarn/v6";
 const PNPM_CACHE_DIR: &'static &str = &"/root/.cache/pnpm";
 const NPM_CACHE_DIR: &'static &str = &"/root/.npm";
+const BUN_CACHE_DIR: &'static &str = &"/root/.bun";
 const CYPRESS_CACHE_DIR: &'static &str = &"/root/.cache/Cypress";
 const NODE_MODULES_CACHE_DIR: &'static &str = &"node_modules/.cache";
 
@@ -64,6 +65,8 @@ impl Provider for NodeProvider {
             install_phase.add_cache_directory(YARN_CACHE_DIR.to_string());
         } else if package_manager == "pnpm" {
             install_phase.add_cache_directory(PNPM_CACHE_DIR.to_string());
+        } else if package_manager == "bun" {
+            install_phase.add_cache_directory(BUN_CACHE_DIR.to_string());
         } else {
             install_phase.add_cache_directory(NPM_CACHE_DIR.to_string());
         }
@@ -203,15 +206,18 @@ impl NodeProvider {
             pkg_manager = "pnpm";
         } else if app.includes_file("yarn.lock") {
             pkg_manager = "yarn";
+        } else if app.includes_file("bun.lockb") {
+            pkg_manager = "bun";
         }
         pkg_manager.to_string()
     }
 
     pub fn get_install_command(app: &App) -> String {
         let mut install_cmd = "npm i";
-        if NodeProvider::get_package_manager(app) == "pnpm" {
+        let pkg_manager = NodeProvider::get_package_manager(app);
+        if pkg_manager == "pnpm" {
             install_cmd = "pnpm i --frozen-lockfile";
-        } else if NodeProvider::get_package_manager(app) == "yarn" {
+        } else if pkg_manager == "yarn" {
             if app.includes_file(".yarnrc.yml") {
                 install_cmd = "yarn set version berry && yarn install --immutable --check-cache";
             } else {
@@ -219,6 +225,8 @@ impl NodeProvider {
             }
         } else if app.includes_file("package-lock.json") {
             install_cmd = "npm ci";
+        } else if app.includes_file("bun.lockb") {
+            install_cmd = "bun i --no-save";
         }
         install_cmd.to_string()
     }
@@ -240,6 +248,8 @@ impl NodeProvider {
             }
         } else if package_manager == "yarn" {
             pm_pkg = Pkg::new("yarn-1_x");
+        } else if package_manager == "bun" {
+            pm_pkg = Pkg::new("bun");
         } else {
             // npm
             let lockfile = app.read_file("package-lock.json").unwrap_or_default();
