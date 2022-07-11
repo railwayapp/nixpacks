@@ -210,10 +210,7 @@ fn test_bun() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-bun");
     assert_eq!(
         plan.setup.unwrap().pkgs,
-        vec![
-            Pkg::new("nodejs"),
-            Pkg::new("bun")
-        ]
+        vec![Pkg::new("nodejs"), Pkg::new("bun")]
     );
     assert_eq!(
         plan.install.clone().unwrap().cmds,
