@@ -210,7 +210,7 @@ fn test_bun() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-bun");
     assert_eq!(
         plan.setup.unwrap().pkgs,
-        vec![Pkg::new("nodejs"), Pkg::new("bun")]
+        vec![Pkg::new("bun").from_overlay(NODE_OVERLAY)]
     );
     assert_eq!(
         plan.install.clone().unwrap().cmds,
@@ -219,10 +219,6 @@ fn test_bun() -> Result<()> {
     assert_eq!(
         plan.install.unwrap().cache_directories,
         Some(vec!["/root/.bun".to_string()])
-    );
-    assert_eq!(
-        plan.build.unwrap().cmds,
-        Some(vec!["bun run build".to_string()])
     );
     assert_eq!(plan.start.unwrap().cmd, Some("bun run start".to_string()));
     assert_eq!(

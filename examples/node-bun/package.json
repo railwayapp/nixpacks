@@ -5,11 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "nodemon index.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
-  },
-  "dependencies": {
-    "fastify": "^3.15.1"
+    "start": "bun index.ts"
   },
   "devDependencies": {
     "nodemon": "^2.0.7",
