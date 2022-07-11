@@ -1,8 +1,8 @@
-use super::plan::BuildPlan;
+use super::{environment::Environment, plan::BuildPlan};
 use anyhow::Result;
 
 pub mod docker;
 
 pub trait Builder {
-    fn create_image(&self, app_source: &str, plan: &BuildPlan) -> Result<()>;
+    fn create_image(&self, app_source: &str, plan: &BuildPlan, env: &Environment) -> Result<()>;
 }

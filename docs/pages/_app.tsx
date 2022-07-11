@@ -2,7 +2,7 @@ import type { AppProps } from "next/app";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import "prismjs";
-import { Hero, SideNav, TopNav } from "../components";
+import { Hero, SideNav, TableOfContents, TopNav } from "../components";
 
 // Import other Prism themes here
 import "prismjs/components/prism-bash.min";
@@ -21,6 +21,7 @@ function collectHeadings(node: any, sections: any[] = []) {
       if (typeof title === "string") {
         sections.push({
           ...node.attributes,
+          // id,
           title,
         });
       }
@@ -57,6 +58,8 @@ export default function MyApp({ Component, pageProps }: AppProps) {
     title = `${title} | Nixpacks`;
   }
 
+  const currentFile = markdoc?.file.path;
+
   const toc = pageProps.markdoc?.content
     ? collectHeadings(pageProps.markdoc.content)
     : [];
@@ -82,7 +85,9 @@ export default function MyApp({ Component, pageProps }: AppProps) {
 
           <div
             className={`max-w-[90rem] mx-auto grid gap-8 ${
-              !isHome ? "grid-cols-1 md:grid-cols-[auto_minmax(0px,1fr)]" : ""
+              !isHome
+                ? "grid-cols-1 md:grid-cols-[auto_minmax(0px,1fr)] lg:grid-cols-[auto_minmax(0px,1fr)_auto]"
+                : ""
             }`}
           >
             {!isHome && <SideNav className="hidden md:block" />}
@@ -95,7 +100,13 @@ export default function MyApp({ Component, pageProps }: AppProps) {
               <Component {...pageProps} />
             </main>
 
-            {/* {!isHome && <TableOfContents toc={toc} />} */}
+            {!isHome && (
+              <TableOfContents
+                toc={toc}
+                className="hidden lg:block"
+                currentFile={currentFile}
+              />
+            )}
           </div>
         </div>
       </div>

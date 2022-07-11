@@ -1,3 +1,9 @@
+use std::{
+    collections::hash_map::DefaultHasher,
+    env,
+    hash::{Hash, Hasher},
+};
+
 use anyhow::Result;
 use clap::{arg, Arg, Command};
 use nixpacks::{
@@ -38,6 +44,12 @@ fn main() -> Result<()> {
                         .takes_value(true),
                 )
                 .arg(
+                    Arg::new("dockerfile")
+                        .long("dockerfile")
+                        .help("Print the generated Dockerfile to stdout")
+                        .hide(true),
+                )
+                .arg(
                     Arg::new("tag")
                         .long("tag")
                         .short('t')
@@ -54,10 +66,17 @@ fn main() -> Result<()> {
                         .multiple_values(true),
                 )
                 .arg(
-                    Arg::new("buildkit")
-                        .long("buildkit")
-                        .help("Forces docker to use buildkit")
-                        .takes_value(false),
+                    Arg::new("cache-key")
+                        .long("cache-key")
+                        .help(
+                            "Unique identifier to key cache by. Defaults to the current directory",
+                        )
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::new("no-cache")
+                        .long("no-cache")
+                        .help("Disable building with the cache"),
                 ),
         )
         .arg(
@@ -148,6 +167,7 @@ fn main() -> Result<()> {
         Some(values) => values.map(String::from).collect::<Vec<String>>(),
         None => Vec::new(),
     };
+
     let pin_pkgs = matches.is_present("pin");
 
     let envs: Vec<_> = match matches.values_of("env") {
@@ -180,6 +200,15 @@ fn main() -> Result<()> {
             let path = matches.value_of("PATH").expect("required");
             let name = matches.value_of("name").map(|n| n.to_string());
             let out_dir = matches.value_of("out").map(|n| n.to_string());
+            let mut cache_key = matches.value_of("cache-key").map(|n| n.to_string());
+            let no_cache = matches.is_present("no-cache");
+
+            // Default to absolute `path` of the source that is being built as the cache-key if not disabled
+            if !no_cache && cache_key.is_none() {
+                cache_key = get_default_cache_key(path)?;
+            }
+
+            let print_dockerfile = matches.is_present("dockerfile");
 
             let tags = matches
                 .values_of("tag")
@@ -191,15 +220,15 @@ fn main() -> Result<()> {
                 .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
                 .unwrap_or_default();
 
-            let force_buildkit = matches.is_present("buildkit");
-
             let build_options = &DockerBuilderOptions {
                 name,
                 tags,
                 labels,
                 out_dir,
-                force_buildkit,
                 quiet: false,
+                cache_key,
+                no_cache,
+                print_dockerfile,
             };
 
             create_docker_image(path, envs, plan_options, build_options)?;
@@ -208,4 +237,33 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn get_default_cache_key(path: &str) -> Result<Option<String>> {
+    let current_dir = env::current_dir()?;
+    let source = current_dir.join(path).canonicalize();
+    if let Ok(source) = source {
+        let source_str = source.to_string_lossy().to_string();
+        let mut hasher = DefaultHasher::new();
+        source_str.hash(&mut hasher);
+
+        let encoded_source = base64::encode(hasher.finish().to_be_bytes())
+            .replace(|c: char| !c.is_alphanumeric(), "");
+
+        Ok(Some(encoded_source))
+    } else {
+        Ok(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_default_cache_key() {
+        let path = "./examples/node";
+        let cache_key = get_default_cache_key(path).unwrap();
+        assert_eq!(cache_key, Some("2UWr73QvCk".to_string()));
+    }
 }

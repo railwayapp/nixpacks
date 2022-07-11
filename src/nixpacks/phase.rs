@@ -99,6 +99,9 @@ pub struct InstallPhase {
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
 
+    #[serde(rename = "cacheDirectories")]
+    pub cache_directories: Option<Vec<String>>,
+
     pub paths: Option<Vec<String>>,
 }
 
@@ -107,6 +110,7 @@ impl InstallPhase {
         Self {
             cmds: Some(vec![cmd]),
             only_include_files: None,
+            cache_directories: None,
             paths: None,
         }
     }
@@ -117,6 +121,15 @@ impl InstallPhase {
             self.only_include_files = Some(files);
         } else {
             self.only_include_files = Some(vec![file]);
+        }
+    }
+
+    pub fn add_cache_directory(&mut self, dir: String) {
+        if let Some(mut dirs) = self.cache_directories.clone() {
+            dirs.push(dir);
+            self.cache_directories = Some(dirs);
+        } else {
+            self.cache_directories = Some(vec![dir]);
         }
     }
 
@@ -146,6 +159,9 @@ pub struct BuildPhase {
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
+
+    #[serde(rename = "cacheDirectories")]
+    pub cache_directories: Option<Vec<String>>,
 }
 
 impl BuildPhase {
@@ -153,6 +169,7 @@ impl BuildPhase {
         Self {
             cmds: Some(vec![cmd]),
             only_include_files: None,
+            cache_directories: None,
         }
     }
 
@@ -162,6 +179,15 @@ impl BuildPhase {
             self.only_include_files = Some(files);
         } else {
             self.only_include_files = Some(vec![file]);
+        }
+    }
+
+    pub fn add_cache_directory(&mut self, dir: String) {
+        if let Some(mut dirs) = self.cache_directories.clone() {
+            dirs.push(dir);
+            self.cache_directories = Some(dirs);
+        } else {
+            self.cache_directories = Some(vec![dir]);
         }
     }
 

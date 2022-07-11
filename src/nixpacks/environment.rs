@@ -35,12 +35,13 @@ impl Environment {
         Ok(environment)
     }
 
-    pub fn get_variable(&self, name: &str) -> Option<&String> {
-        self.variables.get(name)
+    pub fn get_variable(&self, name: &str) -> Option<String> {
+        self.variables.get(name).map(|s| s.to_owned())
     }
 
-    pub fn get_config_variable(&self, name: &str) -> Option<&String> {
+    pub fn get_config_variable(&self, name: &str) -> Option<String> {
         self.get_variable(format!("NIXPACKS_{}", name).as_str())
+            .map(|var| var.replace('\n', ""))
     }
 
     pub fn is_config_variable_truthy(&self, name: &str) -> bool {
@@ -73,23 +74,17 @@ mod tests {
         let mut environment = Environment::default();
         assert!(environment.get_variable("hello").is_none());
         environment.set_variable("hello".to_string(), "world".to_string());
-        assert_eq!(
-            environment.get_variable("hello"),
-            Some(&"world".to_string())
-        );
+        assert_eq!(environment.get_variable("hello"), Some("world".to_string()));
     }
 
     #[test]
     fn test_environment_variable_parsing() {
         let environment =
             Environment::from_envs(vec!["HELLO=world", "CARGO_PKG_NAME", "NON_EXISTANT"]).unwrap();
-        assert_eq!(
-            environment.get_variable("HELLO"),
-            Some(&"world".to_string())
-        );
+        assert_eq!(environment.get_variable("HELLO"), Some("world".to_string()));
         assert_eq!(
             environment.get_variable("CARGO_PKG_NAME"),
-            Some(&"nixpacks".to_string())
+            Some("nixpacks".to_string())
         );
         assert!(environment.get_variable("NON_EXISTANT").is_none());
     }
@@ -97,5 +92,36 @@ mod tests {
     #[test]
     fn test_create_invalid_environment() {
         assert!(Environment::from_envs(vec!["INVALID=ENV=CONFIG"]).is_err());
+    }
+
+    #[test]
+    fn test_get_config_variable() {
+        let mut environment = Environment::default();
+        environment.set_variable("NIXPACKS_HELLO".to_string(), "world".to_string());
+        assert_eq!(
+            environment.get_config_variable("HELLO"),
+            Some("world".to_string())
+        );
+    }
+
+    #[test]
+    fn test_get_config_variable_truthy() {
+        let mut environment = Environment::default();
+
+        environment.set_variable("NIXPACKS_YES".to_string(), "1".to_string());
+        environment.set_variable("NIXPACKS_NO".to_string(), "0".to_string());
+
+        assert!(environment.is_config_variable_truthy("YES"));
+        assert!(!environment.is_config_variable_truthy("NO"));
+    }
+
+    #[test]
+    fn test_get_config_variable_strips_newlines() {
+        let mut environment = Environment::default();
+        environment.set_variable("NIXPACKS_BUILD_CMD".to_string(), "hello\nworld".to_string());
+        assert_eq!(
+            environment.get_config_variable("BUILD_CMD"),
+            Some("helloworld".to_string())
+        );
     }
 }

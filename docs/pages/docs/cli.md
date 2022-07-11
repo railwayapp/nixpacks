@@ -27,8 +27,8 @@ nixpacks build --help
 |                             |                                                                |
 | :-------------------------- | :------------------------------------------------------------- |
 | `--install-cmd <cmd>`, `-i` | Specify the install command                                    |
-| `--build-cmd <cmd>`, `-b`   | Specify the buildcommand                                       |
-| `--start-cmd <cmd>`, `-s`   | Specify the install command                                    |
+| `--build-cmd <cmd>`, `-b`   | Specify the build command                                       |
+| `--start-cmd <cmd>`, `-s`   | Specify the start command                                    |
 | `--name <name>`             | Name for the built image                                       |
 | `--env <envs...>`           | Provide environment variables to your build.                   |
 | `--pkgs <pkgs...>`, `-p`    | Provide additional Nix packages to install in the environment  |
@@ -36,7 +36,8 @@ nixpacks build --help
 | `--libs <libs...>`          | Provide additional Nix libraries to install in the environment |
 | `--tag <tag...>`, `-t`      | Additional tags to add to the output image                     |
 | `--label <labels...>`, `-l` | Additional labels to add to the output image                   |
-| `--buildkit`                | Forces Docker to use buildkit                                  |
+| `--cache-key <key>`         | Unique identifier to use for the build cache                   |
+| `--no-cache`                | Disable caching for the build                                  |
 | `--out <dir>`, `-o`         | Save output directory instead of building it with Docker       |
 
 #### Environment Variables

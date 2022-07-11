@@ -38,3 +38,11 @@ cargo build --release
 ```
 ./target/release/{name}
 ```
+
+## Caching
+
+These directories are cached between builds
+
+- Build: `~/.cargo/git`
+- Build: `~/.cargo/registry`
+- Build: `target`

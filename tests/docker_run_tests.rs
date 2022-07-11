@@ -356,7 +356,7 @@ fn test_rust_custom_version() {
         },
         &DockerBuilderOptions {
             name: Some(name.clone()),
-            quiet: false,
+            quiet: true,
             ..Default::default()
         },
     )

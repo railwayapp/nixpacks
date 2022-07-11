@@ -20,8 +20,9 @@ use crate::{
 use super::Provider;
 
 const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
-
 const POETRY_VERSION: &'static &str = &"1.1.13";
+const PIP_CACHE_DIR: &'static &str = &"/root/.cache/pip";
+
 pub struct PythonProvider {}
 
 impl Provider for PythonProvider {
@@ -59,8 +60,12 @@ impl Provider for PythonProvider {
                 "{} && {} && pip install -r requirements.txt",
                 create_env, activate_env
             ));
+
             install_phase.add_file_dependency("requirements.txt".to_string());
             install_phase.add_path(format!("{}/bin", env_loc));
+
+            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+
             return Ok(Some(install_phase));
         } else if app.includes_file("pyproject.toml") {
             if app.includes_file("poetry.lock") {
@@ -69,17 +74,25 @@ impl Provider for PythonProvider {
                     "{} && {} && {} && poetry install --no-dev --no-interaction --no-ansi",
                     create_env, activate_env, install_poetry
                 ));
+
                 install_phase.add_file_dependency("poetry.lock".to_string());
                 install_phase.add_file_dependency("pyproject.toml".to_string());
                 install_phase.add_path(format!("{}/bin", env_loc));
+
+                install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+
                 return Ok(Some(install_phase));
             }
             let mut install_phase = InstallPhase::new(format!(
                 "{} && {} && pip install --upgrade build setuptools && pip install .",
                 create_env, activate_env
             ));
+
             install_phase.add_file_dependency("pyproject.toml".to_string());
             install_phase.add_path(format!("{}/bin", env_loc));
+
+            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+
             return Ok(Some(install_phase));
         }
 
@@ -113,6 +126,7 @@ impl Provider for PythonProvider {
 
         Ok(None)
     }
+
     fn environment_variables(
         &self,
         app: &App,
@@ -197,9 +211,7 @@ impl PythonProvider {
 
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
         // Fetch version from configs
-        let mut custom_version = env
-            .get_config_variable("PYTHON_VERSION")
-            .map(|s| s.to_string());
+        let mut custom_version = env.get_config_variable("PYTHON_VERSION");
 
         // If not from configs, get it from the .python-version file
         if custom_version.is_none() && app.includes_file(".python-version") {

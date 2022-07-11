@@ -42,6 +42,30 @@ impl App {
     /// # Errors
     /// Creating the Glob fails
     pub fn find_files(&self, pattern: &str) -> Result<Vec<PathBuf>> {
+        let directories = self
+            .find_glob(pattern)?
+            .into_iter()
+            .filter(|path| path.is_file())
+            .collect();
+
+        Ok(directories)
+    }
+
+    /// Returns a list of paths matching a glob pattern
+    ///
+    /// # Errors
+    /// Creating the Glob fails
+    pub fn find_directories(&self, pattern: &str) -> Result<Vec<PathBuf>> {
+        let directories = self
+            .find_glob(pattern)?
+            .into_iter()
+            .filter(|path| path.is_dir())
+            .collect();
+
+        Ok(directories)
+    }
+
+    fn find_glob(&self, pattern: &str) -> Result<Vec<PathBuf>> {
         let full_pattern = self.source.join(pattern);
 
         let pattern_str = match full_pattern.to_str() {
@@ -57,7 +81,7 @@ impl App {
             .into_iter()
             .filter_map(|result| result.ok()) // remove bad ones
             .map(|dir| dir.into_path()) // convert to paths
-            .filter(|path| glob.is_match(path) && path.is_file()) // find matches
+            .filter(|path| glob.is_match(path)) // find matches
             .collect();
 
         Ok(relative_paths)
@@ -109,7 +133,10 @@ impl App {
         T: DeserializeOwned,
     {
         let contents = self.read_file(name)?;
-        let value: T = serde_json::from_str(contents.as_str())?;
+        let value: T = serde_json::from_str(contents.as_str()).with_context(|| {
+            let relative_path = self.strip_source_path(Path::new(name)).unwrap();
+            format!("Error reading {} as JSON", relative_path.to_str().unwrap())
+        })?;
         Ok(value)
     }
 
@@ -118,7 +145,10 @@ impl App {
         T: DeserializeOwned,
     {
         let contents = self.read_file(name)?;
-        let toml_file = toml::from_str(contents.as_str())?;
+        let toml_file = toml::from_str(contents.as_str()).with_context(|| {
+            let relative_path = self.strip_source_path(Path::new(name)).unwrap();
+            format!("Error reading {} as TOML", relative_path.to_str().unwrap())
+        })?;
         Ok(toml_file)
     }
 
@@ -131,6 +161,7 @@ impl App {
         Ok(yaml_file)
     }
 
+    /// Convert an absolute path to a path relative to the app source directory
     pub fn strip_source_path(&self, abs_path: &Path) -> Result<PathBuf> {
         let source_str = match self.source.to_str() {
             Some(s) => s,
@@ -155,11 +186,11 @@ impl App {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use super::*;
+
     use serde::{Deserialize, Serialize};
     use serde_json::{Map, Value};
+    use std::collections::HashMap;
 
     #[derive(Serialize, Deserialize)]
     struct TestPackageJson {

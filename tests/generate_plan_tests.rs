@@ -1,4 +1,5 @@
 use anyhow::Result;
+use nixpacks::providers::node::NODE_OVERLAY;
 use nixpacks::{
     generate_build_plan,
     nixpacks::{
@@ -15,7 +16,14 @@ fn simple_gen_plan(path: &str) -> BuildPlan {
 #[test]
 fn test_node() -> Result<()> {
     let plan = simple_gen_plan("./examples/node");
-    assert_eq!(plan.install.unwrap().cmds, Some(vec!["npm ci".to_string()]));
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["npm ci".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.npm".to_string()])
+    );
     assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
 
@@ -28,6 +36,27 @@ fn test_node_no_lockfile() -> Result<()> {
     assert_eq!(plan.install.unwrap().cmds, Some(vec!["npm i".to_string()]));
     assert_eq!(plan.build.unwrap().cmds, None);
     assert_eq!(plan.start.unwrap().cmd, Some("npm run start".to_string()));
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![
+            Pkg::new("nodejs"),
+            Pkg::new("npm-8_x").from_overlay(NODE_OVERLAY)
+        ]
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_node_npm_old_lockfile() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-npm-old-lockfile");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![
+            Pkg::new("nodejs"),
+            Pkg::new("npm-6_x").from_overlay(NODE_OVERLAY)
+        ]
+    );
 
     Ok(())
 }
@@ -64,7 +93,29 @@ fn test_node_no_scripts() -> Result<()> {
 #[test]
 fn test_node_custom_version() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-custom-version");
-    assert_eq!(plan.setup.unwrap().pkgs, vec![Pkg::new("nodejs-18_x")]);
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![
+            Pkg::new("nodejs-18_x"),
+            Pkg::new("npm-8_x").from_overlay(NODE_OVERLAY)
+        ]
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_node_monorepo() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-monorepo");
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["yarn install --frozen-lockfile".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/usr/local/share/.cache/yarn/v6".to_string()])
+    );
+    assert_eq!(plan.build.unwrap().cmds, None);
 
     Ok(())
 }
@@ -72,6 +123,10 @@ fn test_node_custom_version() -> Result<()> {
 #[test]
 fn test_yarn() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-yarn");
+    assert_eq!(
+        plan.install.unwrap().cmds,
+        Some(vec!["yarn install --frozen-lockfile".to_string()])
+    );
     assert_eq!(
         plan.build.unwrap().cmds,
         Some(vec!["yarn run build".to_string()])
@@ -108,7 +163,7 @@ fn test_yarn_custom_version() -> Result<()> {
         plan.setup.unwrap().pkgs,
         vec![
             Pkg::new("nodejs-14_x"),
-            Pkg::new("yarn").set_override("nodejs", "nodejs-14_x")
+            Pkg::new("yarn-1_x").from_overlay(NODE_OVERLAY)
         ]
     );
 
@@ -118,6 +173,21 @@ fn test_yarn_custom_version() -> Result<()> {
 #[test]
 fn test_pnpm() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-pnpm");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![
+            Pkg::new("nodejs"),
+            Pkg::new("pnpm-6_x").from_overlay(NODE_OVERLAY)
+        ]
+    );
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["pnpm i --frozen-lockfile".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.cache/pnpm".to_string()])
+    );
     assert_eq!(
         plan.build.unwrap().cmds,
         Some(vec!["pnpm run build".to_string()])
@@ -136,13 +206,27 @@ fn test_pnpm() -> Result<()> {
 }
 
 #[test]
+fn test_pnpm_v7() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-pnpm-v7");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![
+            Pkg::new("nodejs"),
+            Pkg::new("pnpm-7_x").from_overlay(NODE_OVERLAY)
+        ]
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_pnpm_custom_version() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-pnpm-custom-node-version");
     assert_eq!(
         plan.setup.unwrap().pkgs,
         vec![
             Pkg::new("nodejs-14_x"),
-            Pkg::new("nodePackages.pnpm").set_override("nodejs", "nodejs-14_x")
+            Pkg::new("pnpm-6_x").from_overlay(NODE_OVERLAY)
         ]
     );
 
@@ -153,8 +237,12 @@ fn test_pnpm_custom_version() -> Result<()> {
 fn test_go() -> Result<()> {
     let plan = simple_gen_plan("./examples/go");
     assert_eq!(
-        plan.build.unwrap().cmds,
+        plan.build.clone().unwrap().cmds,
         Some(vec!["go build -o out main.go".to_string()])
+    );
+    assert_eq!(
+        plan.build.unwrap().cache_directories,
+        Some(vec!["/root/.cache/go-build".to_string()])
     );
     assert_eq!(plan.start.clone().unwrap().cmd, Some("./out".to_string()));
     assert!(plan.start.unwrap().run_image.is_some());
@@ -332,8 +420,16 @@ fn test_pin_archive() -> Result<()> {
 #[test]
 fn test_custom_rust_version() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-custom-version");
-    let cmd = format!("cargo build --release --target {}-unknown-linux-musl", ARCH);
-    assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
+            format!(
+                "cp target/{}-unknown-linux-musl/release/rust-custom-version rust-custom-version",
+                ARCH
+            )
+        ])
+    );
     assert_eq!(
         plan.setup
             .unwrap()
@@ -350,8 +446,16 @@ fn test_custom_rust_version() -> Result<()> {
 #[test]
 fn test_rust_rocket() -> Result<()> {
     let plan = simple_gen_plan("./examples/rust-rocket");
-    let cmd = format!("cargo build --release --target {}-unknown-linux-musl", ARCH);
-    assert_eq!(plan.build.unwrap().cmds, Some(vec![cmd]));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![
+            format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
+            format!(
+                "cp target/{}-unknown-linux-musl/release/rocket rocket",
+                ARCH
+            )
+        ])
+    );
     assert!(plan.start.clone().unwrap().cmd.is_some());
     assert_eq!(
         plan.start.clone().unwrap().cmd.unwrap(),
@@ -371,7 +475,10 @@ fn test_rust_rocket_no_musl() -> Result<()> {
     )?;
     assert_eq!(
         plan.build.unwrap().cmds,
-        Some(vec!["cargo build --release".to_string()])
+        Some(vec![
+            "cargo build --release".to_string(),
+            "cp target/release/rocket rocket".to_string()
+        ])
     );
     assert!(plan
         .start
@@ -379,7 +486,7 @@ fn test_rust_rocket_no_musl() -> Result<()> {
         .unwrap()
         .cmd
         .unwrap()
-        .contains("./target/release/rocket"));
+        .contains("./rocket"));
     assert!(plan.start.unwrap().run_image.is_none());
 
     Ok(())
@@ -500,19 +607,36 @@ fn test_config_from_environment_variables() -> Result<()> {
             "NIXPACKS_BUILD_CMD=build",
             "NIXPACKS_START_CMD=start",
             "NIXPACKS_RUN_IMAGE=alpine",
+            "NIXPACKS_INSTALL_CACHE_DIRS=/tmp,foobar",
+            "NIXPACKS_BUILD_CACHE_DIRS=/build,barbaz",
         ],
         &GeneratePlanOptions::default(),
     )?;
-    assert_eq!(
-        plan.install.unwrap().cmds,
-        Some(vec!["install".to_string()])
-    );
-    assert_eq!(plan.build.unwrap().cmds, Some(vec!["build".to_string()]));
-    assert_eq!(plan.start.clone().unwrap().cmd, Some("start".to_string()));
+
     assert_eq!(
         plan.setup.unwrap().pkgs,
         vec![Pkg::new("cowsay"), Pkg::new("ripgrep")]
     );
+
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["install".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/tmp".to_string(), "foobar".to_string()])
+    );
+
+    assert_eq!(
+        plan.build.clone().unwrap().cmds,
+        Some(vec!["build".to_string()])
+    );
+    assert_eq!(
+        plan.build.unwrap().cache_directories,
+        Some(vec!["/build".to_string(), "barbaz".to_string()])
+    );
+
+    assert_eq!(plan.start.clone().unwrap().cmd, Some("start".to_string()));
     assert_eq!(plan.start.unwrap().run_image, Some("alpine".to_string()));
 
     Ok(())

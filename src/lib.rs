@@ -41,8 +41,8 @@ pub fn get_providers() -> Vec<&'static dyn Provider> {
         &NodeProvider {},
         &PythonProvider {},
         &RustProvider {},
-        &StaticfileProvider {},
         &SwiftProvider {},
+        &StaticfileProvider {},
         &ZigProvider {},
     ]
 }
@@ -75,7 +75,7 @@ pub fn create_docker_image(
 
     let logger = Logger::new();
     let builder = DockerBuilder::new(logger, build_options.to_owned());
-    builder.create_image(app.source.to_str().unwrap(), &plan)?;
+    builder.create_image(app.source.to_str().unwrap(), &plan, &environment)?;
 
     Ok(())
 }

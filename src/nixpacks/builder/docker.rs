@@ -6,7 +6,10 @@ use std::{
 };
 
 use super::Builder;
-use crate::nixpacks::{app, files, logger::Logger, nix, plan::BuildPlan, NIX_PACKS_VERSION};
+use crate::nixpacks::{
+    app, cache::sanitize_cache_key, environment::Environment, files, logger::Logger, nix,
+    plan::BuildPlan, NIX_PACKS_VERSION,
+};
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use tempdir::TempDir;
@@ -16,10 +19,12 @@ use uuid::Uuid;
 pub struct DockerBuilderOptions {
     pub name: Option<String>,
     pub out_dir: Option<String>,
+    pub print_dockerfile: bool,
     pub tags: Vec<String>,
     pub labels: Vec<String>,
     pub quiet: bool,
-    pub force_buildkit: bool,
+    pub cache_key: Option<String>,
+    pub no_cache: bool,
 }
 
 pub struct DockerBuilder {
@@ -28,12 +33,7 @@ pub struct DockerBuilder {
 }
 
 impl Builder for DockerBuilder {
-    fn create_image(&self, app_src: &str, plan: &BuildPlan) -> Result<()> {
-        self.logger
-            .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
-
-        println!("{}", plan.get_build_string());
-
+    fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
         let dir = match &self.options.out_dir {
@@ -46,10 +46,22 @@ impl Builder for DockerBuilder {
         let dest = dir.to_str().context("Invalid temp directory path")?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
 
+        // If printing the Dockerfile, don't write anything to disk
+        if self.options.print_dockerfile {
+            let dockerfile = self.create_dockerfile(plan, env);
+            println!("{dockerfile}");
+
+            return Ok(());
+        }
+
+        self.logger
+            .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
+        println!("{}", plan.get_build_string());
+
         // Write everything to destination
         self.write_app(app_src, dest).context("Writing app")?;
         self.write_assets(plan, dest).context("Writing assets")?;
-        self.write_dockerfile(plan, dest)
+        self.write_dockerfile(plan, dest, env)
             .context("Writing Dockerfile")?;
         self.write_nix_expression(plan, dest)
             .context("Writing NIx expression")?;
@@ -90,9 +102,9 @@ impl DockerBuilder {
             bail!("Please install Docker to build the app https://docs.docker.com/engine/install/")
         }
 
-        if self.options.force_buildkit {
-            docker_build_cmd.env("DOCKER_BUILDKIT", "1");
-        }
+        // Enable BuildKit for all builds
+        docker_build_cmd.env("DOCKER_BUILDKIT", "1");
+
         docker_build_cmd.arg("build").arg(dest).arg("-t").arg(name);
 
         if self.options.quiet {
@@ -121,8 +133,8 @@ impl DockerBuilder {
         files::recursive_copy_dir(app_src, &dest)
     }
 
-    fn write_dockerfile(&self, plan: &BuildPlan, dest: &str) -> Result<()> {
-        let dockerfile = self.create_dockerfile(plan);
+    fn write_dockerfile(&self, plan: &BuildPlan, dest: &str, env: &Environment) -> Result<()> {
+        let dockerfile = self.create_dockerfile(plan, env);
 
         let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
@@ -165,7 +177,7 @@ impl DockerBuilder {
         Ok(())
     }
 
-    fn create_dockerfile(&self, plan: &BuildPlan) -> String {
+    fn create_dockerfile(&self, plan: &BuildPlan, env: &Environment) -> String {
         let app_dir = "/app/";
         let assets_dir = app::ASSETS_DIR;
 
@@ -175,6 +187,12 @@ impl DockerBuilder {
         let start_phase = plan.start.clone().unwrap_or_default();
         let variables = plan.variables.clone().unwrap_or_default();
         let static_assets = plan.static_assets.clone().unwrap_or_default();
+
+        let cache_key = if !self.options.no_cache && !env.is_config_variable_truthy("NO_CACHE") {
+            self.options.cache_key.clone()
+        } else {
+            None
+        };
 
         // -- Variables
         let args_string = if !variables.is_empty() {
@@ -230,11 +248,13 @@ impl DockerBuilder {
         };
 
         // -- Install
+        let install_cache_mount = get_cache_mount(&cache_key, &install_phase.cache_directories);
+
         let install_cmd = install_phase
             .cmds
             .unwrap_or_default()
             .iter()
-            .map(|c| format!("RUN {}", c))
+            .map(|c| format!("RUN {} {}", install_cache_mount, c))
             .collect::<Vec<String>>()
             .join("\n");
 
@@ -256,11 +276,13 @@ impl DockerBuilder {
             .unwrap_or_else(|| vec![".".to_string()]);
 
         // -- Build
+        let build_cache_mount = get_cache_mount(&cache_key, &build_phase.cache_directories);
+
         let build_cmd = build_phase
             .cmds
             .unwrap_or_default()
             .iter()
-            .map(|c| format!("RUN {}", c))
+            .map(|c| format!("RUN {} {}", build_cache_mount, c))
             .collect::<Vec<String>>()
             .join("\n");
 
@@ -343,6 +365,19 @@ impl DockerBuilder {
     }
 }
 
+fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<String>>) -> String {
+    let sanitized_cache_key = cache_key.clone().map(sanitize_cache_key);
+
+    match (sanitized_cache_key, cache_directories) {
+        (Some(cache_key), Some(cache_directories)) => cache_directories
+            .iter()
+            .map(|dir| format!("--mount=type=cache,id={cache_key}-{dir},target={dir}"))
+            .collect::<Vec<String>>()
+            .join(" "),
+        _ => "".to_string(),
+    }
+}
+
 fn get_copy_command(files: &[String], app_dir: &str) -> String {
     if files.is_empty() {
         "".to_owned()
@@ -365,5 +400,32 @@ fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String 
                 .join(" "),
             app_dir
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_cache_mount() {
+        let cache_key = Some("cache_key".to_string());
+        let cache_directories = Some(vec!["dir1".to_string(), "dir2".to_string()]);
+
+        let expected = "--mount=type=cache,id=cache_key-dir1,target=dir1 --mount=type=cache,id=cache_key-dir2,target=dir2";
+        let actual = get_cache_mount(&cache_key, &cache_directories);
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_get_cache_mount_invalid_cache_key() {
+        let cache_key = Some("my cache key".to_string());
+        let cache_directories = Some(vec!["dir1".to_string(), "dir2".to_string()]);
+
+        let expected = "--mount=type=cache,id=my-cache-key-dir1,target=dir1 --mount=type=cache,id=my-cache-key-dir2,target=dir2";
+        let actual = get_cache_mount(&cache_key, &cache_directories);
+
+        assert_eq!(expected, actual);
     }
 }
