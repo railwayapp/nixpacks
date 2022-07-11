@@ -278,6 +278,13 @@ fn test_bun() {
 }
 
 #[test]
+fn test_bun_no_start() {
+    let name = simple_build("./examples/node-bun-no-start");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Bun"));
+}
+
+#[test]
 fn test_pnpm_custom_version() {
     let name = simple_build("./examples/node-pnpm-custom-node-version");
     let output = run_image(name, None);
