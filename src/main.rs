@@ -66,6 +66,13 @@ fn main() -> Result<()> {
                         .multiple_values(true),
                 )
                 .arg(
+                    Arg::new("platform")
+                        .long("platform")
+                        .help("Set target platform for your output image")
+                        .takes_value(true)
+                        .multiple_values(true),
+                )
+                .arg(
                     Arg::new("cache-key")
                         .long("cache-key")
                         .help(
@@ -219,6 +226,10 @@ fn main() -> Result<()> {
                 .values_of("label")
                 .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
                 .unwrap_or_default();
+            let platform = matches
+                .values_of("platform")
+                .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
+                .unwrap_or_default();
 
             let build_options = &DockerBuilderOptions {
                 name,
@@ -228,6 +239,7 @@ fn main() -> Result<()> {
                 quiet: false,
                 cache_key,
                 no_cache,
+                platform,
                 print_dockerfile,
             };
 

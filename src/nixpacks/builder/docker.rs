@@ -25,6 +25,7 @@ pub struct DockerBuilderOptions {
     pub quiet: bool,
     pub cache_key: Option<String>,
     pub no_cache: bool,
+    pub platform: Vec<String>,
 }
 
 pub struct DockerBuilder {
@@ -124,6 +125,9 @@ impl DockerBuilder {
         }
         for l in self.options.labels.clone() {
             docker_build_cmd.arg("--label").arg(l);
+        }
+        for l in self.options.platform.clone() {
+            docker_build_cmd.arg("--platform").arg(l);
         }
 
         Ok(docker_build_cmd)
