@@ -108,10 +108,7 @@ impl Provider for NodeProvider {
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
-            let pkg_manager = NodeProvider::get_package_manager(app);
-            Ok(Some(StartPhase::new(
-                start_cmd.replace("npm", &pkg_manager),
-            )))
+            Ok(Some(StartPhase::new(start_cmd)))
         } else {
             Ok(None)
         }
