@@ -1,6 +1,6 @@
 name: 🐛 Bug Report
-description: Create a report to help us improve Nixpacks.
-title: "bug: "
+description: Create a bug report to help us improve Nixpacks.
+title: ""
 labels: ["bug"]
 body:
   - type: checkboxes
@@ -9,7 +9,7 @@ body:
       label: Is there an existing issue for this?
       description: |
         Please search to see if an issue already exists for the bug you encountered.
-        Please see [Searching Issues and Pull Request](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests) for how to use the GitHub search bar and filters.
+        Please see [Searching Issues and Pull Requests](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests) for how to use the GitHub search bar and filters.
       options:
       - label: I have searched the existing issues
         required: true
@@ -20,7 +20,7 @@ body:
     attributes:
       label: Describe the bug
       description: Please provide a clear and concise description about the problem you ran into.
-      placeholder: I ran into ... while using ...
+      placeholder: This happened when I...
   - type: textarea
     id: to-reproduce
     validations:
@@ -28,11 +28,9 @@ body:
     attributes:
       label: To reproduce
       description: |
-        Please provide a code sample or a code snipet to reproduce said problem. If you have code snippets, error messages, stack trace please also provide them here.
-
-        **IMPORTANT**: make sure to use [code tag](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-and-highlighting-code-blocks#syntax-highlighting) to correctly format your code. Screenshot is helpful but don't use it for code snippets as it doesn't allow others to copy-and-paste your code.
+        Please provide a code sample or a code snippet to reproduce the said problem. If you have code snippets, error messages or a stack trace please provide them here.
       placeholder: |
-        Steps to reproduce the behaviour:
+        Steps to reproduce the bug:
 
           1. Provide '...'
           2. Run '...'
@@ -49,6 +47,6 @@ body:
     attributes:
       label: Environment
       description: |
-        Please share your environment with us.
+        Please share your environment with us. (ie, OS, OS version and Nixpacks version)
     validations:
       required: true

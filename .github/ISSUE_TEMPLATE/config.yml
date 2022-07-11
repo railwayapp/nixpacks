@@ -4,12 +4,16 @@ contact_links:
   - name: Nixpacks' documentation
     url: https://nixpacks.com/
     about: Documentation about Nixpacks. 
-  - name: Railway
+  - name: Railway.
     url: https://railway.app/
-    about: Railway
+    about: Railway.
   - name: Nixpacks' issue tracker
     url: https://github.com/railwayapp/nixpacks/issues
-    about: For creating issues/PR ticket for Nixpacks' development
-  - name: Railway Support
-    url: help@railway.app
-    about: Contact the Railway team for support
+    about: For creating issues/PR ticket for Nixpacks' development.
+  - name: Railway's Discord
+    url: discord.gg/railway
+    about: Contact the Railway team for support via Discord.
+  - name: Railway Blog
+    url: https://blog.railway.app/
+    about: To get the latest news/updates from the Railway team.
+

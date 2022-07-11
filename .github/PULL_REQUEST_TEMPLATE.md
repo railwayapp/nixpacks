@@ -11,10 +11,9 @@ Fixes # (issue)
 
 - [ ] Make sure to follow [GitHub's guide](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request) on creating PR.
 - [ ] Did you read through [contribution guidelines](https://github.com/railwayapp/nixpacks/blob/main/CONTRIBUTING.md)?
-- [ ] Can you build the project with `cargo build` and run the example with `cargo run --build examples/node --name node`?
 - [ ] Did your changes require updates to the documentation? Have you updated those accordingly?
 - [ ] Did you write tests to cover your changes? Did it pass locally when running `cargo test`?
-- [ ] Did you run `cargo check` and `cargo clippy` locally to ensure that CI pass?
+- [ ] Did you run `cargo fmt`, `cargo check` and `cargo clippy` locally to ensure that CI pass?
 
 ## Who can help review?
 
