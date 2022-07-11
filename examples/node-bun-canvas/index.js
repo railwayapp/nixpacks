@@ -1,4 +1,4 @@
-import canvas from 'canvas';
+const canvas = require('canvas');
 
 const c = canvas.createCanvas(25, 25);
 
