@@ -14,8 +14,3 @@ Fixes # (issue)
 - [ ] Did your changes require updates to the documentation? Have you updated those accordingly?
 - [ ] Did you write tests to cover your changes? Did it pass locally when running `cargo test`?
 - [ ] Did you run `cargo fmt`, `cargo check` and `cargo clippy` locally to ensure that CI pass?
-
-## Who can help review?
-
-Feel free to tag members/contributors who can help review your PR.
-<!-- If you know how to use git blame, that is probably the easiest way. -->
