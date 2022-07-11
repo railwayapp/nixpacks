@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::nixpacks::nix::pkg::Pkg;
 
+use super::topological_sort::TopItem;
+
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct GenericPhase {
@@ -27,6 +29,19 @@ pub struct GenericPhase {
 
     #[serde(rename = "cacheDirectories")]
     pub cache_directories: Option<Vec<String>>,
+}
+
+impl TopItem for GenericPhase {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn get_dependencies(&self) -> &[String] {
+        match &self.depends_on {
+            Some(depends_on) => depends_on.as_slice(),
+            None => &[],
+        }
+    }
 }
 
 #[serde_with::skip_serializing_none]
@@ -115,7 +130,10 @@ fn add_multiple_to_option_vec<T: Clone>(
 
 #[cfg(test)]
 mod tests {
-    use crate::providers::node::NODE_OVERLAY;
+    use crate::{
+        nixpacks::plan::topological_sort::{self, topological_sort},
+        providers::node::NODE_OVERLAY,
+    };
 
     use super::*;
 
@@ -141,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_creating_build_plan() {
+    fn test_sorting_phases() {
         let mut setup_phase = GenericPhase::new("setup");
         setup_phase.add_nix_pkgs(vec![
             Pkg::new("nodejs"),
@@ -163,6 +181,13 @@ mod tests {
         start_phase.depends_on_phase("build");
         start_phase.add_cmd("npm run start");
 
-        let _plan = NewBuildPlan::new(vec![setup_phase, install_phase, build_phase, start_phase]);
+        let plan = NewBuildPlan::new(vec![setup_phase, install_phase, build_phase, start_phase]);
+
+        let sorted_phases = topological_sort(plan.phases)
+            .unwrap()
+            .into_iter()
+            .map(|phase| phase.name)
+            .collect::<Vec<_>>();
+        assert_eq!(sorted_phases, vec!["setup", "install", "build", "start"]);
     }
 }
