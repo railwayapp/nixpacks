@@ -259,7 +259,11 @@ impl NodeProvider {
                 pm_pkg = Pkg::new("npm-8_x");
             }
         };
-        pkgs.push(pm_pkg.from_overlay(NODE_OVERLAY));
+        pkgs.push(if package_manager != "bun" {
+            pm_pkg.from_overlay(NODE_OVERLAY)
+        } else {
+            pm_pkg
+        });
 
         Ok(pkgs)
     }
