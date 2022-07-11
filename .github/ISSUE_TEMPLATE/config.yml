@@ -1,0 +1,15 @@
+blank_issues_enabled: true
+version: 2.1
+contact_links:
+  - name: Nixpacks' documentation
+    url: https://nixpacks.com/
+    about: Documentation about Nixpacks. 
+  - name: Railway
+    url: https://railway.app/
+    about: Railway
+  - name: Nixpacks' issue tracker
+    url: https://github.com/railwayapp/nixpacks/issues
+    about: For creating issues/PR ticket for Nixpacks' development
+  - name: Railway Support
+    url: help@railway.app
+    about: Contact the Railway team for support
