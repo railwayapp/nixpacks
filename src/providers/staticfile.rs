@@ -9,6 +9,7 @@ use anyhow::Result;
 use indoc::formatdoc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt::Write as _;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Staticfile {
@@ -67,7 +68,7 @@ impl Provider for StaticfileProvider {
         let status_code = staticfile.status_code.unwrap_or_default();
         let mut error_page = "".to_string();
         for (key, value) in status_code {
-            error_page += &format!("\terror_page {} {};\n", key, value);
+            writeln!(error_page, "\terror_page {} {};", key, value)?;
         }
 
         let nginx_conf = formatdoc! {"
