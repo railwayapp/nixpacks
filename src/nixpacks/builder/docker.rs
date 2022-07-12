@@ -42,6 +42,8 @@ pub struct DockerBuilder {
     options: DockerBuilderOptions,
 }
 
+pub static APP_DIR: &str = "/app/";
+
 impl Builder for DockerBuilder {
     fn create_image(&self, app_src: &str, plan: &NewBuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
@@ -77,36 +79,13 @@ impl Builder for DockerBuilder {
         // self.write_nix_expression(plan, dest)
         //     .context("Writing NIx expression")?;
 
-        let build_plan_string = serde_json::to_string_pretty(plan).unwrap();
-        println!("{}", build_plan_string);
+        // let build_plan_string = serde_json::to_string_pretty(plan).unwrap();
+        // println!("{}", build_plan_string);
 
-        let dockerfile_phases = plan
-            .phases
-            .clone()
-            .into_iter()
-            .map(|phase| {
-                self.generate_dockerfile_for_phase(&phase, dest.to_string(), env)
-                    .context("Generating dockerfile for phase")
-            })
-            .collect::<Result<Vec<_>>>();
-        let dockerfile_phases_str = dockerfile_phases?.join("\n");
+        self.write_app(app_src, dest).context("Writing app")?;
+        self.create_and_write_dockerfile(plan, dest, env)?;
 
-        let start_phase_str = self
-            .generate_dockerfile_for_start_phase(&plan.start_phase.clone().unwrap_or_default())?;
-
-        let base_image = DEFAULT_BASE_IMAGE.to_string();
-
-        let dockerfile = formatdoc! {"
-            FROM {base_image}
-
-            {dockerfile_phases_str}
-
-            {start_phase_str}
-        "};
-
-        println!("{}", dockerfile);
-
-        return Ok(());
+        // println!("{}", dockerfile);
 
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
@@ -175,21 +154,22 @@ impl DockerBuilder {
         files::recursive_copy_dir(app_src, &dest)
     }
 
-    fn write_dockerfile(&self, plan: &BuildPlan, dest: &str, env: &Environment) -> Result<()> {
-        let dockerfile = self.create_dockerfile(plan, env);
+    // fn write_dockerfile(&self, plan: &BuildPlan, dest: &str, env: &Environment) -> Result<()> {
+    //     let dockerfile = self.create_dockerfile(plan, env);
 
-        let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
-        File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
-        fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
+    //     let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
+    //     File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
+    //     fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     fn write_nix_expression(&self, phase: &NewPhase, name: &str, dest: &str) -> Result<String> {
         let nix_expression = nix::create_nix_expression(phase);
 
         let nix_file_name = format!("{}.nix", name);
         let nix_path = PathBuf::from(dest).join(PathBuf::from(nix_file_name.clone()));
+
         let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
         nix_file
             .write_all(nix_expression.as_bytes())
@@ -225,7 +205,7 @@ impl DockerBuilder {
 
         if let Some(cmd) = &start_phase.cmd {
             Ok(formatdoc! {"# start
-            RUN {cmd}"})
+            CMD {cmd}"})
         } else {
             Ok("".to_string())
         }
@@ -237,8 +217,6 @@ impl DockerBuilder {
         dest: String,
         env: &Environment,
     ) -> Result<String> {
-        let app_dir = "/app/";
-
         let cache_key = if !self.options.no_cache && !env.is_config_variable_truthy("NO_CACHE") {
             self.options.cache_key.clone()
         } else {
@@ -249,7 +227,7 @@ impl DockerBuilder {
         let install_nix_pkgs_str = if phase.nix_pkgs.is_some() || phase.nix_libraries.is_some() {
             // Write Nix expression to dest
             let nix_file_name = self.write_nix_expression(phase, &phase.name, dest.as_str())?;
-            format!("RUN nix-env -if {nix_file_name}")
+            format!("COPY {nix_file_name} .\nRUN nix-env -if {nix_file_name}")
         } else {
             "".to_string()
         };
@@ -272,7 +250,7 @@ impl DockerBuilder {
             ("setup", None) => vec![],
             _ => vec![".".to_string()],
         };
-        let phase_copy_cmd = get_copy_command(&phase_files, app_dir);
+        let phase_copy_cmd = get_copy_command(&phase_files, APP_DIR);
 
         let cache_mount = get_cache_mount(&cache_key, &phase.cache_directories);
         let cmds_str = phase
@@ -298,24 +276,13 @@ impl DockerBuilder {
         Ok(dockerfile)
     }
 
-    fn create_dockerfile(&self, plan: &BuildPlan, env: &Environment) -> String {
-        let app_dir = "/app/";
-        let assets_dir = app::ASSETS_DIR;
-
-        let setup_phase = plan.setup.clone().unwrap_or_default();
-        let install_phase = plan.install.clone().unwrap_or_default();
-        let build_phase = plan.build.clone().unwrap_or_default();
-        let start_phase = plan.start.clone().unwrap_or_default();
+    fn create_and_write_dockerfile(
+        &self,
+        plan: &NewBuildPlan,
+        dest: &str,
+        env: &Environment,
+    ) -> Result<()> {
         let variables = plan.variables.clone().unwrap_or_default();
-        let static_assets = plan.static_assets.clone().unwrap_or_default();
-
-        let cache_key = if !self.options.no_cache && !env.is_config_variable_truthy("NO_CACHE") {
-            self.options.cache_key.clone()
-        } else {
-            None
-        };
-
-        // -- Variables
         let args_string = if !variables.is_empty() {
             format!(
                 "ARG {}\nENV {}",
@@ -336,154 +303,233 @@ impl DockerBuilder {
             "".to_string()
         };
 
-        // -- Setup
-        let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
-        if let Some(mut setup_file_deps) = setup_phase.only_include_files {
-            setup_files.append(&mut setup_file_deps);
-        }
-        let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
-
-        let mut apt_get_cmd = "".to_string();
-        // using apt will break build reproducibility
-        if !setup_phase.apt_pkgs.clone().unwrap_or_default().is_empty() {
-            let apt_pkgs = setup_phase.apt_pkgs.unwrap_or_default().join(" ");
-            apt_get_cmd = format!("RUN apt-get update && apt-get install -y {}", apt_pkgs);
-        }
-        let setup_cmd = setup_phase
-            .cmds
-            .unwrap_or_default()
-            .iter()
-            .map(|c| format!("RUN {}", c))
-            .collect::<Vec<String>>()
-            .join("\n");
-
-        // -- Static Assets
-        let assets_copy_cmd = if !static_assets.is_empty() {
-            static_assets
-                .into_keys()
-                .map(|name| format!("COPY assets/{} {}{}", name, assets_dir, name))
-                .collect::<Vec<String>>()
-                .join("\n")
-        } else {
-            "".to_string()
-        };
-
-        // -- Install
-        let install_cache_mount = get_cache_mount(&cache_key, &install_phase.cache_directories);
-
-        let install_cmd = install_phase
-            .cmds
-            .unwrap_or_default()
-            .iter()
-            .map(|c| format!("RUN {} {}", install_cache_mount, c))
-            .collect::<Vec<String>>()
-            .join("\n");
-
-        let (build_path, run_path) = if let Some(paths) = install_phase.paths {
-            let joined_paths = paths.join(":");
-            (
-                format!("ENV PATH {}:$PATH", joined_paths),
-                format!("RUN printf '\\nPATH={joined_paths}:$PATH' >> /root/.profile"),
-            )
-        } else {
-            ("".to_string(), "".to_string())
-        };
-
-        // Files to copy for install phase
-        // If none specified, copy over the entire app
-        let install_files = install_phase
-            .only_include_files
+        let dockerfile_phases = plan
+            .phases
             .clone()
-            .unwrap_or_else(|| vec![".".to_string()]);
+            .into_iter()
+            .map(|phase| {
+                let phase_dockerfile = self
+                    .generate_dockerfile_for_phase(&phase, dest.to_string(), env)
+                    .context("Generating dockerfile for phase")?;
 
-        // -- Build
-        let build_cache_mount = get_cache_mount(&cache_key, &build_phase.cache_directories);
-
-        let build_cmd = build_phase
-            .cmds
-            .unwrap_or_default()
-            .iter()
-            .map(|c| format!("RUN {} {}", build_cache_mount, c))
-            .collect::<Vec<String>>()
-            .join("\n");
-
-        let build_files = build_phase.only_include_files.unwrap_or_else(|| {
-            // Only copy over the entire app if we haven't already in the install phase
-            if install_phase.only_include_files.is_none() {
-                Vec::new()
-            } else {
-                vec![".".to_string()]
-            }
-        });
-
-        // -- Start
-        let start_cmd = start_phase
-            .cmd
-            .map(|cmd| format!("CMD {}", cmd))
-            .unwrap_or_else(|| "".to_string());
-
-        // If we haven't yet copied over the entire app, do that before starting
-        let start_files = start_phase.only_include_files.clone();
-
-        let run_image_setup = match start_phase.run_image {
-            Some(run_image) => {
-                // RUN true to prevent a Docker bug https://github.com/moby/moby/issues/37965#issuecomment-426853382
-                format! {"
-                FROM {run_image}
-                WORKDIR {app_dir}
-                COPY --from=0 /etc/ssl/certs /etc/ssl/certs
-                RUN true
-                {copy_cmd}
-            ",
-                    run_image=run_image,
-                    app_dir=app_dir,
-                    copy_cmd=get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir)
+                match phase.name.as_str() {
+                    // We want to load the variables immediately after the setup phase
+                    "setup" => Ok(format!(
+                        "{phase_dockerfile}\n# load variables\n{args_string}\n"
+                    )),
+                    _ => Ok(phase_dockerfile),
                 }
-            }
-            None => get_copy_command(
-                // If no files specified and no run image, copy everything in /app/ over
-                &start_files.unwrap_or_else(|| vec![".".to_string()]),
-                app_dir,
-            ),
-        };
+            })
+            .collect::<Result<Vec<_>>>();
+        let dockerfile_phases_str = dockerfile_phases?.join("\n");
+
+        let start_phase_str = self
+            .generate_dockerfile_for_start_phase(&plan.start_phase.clone().unwrap_or_default())?;
+
+        let base_image = DEFAULT_BASE_IMAGE.to_string();
 
         let dockerfile = formatdoc! {"
-          FROM {base_image}
+            FROM {base_image}
+            WORKDIR {APP_DIR}
 
-          WORKDIR {app_dir}
+            {dockerfile_phases_str}
 
-          # Setup
-          {setup_copy_cmd}
-          RUN nix-env -if environment.nix
-          {apt_get_cmd}
-          {setup_cmd}
-          
-          {assets_copy_cmd}
+            {start_phase_str}
+        "};
 
-          # Load environment variables
-          {args_string}
+        let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
+        File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
+        fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
 
-          # Install
-          {install_copy_cmd}
-          {install_cmd}
-
-          {build_path}
-          {run_path}
-
-          # Build
-          {build_copy_cmd}
-          {build_cmd}
-
-          # Start
-          {run_image_setup}
-          {start_cmd}
-        ",
-        base_image=setup_phase.base_image,
-        install_copy_cmd=get_copy_command(&install_files, app_dir),
-        build_copy_cmd=get_copy_command(&build_files, app_dir)};
-
-        dockerfile
+        Ok(())
     }
+
+    // fn create_dockerfile(&self, plan: &BuildPlan, env: &Environment) -> String {
+    //     let app_dir = "/app/";
+    //     let assets_dir = app::ASSETS_DIR;
+
+    //     let setup_phase = plan.setup.clone().unwrap_or_default();
+    //     let install_phase = plan.install.clone().unwrap_or_default();
+    //     let build_phase = plan.build.clone().unwrap_or_default();
+    //     let start_phase = plan.start.clone().unwrap_or_default();
+    //     let variables = plan.variables.clone().unwrap_or_default();
+    //     let static_assets = plan.static_assets.clone().unwrap_or_default();
+
+    //     let cache_key = if !self.options.no_cache && !env.is_config_variable_truthy("NO_CACHE") {
+    //         self.options.cache_key.clone()
+    //     } else {
+    //         None
+    //     };
+
+    //     // -- Variables
+    //     let args_string = if !variables.is_empty() {
+    //         format!(
+    //             "ARG {}\nENV {}",
+    //             // Pull the variables in from docker `--build-arg`
+    //             variables
+    //                 .iter()
+    //                 .map(|var| var.0.to_string())
+    //                 .collect::<Vec<_>>()
+    //                 .join(" "),
+    //             // Make the variables available at runtime
+    //             variables
+    //                 .iter()
+    //                 .map(|var| format!("{}=${}", var.0, var.0))
+    //                 .collect::<Vec<_>>()
+    //                 .join(" ")
+    //         )
+    //     } else {
+    //         "".to_string()
+    //     };
+
+    //     // -- Setup
+    //     let mut setup_files: Vec<String> = vec!["environment.nix".to_string()];
+    //     if let Some(mut setup_file_deps) = setup_phase.only_include_files {
+    //         setup_files.append(&mut setup_file_deps);
+    //     }
+    //     let setup_copy_cmd = format!("COPY {} {}", setup_files.join(" "), app_dir);
+
+    //     let mut apt_get_cmd = "".to_string();
+    //     // using apt will break build reproducibility
+    //     if !setup_phase.apt_pkgs.clone().unwrap_or_default().is_empty() {
+    //         let apt_pkgs = setup_phase.apt_pkgs.unwrap_or_default().join(" ");
+    //         apt_get_cmd = format!("RUN apt-get update && apt-get install -y {}", apt_pkgs);
+    //     }
+    //     let setup_cmd = setup_phase
+    //         .cmds
+    //         .unwrap_or_default()
+    //         .iter()
+    //         .map(|c| format!("RUN {}", c))
+    //         .collect::<Vec<String>>()
+    //         .join("\n");
+
+    //     // -- Static Assets
+    //     let assets_copy_cmd = if !static_assets.is_empty() {
+    //         static_assets
+    //             .into_keys()
+    //             .map(|name| format!("COPY assets/{} {}{}", name, assets_dir, name))
+    //             .collect::<Vec<String>>()
+    //             .join("\n")
+    //     } else {
+    //         "".to_string()
+    //     };
+
+    //     // -- Install
+    //     let install_cache_mount = get_cache_mount(&cache_key, &install_phase.cache_directories);
+
+    //     let install_cmd = install_phase
+    //         .cmds
+    //         .unwrap_or_default()
+    //         .iter()
+    //         .map(|c| format!("RUN {} {}", install_cache_mount, c))
+    //         .collect::<Vec<String>>()
+    //         .join("\n");
+
+    //     let (build_path, run_path) = if let Some(paths) = install_phase.paths {
+    //         let joined_paths = paths.join(":");
+    //         (
+    //             format!("ENV PATH {}:$PATH", joined_paths),
+    //             format!("RUN printf '\\nPATH={joined_paths}:$PATH' >> /root/.profile"),
+    //         )
+    //     } else {
+    //         ("".to_string(), "".to_string())
+    //     };
+
+    //     // Files to copy for install phase
+    //     // If none specified, copy over the entire app
+    //     let install_files = install_phase
+    //         .only_include_files
+    //         .clone()
+    //         .unwrap_or_else(|| vec![".".to_string()]);
+
+    //     // -- Build
+    //     let build_cache_mount = get_cache_mount(&cache_key, &build_phase.cache_directories);
+
+    //     let build_cmd = build_phase
+    //         .cmds
+    //         .unwrap_or_default()
+    //         .iter()
+    //         .map(|c| format!("RUN {} {}", build_cache_mount, c))
+    //         .collect::<Vec<String>>()
+    //         .join("\n");
+
+    //     let build_files = build_phase.only_include_files.unwrap_or_else(|| {
+    //         // Only copy over the entire app if we haven't already in the install phase
+    //         if install_phase.only_include_files.is_none() {
+    //             Vec::new()
+    //         } else {
+    //             vec![".".to_string()]
+    //         }
+    //     });
+
+    //     // -- Start
+    //     let start_cmd = start_phase
+    //         .cmd
+    //         .map(|cmd| format!("CMD {}", cmd))
+    //         .unwrap_or_else(|| "".to_string());
+
+    //     // If we haven't yet copied over the entire app, do that before starting
+    //     let start_files = start_phase.only_include_files.clone();
+
+    //     let run_image_setup = match start_phase.run_image {
+    //         Some(run_image) => {
+    //             // RUN true to prevent a Docker bug https://github.com/moby/moby/issues/37965#issuecomment-426853382
+    //             format! {"
+    //             FROM {run_image}
+    //             WORKDIR {app_dir}
+    //             COPY --from=0 /etc/ssl/certs /etc/ssl/certs
+    //             RUN true
+    //             {copy_cmd}
+    //         ",
+    //                 run_image=run_image,
+    //                 app_dir=app_dir,
+    //                 copy_cmd=get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir)
+    //             }
+    //         }
+    //         None => get_copy_command(
+    //             // If no files specified and no run image, copy everything in /app/ over
+    //             &start_files.unwrap_or_else(|| vec![".".to_string()]),
+    //             app_dir,
+    //         ),
+    //     };
+
+    //     let dockerfile = formatdoc! {"
+    //       FROM {base_image}
+
+    //       WORKDIR {app_dir}
+
+    //       # Setup
+    //       {setup_copy_cmd}
+    //       RUN nix-env -if environment.nix
+    //       {apt_get_cmd}
+    //       {setup_cmd}
+
+    //       {assets_copy_cmd}
+
+    //       # Load environment variables
+    //       {args_string}
+
+    //       # Install
+    //       {install_copy_cmd}
+    //       {install_cmd}
+
+    //       {build_path}
+    //       {run_path}
+
+    //       # Build
+    //       {build_copy_cmd}
+    //       {build_cmd}
+
+    //       # Start
+    //       {run_image_setup}
+    //       {start_cmd}
+    //     ",
+    //     base_image=setup_phase.base_image,
+    //     install_copy_cmd=get_copy_command(&install_files, app_dir),
+    //     build_copy_cmd=get_copy_command(&build_files, app_dir)};
+
+    //     dockerfile
+    // }
 }
 
 fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<String>>) -> String {
