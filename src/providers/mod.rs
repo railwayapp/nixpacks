@@ -26,7 +26,11 @@ pub mod zig;
 pub trait Provider {
     fn name(&self) -> &str;
 
-    fn get_build_plan(&self, app: &App, environment: &Environment) -> Result<Option<NewBuildPlan>> {
+    fn get_build_plan(
+        &self,
+        _app: &App,
+        _environment: &Environment,
+    ) -> Result<Option<NewBuildPlan>> {
         Ok(None)
     }
 

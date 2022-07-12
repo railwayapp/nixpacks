@@ -1,19 +1,18 @@
 use crate::nixpacks::{
     app::App,
-    builder::{
-        docker::{DockerBuilder, DockerBuilderOptions},
-        Builder,
-    },
+    builder::{docker::DockerBuilderOptions, ImageBuilder},
     environment::Environment,
     logger::Logger,
     nix::pkg::Pkg,
     plan::{
         generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
-        BuildPlan, PlanGenerator,
+        PlanGenerator,
     },
 };
 use anyhow::Result;
-use nixpacks::plan::new_build_plan::NewBuildPlan;
+use nixpacks::{
+    builder::docker::docker_image_builder::DockerImageBuilder, plan::new_build_plan::NewBuildPlan,
+};
 use providers::{
     crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider,
     fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
@@ -75,7 +74,7 @@ pub fn create_docker_image(
     let plan = generator.generate_plan(&app, &environment)?;
 
     let logger = Logger::new();
-    let builder = DockerBuilder::new(logger, build_options.to_owned());
+    let builder = DockerImageBuilder::new(logger, build_options.to_owned());
     builder.create_image(app.source.to_str().unwrap(), &plan, &environment)?;
 
     Ok(())

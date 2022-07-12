@@ -1,6 +1,6 @@
-use super::topological_sort::{self, topological_sort, TopItem};
-use crate::nixpacks::{environment::EnvironmentVariables, nix::pkg::Pkg};
-use anyhow::{bail, Context, Ok, Result};
+use super::topological_sort::{topological_sort, TopItem};
+use crate::nixpacks::{app::StaticAssets, environment::EnvironmentVariables, nix::pkg::Pkg};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 #[serde_with::skip_serializing_none]
@@ -59,7 +59,7 @@ impl TopItem for NewPhase {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct NewBuildPlan {
     // #[serde(rename = "nixpacksVersion")]
     // pub nixpacks_version: Option<String>,
@@ -70,6 +70,9 @@ pub struct NewBuildPlan {
     // #[serde(rename = "buildImage")]
     // pub build_image: String,
     pub variables: Option<EnvironmentVariables>,
+
+    #[serde(rename = "staticAssets")]
+    pub static_assets: Option<StaticAssets>,
 
     pub phases: Vec<NewPhase>,
 
@@ -119,8 +122,7 @@ impl NewBuildPlan {
     pub fn new(phases: Vec<NewPhase>) -> Self {
         Self {
             phases,
-            start_phase: None,
-            variables: None,
+            ..Default::default()
         }
     }
 
@@ -165,9 +167,7 @@ fn add_multiple_to_option_vec<T: Clone>(
 mod tests {
     use super::*;
 
-    use crate::{
-        nixpacks::plan::topological_sort::topological_sort, providers::node::NODE_OVERLAY,
-    };
+    use crate::providers::node::NODE_OVERLAY;
 
     #[test]
     fn test_adding_value_to_option_vec() {

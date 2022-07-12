@@ -1,8 +1,8 @@
-use std::{collections::HashMap, fs};
+use std::collections::HashMap;
 
 use super::{
-    new_build_plan::{self, NewBuildPlan, NewPhase, NewStartPhase},
-    BuildPlan, PlanGenerator,
+    new_build_plan::{NewBuildPlan, NewPhase, NewStartPhase},
+    PlanGenerator,
 };
 use crate::{
     nixpacks::{
@@ -10,7 +10,6 @@ use crate::{
         environment::{Environment, EnvironmentVariables},
         nix::pkg::Pkg,
         phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
-        NIX_PACKS_VERSION,
     },
     providers::Provider,
 };
@@ -73,14 +72,14 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
         let variables = self
             .get_variables(app, environment)
             .context("Getting plan variables")?;
-        let static_assets = self
+        let _static_assets = self
             .get_static_assets(app, environment)
             .context("Getting provider assets")?;
 
-        let new_setup_phase: NewPhase = setup_phase.clone().into();
-        let new_install_phase: NewPhase = install_phase.clone().into();
-        let new_build_phase: NewPhase = build_phase.clone().into();
-        let new_start_phase: NewStartPhase = start_phase.clone().into();
+        let new_setup_phase: NewPhase = setup_phase.into();
+        let new_install_phase: NewPhase = install_phase.into();
+        let new_build_phase: NewPhase = build_phase.into();
+        let new_start_phase: NewStartPhase = start_phase.into();
 
         let mut new_build_plan =
             NewBuildPlan::new(vec![new_setup_phase, new_install_phase, new_build_phase]);

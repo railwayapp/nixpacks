@@ -1,4 +1,4 @@
-use super::plan::{new_build_plan::NewPhase, BuildPlan};
+use super::plan::new_build_plan::NewPhase;
 use indoc::formatdoc;
 
 pub mod pkg;
