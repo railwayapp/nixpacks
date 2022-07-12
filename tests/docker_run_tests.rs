@@ -277,7 +277,6 @@ fn test_bun() {
     assert!(output.contains("Hello from Bun"));
 }
 
-
 #[test]
 fn test_bun_web_server() {
     let name = simple_build("./examples/node-bun-web-server");
