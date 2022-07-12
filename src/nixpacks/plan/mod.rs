@@ -88,6 +88,7 @@ impl BuildPlan {
         let start_row = print_row("Start", start_phase.cmd.unwrap_or_default());
 
         return formatdoc! {"
+
           {top_box}
           {packages_row}
           {hor_sep}
@@ -96,7 +97,8 @@ impl BuildPlan {
           {build_row}
           {hor_sep}
           {start_row}
-          {bottom_box}",
+          {bottom_box}
+          ",
         };
     }
 }
