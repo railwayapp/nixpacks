@@ -8,7 +8,7 @@ use std::{
 use super::Builder;
 use crate::nixpacks::{
     app, cache::sanitize_cache_key, environment::Environment, files, logger::Logger, nix,
-    plan::BuildPlan, NIX_PACKS_VERSION,
+    plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
@@ -55,8 +55,6 @@ impl Builder for DockerBuilder {
             return Ok(());
         }
 
-        self.logger
-            .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
         println!("{}", plan.get_build_string());
 
         // Write everything to destination
