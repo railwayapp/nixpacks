@@ -11,7 +11,7 @@ body:
     description: |
       A clear and concise description of the feature request.
     placeholder: |
-      An implementation could be implemented by...
+      This could be implemented by...
 - type: textarea
   id: motivation
   validations:
