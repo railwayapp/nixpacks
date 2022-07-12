@@ -374,6 +374,13 @@ fn test_rust_ring() {
 }
 
 #[test]
+fn test_rust_openssl() {
+    let name = simple_build("./examples/rust-openssl");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello, world!"));
+}
+
+#[test]
 fn test_go() {
     let name = simple_build("./examples/go");
     let output = run_image(name, None);
