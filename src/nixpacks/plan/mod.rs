@@ -37,33 +37,39 @@ impl BuildPlan {
 
         let top_box = format!(
             "{}{} {} {}{}",
-            box_drawing::double::DOWN_RIGHT.dimmed(),
+            box_drawing::double::DOWN_RIGHT.cyan().dimmed(),
             str::repeat(
                 box_drawing::double::HORIZONTAL,
                 (BOX_WIDTH - title_width) / 2
             )
+            .cyan()
             .dimmed(),
             title_str.magenta().bold(),
             str::repeat(
                 box_drawing::double::HORIZONTAL,
                 (BOX_WIDTH - title_width) / 2
             )
+            .cyan()
             .dimmed(),
-            box_drawing::double::DOWN_LEFT.dimmed(),
+            box_drawing::double::DOWN_LEFT.cyan().dimmed(),
         );
 
         let bottom_box = format!(
             "{}{}{}",
-            box_drawing::double::UP_RIGHT.dimmed(),
-            str::repeat(box_drawing::double::HORIZONTAL, BOX_WIDTH - 1).dimmed(),
-            box_drawing::double::UP_LEFT.dimmed()
+            box_drawing::double::UP_RIGHT.cyan().dimmed(),
+            str::repeat(box_drawing::double::HORIZONTAL, BOX_WIDTH - 1)
+                .cyan()
+                .dimmed(),
+            box_drawing::double::UP_LEFT.cyan().dimmed()
         );
 
         let hor_sep = format!(
             "{}{}{}",
-            box_drawing::double::VERTICAL.dimmed(),
-            str::repeat(box_drawing::light::HORIZONTAL, BOX_WIDTH - 1).dimmed(),
-            box_drawing::double::VERTICAL.dimmed()
+            box_drawing::double::VERTICAL.cyan().dimmed(),
+            str::repeat(box_drawing::light::HORIZONTAL, BOX_WIDTH - 1)
+                .cyan()
+                .dimmed(),
+            box_drawing::double::VERTICAL.cyan().dimmed()
         );
 
         let setup_phase = self.setup.clone().unwrap_or_default();
@@ -107,6 +113,7 @@ fn print_row(title: &str, content: String) -> String {
     let first_column_width = 10;
 
     let middle_padding = format!(" {} ", box_drawing::light::VERTICAL)
+        .cyan()
         .dimmed()
         .to_string();
     let middle_padding_width = console::measure_text_width(middle_padding.as_str());
@@ -119,7 +126,7 @@ fn print_row(title: &str, content: String) -> String {
     let list_lines = textwrap::wrap(content.as_str(), textwrap_opts);
     let mut output = format!(
         "{} {}{}{} {}",
-        box_drawing::double::VERTICAL.dimmed(),
+        box_drawing::double::VERTICAL.cyan().dimmed(),
         console::pad_str(
             title,
             first_column_width - 1,
@@ -134,13 +141,13 @@ fn print_row(title: &str, content: String) -> String {
             None
         )
         .white(),
-        box_drawing::double::VERTICAL.dimmed()
+        box_drawing::double::VERTICAL.cyan().dimmed()
     );
 
     for line in list_lines.iter().skip(1) {
         output = format!(
             "{output}\n{}{}{}{}{}",
-            box_drawing::double::VERTICAL.dimmed(),
+            box_drawing::double::VERTICAL.cyan().dimmed(),
             console::pad_str("", first_column_width, console::Alignment::Left, None),
             middle_padding,
             console::pad_str(
@@ -150,7 +157,7 @@ fn print_row(title: &str, content: String) -> String {
                 None
             )
             .white(),
-            box_drawing::double::VERTICAL.dimmed()
+            box_drawing::double::VERTICAL.cyan().dimmed()
         );
     }
 
