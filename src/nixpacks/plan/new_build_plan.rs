@@ -106,7 +106,6 @@ impl NewPhase {
     }
 
     pub fn add_apt_pkgs(&mut self, new_pkgs: Vec<String>) {
-        println!("\n\n\nADDING TO APT PKGS\n\n\n");
         self.apt_pkgs = add_multiple_to_option_vec(self.apt_pkgs.clone(), new_pkgs);
     }
 
