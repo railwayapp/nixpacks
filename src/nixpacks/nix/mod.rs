@@ -1,21 +1,20 @@
-use super::plan::BuildPlan;
+use super::plan::{new_build_plan::NewPhase, BuildPlan};
 use indoc::formatdoc;
 
 pub mod pkg;
 
-pub fn create_nix_expression(plan: &BuildPlan) -> String {
-    let setup_phase = plan.setup.clone().unwrap_or_default();
+pub fn create_nix_expression(phase: &NewPhase) -> String {
+    let pkgs = phase.nix_pkgs.clone().unwrap_or_default();
 
-    let nixpkgs = setup_phase
-        .pkgs
+    let nixpkgs = pkgs
         .iter()
         .map(|p| p.to_nix_string())
         .collect::<Vec<String>>()
         .join(" ");
 
-    let libraries = setup_phase.libraries.unwrap_or_default().join(" ");
+    let libraries = phase.nix_libraries.clone().unwrap_or_default().join(" ");
 
-    let nix_archive = setup_phase.archive.clone();
+    let nix_archive = phase.nixpacks_archive.clone();
     let pkg_import = match nix_archive {
         Some(archive) => format!(
             "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
@@ -25,7 +24,7 @@ pub fn create_nix_expression(plan: &BuildPlan) -> String {
     };
 
     let mut overlays: Vec<String> = Vec::new();
-    for pkg in &setup_phase.pkgs {
+    for pkg in &pkgs {
         if let Some(overlay) = &pkg.overlay {
             overlays.push(overlay.to_string());
         }

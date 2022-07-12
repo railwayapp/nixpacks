@@ -1,6 +1,9 @@
 use std::{collections::HashMap, fs};
 
-use super::{BuildPlan, PlanGenerator};
+use super::{
+    new_build_plan::{self, NewBuildPlan, NewPhase, NewStartPhase},
+    BuildPlan, PlanGenerator,
+};
 use crate::{
     nixpacks::{
         app::{App, StaticAssets},
@@ -35,16 +38,25 @@ pub struct NixpacksBuildPlanGenerator<'a> {
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
-    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan> {
+    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<NewBuildPlan> {
         // If options.plan_path is specified, use that build plan
-        if let Some(plan_path) = self.options.clone().plan_path {
-            let plan_json = fs::read_to_string(plan_path).context("Reading build plan")?;
-            let plan: BuildPlan =
-                serde_json::from_str(&plan_json).context("Deserializing build plan")?;
-            return Ok(plan);
-        }
+        // if let Some(plan_path) = self.options.clone().plan_path {
+        //     let plan_json = fs::read_to_string(plan_path).context("Reading build plan")?;
+        //     let plan: BuildPlan =
+        //         serde_json::from_str(&plan_json).context("Deserializing build plan")?;
+        //     return Ok(plan);
+        // }
 
         self.detect(app, environment)?;
+
+        // if let Some(provider) = self.matched_provider {
+        //     if let Some(new_build_plan) = provider.get_build_plan(app, environment)? {
+        //         println!("Using build plan from {}", provider.name());
+
+        //         let plan_string = serde_json::to_string_pretty(&new_build_plan).unwrap();
+        //         println!("{}", plan_string);
+        //     }
+        // }
 
         let setup_phase = self
             .get_setup_phase(app, environment)
@@ -65,17 +77,29 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
             .get_static_assets(app, environment)
             .context("Getting provider assets")?;
 
-        let plan = BuildPlan {
-            version: Some(NIX_PACKS_VERSION.to_string()),
-            setup: Some(setup_phase),
-            install: Some(install_phase),
-            build: Some(build_phase),
-            start: Some(start_phase),
-            variables: Some(variables),
-            static_assets: Some(static_assets),
-        };
+        let new_setup_phase: NewPhase = setup_phase.clone().into();
+        let new_install_phase: NewPhase = install_phase.clone().into();
+        let new_build_phase: NewPhase = build_phase.clone().into();
+        let new_start_phase: NewStartPhase = start_phase.clone().into();
 
-        Ok(plan)
+        let mut new_build_plan =
+            NewBuildPlan::new(vec![new_setup_phase, new_install_phase, new_build_phase]);
+        new_build_plan.add_start_phase(new_start_phase);
+        new_build_plan.set_variables(variables);
+
+        Ok(new_build_plan)
+
+        // let plan = BuildPlan {
+        //     version: Some(NIX_PACKS_VERSION.to_string()),
+        //     setup: Some(setup_phase),
+        //     install: Some(install_phase),
+        //     build: Some(build_phase),
+        //     start: Some(start_phase),
+        //     variables: Some(variables),
+        //     static_assets: Some(static_assets),
+        // };
+
+        // Ok(plan)
     }
 }
 

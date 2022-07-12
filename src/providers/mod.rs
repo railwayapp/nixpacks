@@ -2,6 +2,7 @@ use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::new_build_plan::NewBuildPlan,
 };
 use anyhow::Result;
 
@@ -24,6 +25,11 @@ pub mod zig;
 
 pub trait Provider {
     fn name(&self) -> &str;
+
+    fn get_build_plan(&self, app: &App, environment: &Environment) -> Result<Option<NewBuildPlan>> {
+        Ok(None)
+    }
+
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         Ok(None)

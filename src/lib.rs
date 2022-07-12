@@ -13,6 +13,7 @@ use crate::nixpacks::{
     },
 };
 use anyhow::Result;
+use nixpacks::plan::new_build_plan::NewBuildPlan;
 use providers::{
     crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider,
     fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
@@ -51,7 +52,7 @@ pub fn generate_build_plan(
     path: &str,
     envs: Vec<&str>,
     plan_options: &GeneratePlanOptions,
-) -> Result<BuildPlan> {
+) -> Result<NewBuildPlan> {
     let app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
 

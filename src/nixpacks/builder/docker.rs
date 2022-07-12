@@ -7,8 +7,18 @@ use std::{
 
 use super::Builder;
 use crate::nixpacks::{
-    app, cache::sanitize_cache_key, environment::Environment, files, logger::Logger, nix,
-    plan::BuildPlan, NIX_PACKS_VERSION,
+    app,
+    cache::sanitize_cache_key,
+    environment::Environment,
+    files,
+    images::DEFAULT_BASE_IMAGE,
+    logger::Logger,
+    nix,
+    plan::{
+        new_build_plan::{NewBuildPlan, NewPhase, NewStartPhase},
+        BuildPlan,
+    },
+    NIX_PACKS_VERSION,
 };
 use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
@@ -33,7 +43,7 @@ pub struct DockerBuilder {
 }
 
 impl Builder for DockerBuilder {
-    fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
+    fn create_image(&self, app_src: &str, plan: &NewBuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
         let dir = match &self.options.out_dir {
@@ -47,24 +57,56 @@ impl Builder for DockerBuilder {
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
 
         // If printing the Dockerfile, don't write anything to disk
-        if self.options.print_dockerfile {
-            let dockerfile = self.create_dockerfile(plan, env);
-            println!("{dockerfile}");
+        // if self.options.print_dockerfile {
+        //     let dockerfile = self.create_dockerfile(plan, env);
+        //     println!("{dockerfile}");
 
-            return Ok(());
-        }
+        //     return Ok(());
+        // }
 
         self.logger
             .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
-        println!("{}", plan.get_build_string());
+
+        // println!("{}", plan.get_build_string());
 
         // Write everything to destination
-        self.write_app(app_src, dest).context("Writing app")?;
-        self.write_assets(plan, dest).context("Writing assets")?;
-        self.write_dockerfile(plan, dest, env)
-            .context("Writing Dockerfile")?;
-        self.write_nix_expression(plan, dest)
-            .context("Writing NIx expression")?;
+        // self.write_app(app_src, dest).context("Writing app")?;
+        // self.write_assets(plan, dest).context("Writing assets")?;
+        // self.write_dockerfile(plan, dest, env)
+        //     .context("Writing Dockerfile")?;
+        // self.write_nix_expression(plan, dest)
+        //     .context("Writing NIx expression")?;
+
+        let build_plan_string = serde_json::to_string_pretty(plan).unwrap();
+        println!("{}", build_plan_string);
+
+        let dockerfile_phases = plan
+            .phases
+            .clone()
+            .into_iter()
+            .map(|phase| {
+                self.generate_dockerfile_for_phase(&phase, dest.to_string(), env)
+                    .context("Generating dockerfile for phase")
+            })
+            .collect::<Result<Vec<_>>>();
+        let dockerfile_phases_str = dockerfile_phases?.join("\n");
+
+        let start_phase_str = self
+            .generate_dockerfile_for_start_phase(&plan.start_phase.clone().unwrap_or_default())?;
+
+        let base_image = DEFAULT_BASE_IMAGE.to_string();
+
+        let dockerfile = formatdoc! {"
+            FROM {base_image}
+
+            {dockerfile_phases_str}
+
+            {start_phase_str}
+        "};
+
+        println!("{}", dockerfile);
+
+        return Ok(());
 
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
@@ -95,7 +137,7 @@ impl DockerBuilder {
         DockerBuilder { logger, options }
     }
 
-    fn get_docker_build_cmd(&self, plan: &BuildPlan, name: &str, dest: &str) -> Result<Command> {
+    fn get_docker_build_cmd(&self, plan: &NewBuildPlan, name: &str, dest: &str) -> Result<Command> {
         let mut docker_build_cmd = Command::new("docker");
 
         if docker_build_cmd.output().is_err() {
@@ -143,16 +185,17 @@ impl DockerBuilder {
         Ok(())
     }
 
-    fn write_nix_expression(&self, plan: &BuildPlan, dest: &str) -> Result<()> {
-        let nix_expression = nix::create_nix_expression(plan);
+    fn write_nix_expression(&self, phase: &NewPhase, name: &str, dest: &str) -> Result<String> {
+        let nix_expression = nix::create_nix_expression(phase);
 
-        let nix_path = PathBuf::from(dest).join(PathBuf::from("environment.nix"));
+        let nix_file_name = format!("{}.nix", name);
+        let nix_path = PathBuf::from(dest).join(PathBuf::from(nix_file_name.clone()));
         let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
         nix_file
             .write_all(nix_expression.as_bytes())
             .context("Unable to write Nix expression")?;
 
-        Ok(())
+        Ok(nix_file_name)
     }
 
     fn write_assets(&self, plan: &BuildPlan, dest: &str) -> Result<()> {
@@ -175,6 +218,84 @@ impl DockerBuilder {
         }
 
         Ok(())
+    }
+
+    fn generate_dockerfile_for_start_phase(&self, start_phase: &NewStartPhase) -> Result<String> {
+        // TODO: Handle run images
+
+        if let Some(cmd) = &start_phase.cmd {
+            Ok(formatdoc! {"# start
+            RUN {cmd}"})
+        } else {
+            Ok("".to_string())
+        }
+    }
+
+    fn generate_dockerfile_for_phase(
+        &self,
+        phase: &NewPhase,
+        dest: String,
+        env: &Environment,
+    ) -> Result<String> {
+        let app_dir = "/app/";
+
+        let cache_key = if !self.options.no_cache && !env.is_config_variable_truthy("NO_CACHE") {
+            self.options.cache_key.clone()
+        } else {
+            None
+        };
+
+        // Install nix packages and libraries
+        let install_nix_pkgs_str = if phase.nix_pkgs.is_some() || phase.nix_libraries.is_some() {
+            // Write Nix expression to dest
+            let nix_file_name = self.write_nix_expression(phase, &phase.name, dest.as_str())?;
+            format!("RUN nix-env -if {nix_file_name}")
+        } else {
+            "".to_string()
+        };
+
+        // Install apt packages
+        let apt_pkgs = phase.apt_pkgs.clone().unwrap_or_default();
+        let apt_pkgs_str = if apt_pkgs.len() > 0 {
+            format!(
+                "RUN apt-get update && apt-get install -y {}",
+                apt_pkgs.join(" ")
+            )
+        } else {
+            "".to_string()
+        };
+
+        // Copy over app files
+        let phase_files = match (phase.name.as_str(), &phase.only_include_files) {
+            (_, Some(files)) => files.clone(),
+            // Special case for the setup phase, which has no files
+            ("setup", None) => vec![],
+            _ => vec![".".to_string()],
+        };
+        let phase_copy_cmd = get_copy_command(&phase_files, app_dir);
+
+        let cache_mount = get_cache_mount(&cache_key, &phase.cache_directories);
+        let cmds_str = phase
+            .cmds
+            .clone()
+            .unwrap_or_default()
+            .iter()
+            .map(|s| format!("RUN {} {}", cache_mount, s))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        let dockerfile_stmts = vec![install_nix_pkgs_str, apt_pkgs_str, phase_copy_cmd, cmds_str]
+            .into_iter()
+            .filter(|stmt| !stmt.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        let dockerfile = formatdoc! {"
+            # {name} phase
+            {dockerfile_stmts}
+        ", name=phase.name};
+
+        Ok(dockerfile)
     }
 
     fn create_dockerfile(&self, plan: &BuildPlan, env: &Environment) -> String {

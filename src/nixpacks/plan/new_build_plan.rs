@@ -1,12 +1,11 @@
+use super::topological_sort::{self, topological_sort, TopItem};
+use crate::nixpacks::{environment::EnvironmentVariables, nix::pkg::Pkg};
+use anyhow::{bail, Context, Ok, Result};
 use serde::{Deserialize, Serialize};
-
-use crate::nixpacks::nix::pkg::Pkg;
-
-use super::topological_sort::TopItem;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct GenericPhase {
+pub struct NewPhase {
     pub name: String,
 
     #[serde(rename = "dependsOn")]
@@ -17,6 +16,9 @@ pub struct GenericPhase {
 
     #[serde(rename = "nixLibraries")]
     pub nix_libraries: Option<Vec<String>>,
+
+    #[serde(rename = "nixpacksArchive")]
+    pub nixpacks_archive: Option<String>,
 
     #[serde(rename = "aptPackages")]
     pub apt_pkgs: Option<Vec<String>>,
@@ -31,7 +33,19 @@ pub struct GenericPhase {
     pub cache_directories: Option<Vec<String>>,
 }
 
-impl TopItem for GenericPhase {
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct NewStartPhase {
+    pub cmd: Option<String>,
+
+    #[serde(rename = "runImage")]
+    pub run_image: Option<String>,
+
+    #[serde(rename = "onlyIncludeFiles")]
+    pub only_include_files: Option<Vec<String>>,
+}
+
+impl TopItem for NewPhase {
     fn get_name(&self) -> String {
         self.name.clone()
     }
@@ -55,13 +69,15 @@ pub struct NewBuildPlan {
 
     // #[serde(rename = "buildImage")]
     // pub build_image: String,
+    pub variables: Option<EnvironmentVariables>,
 
-    // #[serde(rename = "runImage")]
-    // pub run_image: Option<String>,
-    pub phases: Vec<GenericPhase>,
+    pub phases: Vec<NewPhase>,
+
+    #[serde(rename = "startPhase")]
+    pub start_phase: Option<NewStartPhase>,
 }
 
-impl GenericPhase {
+impl NewPhase {
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
             name: name.into(),
@@ -82,6 +98,7 @@ impl GenericPhase {
     }
 
     pub fn add_apt_pkgs(&mut self, new_pkgs: Vec<String>) {
+        println!("\n\n\nADDING TO APT PKGS\n\n\n");
         self.apt_pkgs = add_multiple_to_option_vec(self.apt_pkgs.clone(), new_pkgs);
     }
 
@@ -99,12 +116,28 @@ impl GenericPhase {
 }
 
 impl NewBuildPlan {
-    pub fn new(phases: Vec<GenericPhase>) -> Self {
-        Self { phases }
+    pub fn new(phases: Vec<NewPhase>) -> Self {
+        Self {
+            phases,
+            start_phase: None,
+            variables: None,
+        }
     }
 
-    pub fn add_phase(&mut self, phase: GenericPhase) {
+    pub fn add_phase(&mut self, phase: NewPhase) {
         self.phases.push(phase);
+    }
+
+    pub fn add_start_phase(&mut self, start_phase: NewStartPhase) {
+        self.start_phase = Some(start_phase);
+    }
+
+    pub fn set_variables(&mut self, variables: EnvironmentVariables) {
+        self.variables = Some(variables);
+    }
+
+    pub fn get_sorted_phases(&self) -> Result<Vec<NewPhase>> {
+        topological_sort(self.phases.clone())
     }
 }
 
@@ -130,12 +163,11 @@ fn add_multiple_to_option_vec<T: Clone>(
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        nixpacks::plan::topological_sort::{self, topological_sort},
-        providers::node::NODE_OVERLAY,
-    };
-
     use super::*;
+
+    use crate::{
+        nixpacks::plan::topological_sort::topological_sort, providers::node::NODE_OVERLAY,
+    };
 
     #[test]
     fn test_adding_value_to_option_vec() {
@@ -160,30 +192,31 @@ mod tests {
 
     #[test]
     fn test_sorting_phases() {
-        let mut setup_phase = GenericPhase::new("setup");
+        let mut setup_phase = NewPhase::new("setup");
         setup_phase.add_nix_pkgs(vec![
             Pkg::new("nodejs"),
             Pkg::new("npm-8_x").from_overlay(NODE_OVERLAY),
         ]);
 
-        let mut install_phase = GenericPhase::new("install");
+        let mut install_phase = NewPhase::new("install");
         install_phase.depends_on_phase("setup");
         install_phase.add_cmd("npm install");
         install_phase.add_cache_directory("node_modules/.cache");
         install_phase.add_cache_directory("/root/.npm");
 
-        let mut build_phase = GenericPhase::new("build");
+        let mut build_phase = NewPhase::new("build");
         build_phase.depends_on_phase("install");
         build_phase.add_cmd("npm run build");
         build_phase.add_cache_directory("node_modules/.cache");
 
-        let mut start_phase = GenericPhase::new("start");
+        let mut start_phase = NewPhase::new("start");
         start_phase.depends_on_phase("build");
         start_phase.add_cmd("npm run start");
 
         let plan = NewBuildPlan::new(vec![setup_phase, install_phase, build_phase, start_phase]);
 
-        let sorted_phases = topological_sort(plan.phases)
+        let sorted_phases = plan
+            .get_sorted_phases()
             .unwrap()
             .into_iter()
             .map(|phase| phase.name)

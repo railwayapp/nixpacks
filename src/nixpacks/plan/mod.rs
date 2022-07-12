@@ -7,6 +7,8 @@ use anyhow::Result;
 use indoc::formatdoc;
 use serde::{Deserialize, Serialize};
 
+use self::new_build_plan::NewBuildPlan;
+
 pub mod generator;
 pub mod new_build_plan;
 mod topological_sort;
@@ -24,7 +26,7 @@ pub struct BuildPlan {
 }
 
 pub trait PlanGenerator {
-    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan>;
+    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<NewBuildPlan>;
 }
 
 impl BuildPlan {

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use super::{
     images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
     nix::pkg::Pkg,
+    plan::new_build_plan::{NewPhase, NewStartPhase},
 };
 
 #[serde_with::skip_serializing_none]
@@ -19,6 +20,21 @@ pub struct SetupPhase {
 
     #[serde(rename = "baseImage")]
     pub base_image: String,
+}
+
+impl From<SetupPhase> for NewPhase {
+    fn from(setup_phase: SetupPhase) -> Self {
+        NewPhase {
+            name: "setup".to_string(),
+            nix_pkgs: Some(setup_phase.pkgs),
+            nix_libraries: setup_phase.libraries,
+            nixpacks_archive: setup_phase.archive,
+            apt_pkgs: setup_phase.apt_pkgs,
+            cmds: setup_phase.cmds,
+            only_include_files: setup_phase.only_include_files,
+            ..Default::default()
+        }
+    }
 }
 
 impl SetupPhase {
@@ -82,7 +98,7 @@ impl Default for SetupPhase {
         Self {
             pkgs: Default::default(),
             libraries: Default::default(),
-            apt_pkgs: Default::default(),
+            apt_pkgs: None,
             archive: Default::default(),
             only_include_files: Default::default(),
             base_image: DEFAULT_BASE_IMAGE.to_string(),
@@ -103,6 +119,18 @@ pub struct InstallPhase {
     pub cache_directories: Option<Vec<String>>,
 
     pub paths: Option<Vec<String>>,
+}
+
+impl From<InstallPhase> for NewPhase {
+    fn from(install_phase: InstallPhase) -> Self {
+        NewPhase {
+            name: "install".to_string(),
+            cmds: install_phase.cmds,
+            only_include_files: install_phase.only_include_files,
+            cache_directories: install_phase.cache_directories,
+            ..Default::default()
+        }
+    }
 }
 
 impl InstallPhase {
@@ -164,6 +192,18 @@ pub struct BuildPhase {
     pub cache_directories: Option<Vec<String>>,
 }
 
+impl From<BuildPhase> for NewPhase {
+    fn from(build_phase: BuildPhase) -> Self {
+        NewPhase {
+            name: "build".to_string(),
+            cmds: build_phase.cmds,
+            only_include_files: build_phase.only_include_files,
+            cache_directories: build_phase.cache_directories,
+            ..Default::default()
+        }
+    }
+}
+
 impl BuildPhase {
     pub fn new(cmd: String) -> Self {
         Self {
@@ -211,6 +251,16 @@ pub struct StartPhase {
 
     #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
+}
+
+impl From<StartPhase> for NewStartPhase {
+    fn from(start_phase: StartPhase) -> Self {
+        NewStartPhase {
+            run_image: start_phase.run_image,
+            cmd: start_phase.cmd,
+            ..Default::default()
+        }
+    }
 }
 
 impl StartPhase {
