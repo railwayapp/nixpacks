@@ -243,7 +243,7 @@ mod tests {
         start_phase.depends_on_phase("build");
         start_phase.add_cmd("npm run start");
 
-        let plan = NewBuildPlan::new(vec![setup_phase, install_phase, build_phase, start_phase]);
+        let plan = NewBuildPlan::new(vec![install_phase, build_phase, setup_phase]);
 
         let sorted_phases = plan
             .get_sorted_phases()
