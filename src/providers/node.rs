@@ -280,12 +280,10 @@ impl NodeProvider {
         let lock_json = app.read_file("package-lock.json").unwrap_or_default();
         let yarn_lock = app.read_file("yarn.lock").unwrap_or_default();
         let pnpm_yaml = app.read_file("pnpm-lock.yaml").unwrap_or_default();
-        let bun_lock = app.read_file("bun.lockb").unwrap_or_default();
         package_json.contains("\"canvas\"")
             || lock_json.contains("/canvas/")
             || yarn_lock.contains("/canvas/")
             || pnpm_yaml.contains("/canvas/")
-            || bun_lock.contains("/canvas/")
     }
 
     pub fn find_next_packages(app: &App) -> Result<Vec<String>> {

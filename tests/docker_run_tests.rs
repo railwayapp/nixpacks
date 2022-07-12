@@ -277,12 +277,6 @@ fn test_bun() {
     assert!(output.contains("Hello from Bun"));
 }
 
-#[test]
-fn test_bun_no_start() {
-    let name = simple_build("./examples/node-bun-no-start");
-    let output = run_image(name, None);
-    assert!(output.contains("Hello from Bun"));
-}
 
 #[test]
 fn test_bun_web_server() {
