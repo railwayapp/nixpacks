@@ -1,5 +1,10 @@
 use super::topological_sort::{topological_sort, TopItem};
-use crate::nixpacks::{app::StaticAssets, environment::EnvironmentVariables, nix::pkg::Pkg};
+use crate::nixpacks::{
+    app::StaticAssets,
+    environment::EnvironmentVariables,
+    images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
+    nix::pkg::Pkg,
+};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -140,6 +145,31 @@ impl NewBuildPlan {
 
     pub fn get_sorted_phases(&self) -> Result<Vec<NewPhase>> {
         topological_sort(self.phases.clone())
+    }
+}
+
+impl NewStartPhase {
+    pub fn new<S: Into<String>>(cmd: S) -> Self {
+        Self {
+            cmd: Some(cmd.into()),
+            ..Default::default()
+        }
+    }
+
+    pub fn run_in_image(&mut self, image_name: String) {
+        self.run_image = Some(image_name);
+    }
+
+    pub fn run_in_default_image(&mut self) {
+        self.run_image = Some(DEFAULT_BASE_IMAGE.to_string());
+    }
+
+    pub fn run_in_slim_image(&mut self) {
+        self.run_image = Some(DEBIAN_SLIM_IMAGE.to_string());
+    }
+
+    pub fn add_file_dependency<S: Into<String>>(&mut self, file: S) {
+        self.only_include_files = add_to_option_vec(self.only_include_files.clone(), file.into());
     }
 }
 

@@ -48,7 +48,8 @@ impl ImageBuilder for DockerImageBuilder {
         println!("{}", build_plan_string);
 
         self.write_app(app_src, dest).context("Writing app")?;
-        self.write_dockerfile(dockerfile, dest)?;
+        self.write_dockerfile(dockerfile, dest)
+            .context("Writing Dockerfile")?;
         plan.write_supporting_files(&self.options, env, dest)
             .context("Writing supporting files")?;
 
@@ -120,7 +121,7 @@ impl DockerImageBuilder {
     fn write_dockerfile(&self, dockerfile: String, dest: &str) -> Result<()> {
         let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
-        fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
+        fs::write(dockerfile_path, dockerfile)?;
 
         Ok(())
     }

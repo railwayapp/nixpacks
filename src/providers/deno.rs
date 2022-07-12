@@ -6,7 +6,7 @@ use crate::nixpacks::{
     environment::Environment,
     nix::pkg::Pkg,
     phase::{BuildPhase, SetupPhase, StartPhase},
-    plan::new_build_plan::{NewBuildPlan, NewPhase},
+    plan::new_build_plan::{NewBuildPlan, NewPhase, NewStartPhase},
 };
 use anyhow::{Context, Result};
 use regex::Regex;
@@ -31,22 +31,32 @@ impl Provider for DenoProvider {
 
     // New way of defining a provider
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<NewBuildPlan>> {
+        let mut plan = NewBuildPlan::default();
+
         let mut setup_phase = NewPhase::new("setup");
         setup_phase.add_nix_pkgs(vec![Pkg::new("deno")]);
-
-        let mut build_phase = NewPhase::new("build");
-        build_phase.depends_on_phase("setup");
+        plan.add_phase(setup_phase);
 
         if let Some(start_file) = DenoProvider::get_start_file(app)? {
+            let mut build_phase = NewPhase::new("build");
+            build_phase.depends_on_phase("setup");
+
             build_phase.add_cmd(format!(
                 "deno cache {}",
                 start_file
                     .to_str()
                     .context("Failed to convert start_file to string")?
             ));
+
+            plan.add_phase(build_phase);
         };
 
-        let build_plan = NewBuildPlan::new(vec![setup_phase, build_phase]);
+        if let Some(start_cmd) = DenoProvider::get_start_cmd(app)? {
+            let start_phase = NewStartPhase::new(start_cmd);
+            plan.add_start_phase(start_phase);
+        }
+
+        let build_plan = NewBuildPlan::default();
         Ok(Some(build_plan))
     }
 

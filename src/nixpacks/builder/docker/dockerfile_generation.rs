@@ -62,8 +62,7 @@ impl DockerfileGenerator for NewBuildPlan {
         };
 
         let dockerfile_phases = plan
-            .phases
-            .clone()
+            .get_sorted_phases()?
             .into_iter()
             .map(|phase| {
                 let phase_dockerfile = phase
@@ -109,7 +108,7 @@ impl DockerfileGenerator for NewBuildPlan {
     ) -> Result<()> {
         self.write_assets(self, dest).context("Writing assets")?;
 
-        for phase in &self.phases {
+        for phase in self.get_sorted_phases()? {
             phase
                 .write_supporting_files(options, env, dest)
                 .context(format!("Writing files for phase {}", phase.name))?;
