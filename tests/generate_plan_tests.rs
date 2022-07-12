@@ -206,6 +206,90 @@ fn test_pnpm() -> Result<()> {
 }
 
 #[test]
+fn test_bun() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-bun");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("bun").from_overlay(NODE_OVERLAY)]
+    );
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["bun i --no-save".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.bun".to_string()])
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("bun run start".to_string()));
+    assert_eq!(
+        plan.variables.clone().unwrap().get("NODE_ENV"),
+        Some(&"production".to_string())
+    );
+    assert_eq!(
+        plan.variables.unwrap().get("NPM_CONFIG_PRODUCTION"),
+        Some(&"false".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_bun_no_start() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-bun-no-start");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("bun").from_overlay(NODE_OVERLAY)]
+    );
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["bun i --no-save".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.bun".to_string()])
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("bun index.ts".to_string()));
+    assert_eq!(
+        plan.variables.clone().unwrap().get("NODE_ENV"),
+        Some(&"production".to_string())
+    );
+    assert_eq!(
+        plan.variables.unwrap().get("NPM_CONFIG_PRODUCTION"),
+        Some(&"false".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_bun_web_server() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-bun-no-start");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("bun").from_overlay(NODE_OVERLAY)]
+    );
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["bun i --no-save".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.bun".to_string()])
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("bun index.ts".to_string()));
+    assert_eq!(
+        plan.variables.clone().unwrap().get("NODE_ENV"),
+        Some(&"production".to_string())
+    );
+    assert_eq!(
+        plan.variables.unwrap().get("NPM_CONFIG_PRODUCTION"),
+        Some(&"false".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_pnpm_v7() -> Result<()> {
     let plan = simple_gen_plan("./examples/node-pnpm-v7");
     assert_eq!(

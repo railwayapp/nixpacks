@@ -1,0 +1,12 @@
+{
+  "name": "bun-web-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "bun-types": "^0.1.3"
+  }
+}

@@ -19,6 +19,7 @@ const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 const YARN_CACHE_DIR: &'static &str = &"/usr/local/share/.cache/yarn/v6";
 const PNPM_CACHE_DIR: &'static &str = &"/root/.cache/pnpm";
 const NPM_CACHE_DIR: &'static &str = &"/root/.npm";
+const BUN_CACHE_DIR: &'static &str = &"/root/.bun";
 const CYPRESS_CACHE_DIR: &'static &str = &"/root/.cache/Cypress";
 const NODE_MODULES_CACHE_DIR: &'static &str = &"node_modules/.cache";
 
@@ -64,6 +65,8 @@ impl Provider for NodeProvider {
             install_phase.add_cache_directory(YARN_CACHE_DIR.to_string());
         } else if package_manager == "pnpm" {
             install_phase.add_cache_directory(PNPM_CACHE_DIR.to_string());
+        } else if package_manager == "bun" {
+            install_phase.add_cache_directory(BUN_CACHE_DIR.to_string());
         } else {
             install_phase.add_cache_directory(NPM_CACHE_DIR.to_string());
         }
@@ -105,10 +108,7 @@ impl Provider for NodeProvider {
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
-            let pkg_manager = NodeProvider::get_package_manager(app);
-            Ok(Some(StartPhase::new(
-                start_cmd.replace("npm", &pkg_manager),
-            )))
+            Ok(Some(StartPhase::new(start_cmd)))
         } else {
             Ok(None)
         }
@@ -143,19 +143,30 @@ impl NodeProvider {
     }
 
     pub fn get_start_cmd(app: &App) -> Result<Option<String>> {
+        let package_manager = NodeProvider::get_package_manager(app);
         if NodeProvider::has_script(app, "start")? {
-            return Ok(Some("npm run start".to_string()));
+            return Ok(Some(format!("{} run start", package_manager)));
         }
 
         let package_json: PackageJson = app.read_json("package.json")?;
         if let Some(main) = package_json.main {
             if app.includes_file(&main) {
-                return Ok(Some(format!("node {}", main)));
+                if package_manager == "bun" {
+                    return Ok(Some(format!("bun {}", main)));
+                } else {
+                    return Ok(Some(format!("node {}", main)));
+                }
             }
         }
 
         if app.includes_file("index.js") {
-            return Ok(Some("node index.js".to_string()));
+            if package_manager == "bun" {
+                return Ok(Some("bun index.js".to_string()));
+            } else {
+                return Ok(Some("node index.js".to_string()));
+            }
+        } else if app.includes_file("index.ts") && package_manager == "bun" {
+            return Ok(Some("bun index.ts".to_string()));
         }
 
         Ok(None)
@@ -203,15 +214,18 @@ impl NodeProvider {
             pkg_manager = "pnpm";
         } else if app.includes_file("yarn.lock") {
             pkg_manager = "yarn";
+        } else if app.includes_file("bun.lockb") {
+            pkg_manager = "bun";
         }
         pkg_manager.to_string()
     }
 
     pub fn get_install_command(app: &App) -> String {
         let mut install_cmd = "npm i";
-        if NodeProvider::get_package_manager(app) == "pnpm" {
+        let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager == "pnpm" {
             install_cmd = "pnpm i --frozen-lockfile";
-        } else if NodeProvider::get_package_manager(app) == "yarn" {
+        } else if package_manager == "yarn" {
             if app.includes_file(".yarnrc.yml") {
                 install_cmd = "yarn set version berry && yarn install --immutable --check-cache";
             } else {
@@ -219,6 +233,8 @@ impl NodeProvider {
             }
         } else if app.includes_file("package-lock.json") {
             install_cmd = "npm ci";
+        } else if app.includes_file("bun.lockb") {
+            install_cmd = "bun i --no-save";
         }
         install_cmd.to_string()
     }
@@ -228,9 +244,12 @@ impl NodeProvider {
         let package_json: PackageJson = app.read_json("package.json")?;
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
         let pm_pkg: Pkg;
-        let mut pkgs = vec![node_pkg];
+        let mut pkgs = Vec::<Pkg>::new();
 
         let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager != "bun" {
+            pkgs.push(node_pkg);
+        }
         if package_manager == "pnpm" {
             let lockfile = app.read_file("pnpm-lock.yaml").unwrap_or_default();
             if lockfile.starts_with("lockfileVersion: 5.3") {
@@ -240,6 +259,8 @@ impl NodeProvider {
             }
         } else if package_manager == "yarn" {
             pm_pkg = Pkg::new("yarn-1_x");
+        } else if package_manager == "bun" {
+            pm_pkg = Pkg::new("bun");
         } else {
             // npm
             let lockfile = app.read_file("package-lock.json").unwrap_or_default();

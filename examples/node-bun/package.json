@@ -1,0 +1,14 @@
+{
+  "name": "bun",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon index.ts",
+    "start": "bun index.ts"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7",
+    "typescript": "^4.2.4"
+  }
+}
