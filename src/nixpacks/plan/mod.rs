@@ -62,7 +62,7 @@ impl BuildPlan {
         let hor_sep = format!(
             "{}{}{}",
             box_drawing::double::VERTICAL.dimmed(),
-            str::repeat(box_drawing::light::HORIZONTAL, BOX_WIDTH - 1),
+            str::repeat(box_drawing::light::HORIZONTAL, BOX_WIDTH - 1).dimmed(),
             box_drawing::double::VERTICAL.dimmed()
         );
 
@@ -138,8 +138,8 @@ fn print_row(title: &str, content: String) -> String {
     );
 
     for line in list_lines.iter().skip(1) {
-        output.push_str(&format!(
-            "\n{}{}{}{}{}",
+        output = format!(
+            "{output}\n{}{}{}{}{}",
             box_drawing::double::VERTICAL.dimmed(),
             console::pad_str("", first_column_width, console::Alignment::Left, None),
             middle_padding,
@@ -151,7 +151,7 @@ fn print_row(title: &str, content: String) -> String {
             )
             .white(),
             box_drawing::double::VERTICAL.dimmed()
-        ));
+        );
     }
 
     output
