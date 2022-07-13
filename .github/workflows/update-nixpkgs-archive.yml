@@ -1,0 +1,40 @@
+name: Update Nixpkgs Archive
+
+on:
+  schedule:
+    # At 00:00 on Sunday
+    - '0 0 * * 0'
+
+jobs:
+  update-archive:
+    name: Update Archive
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Update Archive
+        id: update-archive
+        shell: bash
+        run: |
+          REPO="NixOS/nixpkgs"
+          BRANCH="nixpkgs-unstable"
+          COMMIT_INFO="$(curl "https://api.github.com/repos/$REPO/commits/$BRANCH")"
+          SHA="$(echo $COMMIT_INFO | jq -r ".sha")"
+          URL="$(echo $COMMIT_INFO | jq -r ".html_url")"
+          DATE="$(date "+%Y-%m-%d %H:%M:%S %Z%z")"
+
+          sed -i "/\/\/ Last Modified:/c\/\/ Last Modified: ${DATE}" src/nixpacks/plan/generator.rs
+          sed -i "/\/\/ https:\/\/github.com\/NixOS\/nixpkgs\/commit/c\/\/ $URL" src/nixpacks/plan/generator.rs
+          sed -i "/static NIXPKGS_ARCHIVE: &str/c\static NIXPKGS_ARCHIVE: &str = \"$SHA\";" src/nixpacks/plan/generator.rs
+
+          echo "::set-output name=sha::$SHA"
+          echo "::set-output name=url::$URL"
+
+      - name: Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'Update nixpkgs archive to [`${{ steps.update-archive.outputs.sha }}`](${{ steps.update-archive.outputs.url }})'
