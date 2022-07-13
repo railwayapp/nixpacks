@@ -3,7 +3,7 @@ name: Update Nixpkgs Archive
 on:
   schedule:
     # Every Monday at 5 PM (UTC)
-    - '0 17 * * 1'
+    - cron: '0 17 * * 1'
 
 env:
   BRANCH_NAME: auto-update/nixpkgs-archive
