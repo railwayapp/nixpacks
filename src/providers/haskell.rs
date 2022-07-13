@@ -11,6 +11,7 @@ use crate::nixpacks::{
 use anyhow::Result;
 
 use super::Provider;
+use std::env::consts::ARCH;
 
 pub struct HaskellStackProvider {}
 
@@ -31,6 +32,21 @@ impl Provider for HaskellStackProvider {
             "binutils".to_string(),
             "make".to_string(),
         ]);
+        if ARCH == "aarch64" {
+            setup_phase.add_apt_pkgs(vec![
+                "libnuma1".to_string(),
+                "libnuma-dev".to_string(),
+                "libtinfo-dev".to_string(),
+                "libtinfo5".to_string(),
+                "libc6-dev".to_string(),
+                "libtinfo6".to_string(),
+                "llvm-11".to_string(),
+                "clang".to_string(),
+                "ninja-build".to_string(),
+                "zlib1g-dev".to_string(),
+            ])
+        }
+
         Ok(Some(setup_phase))
     }
 
