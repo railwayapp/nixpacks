@@ -2,12 +2,15 @@ use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
     environment::Environment,
+    nix::pkg::Pkg,
     phase::{InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{bail, Ok, Result};
 use regex::Regex;
 
 pub struct RubyProvider {}
+
+const BUNDLE_CACHE_DIR: &'static &str = &"/root/.bundle/cache";
 
 impl Provider for RubyProvider {
     fn name(&self) -> &str {
@@ -25,17 +28,31 @@ impl Provider for RubyProvider {
         }
         let mut setup_phase = SetupPhase::new(pkgs);
         setup_phase.add_apt_pkgs(vec!["procps".to_string()]);
+
+        if self.uses_postgres(app)? {
+            setup_phase.add_apt_pkgs(vec!["libpq-dev".to_string()]);
+        }
+
         setup_phase.add_cmd(
             "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh".to_string(),
         );
+
         setup_phase.add_cmd("rvm install ".to_string() + &self.get_ruby_version(app).unwrap());
         setup_phase.add_cmd("gem install ".to_string() + &self.get_bundler_version(app));
+        setup_phase
+            .add_cmd("echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile".to_string());
+
         Ok(Some(setup_phase))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let mut install_phase = InstallPhase::new("bundle install".to_string());
+        let mut install_phase = InstallPhase::default();
         install_phase.add_file_dependency("Gemfile*".to_string());
+        install_phase.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
+
+        install_phase.add_cmd(format!("gem install {}", self.get_bundler_version(app)));
+        install_phase.add_cmd("bundle install".to_string());
+
         if app.includes_file("package.json") {
             install_phase.add_file_dependency("package.json".to_string());
             install_phase
@@ -54,24 +71,34 @@ impl Provider for RubyProvider {
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        Ok(Some(StartPhase::new(self.get_start_command(app))))
+        if let Some(start_cmd) = self.get_start_command(app) {
+            let start_phase = StartPhase::new(start_cmd);
+            Ok(Some(start_phase))
+        } else {
+            Ok(None)
+        }
     }
 }
 
 impl RubyProvider {
-    fn get_start_command(&self, app: &App) -> String {
+    fn get_start_command(&self, app: &App) -> Option<String> {
         if self.is_rails_app(app) {
             if app.includes_file("rails") {
-                "bundle exec rails server -b 0.0.0.0 -p ${PORT:-3000}".to_string()
+                Some("bundle exec rails server -b 0.0.0.0 -p ${PORT:-3000}".to_string())
             } else {
-                "bundle exec bin/rails server -b 0.0.0.0 -p ${PORT:-3000} -e $RAILS_ENV".to_string()
+                Some(
+                    "bundle exec bin/rails server -b 0.0.0.0 -p ${PORT:-3000} -e $RAILS_ENV"
+                        .to_string(),
+                )
             }
         } else if app.includes_file("config/environment.rb") && app.includes_directory("script") {
-            "bundle exec ruby script/server -p ${PORT:-3000}".to_string()
+            Some("bundle exec ruby script/server -p ${PORT:-3000}".to_string())
         } else if app.includes_file("config.ru") {
-            "bundle exec rackup config.ru -p ${PORT:-3000}".to_string()
+            Some("bundle exec rackup config.ru -p ${PORT:-3000}".to_string())
+        } else if app.includes_file("Rakefile") {
+            Some("bundle exec rake".to_string())
         } else {
-            "bundle exec rake".to_string()
+            None
         }
     }
 
@@ -115,6 +142,14 @@ impl RubyProvider {
                 .read_file("config/application.rb")
                 .unwrap_or_default()
                 .contains("Rails::Application")
+    }
+
+    fn uses_postgres(&self, app: &App) -> Result<bool> {
+        if app.includes_file("Gemfile") {
+            let gemfile = app.read_file("Gemfile").unwrap_or_default();
+            return Ok(gemfile.contains("pg"));
+        }
+        Ok(false)
     }
 }
 
