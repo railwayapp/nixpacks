@@ -930,6 +930,9 @@ fn test_ruby_sinatra() -> Result<()> {
         plan.install.unwrap().cmds,
         Some(vec!["bundle install".to_string()])
     );
-    assert_eq!(plan.start.unwrap().cmd, Some("ruby app.rb".to_string()));
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("RACK_ENV=production bundle exec puma".to_string())
+    );
     Ok(())
 }
