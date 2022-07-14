@@ -2,30 +2,32 @@
 
 # Adapted from https://github.com/starship/starship/blob/master/install/install.sh
 
-help_text="# Options
-#
-#   -V, --verbose
-#     Enable verbose output for the installer
-#
-#   -f, -y, --force, --yes
-#     Skip the confirmation prompt during installation
-#
-#   -p, --platform
-#     Override the platform identified by the installer
-#
-#   -b, --bin-dir
-#     Override the bin installation directory
-#
-#   -a, --arch
-#     Override the architecture identified by the installer
-#
-#   -B, --base-url
-#     Override the base URL used for downloading releases
-#   -r, --remove
-#     Uninstall nixpacks
-#   -h, --help
-#     Get some help
-#
+help_text="Options
+
+   -V, --verbose
+   Enable verbose output for the installer
+
+   -f, -y, --force, --yes
+   Skip the confirmation prompt during installation
+
+   -p, --platform
+   Override the platform identified by the installer
+
+   -b, --bin-dir
+   Override the bin installation directory
+
+   -a, --arch
+   Override the architecture identified by the installer
+
+   -B, --base-url
+   Override the base URL used for downloading releases
+
+   -r, --remove
+   Uninstall nixpacks
+
+   -h, --help
+   Get some help
+
 "
 
 set -eu
@@ -50,6 +52,12 @@ SUPPORTED_TARGETS="x86_64-unknown-linux-gnu x86_64-unknown-linux-musl \
 
 info() {
   printf '%s\n' "${BOLD}${GREY}>${NO_COLOR} $*"
+}
+
+debug() {
+  if [[ -n "${VERBOSE}" ]]; then
+    printf '%s\n' "${BOLD}${GREY}>${NO_COLOR} $*"
+  fi
 }
 
 warn() {
@@ -97,7 +105,6 @@ download() {
   file="$1"
   url="$2"
   touch "$file"
-  printf "%s" "$file"
 
   if has curl; then
     cmd="curl --fail --silent --location --output $file $url"
@@ -128,12 +135,12 @@ unpack() {
 
   case "$archive" in
     *.tar.gz)
-      flags=$(test -n "${VERBOSE-}" && echo "-v" || echo "")
+      flags=$(test -n)
       ${sudo} tar "${flags}" -xzf "${archive}" -C "${bin_dir}"
       return 0
       ;;
     *.zip)
-      flags=$(test -z "${VERBOSE-}" && echo "-qq" || echo "")
+      flags=$(test -z)
       UNZIP="${flags}" ${sudo} unzip "${archive}" -d "${bin_dir}"
       return 0
       ;;
@@ -187,7 +194,7 @@ install() {
 
   # remove tempfile
 
-  rm "${archive}"
+  # rm "${archive}"
 }
 
 # Currently supporting:
@@ -412,6 +419,14 @@ while [ "$#" -gt 0 ]; do
     ;;
   esac
 done
+
+# non-empty VERBOSE enables verbose untarring
+if [ -n "${VERBOSE-}" ]; then
+  VERBOSE=v
+else
+  VERBOSE=
+fi
+
 if [ $UNINSTALL == 1 ]; then
   confirm "Are you sure you want to uninstall nixpacks?"
 
@@ -446,21 +461,20 @@ TARGET="$(detect_target "${ARCH}" "${PLATFORM}")"
 
 is_build_available "${ARCH}" "${PLATFORM}" "${TARGET}"
 
-printf "  %s\n" "${UNDERLINE}Configuration${NO_COLOR}"
-info "${BOLD}Bin directory${NO_COLOR}: ${GREEN}${BIN_DIR}${NO_COLOR}"
-info "${BOLD}Platform${NO_COLOR}:      ${GREEN}${PLATFORM}${NO_COLOR}"
-info "${BOLD}Arch${NO_COLOR}:          ${GREEN}${ARCH}${NO_COLOR}"
-info "${BOLD}Version${NO_COLOR}:       ${GREEN}${VERSION[0]}${NO_COLOR}"
 
-# non-empty VERBOSE enables verbose untarring
-if [ -n "${VERBOSE-}" ]; then
-  VERBOSE=v
-  info "${BOLD}Verbose${NO_COLOR}: yes"
-else
-  VERBOSE=
-fi
+print_configuration () {
+  if [[ -n "${VERBOSE}" ]]; then
+    printf "  %s\n" "${UNDERLINE}Configuration${NO_COLOR}"
+    debug "${BOLD}Bin directory${NO_COLOR}: ${GREEN}${BIN_DIR}${NO_COLOR}"
+    debug "${BOLD}Platform${NO_COLOR}:      ${GREEN}${PLATFORM}${NO_COLOR}"
+    debug "${BOLD}Arch${NO_COLOR}:          ${GREEN}${ARCH}${NO_COLOR}"
+    debug "${BOLD}Version${NO_COLOR}:       ${GREEN}${VERSION[0]}${NO_COLOR}"
+    printf '\n'
+  fi
+}
 
-printf '\n'
+print_configuration
+
 
 EXT=tar.gz
 if [ "${PLATFORM}" = "pc-windows-msvc" ]; then
@@ -468,7 +482,7 @@ if [ "${PLATFORM}" = "pc-windows-msvc" ]; then
 fi
 
 URL="${BASE_URL}/latest/download/nixpacks-v${VERSION[0]}-${TARGET}.${EXT}"
-info "Tarball URL: ${UNDERLINE}${BLUE}${URL}${NO_COLOR}"
+debug "Tarball URL: ${UNDERLINE}${BLUE}${URL}${NO_COLOR}"
 confirm "Install nixpacks ${GREEN}${VERSION[0]}${NO_COLOR} to ${BOLD}${GREEN}${BIN_DIR}${NO_COLOR}?"
 check_bin_dir "${BIN_DIR}"
 
@@ -476,6 +490,7 @@ install "${EXT}"
 
 printf "$GREEN"
   cat <<'EOF'
+
       +--------------+
      /|             /|
     / |            / |
@@ -487,5 +502,6 @@ printf "$GREEN"
    | /            | /
    |/             |/
    *--------------*
+
 EOF
 printf "$NO_COLOR"
