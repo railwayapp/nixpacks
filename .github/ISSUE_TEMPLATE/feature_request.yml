@@ -1,5 +1,5 @@
 name: 🚀 Feature Request
-description: Submit a proposal/request for new Nixpacks feature.
+description: Submit a proposal/request for new Nixpacks feature
 title: "Nixpacks Feature Request"
 body:
 - type: textarea
