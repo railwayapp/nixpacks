@@ -1,6 +1,6 @@
 name: 🐛 Bug Report
 description: Create a bug report to help us improve Nixpacks.
-title: ""
+title: "Nixpacks Bug Report"
 labels: ["bug"]
 body:
   - type: checkboxes
