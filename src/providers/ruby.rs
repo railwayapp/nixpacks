@@ -36,8 +36,8 @@ impl Provider for RubyProvider {
             "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh".to_string(),
         );
 
-        setup_phase.add_cmd("rvm install ".to_string() + &self.get_ruby_version(app).unwrap());
-        setup_phase.add_cmd("gem install ".to_string() + &self.get_bundler_version(app));
+        setup_phase.add_cmd(format!("rvm install {}", self.get_ruby_version(app)?));
+        setup_phase.add_cmd(format!("gem install {}", self.get_bundler_version(app)));
         setup_phase
             .add_cmd("echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile".to_string());
 
@@ -49,7 +49,6 @@ impl Provider for RubyProvider {
         install_phase.add_file_dependency("Gemfile*".to_string());
         install_phase.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
-        install_phase.add_cmd(format!("gem install {}", self.get_bundler_version(app)));
         install_phase.add_cmd("bundle install".to_string());
 
         if app.includes_file("package.json") {
@@ -157,26 +156,10 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_gemfile_version() -> Result<()> {
-        assert_eq!(
-            RubyProvider::get_ruby_version(
-                &RubyProvider {},
-                &App::new("./examples/ruby-gemfile")?
-            )?,
-            "ruby-2.7.2"
-        );
-
-        Ok(())
-    }
-
-    #[test]
     fn test_gemfile_lock_version() -> Result<()> {
         assert_eq!(
-            RubyProvider::get_ruby_version(
-                &RubyProvider {},
-                &App::new("./examples/ruby-gemfile-lock")?
-            )?,
-            "ruby-2.7.2"
+            RubyProvider::get_ruby_version(&RubyProvider {}, &App::new("./examples/ruby")?)?,
+            "ruby-3.1.2"
         );
 
         Ok(())
@@ -189,6 +172,19 @@ mod test {
             &App::new("./examples/ruby-no-version")?,
         )
         .is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_file() -> Result<()> {
+        assert_eq!(
+            RubyProvider::get_ruby_version(
+                &RubyProvider {},
+                &App::new("./examples/ruby-rails-postgres")?
+            )?,
+            "3.1.2"
+        );
+
         Ok(())
     }
 }
