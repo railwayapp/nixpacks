@@ -1,7 +1,7 @@
 blank_issues_enabled: true
 version: 2.1
 contact_links:
-  - name: 📖 Nixpacks documentation
+  - name: 📖 Nixpacks Documentation
     url: https://nixpacks.com/
     about: Documentation about Nixpacks
   - name: 🚅 Railway
