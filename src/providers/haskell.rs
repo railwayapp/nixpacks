@@ -31,6 +31,7 @@ impl Provider for HaskellStackProvider {
             "gcc".to_string(),
             "binutils".to_string(),
             "make".to_string(),
+            "zlib1g-dev".to_string(),
         ]);
         if ARCH == "aarch64" {
             setup_phase.add_apt_pkgs(vec![
