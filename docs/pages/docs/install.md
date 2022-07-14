@@ -17,7 +17,7 @@ brew install railwayapp/tap/nixpacks
 Download Nixpacks from GH releases and install automatically
 
 ```sh
-curl -fsSL https://nixpacks.com/install.sh | bash
+curl -sSL https://nixpacks.com/install.sh | bash
 ```
 
 ## Scoop
