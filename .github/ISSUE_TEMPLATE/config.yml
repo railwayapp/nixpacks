@@ -1,10 +1,10 @@
 blank_issues_enabled: true
 version: 2.1
 contact_links:
-  - name: Nixpacks documentation
+  - name: 📖 Nixpacks documentation
     url: https://nixpacks.com/
     about: Documentation about Nixpacks
-  - name: Railway
+  - name: 🚅 Railway
     url: https://railway.app/
     about: Railway homepage
   - name: Railway Discord
