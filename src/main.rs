@@ -267,15 +267,3 @@ fn get_default_cache_key(path: &str) -> Result<Option<String>> {
         Ok(None)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_get_default_cache_key() {
-        let path = "./examples/node";
-        let cache_key = get_default_cache_key(path).unwrap();
-        assert_eq!(cache_key, Some("2UWr73QvCk".to_string()));
-    }
-}
