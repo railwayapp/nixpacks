@@ -2,7 +2,6 @@ use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
     environment::Environment,
-    nix::pkg::Pkg,
     phase::{InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{bail, Ok, Result};

@@ -904,7 +904,11 @@ fn test_zig_gyro() -> Result<()> {
 
 #[test]
 fn test_ruby_rails() -> Result<()> {
-    let plan = simple_gen_plan("./examples/ruby-rails");
+    let plan = simple_gen_plan("./examples/ruby-rails-postgres");
+    assert_eq!(
+        plan.setup.unwrap().apt_pkgs,
+        Some(vec!["procps".to_string(), "libpq-dev".to_string()])
+    );
     assert_eq!(
         plan.install.unwrap().cmds,
         Some(vec!["bundle install".to_string()])
