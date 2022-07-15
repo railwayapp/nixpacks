@@ -315,11 +315,19 @@ impl PythonProvider {
     }
 
     fn uses_numpy(app: &App) -> Result<bool> {
-        Ok(app.includes_file("requirements.txt")
+        let requirements_numpy = app.includes_file("requirements.txt")
             && app
                 .read_file("requirements.txt")?
                 .to_lowercase()
-                .contains("numpy"))
+                .contains("numpy");
+
+        let project_numpy = app.includes_file("pyproject.toml")
+            && app
+                .read_file("pyproject.toml")?
+                .to_lowercase()
+                .contains("numpy");
+
+        Ok(requirements_numpy && project_numpy)
     }
 }
 
