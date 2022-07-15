@@ -327,7 +327,7 @@ impl PythonProvider {
                 .to_lowercase()
                 .contains("numpy");
 
-        Ok(requirements_numpy && project_numpy)
+        Ok(requirements_numpy || project_numpy)
     }
 }
 
