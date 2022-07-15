@@ -47,7 +47,15 @@ impl Provider for PythonProvider {
             pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
         }
 
-        Ok(Some(SetupPhase::new(pkgs)))
+        let mut setup_phase = SetupPhase::new(pkgs);
+
+        // Numpy needs some C headers to be available
+        // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
+        if PythonProvider::uses_numpy(app)? {
+            setup_phase.add_libraries(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
+        }
+
+        Ok(Some(setup_phase))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
@@ -305,6 +313,22 @@ impl PythonProvider {
                 .ok_or_else(|| anyhow::anyhow!("failed to load pyproject.toml"))?),
         ))
     }
+
+    fn uses_numpy(app: &App) -> Result<bool> {
+        let requirements_numpy = app.includes_file("requirements.txt")
+            && app
+                .read_file("requirements.txt")?
+                .to_lowercase()
+                .contains("numpy");
+
+        let project_numpy = app.includes_file("pyproject.toml")
+            && app
+                .read_file("pyproject.toml")?
+                .to_lowercase()
+                .contains("numpy");
+
+        Ok(requirements_numpy || project_numpy)
+    }
 }
 
 #[cfg(test)]
@@ -352,6 +376,19 @@ mod test {
             Pkg::new("python27")
         );
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_numpy_detection() -> Result<()> {
+        assert_eq!(
+            PythonProvider::uses_numpy(&App::new("./examples/python")?)?,
+            false
+        );
+        assert_eq!(
+            PythonProvider::uses_numpy(&App::new("./examples/python-numpy")?)?,
+            true
+        );
         Ok(())
     }
 }

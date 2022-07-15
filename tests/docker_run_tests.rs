@@ -359,6 +359,13 @@ fn test_python_poetry() {
 }
 
 #[test]
+fn test_python_numpy() {
+    let name = simple_build("./examples/python-numpy");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Python numpy and pandas"));
+}
+
+#[test]
 fn test_rust_custom_version() {
     let name = Uuid::new_v4().to_string();
     create_docker_image(
