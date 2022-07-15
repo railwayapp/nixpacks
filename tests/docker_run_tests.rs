@@ -362,7 +362,7 @@ fn test_python_poetry() {
 fn test_python_numpy() {
     let name = simple_build("./examples/python-numpy");
     let output = run_image(name, None);
-    assert!(output.contains("Hello from Python numpy"));
+    assert!(output.contains("Hello from Python numpy and pandas"));
 }
 
 #[test]
