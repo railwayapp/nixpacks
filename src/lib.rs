@@ -68,7 +68,7 @@ pub fn create_docker_image(
     build_options: &DockerBuilderOptions,
 ) -> Result<()> {
     let app = App::new(path)?;
-    let environment = Environment::from_envs(envs)?;
+    let environment = create_environment(&app, envs)?;
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.to_owned());
     let plan = generator.generate_plan(&app, &environment)?;
@@ -78,4 +78,13 @@ pub fn create_docker_image(
     builder.create_image(app.source.to_str().unwrap(), &plan, &environment)?;
 
     Ok(())
+}
+
+pub fn create_environment(
+    app: &App, 
+    envs: Vec<&str>
+) -> Result<Environment> {
+    let environment = Environment::from_envs(envs)?;
+
+    return Ok(environment);
 }

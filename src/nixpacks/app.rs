@@ -8,6 +8,7 @@ use globset::Glob;
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use walkdir::WalkDir;
+use dotenv_parser::parse_dotenv;
 
 pub static ASSETS_DIR: &str = "/assets/";
 pub type StaticAssets = HashMap<String, String>;
@@ -138,6 +139,24 @@ impl App {
             format!("Error reading {} as JSON", relative_path.to_str().unwrap())
         })?;
         Ok(value)
+    }
+
+    pub fn read_dotenv<T>(&self, name: &str) -> Result<T>
+    where
+        T: DeserializeOwned,
+    {      
+        let contents = self.read_file(name)?;
+        let value = parse_dotenv(contents.as_str()).unwrap().with_context(|| {
+            let relative_path = self.strip_source_path(Path::new(name)).unwrap();
+            format!("Error reading {} as TOML", relative_path.to_str().unwrap())
+        })?;
+        
+        // .with_context(|| {
+        //     let relative_path = self.strip_source_path(Path::new(name)).unwrap();
+        //     format!("Error reading {} as DOTENV", relative_path.to_str().unwrap())
+        // })?;
+
+        return Ok(value);
     }
 
     pub fn read_toml<T>(&self, name: &str) -> Result<T>
