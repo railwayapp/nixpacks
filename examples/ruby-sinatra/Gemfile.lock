@@ -3,7 +3,10 @@ GEM
   specs:
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
-    rack (2.2.3)
+    nio4r (2.5.8)
+    puma (5.6.4)
+      nio4r (~> 2.0)
+    rack (2.2.4)
     rack-protection (2.2.0)
       rack
     ruby2_keywords (0.0.5)
@@ -15,14 +18,14 @@ GEM
     tilt (2.0.10)
 
 PLATFORMS
-  x86_64-darwin-20
-  x86_64-linux
+  arm64-darwin-21
 
 DEPENDENCIES
-  sinatra
+  puma (~> 5.6.4)
+  sinatra (~> 2.2.0)
 
 RUBY VERSION
-   ruby 2.7.2p137
+   ruby 3.1.2p20
 
 BUNDLED WITH
-   2.2.8
+   2.3.7
