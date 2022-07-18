@@ -51,6 +51,10 @@ impl Provider for RubyProvider {
 
         install_phase.add_cmd("bundle install".to_string());
 
+        // Ensure that the ruby executable is in the PATH
+        let ruby_version = self.get_ruby_version(app)?;
+        install_phase.add_path(format!("/usr/local/rvm/rubies/{}/bin", ruby_version));
+
         if app.includes_file("package.json") {
             install_phase.add_file_dependency("package.json".to_string());
             install_phase
