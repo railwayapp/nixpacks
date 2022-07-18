@@ -31,7 +31,7 @@ pub struct GeneratePlanOptions {
 }
 
 pub struct NixpacksBuildPlanGenerator<'a> {
-    providers: Vec<&'a dyn Provider>,
+    providers: &'a [&'a dyn Provider],
     matched_provider: Option<&'a dyn Provider>,
     options: GeneratePlanOptions,
 }
@@ -39,7 +39,7 @@ pub struct NixpacksBuildPlanGenerator<'a> {
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan> {
         // If options.plan_path is specified, use that build plan
-        if let Some(plan_path) = self.options.clone().plan_path {
+        if let Some(plan_path) = &self.options.plan_path {
             let plan_json = fs::read_to_string(plan_path).context("Reading build plan")?;
             let plan: BuildPlan =
                 serde_json::from_str(&plan_json).context("Deserializing build plan")?;
@@ -81,11 +81,11 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
     }
 }
 
-impl<'a> NixpacksBuildPlanGenerator<'a> {
-    pub fn new(
-        providers: Vec<&'a dyn Provider>,
+impl NixpacksBuildPlanGenerator<'_> {
+    pub fn new<'a>(
+        providers: &'a [&'a dyn Provider],
         options: GeneratePlanOptions,
-    ) -> NixpacksBuildPlanGenerator {
+    ) -> NixpacksBuildPlanGenerator<'a> {
         NixpacksBuildPlanGenerator {
             providers,
             matched_provider: None,
@@ -94,7 +94,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
     }
 
     fn detect(&mut self, app: &App, environment: &Environment) -> Result<()> {
-        for provider in self.providers.clone() {
+        for &provider in self.providers {
             let matches = provider.detect(app, environment)?;
             if matches {
                 self.matched_provider = Some(provider);
