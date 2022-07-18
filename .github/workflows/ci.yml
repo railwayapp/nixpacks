@@ -70,7 +70,7 @@ jobs:
         with:
           command: clippy
           # Set linting rules for clippy
-          args: --all-targets --all-features -- -D clippy::wildcard_dependencies 
+          args: --all-targets --all-features -- -D warnings 
 
   test-plan:
     name: Test Suite
