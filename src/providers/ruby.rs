@@ -47,7 +47,7 @@ impl Provider for RubyProvider {
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let mut install_phase = InstallPhase::default();
         install_phase.add_file_dependency("Gemfile*".to_string());
-        install_phase.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
+        install_phase.add_cache_directory((*BUNDLE_CACHE_DIR).to_string());
 
         install_phase.add_cmd("bundle install".to_string());
 

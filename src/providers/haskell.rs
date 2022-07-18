@@ -45,7 +45,7 @@ impl Provider for HaskellStackProvider {
                 "clang".to_string(),
                 "ninja-build".to_string(),
                 "zlib1g-dev".to_string(),
-            ])
+            ]);
         }
 
         Ok(Some(setup_phase))
