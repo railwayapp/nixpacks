@@ -54,7 +54,7 @@ impl JavaProvider {
         }
     }
 
-    fn get_start_cmd(&self, app: &App) -> std::string::String {
+    fn get_start_cmd(&self, app: &App) -> String {
         if app.includes_file("pom.xml") {
             format!(
                 "java {} $JAVA_OPTS -jar target/*jar",
