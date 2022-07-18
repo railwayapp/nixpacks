@@ -127,6 +127,7 @@ impl Provider for StaticfileProvider {
 }
 
 impl StaticfileProvider {
+    #[must_use]
     pub fn get_root(app: &App, env: &Environment, staticfile_root: String) -> String {
         let mut root = "".to_string();
         if let Some(staticfile_root) = env.get_config_variable("STATICFILE_ROOT") {

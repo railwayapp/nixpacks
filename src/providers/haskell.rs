@@ -55,6 +55,7 @@ impl Provider for HaskellStackProvider {
 }
 
 #[derive(Deserialize)]
+#[allow(clippy::zero_sized_map_values)]
 struct HaskellStackPackageYaml {
     pub executables: BTreeMap<String, HaskellStackExecutableDefinition>,
 }

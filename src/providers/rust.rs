@@ -44,7 +44,7 @@ impl Provider for RustProvider {
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
 
-        if let Some(target) = RustProvider::get_target(app, env)? {
+        if let Some(target) = RustProvider::get_target(app, env) {
             rust_pkg = rust_pkg.set_override("targets", format!("[\"{target}\"]").as_str());
         }
 
@@ -52,7 +52,7 @@ impl Provider for RustProvider {
             SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
 
         // Include the rust toolchain file so we can install that rust version with Nix
-        if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app)? {
+        if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
             setup_phase.add_file_dependency(toolchain_file);
         }
 
@@ -64,7 +64,7 @@ impl Provider for RustProvider {
     }
 
     fn build(&self, app: &App, env: &Environment) -> Result<Option<BuildPhase>> {
-        let mut build_phase = match RustProvider::get_target(app, env)? {
+        let mut build_phase = match RustProvider::get_target(app, env) {
             Some(target) => {
                 let mut build_phase =
                     BuildPhase::new(format!("cargo build --release --target {target}"));
@@ -88,12 +88,12 @@ impl Provider for RustProvider {
             }
         };
 
-        build_phase.add_cache_directory(CARGO_GIT_CACHE_DIR.to_string());
-        build_phase.add_cache_directory(CARGO_REGISTRY_CACHE_DIR.to_string());
+        build_phase.add_cache_directory((*CARGO_GIT_CACHE_DIR).to_string());
+        build_phase.add_cache_directory((*CARGO_REGISTRY_CACHE_DIR).to_string());
 
         if RustProvider::get_app_name(app)?.is_some() {
             // Cache target directory
-            build_phase.add_cache_directory(CARGO_TARGET_CACHE_DIR.to_string());
+            build_phase.add_cache_directory((*CARGO_TARGET_CACHE_DIR).to_string());
         }
 
         Ok(Some(build_phase))
@@ -103,7 +103,7 @@ impl Provider for RustProvider {
         let name = RustProvider::get_app_name(app)?;
 
         if let Some(name) = name {
-            let start_phase = match RustProvider::get_target(app, env)? {
+            let start_phase = match RustProvider::get_target(app, env) {
                 Some(_) => {
                     let binary_file = format!("./{name}");
                     let mut start_phase = StartPhase::new(format!("./{name}"));
@@ -143,12 +143,12 @@ impl RustProvider {
         }
     }
 
-    fn get_target(_app: &App, env: &Environment) -> Result<Option<String>> {
+    fn get_target(_app: &App, env: &Environment) -> Option<String> {
         // All the user to use the default target instead of compiling with musl
-        if !env.is_config_variable_truthy("NO_MUSL") {
-            Ok(Some(format!("{}-unknown-linux-musl", ARCH)))
+        if env.is_config_variable_truthy("NO_MUSL") {
+            None
         } else {
-            Ok(None)
+            Some(format!("{}-unknown-linux-musl", ARCH))
         }
     }
 
@@ -162,13 +162,13 @@ impl RustProvider {
         Ok(None)
     }
 
-    fn get_rust_toolchain_file(app: &App) -> Result<Option<String>> {
+    fn get_rust_toolchain_file(app: &App) -> Option<String> {
         if app.includes_file("rust-toolchain") {
-            Ok(Some("rust-toolchain".to_string()))
+            Some("rust-toolchain".to_string())
         } else if app.includes_file("rust-toolchain.toml") {
-            Ok(Some("rust-toolchain.toml".to_string()))
+            Some("rust-toolchain.toml".to_string())
         } else {
-            Ok(None)
+            None
         }
     }
 
@@ -180,7 +180,7 @@ impl RustProvider {
             ));
         }
 
-        if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app)? {
+        if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
             return Ok(Pkg::new(
                 format!("(rust-bin.fromRustupToolchainFile ./{})", toolchain_file).as_str(),
             ));
@@ -190,11 +190,10 @@ impl RustProvider {
             Some(toml_file) => {
                 let version = toml_file.package.rust_version;
 
-                version
-                    .map(|version| {
-                        Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str())
-                    })
-                    .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE))
+                version.map_or_else(
+                    || Pkg::new(DEFAULT_RUST_PACKAGE),
+                    |version| Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str()),
+                )
             }
             None => Pkg::new(DEFAULT_RUST_PACKAGE),
         };
