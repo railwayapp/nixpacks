@@ -113,13 +113,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
 
         let env_var_pkgs = environment
             .get_config_variable("PKGS")
-            .map(|pkg_string| {
-                pkg_string
-                    .replace('-', ".")
-                    .split(' ')
-                    .map(Pkg::new)
-                    .collect::<Vec<_>>()
-            })
+            .map(|pkg_string| pkg_string.split(' ').map(Pkg::new).collect::<Vec<_>>())
             .unwrap_or_default();
 
         // Add custom user packages
