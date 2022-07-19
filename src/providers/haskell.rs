@@ -13,6 +13,9 @@ use anyhow::Result;
 use super::Provider;
 use std::env::consts::ARCH;
 
+const STACK_CACHE_DIR: &'static &str = &"/root/.stack";
+const STACK_WORK_CACHE_DIR: &'static &str = &".stack-work";
+
 pub struct HaskellStackProvider {}
 
 impl Provider for HaskellStackProvider {
@@ -52,22 +55,29 @@ impl Provider for HaskellStackProvider {
     }
 
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        Ok(Some(InstallPhase::new("stack setup".to_string())))
+        let mut install_phase = InstallPhase::new("stack setup".to_string());
+        install_phase.add_cache_directory(STACK_CACHE_DIR.to_string());
+
+        Ok(Some(install_phase))
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new("stack build".to_string())))
+        let mut build_phase = BuildPhase::new("stack install".to_string());
+        build_phase.add_cache_directory(STACK_CACHE_DIR.to_string());
+        build_phase.add_cache_directory(STACK_WORK_CACHE_DIR.to_string());
+
+        Ok(Some(build_phase))
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         let package: HaskellStackPackageYaml = app.read_yaml("package.yaml")?;
         let exe_names: Vec<String> = package.executables.keys().cloned().collect();
-        Ok(Some(StartPhase::new(format!(
-            "stack exec {}",
-            exe_names
-                .get(0)
-                .ok_or_else(|| anyhow::anyhow!("Failed to get executable name"))?
-        ))))
+
+        let name = exe_names
+            .get(0)
+            .ok_or_else(|| anyhow::anyhow!("Failed to get executable name"))?;
+
+        Ok(Some(StartPhase::new(format!("/root/.local/bin/{name}",))))
     }
 }
 
