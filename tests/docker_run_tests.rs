@@ -83,7 +83,7 @@ fn run_image(name: String, cfg: Option<Config>) -> String {
     cmd.stdout(Stdio::piped());
 
     let mut child = cmd.spawn().unwrap();
-    let secs = Duration::from_secs(5);
+    let secs = Duration::from_secs(20);
 
     let _status_code = match child.wait_timeout(secs).unwrap() {
         Some(status) => status.code(),
