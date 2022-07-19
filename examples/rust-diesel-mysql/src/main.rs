@@ -26,6 +26,11 @@ fn get_postgress_connection() -> PgConnection {
 
 fn main() {
     // get_mysql_connection();
+    // let o = Command::new("find / -name libpq.so")
+    //     .output()
+    //     .expect("the command to run");
+    println!("{:?}", o.stdout);
     get_postgress_connection();
+
     println!("Hello from rust")
 }

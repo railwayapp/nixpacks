@@ -8,6 +8,8 @@ use crate::nixpacks::{
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Context, Result};
+use cargo_toml::Dependency::Detailed;
+use cargo_toml::Manifest;
 use serde::{Deserialize, Serialize};
 
 static RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
@@ -23,17 +25,6 @@ pub struct CargoTomlPackage {
     pub version: String,
     #[serde(rename = "rust-version")]
     pub rust_version: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CargoTomlDependency {
-    pub features: Option<Vec<String>>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CargoToml {
-    pub package: CargoTomlPackage,
-    pub dependencies: HashMap<String, CargoTomlDependency>,
 }
 
 pub struct RustProvider {}
@@ -153,11 +144,12 @@ impl Provider for RustProvider {
 impl RustProvider {
     fn get_app_name(app: &App) -> Result<Option<String>> {
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
-            let name = toml_file.package.name;
-            Ok(Some(name))
-        } else {
-            Ok(None)
+            if let Some(package) = toml_file.package {
+                let name = package.name;
+                return Ok(Some(name));
+            }
         }
+        Ok(None)
     }
 
     fn get_target(_app: &App, env: &Environment) -> Result<Option<String>> {
@@ -169,10 +161,9 @@ impl RustProvider {
         }
     }
 
-    fn parse_cargo_toml(app: &App) -> Result<Option<CargoToml>> {
+    fn parse_cargo_toml(app: &App) -> Result<Option<Manifest>> {
         if app.includes_file("Cargo.toml") {
-            let cargo_toml: CargoToml =
-                app.read_toml("Cargo.toml").context("Reading Cargo.toml")?;
+            let cargo_toml: Manifest = app.read_toml("Cargo.toml").context("Reading Cargo.toml")?;
             return Ok(Some(cargo_toml));
         }
 
@@ -204,15 +195,17 @@ impl RustProvider {
         }
 
         let pkg = match RustProvider::parse_cargo_toml(app)? {
-            Some(toml_file) => {
-                let version = toml_file.package.rust_version;
-
-                version
-                    .map(|version| {
-                        Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str())
-                    })
-                    .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE))
-            }
+            Some(toml_file) => toml_file
+                .package
+                .map(|package| {
+                    package
+                        .rust_version
+                        .map(|version| {
+                            Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str())
+                        })
+                        .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE))
+                })
+                .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE)),
             None => Pkg::new(DEFAULT_RUST_PACKAGE),
         };
 
@@ -221,8 +214,8 @@ impl RustProvider {
 
     fn get_dependency_features(app: &App, dependency_name: &str) -> Option<Vec<String>> {
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app).unwrap() {
-            if let Some(dep) = toml_file.dependencies.get(dependency_name) {
-                return dep.features.to_owned();
+            if let Detailed(dep) = toml_file.dependencies.get(dependency_name).unwrap() {
+                return Some(dep.features.clone());
             }
         }
         None
