@@ -60,7 +60,7 @@ impl Provider for RustProvider {
         if let Some(features) = RustProvider::get_dependency_features(app, "diesel") {
             if features.contains(&"mysql".to_string()) {
                 println!("adding package 11111");
-                setup_phase.add_pkgs(&mut vec![Pkg::new("mariadb-connector-c")]);
+                setup_phase.add_pkgs(&mut vec![Pkg::new("libmysqlconnectorcpp")]);
             }
         }
 

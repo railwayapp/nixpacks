@@ -1,6 +1,6 @@
 use std::env;
 
-use diesel::mysql::MysqlConnection;
+// use diesel::mysql::MysqlConnection;
 use diesel::pg::PgConnection;
 use diesel::Connection;
 
@@ -19,9 +19,13 @@ fn get_postgress_connection() -> PgConnection {
     PgConnection::establish(&connection_url).expect("Error connecting to the postgress database")
 }
 
+// fn get_mysql_connection() {
+//     MysqlConnection::establish("mysql://mysql:mysql@127.0.0.1:3306")
+//         .expect("Error connecting to database")
+// }
+
 fn main() {
-    MysqlConnection::establish("mysql://mysql:mysql@127.0.0.1:3306")
-        .expect("Error connecting to database");
+    // get_mysql_connection();
     get_postgress_connection();
     println!("Hello from rust")
 }
