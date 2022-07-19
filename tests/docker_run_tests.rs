@@ -261,12 +261,12 @@ fn run_mysql() -> Container {
             environment_variables: EnvironmentVariables::from([
                 ("MYSQL_USER".to_string(), "mysql".to_string()),
                 ("MYSQL_DATABASE".to_string(), "mysql".to_string()),
-                ("MYSQL_PASSWORD".to_string(), password),
-                ("MYSQL_ROOT_HOST".to_string(), container_name),
+                ("MYSQL_PASSWORD".to_string(), "mysql".to_string()),
             ]),
             network: None,
         }),
     }
+    // ("MYSQL_ROOT_HOST".to_string(), container_name),
 }
 
 #[test]
@@ -440,8 +440,9 @@ fn test_rust_ring() {
     let output = run_image(name, None);
     assert!(output.contains("Hello from rust"));
 }
+
 #[test]
-fn test_mysql_ring() {
+fn test_rust_diesel_mysql() {
     // Create the network
     let n = create_network();
     let network_name = n.name.clone();
