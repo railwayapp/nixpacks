@@ -540,7 +540,5 @@ fn test_ruby_rails() {
     stop_and_remove_container(container_name);
     remove_network(network_name);
 
-    println!("OUTPUT: {}", output);
-
     assert!(output.contains("Rails 7"));
 }
