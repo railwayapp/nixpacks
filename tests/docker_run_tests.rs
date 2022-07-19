@@ -230,7 +230,7 @@ fn run_mysql() -> Container {
     let container_name = format!("mysql-{}", hash);
     let password = hash;
 
-    // run
+    // Run
     docker_cmd.arg("run");
 
     // Set Needed Envvars
@@ -241,7 +241,7 @@ fn run_mysql() -> Container {
     // Run detached
     docker_cmd.arg("-d");
 
-    // attach name
+    // Attach name
     docker_cmd.arg("--name").arg(container_name.clone());
 
     // Assign image
@@ -266,6 +266,7 @@ fn run_mysql() -> Container {
             network: None,
         }),
     }
+    // TODO MIGHT NEED THIS LATER
     // ("MYSQL_ROOT_HOST".to_string(), container_name),
 }
 
