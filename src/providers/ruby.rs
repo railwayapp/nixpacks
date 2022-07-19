@@ -41,7 +41,6 @@ impl Provider for RubyProvider {
         setup_phase.add_cmd(format!("gem install {}", self.get_bundler_version(app)));
         setup_phase
             .add_cmd("echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile".to_string());
-        setup_phase.add_cmd("source /usr/local/rvm/scripts/rvm".to_string());
 
         Ok(Some(setup_phase))
     }
