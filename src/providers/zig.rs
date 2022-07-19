@@ -1,5 +1,6 @@
 use anyhow::Result;
 use std::env::consts::ARCH;
+use std::ffi::OsStr;
 
 use crate::nixpacks::{
     app::App,
@@ -60,13 +61,14 @@ impl Provider for ZigProvider {
             "./zig-out/bin/{}",
             app.source
                 .file_name()
-                .map(|f| f.to_str())
-                .map_or("*", |s| s.unwrap())
+                .map(OsStr::to_str)
+                .map_or("*", Option::unwrap)
         ))))
     }
 }
 
 impl ZigProvider {
+    #[must_use]
     pub fn get_gyro_download_url() -> String {
         let gyro_supported_archs: Vec<&str> = vec!["x86_64", "aarch64", "i386"];
         if gyro_supported_archs.contains(&ARCH) {

@@ -2,6 +2,7 @@ use std::{
     collections::hash_map::DefaultHasher,
     env,
     hash::{Hash, Hasher},
+    string::ToString,
 };
 
 use anyhow::Result;
@@ -161,7 +162,7 @@ fn main() -> Result<()> {
 
     let install_cmd = matches.value_of("install_cmd").map(|s| vec![s.to_string()]);
     let build_cmd = matches.value_of("build_cmd").map(|s| vec![s.to_string()]);
-    let start_cmd = matches.value_of("start_cmd").map(|s| s.to_string());
+    let start_cmd = matches.value_of("start_cmd").map(ToString::to_string);
     let pkgs = match matches.values_of("pkgs") {
         Some(values) => values.map(Pkg::new).collect::<Vec<_>>(),
         None => Vec::new(),
@@ -182,7 +183,7 @@ fn main() -> Result<()> {
         None => Vec::new(),
     };
 
-    let plan_path = matches.value_of("plan").map(|n| n.to_string());
+    let plan_path = matches.value_of("plan").map(ToString::to_string);
 
     let plan_options = &GeneratePlanOptions {
         custom_install_cmd: install_cmd,
@@ -205,9 +206,9 @@ fn main() -> Result<()> {
         }
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").expect("required");
-            let name = matches.value_of("name").map(|n| n.to_string());
-            let out_dir = matches.value_of("out").map(|n| n.to_string());
-            let mut cache_key = matches.value_of("cache-key").map(|n| n.to_string());
+            let name = matches.value_of("name").map(ToString::to_string);
+            let out_dir = matches.value_of("out").map(ToString::to_string);
+            let mut cache_key = matches.value_of("cache-key").map(ToString::to_string);
             let no_cache = matches.is_present("no-cache");
 
             // Default to absolute `path` of the source that is being built as the cache-key if not disabled
@@ -219,16 +220,16 @@ fn main() -> Result<()> {
 
             let tags = matches
                 .values_of("tag")
-                .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
+                .map(|values| values.map(ToString::to_string).collect::<Vec<_>>())
                 .unwrap_or_default();
 
             let labels = matches
                 .values_of("label")
-                .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
+                .map(|values| values.map(ToString::to_string).collect::<Vec<_>>())
                 .unwrap_or_default();
             let platform = matches
                 .values_of("platform")
-                .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
+                .map(|values| values.map(ToString::to_string).collect::<Vec<_>>())
                 .unwrap_or_default();
 
             let build_options = &DockerBuilderOptions {

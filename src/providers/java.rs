@@ -39,7 +39,7 @@ impl Provider for JavaProvider {
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        let start_cmd = self.get_start_cmd(app)?;
+        let start_cmd = self.get_start_cmd(app);
         Ok(Some(StartPhase::new(start_cmd)))
     }
 }
@@ -54,14 +54,14 @@ impl JavaProvider {
         }
     }
 
-    fn get_start_cmd(&self, app: &App) -> Result<String> {
+    fn get_start_cmd(&self, app: &App) -> String {
         if app.includes_file("pom.xml") {
-            Ok(format!(
+            format!(
                 "java {} $JAVA_OPTS -jar target/*jar",
                 self.get_port_config(app)
-            ))
+            )
         } else {
-            Ok("java $JAVA_OPTS -jar target/*jar".to_string())
+            "java $JAVA_OPTS -jar target/*jar".to_string()
         }
     }
     fn get_port_config(&self, app: &App) -> String {

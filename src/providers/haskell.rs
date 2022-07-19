@@ -45,7 +45,7 @@ impl Provider for HaskellStackProvider {
                 "clang".to_string(),
                 "ninja-build".to_string(),
                 "zlib1g-dev".to_string(),
-            ])
+            ]);
         }
 
         Ok(Some(setup_phase))
@@ -72,6 +72,7 @@ impl Provider for HaskellStackProvider {
 }
 
 #[derive(Deserialize)]
+#[allow(clippy::zero_sized_map_values)]
 struct HaskellStackPackageYaml {
     pub executables: BTreeMap<String, HaskellStackExecutableDefinition>,
 }

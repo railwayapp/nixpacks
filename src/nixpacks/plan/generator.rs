@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, fs, string::ToString};
 
 use super::{BuildPlan, PlanGenerator};
 use crate::{
@@ -82,6 +82,7 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
 }
 
 impl<'a> NixpacksBuildPlanGenerator<'a> {
+    #[must_use]
     pub fn new(
         providers: Vec<&'a dyn Provider>,
         options: GeneratePlanOptions,
@@ -125,7 +126,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
             .map(|lib_string| {
                 lib_string
                     .split(' ')
-                    .map(|s| s.to_string())
+                    .map(ToString::to_string)
                     .collect::<Vec<String>>()
             })
             .unwrap_or_default();
@@ -139,7 +140,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
             .map(|apt_pkgs_string| {
                 apt_pkgs_string
                     .split(' ')
-                    .map(|s| s.to_string())
+                    .map(ToString::to_string)
                     .collect::<Vec<String>>()
             })
             .unwrap_or_default();
@@ -149,7 +150,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         setup_phase.add_apt_pkgs(apt_pkgs);
 
         if self.options.pin_pkgs {
-            setup_phase.set_archive(NIXPKGS_ARCHIVE.to_string())
+            setup_phase.set_archive(NIXPKGS_ARCHIVE.to_string());
         }
 
         Ok(setup_phase)
@@ -169,7 +170,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         if let Some(install_cache_dirs) = environment.get_config_variable("INSTALL_CACHE_DIRS") {
             let custom_install_cache_dirs = install_cache_dirs
                 .split(',')
-                .map(|s| s.to_string())
+                .map(ToString::to_string)
                 .collect::<Vec<_>>();
 
             install_phase.cache_directories = match install_phase.cache_directories {
@@ -207,7 +208,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
         if let Some(build_cache_dirs) = environment.get_config_variable("BUILD_CACHE_DIRS") {
             let custom_build_cache_dirs = build_cache_dirs
                 .split(',')
-                .map(|s| s.to_string())
+                .map(ToString::to_string)
                 .collect::<Vec<_>>();
 
             build_phase.cache_directories = match build_phase.cache_directories {
@@ -311,13 +312,14 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
             } else if procfile.is_empty() {
                 Ok(None)
             } else {
-                let process = Vec::from_iter(procfile.values())[0].to_string();
+                let process = procfile.values().collect::<Vec<_>>()[0].to_string();
                 Ok(Some(process))
             }
         } else {
             Ok(None)
         }
     }
+
     fn get_procfile_release_cmd(&self, app: &App) -> Result<Option<String>> {
         if app.includes_file("Procfile") {
             let procfile: HashMap<String, String> =

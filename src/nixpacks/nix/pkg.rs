@@ -10,6 +10,7 @@ pub struct Pkg {
 }
 
 impl Pkg {
+    #[must_use]
     pub fn new(name: &str) -> Pkg {
         Pkg {
             name: name.to_string(),
@@ -18,6 +19,7 @@ impl Pkg {
         }
     }
 
+    #[must_use]
     pub fn to_nix_string(&self) -> String {
         match &self.overrides {
             Some(overrides) => {
@@ -32,6 +34,7 @@ impl Pkg {
         }
     }
 
+    #[must_use]
     pub fn set_override(mut self, name: &str, pkg: &str) -> Self {
         if let Some(mut overrides) = self.overrides {
             overrides.insert(name.to_string(), pkg.to_string());
@@ -43,11 +46,13 @@ impl Pkg {
         self
     }
 
+    #[must_use]
     pub fn from_overlay(mut self, overlay: &str) -> Self {
         self.overlay = Some(overlay.to_string());
         self
     }
 
+    #[must_use]
     pub fn to_pretty_string(&self) -> String {
         match &self.overrides {
             Some(overrides) => {

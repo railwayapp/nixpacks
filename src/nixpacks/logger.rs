@@ -3,6 +3,7 @@ use colored::Colorize;
 pub struct Logger {}
 
 impl Logger {
+    #[must_use]
     pub fn new() -> Logger {
         Logger {}
     }

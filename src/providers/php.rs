@@ -112,7 +112,7 @@ impl PhpProvider {
     }
     fn get_php_version(&self, app: &App) -> Result<String> {
         let composer_json: ComposerJson = app.read_json("composer.json")?;
-        let version = composer_json.require.get("php").map(|v| v.to_string());
+        let version = composer_json.require.get("php").cloned();
         Ok(match version {
             Some(v) => {
                 if v.contains("8.0") {
@@ -138,7 +138,7 @@ impl PhpProvider {
     fn get_php_extensions(&self, app: &App) -> Result<Vec<String>> {
         let composer_json: ComposerJson = app.read_json("composer.json")?;
         let mut extensions = Vec::new();
-        for (extension, _) in composer_json.require.iter() {
+        for extension in composer_json.require.keys() {
             if extension.starts_with("ext-") {
                 extensions.push(
                     extension

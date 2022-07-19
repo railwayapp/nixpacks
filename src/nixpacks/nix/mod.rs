@@ -3,13 +3,14 @@ use indoc::formatdoc;
 
 pub mod pkg;
 
+#[must_use]
 pub fn create_nix_expression(plan: &BuildPlan) -> String {
     let setup_phase = plan.setup.clone().unwrap_or_default();
 
     let nixpkgs = setup_phase
         .pkgs
         .iter()
-        .map(|p| p.to_nix_string())
+        .map(pkg::Pkg::to_nix_string)
         .collect::<Vec<String>>()
         .join(" ");
 

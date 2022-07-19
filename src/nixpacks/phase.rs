@@ -22,6 +22,7 @@ pub struct SetupPhase {
 }
 
 impl SetupPhase {
+    #[must_use]
     pub fn new(pkgs: Vec<Pkg>) -> Self {
         Self {
             pkgs,
@@ -80,13 +81,13 @@ impl SetupPhase {
 impl Default for SetupPhase {
     fn default() -> Self {
         Self {
-            pkgs: Default::default(),
-            libraries: Default::default(),
-            apt_pkgs: Default::default(),
-            archive: Default::default(),
-            only_include_files: Default::default(),
+            pkgs: Vec::new(),
+            libraries: None,
+            apt_pkgs: None,
+            archive: None,
+            only_include_files: None,
             base_image: DEFAULT_BASE_IMAGE.to_string(),
-            cmds: Default::default(),
+            cmds: None,
         }
     }
 }
@@ -106,6 +107,7 @@ pub struct InstallPhase {
 }
 
 impl InstallPhase {
+    #[must_use]
     pub fn new(cmd: String) -> Self {
         Self {
             cmds: Some(vec![cmd]),
@@ -165,6 +167,7 @@ pub struct BuildPhase {
 }
 
 impl BuildPhase {
+    #[must_use]
     pub fn new(cmd: String) -> Self {
         Self {
             cmds: Some(vec![cmd]),
@@ -214,6 +217,7 @@ pub struct StartPhase {
 }
 
 impl StartPhase {
+    #[must_use]
     pub fn new(cmd: String) -> Self {
         Self {
             cmd: Some(cmd),
