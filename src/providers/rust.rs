@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env::consts::ARCH, iter::Map};
+use std::{collections::HashMap, env::consts::ARCH};
 
 use super::Provider;
 use crate::nixpacks::{
@@ -59,11 +59,10 @@ impl Provider for RustProvider {
 
         if let Some(features) = RustProvider::get_dependency_features(app, "diesel") {
             if features.contains(&"mysql".to_string()) {
+                println!("adding package 11111");
                 setup_phase.add_pkgs(&mut vec![Pkg::new("mariadb-connector-c")]);
             }
         }
-
-        println!("{:?}", setup_phase.pkgs);
 
         // Include the rust toolchain file so we can install that rust version with Nix
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app)? {
