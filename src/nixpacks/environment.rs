@@ -35,8 +35,8 @@ impl Environment {
         Ok(environment)
     }
 
-    pub fn get_variable(&self, name: &str) -> Option<String> {
-        self.variables.get(name).map(|s| s.to_owned())
+    pub fn get_variable(&self, name: &str) -> Option<&str> {
+        self.variables.get(name).map(String::as_str)
     }
 
     pub fn get_config_variable(&self, name: &str) -> Option<String> {
@@ -74,18 +74,15 @@ mod tests {
         let mut environment = Environment::default();
         assert!(environment.get_variable("hello").is_none());
         environment.set_variable("hello".to_string(), "world".to_string());
-        assert_eq!(environment.get_variable("hello"), Some("world".to_string()));
+        assert_eq!(environment.get_variable("hello"), Some("world"));
     }
 
     #[test]
     fn test_environment_variable_parsing() {
         let environment =
             Environment::from_envs(vec!["HELLO=world", "CARGO_PKG_NAME", "NON_EXISTANT"]).unwrap();
-        assert_eq!(environment.get_variable("HELLO"), Some("world".to_string()));
-        assert_eq!(
-            environment.get_variable("CARGO_PKG_NAME"),
-            Some("nixpacks".to_string())
-        );
+        assert_eq!(environment.get_variable("HELLO"), Some("world"));
+        assert_eq!(environment.get_variable("CARGO_PKG_NAME"), Some("nixpacks"));
         assert!(environment.get_variable("NON_EXISTANT").is_none());
     }
 
