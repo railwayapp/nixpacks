@@ -1,4 +1,4 @@
-use std::env::consts::ARCH;
+use std::{collections::HashMap, env::consts::ARCH};
 
 use super::Provider;
 use crate::nixpacks::{
@@ -26,8 +26,14 @@ pub struct CargoTomlPackage {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct CargoTomlDependency {
+    pub features: Option<Vec<String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CargoToml {
     pub package: CargoTomlPackage,
+    pub dependencies: HashMap<String, CargoTomlDependency>,
 }
 
 pub struct RustProvider {}
@@ -50,6 +56,13 @@ impl Provider for RustProvider {
 
         let mut setup_phase =
             SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
+
+        if let Some(features) = RustProvider::get_dependency_features(app, "diesel") {
+            if features.contains(&"mysql".to_string()) {
+                println!("adding package 11111");
+                setup_phase.add_pkgs(&mut vec![Pkg::new("mariadb-connector-c")]);
+            }
+        }
 
         // Include the rust toolchain file so we can install that rust version with Nix
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app)? {
@@ -200,6 +213,15 @@ impl RustProvider {
         };
 
         Ok(pkg)
+    }
+
+    fn get_dependency_features(app: &App, dependency_name: &str) -> Option<Vec<String>> {
+        if let Some(toml_file) = RustProvider::parse_cargo_toml(app).unwrap() {
+            if let Some(dep) = toml_file.dependencies.get(dependency_name) {
+                return dep.features.to_owned();
+            }
+        }
+        None
     }
 }
 

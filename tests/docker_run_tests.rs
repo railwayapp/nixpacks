@@ -124,6 +124,7 @@ fn simple_build(path: &str) -> String {
     name
 }
 const POSTGRES_IMAGE: &str = "postgres";
+const MYSQL_IMAGE: &str = "mysql";
 
 struct Network {
     name: String,
@@ -220,6 +221,53 @@ fn run_postgres() -> Container {
             network: None,
         }),
     }
+}
+
+fn run_mysql() -> Container {
+    let mut docker_cmd = Command::new("docker");
+
+    let hash = Uuid::new_v4().to_string();
+    let container_name = format!("mysql-{}", hash);
+    let password = hash;
+
+    // Run
+    docker_cmd.arg("run");
+
+    // Set Needed Envvars
+    docker_cmd
+        .arg("-e")
+        .arg(format!("MYSQL_ROOT_PASSWORD={}", &password));
+
+    // Run detached
+    docker_cmd.arg("-d");
+
+    // Attach name
+    docker_cmd.arg("--name").arg(container_name.clone());
+
+    // Assign image
+    docker_cmd.arg(MYSQL_IMAGE);
+
+    // Run the command
+    docker_cmd
+        .spawn()
+        .unwrap()
+        .wait()
+        .context("Building mysql")
+        .unwrap();
+
+    Container {
+        name: container_name.clone(),
+        config: Some(Config {
+            environment_variables: EnvironmentVariables::from([
+                ("MYSQL_USER".to_string(), "mysql".to_string()),
+                ("MYSQL_DATABASE".to_string(), "mysql".to_string()),
+                ("MYSQL_PASSWORD".to_string(), "mysql".to_string()),
+            ]),
+            network: None,
+        }),
+    }
+    // TODO MIGHT NEED THIS LATER
+    // ("MYSQL_ROOT_HOST".to_string(), container_name),
 }
 
 #[test]
@@ -391,6 +439,46 @@ fn test_rust_custom_version() {
 fn test_rust_ring() {
     let name = simple_build("./examples/rust-ring");
     let output = run_image(name, None);
+    assert!(output.contains("Hello from rust"));
+}
+
+#[test]
+fn test_rust_diesel() {
+    // Create the network
+    let n = create_network();
+
+    // Create the db instances
+    let mysql_container = run_mysql();
+    let postgres_container = run_postgres();
+
+    // Attach the db instances to the network
+    attach_container_to_network(n.name.clone(), mysql_container.name.to_owned());
+    attach_container_to_network(n.name.clone(), postgres_container.name.to_owned());
+
+    // Build the rust example
+    let name = simple_build("./examples/rust-diesel-mysql");
+    let mut merged_envvars = mysql_container
+        .config
+        .unwrap()
+        .environment_variables
+        .to_owned();
+
+    merged_envvars.extend(postgres_container.config.unwrap().environment_variables);
+
+    // Run the rust example on the attached network
+    let output = run_image(
+        name,
+        Some(Config {
+            environment_variables: merged_envvars,
+            network: Some(n.name.clone()),
+        }),
+    );
+
+    // Cleanup containers and networks
+    stop_and_remove_container(postgres_container.name);
+    stop_and_remove_container(mysql_container.name);
+    remove_network(n.name);
+
     assert!(output.contains("Hello from rust"));
 }
 
