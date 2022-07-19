@@ -62,6 +62,10 @@ impl Provider for RustProvider {
                 println!("adding package 11111");
                 setup_phase.add_pkgs(&mut vec![Pkg::new("libmysqlconnectorcpp")]);
             }
+
+            if features.contains(&"postgres".to_string()) {
+                setup_phase.add_pkgs(&mut vec![Pkg::new("postgresql")]);
+            }
         }
 
         // Include the rust toolchain file so we can install that rust version with Nix
