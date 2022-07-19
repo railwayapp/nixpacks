@@ -9,7 +9,6 @@ use crate::nixpacks::{
 };
 use anyhow::{Context, Result};
 use cargo_toml::Manifest;
-use serde::{Deserialize, Serialize};
 
 static RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
 static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
@@ -17,20 +16,6 @@ static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
 const CARGO_GIT_CACHE_DIR: &'static &str = &"/root/.cargo/git";
 const CARGO_REGISTRY_CACHE_DIR: &'static &str = &"/root/.cargo/registry";
 const CARGO_TARGET_CACHE_DIR: &'static &str = &"target";
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CargoTomlPackage {
-    pub name: String,
-    pub version: String,
-    #[serde(rename = "rust-version")]
-    pub rust_version: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CargoToml1 {
-    pub package: CargoTomlPackage,
-    pub dependencies: Option<Vec<CargoTomlPackage>>,
-}
 
 pub struct RustProvider {}
 
@@ -241,10 +226,8 @@ impl RustProvider {
             }
         }
 
-        if app.includes_file("Cargo.lock") {
-            if app.read_file("Cargo.lock")?.contains("openssl") {
-                return Ok(true);
-            }
+        if app.includes_file("Cargo.lock") && app.read_file("Cargo.lock")?.contains("openssl") {
+            return Ok(true);
         }
 
         Ok(false)
@@ -313,14 +296,12 @@ mod test {
 
     #[test]
     fn test_uses_openssl() -> Result<()> {
-        assert_eq!(
-            RustProvider::uses_openssl(&App::new("./examples/rust-custom-version")?)?,
-            false
-        );
-        assert_eq!(
-            RustProvider::uses_openssl(&App::new("./examples/rust-openssl")?)?,
-            true
-        );
+        assert!(!RustProvider::uses_openssl(&App::new(
+            "./examples/rust-custom-version"
+        )?)?,);
+        assert!(RustProvider::uses_openssl(&App::new(
+            "./examples/rust-openssl"
+        )?)?,);
 
         Ok(())
     }
