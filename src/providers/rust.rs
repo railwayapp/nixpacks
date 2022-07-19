@@ -8,7 +8,7 @@ use crate::nixpacks::{
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
+use cargo_toml::Manifest;
 
 static RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
 static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
@@ -16,19 +16,6 @@ static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
 const CARGO_GIT_CACHE_DIR: &'static &str = &"/root/.cargo/git";
 const CARGO_REGISTRY_CACHE_DIR: &'static &str = &"/root/.cargo/registry";
 const CARGO_TARGET_CACHE_DIR: &'static &str = &"target";
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CargoTomlPackage {
-    pub name: String,
-    pub version: String,
-    #[serde(rename = "rust-version")]
-    pub rust_version: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CargoToml {
-    pub package: CargoTomlPackage,
-}
 
 pub struct RustProvider {}
 
@@ -56,7 +43,12 @@ impl Provider for RustProvider {
             setup_phase.add_file_dependency(toolchain_file);
         }
 
-        if !env.is_config_variable_truthy("NO_MUSL") {
+        // Custom libs for openssl
+        if RustProvider::uses_openssl(app)? {
+            setup_phase.add_libraries(vec!["openssl".to_string(), "openssl.dev".to_string()]);
+        }
+
+        if RustProvider::should_use_musl(app, env)? {
             setup_phase.add_apt_pkgs(vec!["musl-tools".to_string()]);
         }
 
@@ -136,26 +128,26 @@ impl Provider for RustProvider {
 impl RustProvider {
     fn get_app_name(app: &App) -> Result<Option<String>> {
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
-            let name = toml_file.package.name;
-            Ok(Some(name))
-        } else {
-            Ok(None)
+            if let Some(package) = toml_file.package {
+                let name = package.name;
+                return Ok(Some(name));
+            }
         }
+
+        Ok(None)
     }
 
-    fn get_target(_app: &App, env: &Environment) -> Result<Option<String>> {
-        // All the user to use the default target instead of compiling with musl
-        if !env.is_config_variable_truthy("NO_MUSL") {
+    fn get_target(app: &App, env: &Environment) -> Result<Option<String>> {
+        if RustProvider::should_use_musl(app, env)? {
             Ok(Some(format!("{}-unknown-linux-musl", ARCH)))
         } else {
             Ok(None)
         }
     }
 
-    fn parse_cargo_toml(app: &App) -> Result<Option<CargoToml>> {
+    fn parse_cargo_toml(app: &App) -> Result<Option<Manifest>> {
         if app.includes_file("Cargo.toml") {
-            let cargo_toml: CargoToml =
-                app.read_toml("Cargo.toml").context("Reading Cargo.toml")?;
+            let cargo_toml: Manifest = app.read_toml("Cargo.toml").context("Reading Cargo.toml")?;
             return Ok(Some(cargo_toml));
         }
 
@@ -187,19 +179,57 @@ impl RustProvider {
         }
 
         let pkg = match RustProvider::parse_cargo_toml(app)? {
-            Some(toml_file) => {
-                let version = toml_file.package.rust_version;
-
-                version
-                    .map(|version| {
-                        Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str())
-                    })
-                    .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE))
-            }
+            Some(toml_file) => toml_file
+                .package
+                .map(|package| {
+                    package
+                        .rust_version
+                        .map(|version| {
+                            Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str())
+                        })
+                        .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE))
+                })
+                .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE)),
             None => Pkg::new(DEFAULT_RUST_PACKAGE),
         };
 
         Ok(pkg)
+    }
+
+    fn should_use_musl(app: &App, env: &Environment) -> Result<bool> {
+        if env.is_config_variable_truthy("NO_MUSL") {
+            return Ok(false);
+        }
+
+        if RustProvider::get_rust_toolchain_file(app)?.is_some() {
+            return Ok(false);
+        }
+
+        // Do not build for the musl target if using openssl
+        if RustProvider::uses_openssl(app)? {
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    fn uses_openssl(app: &App) -> Result<bool> {
+        // Check Cargo.toml
+        if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
+            if toml_file.dependencies.contains_key("openssl")
+                || toml_file.dev_dependencies.contains_key("openssl")
+                || toml_file.build_dependencies.contains_key("openssl")
+            {
+                return Ok(true);
+            }
+        }
+
+        // Check Cargo.lock
+        if app.includes_file("Cargo.lock") && app.read_file("Cargo.lock")?.contains("openssl") {
+            return Ok(true);
+        }
+
+        Ok(false)
     }
 }
 
@@ -259,6 +289,18 @@ mod test {
             )?,
             Pkg::new("rust-bin.stable.\"1.54.0\".default")
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_uses_openssl() -> Result<()> {
+        assert!(!RustProvider::uses_openssl(&App::new(
+            "./examples/rust-custom-version"
+        )?)?,);
+        assert!(RustProvider::uses_openssl(&App::new(
+            "./examples/rust-openssl"
+        )?)?,);
 
         Ok(())
     }

@@ -381,14 +381,12 @@ mod test {
 
     #[test]
     fn test_numpy_detection() -> Result<()> {
-        assert_eq!(
-            PythonProvider::uses_numpy(&App::new("./examples/python")?)?,
-            false
-        );
-        assert_eq!(
-            PythonProvider::uses_numpy(&App::new("./examples/python-numpy")?)?,
-            true
-        );
+        assert!(!PythonProvider::uses_numpy(&App::new(
+            "./examples/python"
+        )?)?,);
+        assert!(PythonProvider::uses_numpy(&App::new(
+            "./examples/python-numpy"
+        )?)?,);
         Ok(())
     }
 }
