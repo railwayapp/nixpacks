@@ -218,6 +218,7 @@ impl RustProvider {
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
             if toml_file.dependencies.contains_key("openssl")
                 || toml_file.dev_dependencies.contains_key("openssl")
+                || toml_file.build_dependencies.contains_key("openssl")
             {
                 return Ok(true);
             }
