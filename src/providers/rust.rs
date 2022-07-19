@@ -1,4 +1,4 @@
-use std::env::consts::ARCH;
+use std::{collections::HashMap, env::consts::ARCH, iter::Map};
 
 use super::Provider;
 use crate::nixpacks::{
@@ -26,8 +26,14 @@ pub struct CargoTomlPackage {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct CargoTomlDep {
+    pub features: Option<Vec<String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CargoToml {
     pub package: CargoTomlPackage,
+    pub dependencies: HashMap<String, CargoTomlDep>,
 }
 
 pub struct RustProvider {}
@@ -50,6 +56,20 @@ impl Provider for RustProvider {
 
         let mut setup_phase =
             SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
+
+        if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
+            println!("{:?}", toml_file);
+            if let Some(diesel_deps) = toml_file.dependencies.get("diesel") {
+                if let Some(diesel_features) = &diesel_deps.features {
+                    if diesel_features.contains(&"mysql".to_string()) {
+                        println!("Adding mariadb-connector-c");
+                        setup_phase.add_pkgs(&mut vec![Pkg::new("mariadb-connector-c")]);
+                    }
+                }
+            }
+        }
+
+        println!("{:?}", setup_phase.pkgs);
 
         // Include the rust toolchain file so we can install that rust version with Nix
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app)? {
