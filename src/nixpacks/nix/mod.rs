@@ -45,7 +45,7 @@ pub fn create_nix_expression(plan: &BuildPlan) -> String {
       export OPENSSL_LIB_DIR=\"${{openssl.out}}/lib\"
     "}
     } else {
-        "".to_string()
+        String::new()
     };
 
     let nix_expression = formatdoc! {"

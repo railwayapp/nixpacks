@@ -45,11 +45,7 @@ impl Provider for RustProvider {
 
         // Custom libs for openssl
         if RustProvider::uses_openssl(app)? {
-            setup_phase.add_libraries(vec![
-                "openssl".to_string(),
-                "openssl.dev".to_string(),
-                "pkg-config".to_string(),
-            ]);
+            setup_phase.add_libraries(vec!["openssl".to_string(), "openssl.dev".to_string()]);
         }
 
         if RustProvider::should_use_musl(app, env)? {
@@ -218,6 +214,7 @@ impl RustProvider {
     }
 
     fn uses_openssl(app: &App) -> Result<bool> {
+        // Check Cargo.toml
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
             if toml_file.dependencies.contains_key("openssl")
                 || toml_file.dev_dependencies.contains_key("openssl")
@@ -226,6 +223,7 @@ impl RustProvider {
             }
         }
 
+        // Check Cargo.lock
         if app.includes_file("Cargo.lock") && app.read_file("Cargo.lock")?.contains("openssl") {
             return Ok(true);
         }
