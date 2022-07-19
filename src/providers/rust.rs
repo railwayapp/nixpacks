@@ -26,14 +26,14 @@ pub struct CargoTomlPackage {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct CargoTomlDep {
+pub struct CargoTomlDependency {
     pub features: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CargoToml {
     pub package: CargoTomlPackage,
-    pub dependencies: HashMap<String, CargoTomlDep>,
+    pub dependencies: HashMap<String, CargoTomlDependency>,
 }
 
 pub struct RustProvider {}
@@ -57,15 +57,9 @@ impl Provider for RustProvider {
         let mut setup_phase =
             SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
 
-        if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
-            println!("{:?}", toml_file);
-            if let Some(diesel_deps) = toml_file.dependencies.get("diesel") {
-                if let Some(diesel_features) = &diesel_deps.features {
-                    if diesel_features.contains(&"mysql".to_string()) {
-                        println!("Adding mariadb-connector-c");
-                        setup_phase.add_pkgs(&mut vec![Pkg::new("mariadb-connector-c")]);
-                    }
-                }
+        if let Some(features) = RustProvider::get_dependency_features(app, "diesel") {
+            if features.contains(&"mysql".to_string()) {
+                setup_phase.add_pkgs(&mut vec![Pkg::new("mariadb-connector-c")]);
             }
         }
 
@@ -220,6 +214,15 @@ impl RustProvider {
         };
 
         Ok(pkg)
+    }
+
+    fn get_dependency_features(app: &App, dependency_name: &str) -> Option<Vec<String>> {
+        if let Some(toml_file) = RustProvider::parse_cargo_toml(app).unwrap() {
+            if let Some(dep) = toml_file.dependencies.get(dependency_name) {
+                return dep.features.to_owned();
+            }
+        }
+        None
     }
 }
 
