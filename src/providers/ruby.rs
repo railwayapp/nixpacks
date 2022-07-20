@@ -2,7 +2,7 @@ use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    phase::{InstallPhase, SetupPhase, StartPhase},
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{bail, Ok, Result};
 use regex::Regex;
@@ -73,6 +73,20 @@ impl Provider for RubyProvider {
             }
         }
         Ok(Some(install_phase))
+    }
+
+    fn build(
+        &self,
+        app: &App,
+        _env: &Environment,
+    ) -> Result<Option<crate::nixpacks::phase::BuildPhase>> {
+        if self.is_rails_app(app) {
+            Ok(Some(BuildPhase::new(
+                "bundle exec rake assets:precompile".to_string(),
+            )))
+        } else {
+            Ok(None)
+        }
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
