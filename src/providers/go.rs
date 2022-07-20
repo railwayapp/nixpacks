@@ -92,7 +92,7 @@ impl GolangProvider {
             let go_version_line = lines.find(|line| line.trim().starts_with("go"));
 
             if let Some(go_version_line) = go_version_line {
-                let go_version = go_version_line.trim().split_whitespace().nth(1).unwrap();
+                let go_version = go_version_line.split_whitespace().nth(1).unwrap();
 
                 if let Some(nix_pkg) = version_number_to_pkg(go_version)? {
                     return Ok(nix_pkg);
