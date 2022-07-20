@@ -20,7 +20,11 @@ If a `package.json` file is found then the dependencies are installed with the r
 
 ## Build
 
-_None_
+If a Rails application
+
+```
+bundle exec rake assets:precompile
+```
 
 ## Start
 
