@@ -46,7 +46,7 @@ If a `config.ru` file is found
 bundle exec rackup config.ru
 ```
 
-Otherwise
+If a `Rakefile` file is found
 
 ```
 bundle exec rake
