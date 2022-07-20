@@ -20,11 +20,15 @@ If a `package.json` file is found then the dependencies are installed with the r
 
 ## Build
 
-_None_
+If a Rails application is detected
+
+```
+bundle exec rake assets:precompile
+```
 
 ## Start
 
-If a [Rails](https://rubyonrails.org/) application.
+If a [Rails](https://rubyonrails.org/) application is detected
 
 ```
 bundle exec rails server -b 0.0.0.0
@@ -42,7 +46,7 @@ If a `config.ru` file is found
 bundle exec rackup config.ru
 ```
 
-Otherwise
+If a `Rakefile` file is found
 
 ```
 bundle exec rake
