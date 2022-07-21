@@ -14,11 +14,11 @@ use crate::nixpacks::{
 };
 use anyhow::Result;
 use providers::{
-    crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider,
-    fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
-    node::NodeProvider, php::PhpProvider, python::PythonProvider, ruby::RubyProvider,
-    rust::RustProvider, staticfile::StaticfileProvider, swift::SwiftProvider, zig::ZigProvider,
-    Provider,
+    clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
+    deno::DenoProvider, fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider,
+    java::JavaProvider, node::NodeProvider, php::PhpProvider, python::PythonProvider,
+    ruby::RubyProvider, rust::RustProvider, staticfile::StaticfileProvider, swift::SwiftProvider,
+    zig::ZigProvider, Provider,
 };
 
 mod chain;
@@ -33,6 +33,7 @@ pub fn get_providers() -> &'static [&'static dyn Provider] {
         &DartProvider {},
         &DenoProvider {},
         &FSharpProvider {},
+        &ClojureProvider {},
         &GolangProvider {},
         &HaskellStackProvider {},
         &JavaProvider {},

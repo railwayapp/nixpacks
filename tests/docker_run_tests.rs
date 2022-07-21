@@ -550,3 +550,10 @@ fn test_ruby_rails() {
 
     assert!(output.contains("Rails 7"));
 }
+
+#[test]
+fn test_clojure() {
+    let name = simple_build("./examples/clojure");
+    let output = run_image(name, None);
+    assert_eq!(output, "Hello, World From Clojure!");
+}

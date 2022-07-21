@@ -939,3 +939,21 @@ fn test_ruby_sinatra() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_clojure() -> Result<()> {
+    let plan = simple_gen_plan("./examples/clojure");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("leiningen"), Pkg::new("jdk8"),]
+    );
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["lein uberjar".to_string()])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java $JAVA_OPTS -jar target/uberjar/*standalone.jar".to_string())
+    );
+    Ok(())
+}
