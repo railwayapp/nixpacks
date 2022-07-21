@@ -48,12 +48,10 @@ impl ClojureProvider {
             custom_version = Some(app.read_file(".jdk-version")?);
         }
 
-        // If it's still none, return default
-        if custom_version.is_none() {
-            return Ok(DEFAULT_JDK_PKG_NAME.to_string());
+        return match custom_version {
+            Some(v) => Ok(v),
+            None => Ok(DEFAULT_JDK_PKG_NAME.to_string()),
         }
-
-        return Ok(custom_version.unwrap());
     }
 
     fn parse_custom_version(custom_version: String) -> Result<String>{
