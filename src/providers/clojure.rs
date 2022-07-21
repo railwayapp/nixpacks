@@ -10,7 +10,7 @@ pub struct ClojureProvider {}
 
 impl Provider for ClojureProvider {
     fn name(&self) -> &str {
-        "Clojure"
+        "clojure"
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
