@@ -1,0 +1,16 @@
+syntax: glob
+pom.xml
+pom.xml.asc
+*.jar
+*.class
+.gitignore
+.git/**
+
+syntax: regexp
+^.nrepl-port
+^.prepl-port
+^.lein-.*
+^target/
+^classes/
+^checkouts/
+profiles.clj
