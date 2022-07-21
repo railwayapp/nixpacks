@@ -942,10 +942,7 @@ fn test_clojure() -> Result<()> {
     let plan = simple_gen_plan("./examples/clojure");
     assert_eq!(
         plan.setup.unwrap().pkgs,
-        vec![
-            Pkg::new("leiningen"),
-            Pkg::new("jdk8"),
-        ]
+        vec![Pkg::new("leiningen"), Pkg::new("jdk8"),]
     );
     assert_eq!(
         plan.build.unwrap().cmds,
