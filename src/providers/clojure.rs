@@ -48,10 +48,10 @@ impl ClojureProvider {
             custom_version = Some(app.read_file(".jdk-version")?);
         }
 
-        return match custom_version {
+        match custom_version {
             Some(v) => Ok(v),
             None => Ok(DEFAULT_JDK_PKG_NAME.to_string()),
-        };
+        }
     }
 
     fn parse_custom_version(custom_version: String) -> Result<String> {
@@ -78,7 +78,7 @@ impl ClojureProvider {
             None => "_",
         };
 
-        return Ok(value.to_string());
+        Ok(value.to_string())
     }
 
     pub fn get_nix_jdk_package(app: &App, env: &Environment) -> Result<Pkg> {
@@ -88,10 +88,10 @@ impl ClojureProvider {
         let pkg_name = match parsed_version.as_str() {
             "latest" => "jdk",
             "11" => "jdk11",
-            "8" | _ => DEFAULT_JDK_PKG_NAME,
+            _ => DEFAULT_JDK_PKG_NAME, // 8 or any other value
         };
 
-        return Ok(Pkg::new(pkg_name));
+        Ok(Pkg::new(pkg_name))
     }
 }
 
