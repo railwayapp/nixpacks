@@ -253,6 +253,7 @@ fn test_yarn_custom_version() {
 fn test_yarn_berry() {
     let name = simple_build("./examples/node-yarn-berry");
     let output = run_image(name, None);
+
     assert!(output.contains("Hello from Yarn v2+"));
 }
 
