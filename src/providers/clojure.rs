@@ -6,7 +6,7 @@ use crate::nixpacks::{
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
-use regex::{Match, Regex};
+use regex::Regex;
 
 const DEFAULT_JDK_PKG_NAME: &'static &str = &"jdk8";
 pub struct ClojureProvider {}
