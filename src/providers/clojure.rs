@@ -25,9 +25,7 @@ impl Provider for ClojureProvider {
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new(
-            "lein uberjar".to_string(),
-        )))
+        Ok(Some(BuildPhase::new("lein uberjar".to_string())))
     }
 
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
