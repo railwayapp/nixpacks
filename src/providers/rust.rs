@@ -48,17 +48,15 @@ impl Provider for RustProvider {
         let mut setup_phase =
             SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
 
+        // Install connectors for mysql and or postgresql if the respective features are enabled for diesel.
         if let Some(features) = RustProvider::get_dependency_features(app, "diesel") {
             if features.contains(&"mysql".to_string()) {
-                println!("adding package 11111");
-                // setup_phase.add_pkgs(&mut vec![Pkg::new("libmysqlconnectorcpp")]);
-                setup_phase.add_libraries(vec!["mariadb-connector-c".to_owned()]);
-                // setup_phase.add_libraries(vec!["libmysqlclient".to_owned()]);
+                setup_phase.add_apt_pkgs(vec!["libmariadb-dev-compat".to_string()])
             }
+            setup_phase.add_cmd("find . -name '*mysql*.*'".to_string());
 
             if features.contains(&"postgres".to_string()) {
-                setup_phase.add_pkgs(&mut vec![Pkg::new("postgresql")]);
-                setup_phase.add_apt_pkgs(vec!["libpq-dev".to_string()])
+                // Do postgres things
             }
         }
 

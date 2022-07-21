@@ -115,7 +115,7 @@ fn simple_build(path: &str) -> String {
         },
         &DockerBuilderOptions {
             name: Some(name.clone()),
-            quiet: true,
+            quiet: false,
             ..Default::default()
         },
     )
@@ -266,8 +266,6 @@ fn run_mysql() -> Container {
             network: None,
         }),
     }
-    // TODO MIGHT NEED THIS LATER
-    // ("MYSQL_ROOT_HOST".to_string(), container_name),
 }
 
 #[test]
