@@ -43,7 +43,7 @@ impl ClojureProvider {
         // Fetch version from configs
         let mut custom_version = env.get_config_variable("JDK_VERSION");
 
-        // If not from configs, get it from the .python-version file
+        // If not from configs, get it from the .jdk-version file
         if custom_version.is_none() && app.includes_file(".jdk-version") {
             custom_version = Some(app.read_file(".jdk-version")?);
         }
@@ -54,7 +54,7 @@ impl ClojureProvider {
         }
         let custom_version = custom_version.unwrap();
 
-        // Regex for reading Python versions (e.g. 3.8.0 or 3.8 or 3)
+        // Regex for reading Clojure versions (e.g. 8 or 11 or latest)
         let jdk_regex = Regex::new(r"(^[0-9][0-9]?$)|(^latest$)")?;
 
         // Capture matches
@@ -67,7 +67,6 @@ impl ClojureProvider {
 
         let matches = matches.unwrap();
 
-        // Fetch python versions into tuples with defaults
         fn as_default(v: Option<Match>) -> &str {
             match v {
                 Some(m) => m.as_str(),
