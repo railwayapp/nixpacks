@@ -1,10 +1,10 @@
 ---
-title: Python
+title: Clojure
 ---
 
 # {% $markdoc.frontmatter.title %}
 
-Python is detected if a `project.clj` file is found.
+Clojure is detected if a `project.clj` file is found.
 
 ## Setup
 
