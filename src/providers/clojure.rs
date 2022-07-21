@@ -75,7 +75,11 @@ impl ClojureProvider {
             }
         }
 
-        let matched_value = if matches.get(0).is_some() { matches.get(0) } else { matches.get(1) };
+        let matched_value = if matches.get(0).is_some() {
+            matches.get(0)
+        } else {
+            matches.get(1)
+        };
         let jdk_version = as_default(matched_value);
 
         // Match major and minor versions
