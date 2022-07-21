@@ -54,7 +54,7 @@ impl ClojureProvider {
         }
         let custom_version = custom_version.unwrap();
 
-        // Regex for reading Clojure versions (e.g. 8 or 11 or latest)
+        // Regex for reading JDK versions (e.g. 8 or 11 or latest)
         let jdk_regex = Regex::new(r"(^[0-9][0-9]?$)|(^latest$)")?;
 
         // Capture matches
