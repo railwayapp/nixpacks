@@ -12,6 +12,7 @@ The following JDK versions are available
 
 - `8`  (Default)
 - `11`
+- `latest`
 
 The version can be overriden by
 

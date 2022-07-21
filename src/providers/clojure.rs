@@ -55,7 +55,7 @@ impl ClojureProvider {
         let custom_version = custom_version.unwrap();
 
         // Regex for reading Python versions (e.g. 3.8.0 or 3.8 or 3)
-        let jdk_regex = Regex::new(r"^[0-9][0-9]?$")?;
+        let jdk_regex = Regex::new(r"(^[0-9][0-9]?$)|(^latest$)")?;
 
         // Capture matches
         let matches = jdk_regex.captures(custom_version.as_str().trim());
@@ -64,6 +64,7 @@ impl ClojureProvider {
         if matches.is_none() {
             return Ok(Pkg::new(DEFAULT_JDK_PKG_NAME));
         }
+
         let matches = matches.unwrap();
 
         // Fetch python versions into tuples with defaults
@@ -73,11 +74,15 @@ impl ClojureProvider {
                 None => "_",
             }
         }
-        let jdk_version = as_default(matches.get(0));
+
+        let matched_value = if matches.get(0).is_some() { matches.get(0) } else { matches.get(1) };
+        let jdk_version = as_default(matched_value);
+
         // Match major and minor versions
         match jdk_version {
             "8" => Ok(Pkg::new(DEFAULT_JDK_PKG_NAME)),
             "11" => Ok(Pkg::new("jdk11")),
+            "latest" => Ok(Pkg::new("jdk")),
             _ => Ok(Pkg::new(DEFAULT_JDK_PKG_NAME)),
         }
     }
@@ -110,6 +115,35 @@ mod test {
                 &Environment::default()
             )?,
             Pkg::new("jdk11")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_custom_latest_version() -> Result<()> {
+        assert_eq!(
+            ClojureProvider::get_nix_jdk_package(
+                &App::new("./examples/clojure-jdk-latest")?,
+                &Environment::default()
+            )?,
+            Pkg::new("jdk")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_latest_version_from_environment_variable() -> Result<()> {
+        assert_eq!(
+            ClojureProvider::get_nix_jdk_package(
+                &App::new("./examples/clojure-jdk-latest")?,
+                &Environment::new(HashMap::from([(
+                    "NIXPACKS_JDK_VERSION".to_string(),
+                    "latest".to_string()
+                )]))
+            )?,
+            Pkg::new("jdk")
         );
 
         Ok(())
