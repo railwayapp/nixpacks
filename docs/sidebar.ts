@@ -24,6 +24,7 @@ export const sidebarItems: ISidebarSection[] = [
       { href: "/docs/providers/go", text: "Go" },
       { href: "/docs/providers/haskell", text: "Haskell" },
       { href: "/docs/providers/java", text: "Java" },
+      { href: "/docs/providers/clojure", text: "Clojure" },
       { href: "/docs/providers/node", text: "Node" },
       { href: "/docs/providers/php", text: "PHP" },
       { href: "/docs/providers/python", text: "Python" },
