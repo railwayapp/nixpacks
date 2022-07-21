@@ -150,7 +150,7 @@ fn test_yarn_berry() -> Result<()> {
     assert_eq!(
         plan.install.unwrap().cmds,
         Some(vec![
-            "yarn set version berry && yarn install --immutable --check-cache".to_string()
+            "yarn set version berry && yarn install --check-cache".to_string()
         ])
     );
     Ok(())
