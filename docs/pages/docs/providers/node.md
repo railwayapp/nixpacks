@@ -4,7 +4,7 @@ title: Node
 
 # {% $markdoc.frontmatter.title %}
 
-The Node provider supports NPM, Yarn, Yarn 2, and PNPM.
+The Node provider supports NPM, Yarn, Yarn 2, Bun (as a package manager & runtime) and PNPM.
 
 ## Environment Variables
 
