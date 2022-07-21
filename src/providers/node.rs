@@ -227,7 +227,7 @@ impl NodeProvider {
             install_cmd = "pnpm i --frozen-lockfile";
         } else if package_manager == "yarn" {
             if app.includes_file(".yarnrc.yml") {
-                install_cmd = "yarn set version berry && yarn install --immutable --check-cache";
+                install_cmd = "yarn set version berry && yarn install --check-cache";
             } else {
                 install_cmd = "yarn install --frozen-lockfile";
             }
