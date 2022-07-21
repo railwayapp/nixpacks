@@ -39,7 +39,7 @@ impl Provider for ClojureProvider {
 }
 
 impl ClojureProvider {
-    fn get_nix_jdk_package(app: &App, env: &Environment) -> Result<Pkg> {
+    pub fn get_nix_jdk_package(app: &App, env: &Environment) -> Result<Pkg> {
         // Fetch version from configs
         let mut custom_version = env.get_config_variable("JDK_VERSION");
 
@@ -67,19 +67,16 @@ impl ClojureProvider {
 
         let matches = matches.unwrap();
 
-        fn as_default(v: Option<Match>) -> &str {
-            match v {
-                Some(m) => m.as_str(),
-                None => "_",
-            }
-        }
-
         let matched_value = if matches.get(0).is_some() {
             matches.get(0)
         } else {
             matches.get(1)
         };
-        let jdk_version = as_default(matched_value);
+
+        let jdk_version = match matched_value {
+            Some(m) => m.as_str(),
+            None => "_",
+        };
 
         // Match major and minor versions
         match jdk_version {
