@@ -150,7 +150,7 @@ fn test_yarn_berry() -> Result<()> {
     assert_eq!(
         plan.install.unwrap().cmds,
         Some(vec![
-            "yarn set version berry && yarn install --immutable --check-cache".to_string()
+            "yarn set version berry && yarn install --check-cache".to_string()
         ])
     );
     Ok(())
@@ -640,14 +640,17 @@ fn test_node_main_file_doesnt_exist() -> Result<()> {
 fn test_haskell_stack() -> Result<()> {
     let plan = simple_gen_plan("./examples/haskell-stack");
     assert_eq!(
-        plan.build.unwrap().cmds,
-        Some(vec!["stack build".to_string()])
-    );
-    assert_eq!(
         plan.install.unwrap().cmds,
         Some(vec!["stack setup".to_string()])
     );
-    assert!(plan.start.unwrap().cmd.unwrap().contains("stack exec"));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["stack install".to_string()])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("/root/.local/bin/haskell-stack-exe".to_string())
+    );
     Ok(())
 }
 

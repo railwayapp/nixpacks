@@ -26,8 +26,8 @@ mod chain;
 pub mod nixpacks;
 pub mod providers;
 
-pub fn get_providers() -> Vec<&'static dyn Provider> {
-    vec![
+pub fn get_providers() -> &'static [&'static dyn Provider] {
+    &[
         &CrystalProvider {},
         &CSharpProvider {},
         &DartProvider {},
