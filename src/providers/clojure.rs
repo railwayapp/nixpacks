@@ -39,7 +39,7 @@ impl Provider for ClojureProvider {
 }
 
 impl ClojureProvider {
-    pub fn get_nix_jdk_package(app: &App, env: &Environment) -> Result<Pkg> {
+    fn get_custom_version(app: &App, env: &Environment) -> Result<String> {
         // Fetch version from configs
         let mut custom_version = env.get_config_variable("JDK_VERSION");
 
@@ -50,10 +50,13 @@ impl ClojureProvider {
 
         // If it's still none, return default
         if custom_version.is_none() {
-            return Ok(Pkg::new(DEFAULT_JDK_PKG_NAME));
+            return Ok(DEFAULT_JDK_PKG_NAME.to_string());
         }
-        let custom_version = custom_version.unwrap();
 
+        return Ok(custom_version.unwrap());
+    }
+
+    fn parse_custom_version(custom_version: String) -> Result<String>{
         // Regex for reading JDK versions (e.g. 8 or 11 or latest)
         let jdk_regex = Regex::new(r"(^[0-9][0-9]?$)|(^latest$)")?;
 
@@ -62,30 +65,37 @@ impl ClojureProvider {
 
         // If no matches, just use default
         if matches.is_none() {
-            return Ok(Pkg::new(DEFAULT_JDK_PKG_NAME));
+            return Ok(DEFAULT_JDK_PKG_NAME.to_string());
         }
 
         let matches = matches.unwrap();
-
         let matched_value = if matches.get(0).is_some() {
             matches.get(0)
         } else {
             matches.get(1)
         };
 
-        let jdk_version = match matched_value {
+        let value = match matched_value {
             Some(m) => m.as_str(),
             None => "_",
         };
 
-        // Match major and minor versions
-        match jdk_version {
-            "8" => Ok(Pkg::new(DEFAULT_JDK_PKG_NAME)),
-            "11" => Ok(Pkg::new("jdk11")),
-            "latest" => Ok(Pkg::new("jdk")),
-            _ => Ok(Pkg::new(DEFAULT_JDK_PKG_NAME)),
-        }
+        return Ok(value.to_string())
     }
+
+    pub fn get_nix_jdk_package(app: &App, env: &Environment) -> Result<Pkg> {
+        let custom_version = ClojureProvider::get_custom_version(app, env)?;
+        let parsed_version = ClojureProvider::parse_custom_version(custom_version)?;  
+
+        let pkg_name = match parsed_version.as_str() {
+            "latest" => "jdk",
+            "11" => "jdk11",
+            "8" | _ => DEFAULT_JDK_PKG_NAME,
+        };
+
+        return Ok(Pkg::new(pkg_name));
+    }
+
 }
 
 #[cfg(test)]
