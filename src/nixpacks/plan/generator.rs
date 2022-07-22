@@ -50,14 +50,12 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
 
         self.detect(app, environment)?;
 
-        // if let Some(provider) = self.matched_provider {
-        //     if let Some(new_build_plan) = provider.get_build_plan(app, environment)? {
-        //         println!("Using build plan from {}", provider.name());
-
-        //         let plan_string = serde_json::to_string_pretty(&new_build_plan).unwrap();
-        //         println!("{}", plan_string);
-        //     }
-        // }
+        // If the provider defines a build plan in the new format, use that
+        if let Some(provider) = self.matched_provider {
+            if let Some(new_build_plan) = provider.get_build_plan(app, environment)? {
+                return Ok(new_build_plan);
+            }
+        }
 
         let setup_phase = self
             .get_setup_phase(app, environment)

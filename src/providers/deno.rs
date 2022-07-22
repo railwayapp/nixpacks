@@ -56,8 +56,7 @@ impl Provider for DenoProvider {
             plan.add_start_phase(start_phase);
         }
 
-        let build_plan = NewBuildPlan::default();
-        Ok(Some(build_plan))
+        Ok(Some(plan))
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {

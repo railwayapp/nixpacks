@@ -1,6 +1,9 @@
 use crate::nixpacks::cache::sanitize_cache_key;
 
-fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<String>>) -> String {
+pub fn get_cache_mount(
+    cache_key: &Option<String>,
+    cache_directories: &Option<Vec<String>>,
+) -> String {
     match (cache_key, cache_directories) {
         (Some(cache_key), Some(cache_directories)) => cache_directories
             .iter()
