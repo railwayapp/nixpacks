@@ -560,7 +560,7 @@ fn test_clojure() {
 
 #[test]
 fn test_clojure_ring_app() {
-    let name = simple_build("./examples/clojure-ring-app ");
+    let name = simple_build("./examples/clojure-ring-app");
     let output = run_image(name, None);
     assert_eq!(output, "Hello Clojure, Hello Ring!");
 }
