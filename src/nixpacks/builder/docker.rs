@@ -372,12 +372,14 @@ impl DockerBuilder {
 }
 
 fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<String>>) -> String {
-    let sanitized_cache_key = cache_key.clone().map(sanitize_cache_key);
-
-    match (sanitized_cache_key, cache_directories) {
+    match (cache_key, cache_directories) {
         (Some(cache_key), Some(cache_directories)) => cache_directories
             .iter()
-            .map(|dir| format!("--mount=type=cache,id={cache_key}-{dir},target={dir}"))
+            .map(|dir| {
+                let sanitized_dir = dir.replace('~', "/root");
+                let sanitized_key = sanitize_cache_key(format!("{cache_key}-{sanitized_dir}"));
+                format!("--mount=type=cache,id={sanitized_key},target={sanitized_dir}")
+            })
             .collect::<Vec<String>>()
             .join(" "),
         _ => "".to_string(),
