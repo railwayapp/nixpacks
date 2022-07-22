@@ -943,17 +943,47 @@ fn test_ruby_sinatra() -> Result<()> {
 #[test]
 fn test_clojure() -> Result<()> {
     let plan = simple_gen_plan("./examples/clojure");
+    let move_file_cmd = "if [ -f /app/target/uberjar/*standalone.jar ]; then  mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi";
+
     assert_eq!(
         plan.setup.unwrap().pkgs,
         vec![Pkg::new("leiningen"), Pkg::new("jdk8"),]
     );
     assert_eq!(
         plan.build.unwrap().cmds,
-        Some(vec!["lein uberjar".to_string()])
+        Some(vec![format!(
+            "{}; {}",
+            "lein uberjar".to_string(),
+            move_file_cmd
+        )])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
-        Some("java $JAVA_OPTS -jar target/uberjar/*standalone.jar".to_string())
+        Some("java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_clojure_ring_app() -> Result<()> {
+    let plan = simple_gen_plan("./examples/clojure-ring-app");
+    let move_file_cmd = "if [ -f /app/target/uberjar/*standalone.jar ]; then  mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi";
+
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("leiningen"), Pkg::new("jdk8"),]
+    );
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![format!(
+            "{}; {}",
+            "lein ring uberjar".to_string(),
+            move_file_cmd
+        )])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string())
     );
     Ok(())
 }

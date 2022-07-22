@@ -3,12 +3,14 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    phase::{BuildPhase, SetupPhase, StartPhase},
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
 use regex::Regex;
 
 const DEFAULT_JDK_PKG_NAME: &'static &str = &"jdk8";
+const LEIN_CACHE_DIR: &'static &str = &"~/.m2";
+
 pub struct ClojureProvider {}
 
 impl Provider for ClojureProvider {
@@ -20,21 +22,44 @@ impl Provider for ClojureProvider {
         Ok(app.includes_file("project.clj"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+        let mut install_phase = InstallPhase::new("".to_string());
+        install_phase.add_cache_directory(LEIN_CACHE_DIR.to_string());
+        Ok(Some(install_phase))
+    }
+
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         Ok(Some(SetupPhase::new(vec![
             Pkg::new("leiningen"),
-            Pkg::new("jdk8"),
+            ClojureProvider::get_nix_jdk_package(app, env)?,
         ])))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new("lein uberjar".to_string())))
+    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+        let has_lein_ring_plugin = app
+            .read_file("project.clj")?
+            .to_lowercase()
+            .contains("[lein-ring ");
+
+        let build_cmd = match has_lein_ring_plugin {
+            true => "lein ring uberjar",
+            false => "lein uberjar",
+        };
+
+        // based on project config, uberjar can be created under ./target/uberjar or ./target, This ensure file will be found on the same place whatevery the project config is
+        let move_file_cmd = "if [ -f /app/target/uberjar/*standalone.jar ]; then  mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi";
+
+        Ok(Some(BuildPhase::new(format!(
+            "{}; {}",
+            build_cmd.to_string(),
+            move_file_cmd
+        ))))
     }
 
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        Ok(Some(StartPhase::new(
-            "java $JAVA_OPTS -jar target/uberjar/*standalone.jar".to_string(),
-        )))
+        let start_cmd = "java $JAVA_OPTS -jar /app/target/*standalone.jar";
+
+        Ok(Some(StartPhase::new(start_cmd.to_string())))
     }
 }
 
