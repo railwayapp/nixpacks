@@ -41,3 +41,6 @@ console = { default-features = false, version = "0.15.0" }
 box_drawing = "0.1.2"
 textwrap = { default-features = false, version = "0.15.0" }
 cargo_toml = "0.11.5"
+
+[dev-dependencies]
+insta = "1.16.0"

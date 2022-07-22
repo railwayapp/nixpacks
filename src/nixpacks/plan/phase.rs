@@ -74,6 +74,29 @@ impl Phase {
         }
     }
 
+    pub fn setup() -> Self {
+        Self {
+            name: "setup".to_string(),
+            ..Default::default()
+        }
+    }
+
+    pub fn install() -> Self {
+        Self {
+            name: "install".to_string(),
+            depends_on: Some(vec!["setup".to_string()]),
+            ..Default::default()
+        }
+    }
+
+    pub fn build() -> Self {
+        Self {
+            name: "build".to_string(),
+            depends_on: Some(vec!["install".to_string()]),
+            ..Default::default()
+        }
+    }
+
     pub fn depends_on_phase<S: Into<String>>(&mut self, name: S) {
         self.depends_on = add_to_option_vec(self.depends_on.clone(), name.into());
     }

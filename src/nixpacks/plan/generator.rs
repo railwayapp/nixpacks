@@ -80,9 +80,10 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
         let new_build_phase: Phase = build_phase.into();
         let new_start_phase: StartPhase = start_phase.into();
 
-        let mut new_build_plan =
-            BuildPlan::new(vec![new_setup_phase, new_install_phase, new_build_phase]);
-        new_build_plan.add_start_phase(new_start_phase);
+        let mut new_build_plan = BuildPlan::new(
+            vec![new_setup_phase, new_install_phase, new_build_phase],
+            Some(new_start_phase),
+        );
         new_build_plan.set_variables(variables);
 
         Ok(new_build_plan)

@@ -57,9 +57,10 @@ pub struct BuildPlan {
 }
 
 impl BuildPlan {
-    pub fn new(phases: Vec<Phase>) -> Self {
+    pub fn new(phases: Vec<Phase>, start_phase: Option<StartPhase>) -> Self {
         Self {
             phases,
+            start_phase,
             ..Default::default()
         }
     }

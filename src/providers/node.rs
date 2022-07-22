@@ -5,8 +5,10 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
-    plan::legacy_phase::{
-        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    plan::{
+        legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
+        phase::{Phase, StartPhase},
+        BuildPlan,
     },
 };
 use anyhow::Result;
@@ -47,55 +49,39 @@ impl Provider for NodeProvider {
         Ok(app.includes_file("package.json"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<LegacySetupPhase>> {
-        let packages = NodeProvider::get_nix_packages(app, env)?;
-        let mut setup_phase = LegacySetupPhase::new(packages);
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+        // Setup
+        let mut setup = Phase::setup();
+        setup.add_nix_pkgs(NodeProvider::get_nix_packages(app, env)?);
+
         if NodeProvider::uses_canvas(app) {
-            setup_phase.add_libraries(vec!["libuuid".to_string(), "libGL".to_string()]);
-        }
-        Ok(Some(setup_phase))
-    }
-
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
-        let install_cmd = NodeProvider::get_install_command(app);
-
-        let mut install_phase = LegacyInstallPhase::new(install_cmd);
-
-        // Package manage cache directories
-        let package_manager = NodeProvider::get_package_manager(app);
-        if package_manager == "yarn" {
-            install_phase.add_cache_directory(YARN_CACHE_DIR.to_string());
-        } else if package_manager == "pnpm" {
-            install_phase.add_cache_directory(PNPM_CACHE_DIR.to_string());
-        } else if package_manager == "bun" {
-            install_phase.add_cache_directory(BUN_CACHE_DIR.to_string());
-        } else {
-            install_phase.add_cache_directory(NPM_CACHE_DIR.to_string());
+            setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
 
-        let all_deps = NodeProvider::get_all_deps(app)?;
+        // Install
+        let mut install = Phase::install();
+        install.add_cmd(NodeProvider::get_install_command(app));
+
+        install.add_cache_directory(NodeProvider::get_package_manager_cache_dir(app));
 
         // Cypress cache directory
+        let all_deps = NodeProvider::get_all_deps(app)?;
         if all_deps.get("cypress").is_some() {
-            install_phase.add_cache_directory(CYPRESS_CACHE_DIR.to_string());
+            install.add_cache_directory(CYPRESS_CACHE_DIR.to_string());
         }
 
-        Ok(Some(install_phase))
-    }
-
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
-        let mut build_phase = LegacyBuildPhase::default();
-
+        // Build
+        let mut build = Phase::build();
         if NodeProvider::has_script(app, "build")? {
             let pkg_manager = NodeProvider::get_package_manager(app);
-            build_phase.add_cmd(format!("{} run build", pkg_manager));
+            build.add_cmd(format!("{} run build", pkg_manager));
         }
 
         // Next build cache directories
         let next_cache_dirs = NodeProvider::find_next_packages(app)?;
         for dir in next_cache_dirs {
             let next_cache_dir = ".next/cache";
-            build_phase.add_cache_directory(if dir.is_empty() {
+            build.add_cache_directory(if dir.is_empty() {
                 next_cache_dir.to_string()
             } else {
                 format!("{}/{}", dir, next_cache_dir)
@@ -103,26 +89,98 @@ impl Provider for NodeProvider {
         }
 
         // Node modules cache directory
-        build_phase.add_cache_directory(NODE_MODULES_CACHE_DIR.to_string());
+        build.add_cache_directory(NODE_MODULES_CACHE_DIR.to_string());
 
-        Ok(Some(build_phase))
-    }
-
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
-        if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
-            Ok(Some(LegacyStartPhase::new(start_cmd)))
+        // Start
+        let start = if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
+            Some(StartPhase::new(start_cmd))
         } else {
-            Ok(None)
-        }
+            None
+        };
+
+        let mut plan = BuildPlan::new(vec![setup, install, build], start);
+
+        plan.set_variables(NodeProvider::get_node_environment_variables());
+
+        Ok(Some(plan))
     }
 
-    fn environment_variables(
-        &self,
-        _app: &App,
-        _env: &Environment,
-    ) -> Result<Option<EnvironmentVariables>> {
-        Ok(Some(NodeProvider::get_node_environment_variables()))
-    }
+    // fn setup(&self, app: &App, env: &Environment) -> Result<Option<LegacySetupPhase>> {
+    //     let packages = NodeProvider::get_nix_packages(app, env)?;
+    //     let mut setup_phase = LegacySetupPhase::new(packages);
+    //     if NodeProvider::uses_canvas(app) {
+    //         setup_phase.add_libraries(vec!["libuuid".to_string(), "libGL".to_string()]);
+    //     }
+    //     Ok(Some(setup_phase))
+    // }
+
+    // fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+    //     let install_cmd = NodeProvider::get_install_command(app);
+
+    //     let mut install_phase = LegacyInstallPhase::new(install_cmd);
+
+    //     // Package manage cache directories
+    //     let package_manager = NodeProvider::get_package_manager(app);
+    //     if package_manager == "yarn" {
+    //         install_phase.add_cache_directory(YARN_CACHE_DIR.to_string());
+    //     } else if package_manager == "pnpm" {
+    //         install_phase.add_cache_directory(PNPM_CACHE_DIR.to_string());
+    //     } else if package_manager == "bun" {
+    //         install_phase.add_cache_directory(BUN_CACHE_DIR.to_string());
+    //     } else {
+    //         install_phase.add_cache_directory(NPM_CACHE_DIR.to_string());
+    //     }
+
+    //     let all_deps = NodeProvider::get_all_deps(app)?;
+
+    //     // Cypress cache directory
+    //     if all_deps.get("cypress").is_some() {
+    //         install_phase.add_cache_directory(CYPRESS_CACHE_DIR.to_string());
+    //     }
+
+    //     Ok(Some(install_phase))
+    // }
+
+    // fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+    //     let mut build_phase = LegacyBuildPhase::default();
+
+    //     if NodeProvider::has_script(app, "build")? {
+    //         let pkg_manager = NodeProvider::get_package_manager(app);
+    //         build_phase.add_cmd(format!("{} run build", pkg_manager));
+    //     }
+
+    //     // Next build cache directories
+    //     let next_cache_dirs = NodeProvider::find_next_packages(app)?;
+    //     for dir in next_cache_dirs {
+    //         let next_cache_dir = ".next/cache";
+    //         build_phase.add_cache_directory(if dir.is_empty() {
+    //             next_cache_dir.to_string()
+    //         } else {
+    //             format!("{}/{}", dir, next_cache_dir)
+    //         });
+    //     }
+
+    //     // Node modules cache directory
+    //     build_phase.add_cache_directory(NODE_MODULES_CACHE_DIR.to_string());
+
+    //     Ok(Some(build_phase))
+    // }
+
+    // fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+    //     if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
+    //         Ok(Some(LegacyStartPhase::new(start_cmd)))
+    //     } else {
+    //         Ok(None)
+    //     }
+    // }
+
+    // fn environment_variables(
+    //     &self,
+    //     _app: &App,
+    //     _env: &Environment,
+    // ) -> Result<Option<EnvironmentVariables>> {
+    //     Ok(Some(NodeProvider::get_node_environment_variables()))
+    // }
 }
 
 impl NodeProvider {
@@ -239,6 +297,19 @@ impl NodeProvider {
             install_cmd = "bun i --no-save";
         }
         install_cmd.to_string()
+    }
+
+    fn get_package_manager_cache_dir(app: &App) -> String {
+        let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager == "yarn" {
+            YARN_CACHE_DIR.to_string()
+        } else if package_manager == "pnpm" {
+            PNPM_CACHE_DIR.to_string()
+        } else if package_manager == "bun" {
+            BUN_CACHE_DIR.to_string()
+        } else {
+            NPM_CACHE_DIR.to_string()
+        }
     }
 
     /// Returns the nodejs nix package and the appropriate package manager nix image.
