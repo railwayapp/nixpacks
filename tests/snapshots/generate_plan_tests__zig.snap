@@ -1,0 +1,28 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "0.2.9",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "zig"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+  },
+  "install": {},
+  "build": {
+    "cmds": [
+      "zig build -Drelease-safe=true"
+    ]
+  },
+  "start": {
+    "cmd": "./zig-out/bin/zig"
+  },
+  "variables": {},
+  "static_assets": {}
+}

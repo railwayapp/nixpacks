@@ -1,0 +1,52 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "0.2.9",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "cowsay"
+      },
+      {
+        "name": "ripgrep"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+  },
+  "install": {
+    "cmds": [
+      "install"
+    ],
+    "cacheDirectories": [
+      "/tmp",
+      "foobar"
+    ]
+  },
+  "build": {
+    "cmds": [
+      "build"
+    ],
+    "cacheDirectories": [
+      "/build",
+      "barbaz"
+    ]
+  },
+  "start": {
+    "cmd": "start",
+    "runImage": "alpine"
+  },
+  "variables": {
+    "NIXPACKS_BUILD_CACHE_DIRS": "/build,barbaz",
+    "NIXPACKS_BUILD_CMD": "build",
+    "NIXPACKS_INSTALL_CACHE_DIRS": "/tmp,foobar",
+    "NIXPACKS_INSTALL_CMD": "install",
+    "NIXPACKS_PKGS": "cowsay ripgrep",
+    "NIXPACKS_RUN_IMAGE": "alpine",
+    "NIXPACKS_START_CMD": "start"
+  },
+  "static_assets": {}
+}

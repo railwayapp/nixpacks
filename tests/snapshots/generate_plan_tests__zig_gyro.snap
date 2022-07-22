@@ -1,0 +1,37 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "0.2.9",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "zig"
+      },
+      {
+        "name": "wget"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+  },
+  "install": {
+    "cmds": [
+      "mkdir /gyro && (wget -O- https://github.com/mattnite/gyro/releases/download/0.6.0/gyro-0.6.0-linux-aarch64.tar.gz | tar -C /gyro -xzf -)",
+      "chmod +x /gyro/gyro-0.6.0-linux-aarch64/bin/gyro",
+      "/gyro/gyro-0.6.0-linux-aarch64/bin/gyro fetch"
+    ]
+  },
+  "build": {
+    "cmds": [
+      "zig build -Drelease-safe=true"
+    ]
+  },
+  "start": {
+    "cmd": "./zig-out/bin/zig-gyro"
+  },
+  "variables": {},
+  "static_assets": {}
+}

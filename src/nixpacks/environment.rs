@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
-use std::{collections::HashMap, env};
+use std::{collections::BTreeMap, env};
 
-pub type EnvironmentVariables = HashMap<String, String>;
+pub type EnvironmentVariables = BTreeMap<String, String>;
 
 #[derive(Default, Debug)]
 pub struct Environment {

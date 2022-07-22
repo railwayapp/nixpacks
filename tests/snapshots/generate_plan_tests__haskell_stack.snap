@@ -1,0 +1,55 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "0.2.9",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "stack"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [
+      "libgmp-dev",
+      "gcc",
+      "binutils",
+      "make",
+      "zlib1g-dev",
+      "libnuma1",
+      "libnuma-dev",
+      "libtinfo-dev",
+      "libtinfo5",
+      "libc6-dev",
+      "libtinfo6",
+      "llvm-11",
+      "clang",
+      "ninja-build",
+      "zlib1g-dev"
+    ],
+    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+  },
+  "install": {
+    "cmds": [
+      "stack setup"
+    ],
+    "cacheDirectories": [
+      "/root/.stack"
+    ]
+  },
+  "build": {
+    "cmds": [
+      "stack install"
+    ],
+    "cacheDirectories": [
+      "/root/.stack",
+      ".stack-work"
+    ]
+  },
+  "start": {
+    "cmd": "/root/.local/bin/haskell-stack-exe"
+  },
+  "variables": {},
+  "static_assets": {}
+}

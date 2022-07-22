@@ -1,0 +1,37 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "0.2.9",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "python38"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+  },
+  "install": {
+    "cmds": [
+      "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install --upgrade build setuptools && pip install ."
+    ],
+    "onlyIncludeFiles": [
+      "pyproject.toml"
+    ],
+    "cacheDirectories": [
+      "/root/.cache/pip"
+    ],
+    "paths": [
+      "/opt/venv/bin"
+    ]
+  },
+  "build": {},
+  "start": {
+    "cmd": "python -m nixpacks-setuptools"
+  },
+  "variables": {},
+  "static_assets": {}
+}
