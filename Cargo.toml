@@ -8,6 +8,7 @@ description = "Generate an OCI compliant image based off app source"
 readme = "README.md"
 homepage = "https://github.com/railwayapp/nixpacks"
 repository = "https://github.com/railwayapp/nixpacks"
+exclude = ["examples/", "docs/"]
 
 [[bin]]
 name = "nixpacks"
