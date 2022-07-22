@@ -3,12 +3,14 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    phase::{BuildPhase, SetupPhase, StartPhase},
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
 use regex::Regex;
 
 const DEFAULT_JDK_PKG_NAME: &'static &str = &"jdk8";
+const LEIN_CACHE_DIR: &'static &str = &"~/.m2";
+
 pub struct ClojureProvider {}
 
 impl Provider for ClojureProvider {
@@ -20,6 +22,12 @@ impl Provider for ClojureProvider {
         Ok(app.includes_file("project.clj"))
     }
 
+    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+        let mut install_phase = InstallPhase::new("".to_string());
+        install_phase.add_cache_directory(LEIN_CACHE_DIR.to_string());
+        return Ok(Some(install_phase));
+    }
+
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
         Ok(Some(SetupPhase::new(vec![
             Pkg::new("leiningen"),
@@ -27,13 +35,23 @@ impl Provider for ClojureProvider {
         ])))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new("lein uberjar".to_string())))
+    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+        let has_lein_ring_plugin = app
+            .read_file("project.clj")?
+            .to_lowercase()
+            .contains("[lein-ring ");
+
+        let build_cmd = match has_lein_ring_plugin {
+            true => "lein ring uberjar",
+            false => "lein uberjar",
+        };
+
+        Ok(Some(BuildPhase::new(build_cmd.to_string())))
     }
 
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         Ok(Some(StartPhase::new(
-            "java $JAVA_OPTS -jar target/uberjar/*standalone.jar".to_string(),
+            "java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string(),
         )))
     }
 }

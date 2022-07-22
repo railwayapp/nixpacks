@@ -953,7 +953,25 @@ fn test_clojure() -> Result<()> {
     );
     assert_eq!(
         plan.start.unwrap().cmd,
-        Some("java $JAVA_OPTS -jar target/uberjar/*standalone.jar".to_string())
+        Some("java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_clojure_ring_app() -> Result<()> {
+    let plan = simple_gen_plan("./examples/clojure-ring-app");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("leiningen"), Pkg::new("jdk8"),]
+    );
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["lein ring uberjar".to_string()])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string())
     );
     Ok(())
 }
