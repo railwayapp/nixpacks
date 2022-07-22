@@ -42,8 +42,9 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          title: Update nixpkgs archive to [`${{ steps.update-archive.outputs.sha }}`](${{ steps.update-archive.outputs.url }})
-          commit-message: Update nixpkgs archive to [`${{ steps.update-archive.outputs.sha }}`](${{ steps.update-archive.outputs.url }})
+          title: Update nixpkgs archive
+          commit-message: Update nixpkgs archive to `${{ steps.update-archive.outputs.sha }}`
+          body: "[`${{ steps.update-archive.outputs.sha }}`](${{ steps.update-archive.outputs.url }})"
           signoff: true
           delete-branch: true
           author: ${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>
