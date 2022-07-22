@@ -290,7 +290,18 @@ fn test_node_main_file_doesnt_exist() {
 #[test]
 fn test_haskell_stack() {
     let plan = simple_gen_plan("./examples/haskell-stack");
-    insta::assert_json_snapshot!(plan);
+    assert_eq!(
+        plan.install.unwrap().cmds,
+        Some(vec!["stack setup".to_string()])
+    );
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["stack install".to_string()])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("/root/.local/bin/haskell-stack-exe".to_string())
+    );
 }
 
 #[test]
@@ -388,7 +399,23 @@ fn test_zig() {
 #[test]
 fn test_zig_gyro() {
     let plan = simple_gen_plan("./examples/zig-gyro");
-    insta::assert_json_snapshot!(plan);
+
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["zig build -Drelease-safe=true".to_string()])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("./zig-out/bin/zig-gyro".to_string())
+    );
+    assert!(plan
+        .install
+        .unwrap()
+        .cmds
+        .unwrap()
+        .get(0)
+        .unwrap()
+        .contains("mkdir /gyro"));
 }
 
 #[test]
