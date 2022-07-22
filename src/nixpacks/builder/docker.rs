@@ -376,9 +376,9 @@ fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<St
         (Some(cache_key), Some(cache_directories)) => cache_directories
             .iter()
             .map(|dir| {
-                let key = format!("{cache_key}-{dir}");
-                let safe_key = sanitize_cache_key(key);
-                format!("--mount=type=cache,id={safe_key},target={dir}")
+                let sanitized_dir = dir.to_string().replace('~',"root");
+                let sanitized_key = sanitize_cache_key(format!("{cache_key}-{sanitized_dir}"));
+                format!("--mount=type=cache,id={sanitized_key},target={sanitized_dir}")
             })
             .collect::<Vec<String>>()
             .join(" "),

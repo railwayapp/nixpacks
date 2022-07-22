@@ -3,11 +3,11 @@ pub fn sanitize_cache_key(cache_key: String) -> String {
         .chars()
         .filter(|x| match x {
             // remove these chars
-            '/' | '.' => false,
+            '.' => false,
             _ => true,
         })
         .map(|x| match x {
-            ' ' | '~' => '-',
+            ' ' | '/' => '-',
             _ => x,
         })
         .collect()
