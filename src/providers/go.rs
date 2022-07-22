@@ -55,9 +55,7 @@ impl Provider for GolangProvider {
     fn start(&self, _app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         let mut start_phase = StartPhase::new(format!("./{}", BINARY_NAME));
 
-        let cgo = env
-            .get_variable("CGO_ENABLED")
-            .unwrap_or_else(|| "0".to_string());
+        let cgo = env.get_variable("CGO_ENABLED").unwrap_or("0");
 
         // Only run in a new image if CGO_ENABLED=0 (default)
         if cgo != "1" {
@@ -94,7 +92,7 @@ impl GolangProvider {
             let go_version_line = lines.find(|line| line.trim().starts_with("go"));
 
             if let Some(go_version_line) = go_version_line {
-                let go_version = go_version_line.trim().split_whitespace().nth(1).unwrap();
+                let go_version = go_version_line.split_whitespace().nth(1).unwrap();
 
                 if let Some(nix_pkg) = version_number_to_pkg(go_version)? {
                     return Ok(nix_pkg);

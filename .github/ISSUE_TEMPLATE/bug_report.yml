@@ -1,0 +1,52 @@
+name: 🐛 Bug Report
+description: Create a bug report to help us improve Nixpacks
+title: "Nixpacks Bug Report"
+labels: ["bug"]
+body:
+  - type: checkboxes
+    id: issue-already-exists
+    attributes:
+      label: Is there an existing issue for this?
+      description: |
+        Please search to see if an issue already exists for the bug you encountered.
+        Please see [Searching Issues and Pull Requests](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests) for how to use the GitHub search bar and filters.
+      options:
+      - label: I have searched the existing issues
+        required: true
+  - type: textarea
+    id: describe-the-bugs
+    validations:
+      required: true
+    attributes:
+      label: Describe the bug
+      description: Please provide a clear and concise description about the problem you ran into.
+      placeholder: This happened when I...
+  - type: textarea
+    id: to-reproduce
+    validations:
+      required: false
+    attributes:
+      label: To reproduce
+      description: |
+        Please provide a code sample or a code snippet to reproduce the said problem. If you have code snippets, error messages or a stack trace please provide them here.
+      placeholder: |
+        Steps to reproduce the bug:
+
+          1. Provide '...'
+          2. Run '...'
+          3. See error
+  - type: textarea
+    id: expected-behavior
+    validations:
+      required: false
+    attributes:
+      label: Expected behavior
+      description: "A clear and concise description of what you would expect to happen."
+  - type: textarea
+    id: environment-info
+    attributes:
+      label: Environment
+      description: |
+        Please share your environment with us. (ie, OS, OS version and Nixpacks version)
+    validations:
+      required: true

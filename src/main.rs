@@ -66,6 +66,13 @@ fn main() -> Result<()> {
                         .multiple_values(true),
                 )
                 .arg(
+                    Arg::new("platform")
+                        .long("platform")
+                        .help("Set target platform for your output image")
+                        .takes_value(true)
+                        .multiple_values(true),
+                )
+                .arg(
                     Arg::new("cache-key")
                         .long("cache-key")
                         .help(
@@ -219,6 +226,10 @@ fn main() -> Result<()> {
                 .values_of("label")
                 .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
                 .unwrap_or_default();
+            let platform = matches
+                .values_of("platform")
+                .map(|values| values.map(|s| s.to_string()).collect::<Vec<_>>())
+                .unwrap_or_default();
 
             let build_options = &DockerBuilderOptions {
                 name,
@@ -228,6 +239,7 @@ fn main() -> Result<()> {
                 quiet: false,
                 cache_key,
                 no_cache,
+                platform,
                 print_dockerfile,
             };
 
@@ -253,17 +265,5 @@ fn get_default_cache_key(path: &str) -> Result<Option<String>> {
         Ok(Some(encoded_source))
     } else {
         Ok(None)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_get_default_cache_key() {
-        let path = "./examples/node";
-        let cache_key = get_default_cache_key(path).unwrap();
-        assert_eq!(cache_key, Some("2UWr73QvCk".to_string()));
     }
 }

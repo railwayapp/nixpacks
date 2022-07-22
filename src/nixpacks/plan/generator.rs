@@ -15,8 +15,10 @@ use crate::{
 };
 use anyhow::{bail, Context, Ok, Result};
 
-// https://status.nixos.org/
-static NIXPKGS_ARCHIVE: &str = "41cc1d5d9584103be4108c1815c350e07c807036";
+// This line is automatically updated.
+// Last Modified: 2022-07-18 17:26:19 UTC+0000
+// https://github.com/NixOS/nixpkgs/commit/9eb60f25aff0d2218c848dd4574a0ab5e296cabe
+static NIXPKGS_ARCHIVE: &str = "9eb60f25aff0d2218c848dd4574a0ab5e296cabe";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
@@ -31,7 +33,7 @@ pub struct GeneratePlanOptions {
 }
 
 pub struct NixpacksBuildPlanGenerator<'a> {
-    providers: Vec<&'a dyn Provider>,
+    providers: &'a [&'a dyn Provider],
     matched_provider: Option<&'a dyn Provider>,
     options: GeneratePlanOptions,
 }
@@ -102,11 +104,11 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
     }
 }
 
-impl<'a> NixpacksBuildPlanGenerator<'a> {
-    pub fn new(
-        providers: Vec<&'a dyn Provider>,
+impl NixpacksBuildPlanGenerator<'_> {
+    pub fn new<'a>(
+        providers: &'a [&'a dyn Provider],
         options: GeneratePlanOptions,
-    ) -> NixpacksBuildPlanGenerator {
+    ) -> NixpacksBuildPlanGenerator<'a> {
         NixpacksBuildPlanGenerator {
             providers,
             matched_provider: None,
@@ -115,7 +117,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
     }
 
     fn detect(&mut self, app: &App, environment: &Environment) -> Result<()> {
-        for provider in self.providers.clone() {
+        for &provider in self.providers {
             let matches = provider.detect(app, environment)?;
             if matches {
                 self.matched_provider = Some(provider);

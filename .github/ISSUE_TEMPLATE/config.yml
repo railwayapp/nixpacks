@@ -1,0 +1,13 @@
+blank_issues_enabled: true
+version: 2.1
+contact_links:
+  - name: 📖 Nixpacks Documentation
+    url: https://nixpacks.com/
+    about: Documentation about Nixpacks
+  - name: 🚅 Railway
+    url: https://railway.app/
+    about: Railway homepage
+  - name: 💬 Railway Discord
+    url: https://discord.gg/railway
+    about: Contact the Railway team for support via Discord
+

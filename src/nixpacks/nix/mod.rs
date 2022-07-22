@@ -36,6 +36,17 @@ pub fn create_nix_expression(phase: &NewPhase) -> String {
         .collect::<Vec<String>>()
         .join("\n");
 
+    // If the openssl library is added, set the OPENSSL_DIR and OPENSSL_LIB_DIR environment variables
+    // In the future, we will probably want a generic way for providers to set variables based off Nix package locations
+    let openssl_dirs = if libraries.contains("openssl") {
+        formatdoc! {"
+      export OPENSSL_DIR=\"${{openssl.dev}}\"
+      export OPENSSL_LIB_DIR=\"${{openssl.out}}/lib\"
+    "}
+    } else {
+        String::new()
+    };
+
     let nix_expression = formatdoc! {"
             {{ }}:
 
@@ -45,6 +56,7 @@ pub fn create_nix_expression(phase: &NewPhase) -> String {
                 APPEND_LIBRARY_PATH = \"${{lib.makeLibraryPath [ {libraries} ] }}\";
                 myLibraries = writeText \"libraries\" ''
                   export LD_LIBRARY_PATH=\"${{APPEND_LIBRARY_PATH}}:$LD_LIBRARY_PATH\"
+                  {openssl_dirs}
                 '';
               in
                 buildEnv {{

@@ -38,7 +38,7 @@ export const TopNav: React.FC<{
       <nav
         className={`flex items-center justify-between px-8 py-5 w-full max-w-[90rem] mx-auto`}
       >
-        <Link href="/" className="flex">
+        <Link href="/docs" className="flex">
           📦 Nixpacks
         </Link>
 

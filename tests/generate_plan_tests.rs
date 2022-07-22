@@ -150,7 +150,7 @@ fn test_yarn_berry() -> Result<()> {
     assert_eq!(
         plan.install.unwrap().cmds,
         Some(vec![
-            "yarn set version berry && yarn install --immutable --check-cache".to_string()
+            "yarn set version berry && yarn install --check-cache".to_string()
         ])
     );
     Ok(())
@@ -193,6 +193,90 @@ fn test_pnpm() -> Result<()> {
         Some(vec!["pnpm run build".to_string()])
     );
     assert_eq!(plan.start.unwrap().cmd, Some("pnpm run start".to_string()));
+    assert_eq!(
+        plan.variables.clone().unwrap().get("NODE_ENV"),
+        Some(&"production".to_string())
+    );
+    assert_eq!(
+        plan.variables.unwrap().get("NPM_CONFIG_PRODUCTION"),
+        Some(&"false".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_bun() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-bun");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("bun").from_overlay(NODE_OVERLAY)]
+    );
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["bun i --no-save".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.bun".to_string()])
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("bun run start".to_string()));
+    assert_eq!(
+        plan.variables.clone().unwrap().get("NODE_ENV"),
+        Some(&"production".to_string())
+    );
+    assert_eq!(
+        plan.variables.unwrap().get("NPM_CONFIG_PRODUCTION"),
+        Some(&"false".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_bun_no_start() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-bun-no-start");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("bun").from_overlay(NODE_OVERLAY)]
+    );
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["bun i --no-save".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.bun".to_string()])
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("bun index.ts".to_string()));
+    assert_eq!(
+        plan.variables.clone().unwrap().get("NODE_ENV"),
+        Some(&"production".to_string())
+    );
+    assert_eq!(
+        plan.variables.unwrap().get("NPM_CONFIG_PRODUCTION"),
+        Some(&"false".to_string())
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_bun_web_server() -> Result<()> {
+    let plan = simple_gen_plan("./examples/node-bun-no-start");
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("bun").from_overlay(NODE_OVERLAY)]
+    );
+    assert_eq!(
+        plan.install.clone().unwrap().cmds,
+        Some(vec!["bun i --no-save".to_string()])
+    );
+    assert_eq!(
+        plan.install.unwrap().cache_directories,
+        Some(vec!["/root/.bun".to_string()])
+    );
+    assert_eq!(plan.start.unwrap().cmd, Some("bun index.ts".to_string()));
     assert_eq!(
         plan.variables.clone().unwrap().get("NODE_ENV"),
         Some(&"production".to_string())
@@ -556,14 +640,17 @@ fn test_node_main_file_doesnt_exist() -> Result<()> {
 fn test_haskell_stack() -> Result<()> {
     let plan = simple_gen_plan("./examples/haskell-stack");
     assert_eq!(
-        plan.build.unwrap().cmds,
-        Some(vec!["stack build".to_string()])
-    );
-    assert_eq!(
         plan.install.unwrap().cmds,
         Some(vec!["stack setup".to_string()])
     );
-    assert!(plan.start.unwrap().cmd.unwrap().contains("stack exec"));
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec!["stack install".to_string()])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("/root/.local/bin/haskell-stack-exe".to_string())
+    );
     Ok(())
 }
 
@@ -820,14 +907,21 @@ fn test_zig_gyro() -> Result<()> {
 
 #[test]
 fn test_ruby_rails() -> Result<()> {
-    let plan = simple_gen_plan("./examples/ruby-rails");
+    let plan = simple_gen_plan("./examples/ruby-rails-postgres");
+    assert_eq!(
+        plan.setup.unwrap().apt_pkgs,
+        Some(vec!["procps".to_string(), "libpq-dev".to_string()])
+    );
     assert_eq!(
         plan.install.unwrap().cmds,
         Some(vec!["bundle install".to_string()])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
-        Some("bundle exec bin/rails server -b 0.0.0.0 -p ${PORT:-3000} -e $RAILS_ENV".to_string())
+        Some(
+            "rake db:migrate && bundle exec bin/rails server -b 0.0.0.0 -p ${PORT:-3000}"
+                .to_string()
+        )
     );
     Ok(())
 }
@@ -839,6 +933,57 @@ fn test_ruby_sinatra() -> Result<()> {
         plan.install.unwrap().cmds,
         Some(vec!["bundle install".to_string()])
     );
-    assert_eq!(plan.start.unwrap().cmd, Some("ruby app.rb".to_string()));
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("RACK_ENV=production bundle exec puma".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_clojure() -> Result<()> {
+    let plan = simple_gen_plan("./examples/clojure");
+    let move_file_cmd = "if [ -f /app/target/uberjar/*standalone.jar ]; then  mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi";
+
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("leiningen"), Pkg::new("jdk8"),]
+    );
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![format!(
+            "{}; {}",
+            "lein uberjar".to_string(),
+            move_file_cmd
+        )])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_clojure_ring_app() -> Result<()> {
+    let plan = simple_gen_plan("./examples/clojure-ring-app");
+    let move_file_cmd = "if [ -f /app/target/uberjar/*standalone.jar ]; then  mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi";
+
+    assert_eq!(
+        plan.setup.unwrap().pkgs,
+        vec![Pkg::new("leiningen"), Pkg::new("jdk8"),]
+    );
+    assert_eq!(
+        plan.build.unwrap().cmds,
+        Some(vec![format!(
+            "{}; {}",
+            "lein ring uberjar".to_string(),
+            move_file_cmd
+        )])
+    );
+    assert_eq!(
+        plan.start.unwrap().cmd,
+        Some("java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string())
+    );
     Ok(())
 }

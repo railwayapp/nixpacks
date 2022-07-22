@@ -83,7 +83,7 @@ fn run_image(name: String, cfg: Option<Config>) -> String {
     cmd.stdout(Stdio::piped());
 
     let mut child = cmd.spawn().unwrap();
-    let secs = Duration::from_secs(5);
+    let secs = Duration::from_secs(20);
 
     let _status_code = match child.wait_timeout(secs).unwrap() {
         Some(status) => status.code(),
@@ -253,6 +253,7 @@ fn test_yarn_custom_version() {
 fn test_yarn_berry() {
     let name = simple_build("./examples/node-yarn-berry");
     let output = run_image(name, None);
+
     assert!(output.contains("Hello from Yarn v2+"));
 }
 
@@ -268,6 +269,20 @@ fn test_pnpm() {
     let name = simple_build("./examples/node-pnpm");
     let output = run_image(name, None);
     assert!(output.contains("Hello from PNPM"));
+}
+
+#[test]
+fn test_bun() {
+    let name = simple_build("./examples/node-bun");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Bun"));
+}
+
+#[test]
+fn test_bun_web_server() {
+    let name = simple_build("./examples/node-bun-web-server");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from a Bun web server!"));
 }
 
 #[test]
@@ -345,6 +360,13 @@ fn test_python_poetry() {
 }
 
 #[test]
+fn test_python_numpy() {
+    let name = simple_build("./examples/python-numpy");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Python numpy and pandas"));
+}
+
+#[test]
 fn test_rust_custom_version() {
     let name = Uuid::new_v4().to_string();
     create_docker_image(
@@ -371,6 +393,13 @@ fn test_rust_ring() {
     let name = simple_build("./examples/rust-ring");
     let output = run_image(name, None);
     assert!(output.contains("Hello from rust"));
+}
+
+#[test]
+fn test_rust_openssl() {
+    let name = simple_build("./examples/rust-openssl");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from Rust openssl!"));
 }
 
 #[test]
@@ -492,7 +521,46 @@ fn test_ruby_sinatra() {
 
 #[test]
 fn test_ruby_rails() {
-    let name = simple_build("./examples/ruby-rails/");
+    // Create the network
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    // Create the postgres instance
+    let c = run_postgres();
+    let container_name = c.name.clone();
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    // Build the Django example
+    let name = simple_build("./examples/ruby-rails-postgres");
+
+    // Run the Rails example on the attached network
+    let output = run_image(
+        name,
+        Some(Config {
+            environment_variables: c.config.unwrap().environment_variables,
+            network: Some(network_name.clone()),
+        }),
+    );
+
+    // Cleanup containers and networks
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
+
+    assert!(output.contains("Rails 7"));
+}
+
+#[test]
+fn test_clojure() {
+    let name = simple_build("./examples/clojure");
     let output = run_image(name, None);
-    assert!(output.contains("Rails"));
+    assert_eq!(output, "Hello, World From Clojure!");
+}
+
+#[test]
+fn test_clojure_ring_app() {
+    let name = simple_build("./examples/clojure-ring-app");
+    let output = run_image(name, None);
+    assert_eq!(output, "Started server on port 3000");
 }
