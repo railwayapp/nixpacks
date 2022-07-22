@@ -50,9 +50,10 @@ impl Provider for ClojureProvider {
     }
 
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        Ok(Some(StartPhase::new(
-            "java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string(),
-        )))
+        // based on config uberjar can be under target/uberjar or target, this ensure file will be found on the same place for different configs
+        let start_cmd= "mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; java $JAVA_OPTS -jar /app/target/*standalone.jar";
+
+        Ok(Some(StartPhase::new(start_cmd.to_string())))
     }
 }
 
