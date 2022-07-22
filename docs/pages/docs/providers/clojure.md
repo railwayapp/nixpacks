@@ -21,20 +21,18 @@ The version can be overriden by
 
 ## Build
 
-If `lein-ring plugin detected`
+If `lein-ring` plugin detected
 
-```
-lein ring uberjar
+```lein ring uberjar; if [ -f /app/target/uberjar/*standalone.jar ]; then mv /app/target/uberjar/standalone.jar /app/target/*standalone.jar; fi
 ```
 
 Default
-```
-lein uberjar
+```lein uberjar; if [ -f /app/target/uberjar/*standalone.jar ]; then mv /app/target/uberjar/standalone.jar /app/target/*standalone.jar; fi
 ```
 
 
 ## Start
 
 ```
-mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; java $JAVA_OPTS -jar /app/target/*standalone.jar
+java $JAVA_OPTS -jar /app/target/*standalone.jar
 ```

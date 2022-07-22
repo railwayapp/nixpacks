@@ -46,12 +46,18 @@ impl Provider for ClojureProvider {
             false => "lein uberjar",
         };
 
-        Ok(Some(BuildPhase::new(build_cmd.to_string())))
+        // based on project config, uberjar can be created under ./target/uberjar or ./target, This ensure file will be found on the same place whatevery the project config is
+        let move_file_cmd = "if [ -f /app/target/uberjar/*standalone.jar ]; then  mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi";
+
+        Ok(Some(BuildPhase::new(format!(
+            "{}; {}",
+            build_cmd.to_string(),
+            move_file_cmd
+        ))))
     }
 
     fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        // based on project config, uberjar can be created under ./target/uberjar or ./target, this ensure file will be found on the same place for different project configs
-        let start_cmd= "mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; java $JAVA_OPTS -jar /app/target/*standalone.jar";
+        let start_cmd = "java $JAVA_OPTS -jar /app/target/*standalone.jar";
 
         Ok(Some(StartPhase::new(start_cmd.to_string())))
     }
