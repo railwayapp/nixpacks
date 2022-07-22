@@ -1,11 +1,7 @@
 pub fn sanitize_cache_key(cache_key: String) -> String {
     cache_key
         .chars()
-        .filter(|x| match x {
-            // remove these chars
-            '.' => false,
-            _ => true,
-        })
+        .filter(|x| !matches!(x, '.')) // remove dot from the string
         .map(|x| match x {
             ' ' | '/' => '-',
             _ => x,
