@@ -20,6 +20,10 @@ mod tests {
             sanitize_cache_key("s p a c e s".to_string()),
             "s-p-a-c-e-s".to_string()
         );
-        assert_eq!(sanitize_cache_key("/.m2".to_string()), "-m2".to_string());
+        assert_eq!(
+            sanitize_cache_key("s/my-cache-key".to_string()),
+            "/my-cache-key".to_string()
+        );
+        assert_eq!(sanitize_cache_key("/.m2".to_string()), "/m2".to_string());
     }
 }
