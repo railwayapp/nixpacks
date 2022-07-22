@@ -562,5 +562,5 @@ fn test_clojure() {
 fn test_clojure_ring_app() {
     let name = simple_build("./examples/clojure-ring-app");
     let output = run_image(name, None);
-    assert_eq!(output, "Hello Clojure, Hello Ring!");
+    assert_eq!(output, "Started server on port 3000");
 }
