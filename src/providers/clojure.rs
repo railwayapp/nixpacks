@@ -51,8 +51,7 @@ impl Provider for ClojureProvider {
 
         Ok(Some(BuildPhase::new(format!(
             "{}; {}",
-            build_cmd.to_string(),
-            move_file_cmd
+            build_cmd, move_file_cmd
         ))))
     }
 

@@ -951,11 +951,7 @@ fn test_clojure() -> Result<()> {
     );
     assert_eq!(
         plan.build.unwrap().cmds,
-        Some(vec![format!(
-            "{}; {}",
-            "lein uberjar".to_string(),
-            move_file_cmd
-        )])
+        Some(vec![format!("{}; {}", "lein uberjar", move_file_cmd)])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
@@ -975,11 +971,7 @@ fn test_clojure_ring_app() -> Result<()> {
     );
     assert_eq!(
         plan.build.unwrap().cmds,
-        Some(vec![format!(
-            "{}; {}",
-            "lein ring uberjar".to_string(),
-            move_file_cmd
-        )])
+        Some(vec![format!("{}; {}", "lein ring uberjar", move_file_cmd)])
     );
     assert_eq!(
         plan.start.unwrap().cmd,
