@@ -28,10 +28,10 @@ impl Provider for ClojureProvider {
         Ok(Some(install_phase))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         Ok(Some(SetupPhase::new(vec![
             Pkg::new("leiningen"),
-            Pkg::new("jdk8"),
+            ClojureProvider::get_nix_jdk_package(app, env)?,
         ])))
     }
 
