@@ -953,7 +953,7 @@ fn test_clojure() -> Result<()> {
     );
     assert_eq!(
         plan.start.unwrap().cmd,
-        Some("java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string())
+        Some("mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string())
     );
     Ok(())
 }
@@ -971,7 +971,7 @@ fn test_clojure_ring_app() -> Result<()> {
     );
     assert_eq!(
         plan.start.unwrap().cmd,
-        Some("java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string())
+        Some("mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; java $JAVA_OPTS -jar /app/target/*standalone.jar".to_string())
     );
     Ok(())
 }
