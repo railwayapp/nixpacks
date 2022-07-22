@@ -1,14 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-use super::{
+use crate::nixpacks::{
     images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
     nix::pkg::Pkg,
-    plan::new_build_plan::{NewPhase, NewStartPhase},
 };
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct SetupPhase {
+pub struct LegacySetupPhase {
     pub pkgs: Vec<Pkg>,
     pub archive: Option<String>,
     pub libraries: Option<Vec<String>>,
@@ -22,22 +21,7 @@ pub struct SetupPhase {
     pub base_image: String,
 }
 
-impl From<SetupPhase> for NewPhase {
-    fn from(setup_phase: SetupPhase) -> Self {
-        NewPhase {
-            name: "setup".to_string(),
-            nix_pkgs: Some(setup_phase.pkgs),
-            nix_libraries: setup_phase.libraries,
-            nixpacks_archive: setup_phase.archive,
-            apt_pkgs: setup_phase.apt_pkgs,
-            cmds: setup_phase.cmds,
-            only_include_files: setup_phase.only_include_files,
-            ..Default::default()
-        }
-    }
-}
-
-impl SetupPhase {
+impl LegacySetupPhase {
     pub fn new(pkgs: Vec<Pkg>) -> Self {
         Self {
             pkgs,
@@ -91,7 +75,7 @@ impl SetupPhase {
     }
 }
 
-impl Default for SetupPhase {
+impl Default for LegacySetupPhase {
     fn default() -> Self {
         Self {
             pkgs: Default::default(),
@@ -107,7 +91,7 @@ impl Default for SetupPhase {
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct InstallPhase {
+pub struct LegacyInstallPhase {
     pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
@@ -119,19 +103,7 @@ pub struct InstallPhase {
     pub paths: Option<Vec<String>>,
 }
 
-impl From<InstallPhase> for NewPhase {
-    fn from(install_phase: InstallPhase) -> Self {
-        NewPhase {
-            name: "install".to_string(),
-            cmds: install_phase.cmds,
-            only_include_files: install_phase.only_include_files,
-            cache_directories: install_phase.cache_directories,
-            ..Default::default()
-        }
-    }
-}
-
-impl InstallPhase {
+impl LegacyInstallPhase {
     pub fn new(cmd: String) -> Self {
         Self {
             cmds: Some(vec![cmd]),
@@ -177,7 +149,7 @@ impl InstallPhase {
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct BuildPhase {
+pub struct LegacyBuildPhase {
     pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
@@ -187,19 +159,7 @@ pub struct BuildPhase {
     pub cache_directories: Option<Vec<String>>,
 }
 
-impl From<BuildPhase> for NewPhase {
-    fn from(build_phase: BuildPhase) -> Self {
-        NewPhase {
-            name: "build".to_string(),
-            cmds: build_phase.cmds,
-            only_include_files: build_phase.only_include_files,
-            cache_directories: build_phase.cache_directories,
-            ..Default::default()
-        }
-    }
-}
-
-impl BuildPhase {
+impl LegacyBuildPhase {
     pub fn new(cmd: String) -> Self {
         Self {
             cmds: Some(vec![cmd]),
@@ -235,7 +195,7 @@ impl BuildPhase {
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct StartPhase {
+pub struct LegacyStartPhase {
     pub cmd: Option<String>,
 
     #[serde(rename = "runImage")]
@@ -245,17 +205,7 @@ pub struct StartPhase {
     pub only_include_files: Option<Vec<String>>,
 }
 
-impl From<StartPhase> for NewStartPhase {
-    fn from(start_phase: StartPhase) -> Self {
-        NewStartPhase {
-            run_image: start_phase.run_image,
-            cmd: start_phase.cmd,
-            ..Default::default()
-        }
-    }
-}
-
-impl StartPhase {
+impl LegacyStartPhase {
     pub fn new(cmd: String) -> Self {
         Self {
             cmd: Some(cmd),

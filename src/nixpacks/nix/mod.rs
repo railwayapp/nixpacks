@@ -1,9 +1,10 @@
-use super::plan::new_build_plan::NewPhase;
 use indoc::formatdoc;
+
+use super::plan::phase::Phase;
 
 pub mod pkg;
 
-pub fn create_nix_expression(phase: &NewPhase) -> String {
+pub fn create_nix_expression(phase: &Phase) -> String {
     let pkgs = phase.nix_pkgs.clone().unwrap_or_default();
 
     let nixpkgs = pkgs

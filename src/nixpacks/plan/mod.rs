@@ -1,9 +1,12 @@
-use self::new_build_plan::NewBuildPlan;
+use self::{
+    legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
+    phase::{Phase, StartPhase},
+    topological_sort::topological_sort,
+};
 use super::NIX_PACKS_VERSION;
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::Result;
 use colored::Colorize;
@@ -11,7 +14,8 @@ use indoc::formatdoc;
 use serde::{Deserialize, Serialize};
 
 pub mod generator;
-pub mod new_build_plan;
+pub mod legacy_phase;
+pub mod phase;
 mod topological_sort;
 
 const FIRST_COLUMN_WIDTH: usize = 10;
@@ -20,21 +24,68 @@ const MAX_BOX_WIDTH: usize = 80;
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct BuildPlan {
+pub struct LegacyBuildPlan {
     pub version: Option<String>,
-    pub setup: Option<SetupPhase>,
-    pub install: Option<InstallPhase>,
-    pub build: Option<BuildPhase>,
-    pub start: Option<StartPhase>,
+    pub setup: Option<LegacySetupPhase>,
+    pub install: Option<LegacyInstallPhase>,
+    pub build: Option<LegacyBuildPhase>,
+    pub start: Option<LegacyStartPhase>,
     pub variables: Option<EnvironmentVariables>,
     pub static_assets: Option<StaticAssets>,
 }
 
-pub trait PlanGenerator {
-    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<NewBuildPlan>;
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct BuildPlan {
+    // #[serde(rename = "nixpacksVersion")]
+    // pub nixpacks_version: Option<String>,
+
+    // #[serde(rename = "nixpacksArchive")]
+    // pub nixpacks_archive: Option<String>,
+
+    // #[serde(rename = "buildImage")]
+    // pub build_image: String,
+    pub variables: Option<EnvironmentVariables>,
+
+    #[serde(rename = "staticAssets")]
+    pub static_assets: Option<StaticAssets>,
+
+    pub phases: Vec<Phase>,
+
+    #[serde(rename = "startPhase")]
+    pub start_phase: Option<StartPhase>,
 }
 
 impl BuildPlan {
+    pub fn new(phases: Vec<Phase>) -> Self {
+        Self {
+            phases,
+            ..Default::default()
+        }
+    }
+
+    pub fn add_phase(&mut self, phase: Phase) {
+        self.phases.push(phase);
+    }
+
+    pub fn add_start_phase(&mut self, start_phase: StartPhase) {
+        self.start_phase = Some(start_phase);
+    }
+
+    pub fn set_variables(&mut self, variables: EnvironmentVariables) {
+        self.variables = Some(variables);
+    }
+
+    pub fn get_sorted_phases(&self) -> Result<Vec<Phase>> {
+        topological_sort(self.phases.clone())
+    }
+}
+
+pub trait PlanGenerator {
+    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan>;
+}
+
+impl LegacyBuildPlan {
     pub fn get_build_string(&self) -> String {
         let title_str = format!(" Nixpacks v{} ", NIX_PACKS_VERSION);
         let title_width = console::measure_text_width(title_str.as_str());

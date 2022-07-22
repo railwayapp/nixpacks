@@ -2,7 +2,10 @@ use crate::nixpacks::{
     environment::Environment,
     images::DEFAULT_BASE_IMAGE,
     nix,
-    plan::new_build_plan::{NewBuildPlan, NewPhase, NewStartPhase},
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
+    },
 };
 use anyhow::{Context, Ok, Result};
 use indoc::formatdoc;
@@ -32,7 +35,7 @@ pub trait DockerfileGenerator {
 
 pub static APP_DIR: &str = "/app/";
 
-impl DockerfileGenerator for NewBuildPlan {
+impl DockerfileGenerator for BuildPlan {
     fn generate_dockerfile(
         &self,
         options: &DockerBuilderOptions,
@@ -118,8 +121,8 @@ impl DockerfileGenerator for NewBuildPlan {
     }
 }
 
-impl NewBuildPlan {
-    fn write_assets(&self, plan: &NewBuildPlan, dest: &str) -> Result<()> {
+impl BuildPlan {
+    fn write_assets(&self, plan: &BuildPlan, dest: &str) -> Result<()> {
         if let Some(assets) = &plan.static_assets {
             if !assets.is_empty() {
                 let static_assets_path = PathBuf::from(dest).join(PathBuf::from("assets"));
@@ -142,7 +145,7 @@ impl NewBuildPlan {
     }
 }
 
-impl DockerfileGenerator for NewStartPhase {
+impl DockerfileGenerator for StartPhase {
     fn generate_dockerfile(
         &self,
         _options: &DockerBuilderOptions,
@@ -159,7 +162,7 @@ impl DockerfileGenerator for NewStartPhase {
     }
 }
 
-impl DockerfileGenerator for NewPhase {
+impl DockerfileGenerator for Phase {
     fn generate_dockerfile(
         &self,
         options: &DockerBuilderOptions,

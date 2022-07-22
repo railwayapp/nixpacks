@@ -10,9 +10,7 @@ use crate::nixpacks::{
     },
 };
 use anyhow::Result;
-use nixpacks::{
-    builder::docker::docker_image_builder::DockerImageBuilder, plan::new_build_plan::NewBuildPlan,
-};
+use nixpacks::{builder::docker::docker_image_builder::DockerImageBuilder, plan::BuildPlan};
 use providers::{
     clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
     deno::DenoProvider, fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider,
@@ -52,7 +50,7 @@ pub fn generate_build_plan(
     path: &str,
     envs: Vec<&str>,
     plan_options: &GeneratePlanOptions,
-) -> Result<NewBuildPlan> {
+) -> Result<BuildPlan> {
     let app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
 

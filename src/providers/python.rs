@@ -1,21 +1,17 @@
-use std::{collections::HashMap, fs};
-
-use anyhow::{bail, Context, Ok, Result};
-
-use std::result::Result::Ok as OkResult;
-
-use regex::{Match, Regex};
-use serde::Deserialize;
-
 use crate::{
     chain,
     nixpacks::{
         app::App,
         environment::{Environment, EnvironmentVariables},
-        phase::{InstallPhase, SetupPhase, StartPhase},
+        plan::legacy_phase::{LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
     },
     Pkg,
 };
+use anyhow::{bail, Context, Ok, Result};
+use regex::{Match, Regex};
+use serde::Deserialize;
+use std::result::Result::Ok as OkResult;
+use std::{collections::HashMap, fs};
 
 use super::Provider;
 
@@ -36,7 +32,7 @@ impl Provider for PythonProvider {
             || app.includes_file("pyproject.toml"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<LegacySetupPhase>> {
         let mut pkgs: Vec<Pkg> = vec![];
         let python_base_package = PythonProvider::get_nix_python_package(app, env)?;
 
@@ -47,7 +43,7 @@ impl Provider for PythonProvider {
             pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
         }
 
-        let mut setup_phase = SetupPhase::new(pkgs);
+        let mut setup_phase = LegacySetupPhase::new(pkgs);
 
         // Numpy needs some C headers to be available
         // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
@@ -58,13 +54,13 @@ impl Provider for PythonProvider {
         Ok(Some(setup_phase))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
         let env_loc = "/opt/venv";
         let create_env = format!("python -m venv {}", env_loc);
         let activate_env = format!(". {}/bin/activate", env_loc);
 
         if app.includes_file("requirements.txt") {
-            let mut install_phase = InstallPhase::new(format!(
+            let mut install_phase = LegacyInstallPhase::new(format!(
                 "{} && {} && pip install -r requirements.txt",
                 create_env, activate_env
             ));
@@ -78,7 +74,7 @@ impl Provider for PythonProvider {
         } else if app.includes_file("pyproject.toml") {
             if app.includes_file("poetry.lock") {
                 let install_poetry = "pip install poetry==$NIXPACKS_POETRY_VERSION".to_string();
-                let mut install_phase = InstallPhase::new(format!(
+                let mut install_phase = LegacyInstallPhase::new(format!(
                     "{} && {} && {} && poetry install --no-dev --no-interaction --no-ansi",
                     create_env, activate_env, install_poetry
                 ));
@@ -91,7 +87,7 @@ impl Provider for PythonProvider {
 
                 return Ok(Some(install_phase));
             }
-            let mut install_phase = InstallPhase::new(format!(
+            let mut install_phase = LegacyInstallPhase::new(format!(
                 "{} && {} && pip install --upgrade build setuptools && pip install .",
                 create_env, activate_env
             ));
@@ -107,11 +103,11 @@ impl Provider for PythonProvider {
         Ok(None)
     }
 
-    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, app: &App, env: &Environment) -> Result<Option<LegacyStartPhase>> {
         if PythonProvider::is_django(app, env)? {
             let app_name = PythonProvider::get_django_app_name(app, env)?;
 
-            return Ok(Some(StartPhase::new(format!(
+            return Ok(Some(LegacyStartPhase::new(format!(
                 "python manage.py migrate && gunicorn {}",
                 app_name
             ))));
@@ -120,7 +116,7 @@ impl Provider for PythonProvider {
         if app.includes_file("pyproject.toml") {
             if let OkResult(meta) = PythonProvider::parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
-                    return Ok(Some(StartPhase::new(match entry_point {
+                    return Ok(Some(LegacyStartPhase::new(match entry_point {
                         EntryPoint::Command(cmd) => cmd,
                         EntryPoint::Module(module) => format!("python -m {}", module),
                     })));
@@ -129,7 +125,7 @@ impl Provider for PythonProvider {
         }
         // falls through
         if app.includes_file("main.py") {
-            return Ok(Some(StartPhase::new("python main.py".to_string())));
+            return Ok(Some(LegacyStartPhase::new("python main.py".to_string())));
         }
 
         Ok(None)

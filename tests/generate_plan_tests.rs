@@ -4,12 +4,12 @@ use nixpacks::{
     generate_build_plan,
     nixpacks::{
         nix::pkg::Pkg,
-        plan::{generator::GeneratePlanOptions, BuildPlan},
+        plan::{generator::GeneratePlanOptions, LegacyBuildPlan},
     },
 };
 use std::env::consts::ARCH;
 
-fn simple_gen_plan(path: &str) -> BuildPlan {
+fn simple_gen_plan(path: &str) -> LegacyBuildPlan {
     generate_build_plan(path, Vec::new(), &GeneratePlanOptions::default()).unwrap()
 }
 

@@ -1,14 +1,13 @@
-use std::env::consts::ARCH;
-
 use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
-    phase::{BuildPhase, SetupPhase, StartPhase},
+    plan::legacy_phase::{LegacyBuildPhase, LegacySetupPhase, LegacyStartPhase},
 };
 use anyhow::{Context, Result};
 use cargo_toml::Manifest;
+use std::env::consts::ARCH;
 
 static RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
 static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
@@ -28,7 +27,7 @@ impl Provider for RustProvider {
         Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<LegacySetupPhase>> {
         let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
 
         if let Some(target) = RustProvider::get_target(app, env)? {
@@ -36,7 +35,7 @@ impl Provider for RustProvider {
         }
 
         let mut setup_phase =
-            SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
+            LegacySetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
 
         // Include the rust toolchain file so we can install that rust version with Nix
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app)? {
@@ -57,11 +56,11 @@ impl Provider for RustProvider {
         Ok(Some(setup_phase))
     }
 
-    fn build(&self, app: &App, env: &Environment) -> Result<Option<BuildPhase>> {
+    fn build(&self, app: &App, env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         let mut build_phase = match RustProvider::get_target(app, env)? {
             Some(target) => {
                 let mut build_phase =
-                    BuildPhase::new(format!("cargo build --release --target {target}"));
+                    LegacyBuildPhase::new(format!("cargo build --release --target {target}"));
 
                 if let Some(name) = RustProvider::get_app_name(app)? {
                     // Copy the binary out of the target directory
@@ -71,7 +70,7 @@ impl Provider for RustProvider {
                 build_phase
             }
             None => {
-                let mut build_phase = BuildPhase::new("cargo build --release".to_string());
+                let mut build_phase = LegacyBuildPhase::new("cargo build --release".to_string());
 
                 if let Some(name) = RustProvider::get_app_name(app)? {
                     // Copy the binary out of the target directory
@@ -93,21 +92,21 @@ impl Provider for RustProvider {
         Ok(Some(build_phase))
     }
 
-    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, app: &App, env: &Environment) -> Result<Option<LegacyStartPhase>> {
         let name = RustProvider::get_app_name(app)?;
 
         if let Some(name) = name {
             let start_phase = match RustProvider::get_target(app, env)? {
                 Some(_) => {
                     let binary_file = format!("./{name}");
-                    let mut start_phase = StartPhase::new(format!("./{name}"));
+                    let mut start_phase = LegacyStartPhase::new(format!("./{name}"));
 
                     start_phase.run_in_slim_image();
                     start_phase.add_file_dependency(binary_file);
 
                     start_phase
                 }
-                None => StartPhase::new(format!("./{name}")),
+                None => LegacyStartPhase::new(format!("./{name}")),
             };
 
             Ok(Some(start_phase))

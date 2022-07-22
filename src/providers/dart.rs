@@ -3,7 +3,9 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::legacy_phase::{
+        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    },
 };
 use anyhow::{Context, Result};
 use serde::Deserialize;
@@ -27,29 +29,31 @@ impl Provider for DartProvider {
         Ok(app.includes_file("pubspec.yaml"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![Pkg::new(DEFAULT_DART_PKG_NAME)])))
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
+        Ok(Some(LegacySetupPhase::new(vec![Pkg::new(
+            DEFAULT_DART_PKG_NAME,
+        )])))
     }
 
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let mut install_cmd = InstallPhase::new("dart pub get".to_string());
+    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+        let mut install_cmd = LegacyInstallPhase::new("dart pub get".to_string());
         install_cmd.add_file_dependency("pubspec.yaml".to_string());
 
         Ok(Some(install_cmd))
     }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         let pubspec = DartProvider::get_pubspec(app)?;
         let command = format!("dart compile exe bin/{}.dart", pubspec.name);
 
-        Ok(Some(BuildPhase::new(command)))
+        Ok(Some(LegacyBuildPhase::new(command)))
     }
 
-    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
         let pubspec = DartProvider::get_pubspec(_app)?;
         let command = format!("./bin/{}.exe", pubspec.name);
 
-        Ok(Some(StartPhase::new(command)))
+        Ok(Some(LegacyStartPhase::new(command)))
     }
 }
 

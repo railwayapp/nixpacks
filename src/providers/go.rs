@@ -3,7 +3,9 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::legacy_phase::{
+        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    },
 };
 use anyhow::Result;
 
@@ -24,27 +26,27 @@ impl Provider for GolangProvider {
         Ok(app.includes_file("main.go") || app.includes_file("go.mod"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
         let go_mod = self.read_go_mod_if_exists(_app)?;
         let nix_pkg = GolangProvider::get_nix_golang_pkg(go_mod)?;
 
-        Ok(Some(SetupPhase::new(vec![Pkg::new(&nix_pkg)])))
+        Ok(Some(LegacySetupPhase::new(vec![Pkg::new(&nix_pkg)])))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
         if app.includes_file("go.mod") {
-            let mut install_phase = InstallPhase::new("go get".to_string());
+            let mut install_phase = LegacyInstallPhase::new("go get".to_string());
             install_phase.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
             return Ok(Some(install_phase));
         }
         Ok(None)
     }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         let mut build_phase = if app.includes_file("go.mod") {
-            BuildPhase::new(format!("go build -o {}", BINARY_NAME))
+            LegacyBuildPhase::new(format!("go build -o {}", BINARY_NAME))
         } else {
-            BuildPhase::new(format!("go build -o {} main.go", BINARY_NAME))
+            LegacyBuildPhase::new(format!("go build -o {} main.go", BINARY_NAME))
         };
 
         build_phase.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
@@ -52,8 +54,8 @@ impl Provider for GolangProvider {
         Ok(Some(build_phase))
     }
 
-    fn start(&self, _app: &App, env: &Environment) -> Result<Option<StartPhase>> {
-        let mut start_phase = StartPhase::new(format!("./{}", BINARY_NAME));
+    fn start(&self, _app: &App, env: &Environment) -> Result<Option<LegacyStartPhase>> {
+        let mut start_phase = LegacyStartPhase::new(format!("./{}", BINARY_NAME));
 
         let cgo = env.get_variable("CGO_ENABLED").unwrap_or("0");
 

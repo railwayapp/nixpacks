@@ -5,7 +5,9 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::legacy_phase::{
+        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    },
 };
 use anyhow::{Context, Result};
 use serde::Deserialize;
@@ -28,25 +30,27 @@ impl Provider for CrystalProvider {
         Ok(app.includes_file("shard.yml"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
+        Ok(Some(LegacySetupPhase::new(vec![
             Pkg::new("crystal"),
             Pkg::new("shards"),
         ])))
     }
 
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        Ok(Some(InstallPhase::new("shards install".to_string())))
+    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+        Ok(Some(LegacyInstallPhase::new("shards install".to_string())))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new("shards build --release".to_string())))
+    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+        Ok(Some(LegacyBuildPhase::new(
+            "shards build --release".to_string(),
+        )))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
         let config = CrystalProvider::get_config(app)?;
         let target_names = config.targets.keys().cloned().collect::<Vec<_>>();
-        let start_phase = StartPhase::new(format!(
+        let start_phase = LegacyStartPhase::new(format!(
             "./bin/{}",
             target_names
                 .get(0)

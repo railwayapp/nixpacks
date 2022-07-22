@@ -1,16 +1,19 @@
-use super::topological_sort::{topological_sort, TopItem};
-use crate::nixpacks::{
-    app::StaticAssets,
-    environment::EnvironmentVariables,
-    images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
-    nix::pkg::Pkg,
-};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
+use crate::nixpacks::{
+    images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
+    nix::pkg::Pkg,
+};
+
+use super::{
+    legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
+    topological_sort::TopItem,
+};
+
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct NewPhase {
+pub struct Phase {
     pub name: String,
 
     #[serde(rename = "dependsOn")]
@@ -40,7 +43,7 @@ pub struct NewPhase {
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct NewStartPhase {
+pub struct StartPhase {
     pub cmd: Option<String>,
 
     #[serde(rename = "runImage")]
@@ -50,7 +53,7 @@ pub struct NewStartPhase {
     pub only_include_files: Option<Vec<String>>,
 }
 
-impl TopItem for NewPhase {
+impl TopItem for Phase {
     fn get_name(&self) -> String {
         self.name.clone()
     }
@@ -63,29 +66,7 @@ impl TopItem for NewPhase {
     }
 }
 
-#[serde_with::skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
-pub struct NewBuildPlan {
-    // #[serde(rename = "nixpacksVersion")]
-    // pub nixpacks_version: Option<String>,
-
-    // #[serde(rename = "nixpacksArchive")]
-    // pub nixpacks_archive: Option<String>,
-
-    // #[serde(rename = "buildImage")]
-    // pub build_image: String,
-    pub variables: Option<EnvironmentVariables>,
-
-    #[serde(rename = "staticAssets")]
-    pub static_assets: Option<StaticAssets>,
-
-    pub phases: Vec<NewPhase>,
-
-    #[serde(rename = "startPhase")]
-    pub start_phase: Option<NewStartPhase>,
-}
-
-impl NewPhase {
+impl Phase {
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
             name: name.into(),
@@ -122,32 +103,7 @@ impl NewPhase {
     }
 }
 
-impl NewBuildPlan {
-    pub fn new(phases: Vec<NewPhase>) -> Self {
-        Self {
-            phases,
-            ..Default::default()
-        }
-    }
-
-    pub fn add_phase(&mut self, phase: NewPhase) {
-        self.phases.push(phase);
-    }
-
-    pub fn add_start_phase(&mut self, start_phase: NewStartPhase) {
-        self.start_phase = Some(start_phase);
-    }
-
-    pub fn set_variables(&mut self, variables: EnvironmentVariables) {
-        self.variables = Some(variables);
-    }
-
-    pub fn get_sorted_phases(&self) -> Result<Vec<NewPhase>> {
-        topological_sort(self.phases.clone())
-    }
-}
-
-impl NewStartPhase {
+impl StartPhase {
     pub fn new<S: Into<String>>(cmd: S) -> Self {
         Self {
             cmd: Some(cmd.into()),
@@ -192,64 +148,59 @@ fn add_multiple_to_option_vec<T: Clone>(
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// Legacy intos
 
-    use crate::providers::node::NODE_OVERLAY;
-
-    #[test]
-    fn test_adding_value_to_option_vec() {
-        assert_eq!(add_to_option_vec(None, "a"), Some(vec!["a"]));
-        assert_eq!(
-            add_to_option_vec(Some(vec!["a", "b"]), "c"),
-            Some(vec!["a", "b", "c"])
-        );
+impl From<LegacySetupPhase> for Phase {
+    fn from(setup_phase: LegacySetupPhase) -> Self {
+        Phase {
+            name: "setup".to_string(),
+            nix_pkgs: Some(setup_phase.pkgs),
+            nix_libraries: setup_phase.libraries,
+            nixpacks_archive: setup_phase.archive,
+            apt_pkgs: setup_phase.apt_pkgs,
+            cmds: setup_phase.cmds,
+            only_include_files: setup_phase.only_include_files,
+            ..Default::default()
+        }
     }
+}
 
-    #[test]
-    fn test_adding_multiple_values_to_option_vec() {
-        assert_eq!(
-            add_multiple_to_option_vec(None, vec!["a", "b"]),
-            Some(vec!["a", "b"])
-        );
-        assert_eq!(
-            add_multiple_to_option_vec(Some(vec!["a", "b"]), vec!["c", "d"]),
-            Some(vec!["a", "b", "c", "d"])
-        );
+impl From<LegacyInstallPhase> for Phase {
+    fn from(install_phase: LegacyInstallPhase) -> Self {
+        let mut i = Phase {
+            name: "install".to_string(),
+            cmds: install_phase.cmds,
+            only_include_files: install_phase.only_include_files,
+            cache_directories: install_phase.cache_directories,
+            ..Default::default()
+        };
+
+        i.depends_on_phase("setup");
+        i
     }
+}
 
-    #[test]
-    fn test_sorting_phases() {
-        let mut setup_phase = NewPhase::new("setup");
-        setup_phase.add_nix_pkgs(vec![
-            Pkg::new("nodejs"),
-            Pkg::new("npm-8_x").from_overlay(NODE_OVERLAY),
-        ]);
+impl From<LegacyBuildPhase> for Phase {
+    fn from(build_phase: LegacyBuildPhase) -> Self {
+        let mut p = Phase {
+            name: "build".to_string(),
+            cmds: build_phase.cmds,
+            only_include_files: build_phase.only_include_files,
+            cache_directories: build_phase.cache_directories,
+            ..Default::default()
+        };
 
-        let mut install_phase = NewPhase::new("install");
-        install_phase.depends_on_phase("setup");
-        install_phase.add_cmd("npm install");
-        install_phase.add_cache_directory("node_modules/.cache");
-        install_phase.add_cache_directory("/root/.npm");
+        p.depends_on_phase("install");
+        p
+    }
+}
 
-        let mut build_phase = NewPhase::new("build");
-        build_phase.depends_on_phase("install");
-        build_phase.add_cmd("npm run build");
-        build_phase.add_cache_directory("node_modules/.cache");
-
-        let mut start_phase = NewPhase::new("start");
-        start_phase.depends_on_phase("build");
-        start_phase.add_cmd("npm run start");
-
-        let plan = NewBuildPlan::new(vec![install_phase, build_phase, setup_phase]);
-
-        let sorted_phases = plan
-            .get_sorted_phases()
-            .unwrap()
-            .into_iter()
-            .map(|phase| phase.name)
-            .collect::<Vec<_>>();
-        assert_eq!(sorted_phases, vec!["setup", "install", "build", "start"]);
+impl From<LegacyStartPhase> for StartPhase {
+    fn from(start_phase: LegacyStartPhase) -> Self {
+        StartPhase {
+            run_image: start_phase.run_image,
+            cmd: start_phase.cmd,
+            ..Default::default()
+        }
     }
 }

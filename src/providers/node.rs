@@ -5,7 +5,9 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::legacy_phase::{
+        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    },
 };
 use anyhow::Result;
 use regex::Regex;
@@ -45,19 +47,19 @@ impl Provider for NodeProvider {
         Ok(app.includes_file("package.json"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<LegacySetupPhase>> {
         let packages = NodeProvider::get_nix_packages(app, env)?;
-        let mut setup_phase = SetupPhase::new(packages);
+        let mut setup_phase = LegacySetupPhase::new(packages);
         if NodeProvider::uses_canvas(app) {
             setup_phase.add_libraries(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
         Ok(Some(setup_phase))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
         let install_cmd = NodeProvider::get_install_command(app);
 
-        let mut install_phase = InstallPhase::new(install_cmd);
+        let mut install_phase = LegacyInstallPhase::new(install_cmd);
 
         // Package manage cache directories
         let package_manager = NodeProvider::get_package_manager(app);
@@ -81,8 +83,8 @@ impl Provider for NodeProvider {
         Ok(Some(install_phase))
     }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        let mut build_phase = BuildPhase::default();
+    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+        let mut build_phase = LegacyBuildPhase::default();
 
         if NodeProvider::has_script(app, "build")? {
             let pkg_manager = NodeProvider::get_package_manager(app);
@@ -106,9 +108,9 @@ impl Provider for NodeProvider {
         Ok(Some(build_phase))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
         if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
-            Ok(Some(StartPhase::new(start_cmd)))
+            Ok(Some(LegacyStartPhase::new(start_cmd)))
         } else {
             Ok(None)
         }

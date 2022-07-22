@@ -1,4 +1,4 @@
-use crate::nixpacks::cache::sanitize_cache_key;
+use super::cache::sanitize_cache_key;
 
 pub fn get_cache_mount(
     cache_key: &Option<String>,

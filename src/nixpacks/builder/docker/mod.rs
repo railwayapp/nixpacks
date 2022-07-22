@@ -13,6 +13,7 @@ pub struct DockerBuilderOptions {
     pub platform: Vec<String>,
 }
 
+mod cache;
 pub mod docker_image_builder;
 mod dockerfile_generation;
 mod utils;

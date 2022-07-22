@@ -5,8 +5,10 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    phase::{BuildPhase, SetupPhase, StartPhase},
-    plan::new_build_plan::{NewBuildPlan, NewPhase, NewStartPhase},
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
+    },
 };
 use anyhow::{Context, Result};
 use regex::Regex;
@@ -29,36 +31,6 @@ impl Provider for DenoProvider {
         "deno"
     }
 
-    // New way of defining a provider
-    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<NewBuildPlan>> {
-        let mut plan = NewBuildPlan::default();
-
-        let mut setup_phase = NewPhase::new("setup");
-        setup_phase.add_nix_pkgs(vec![Pkg::new("deno")]);
-        plan.add_phase(setup_phase);
-
-        if let Some(start_file) = DenoProvider::get_start_file(app)? {
-            let mut build_phase = NewPhase::new("build");
-            build_phase.depends_on_phase("setup");
-
-            build_phase.add_cmd(format!(
-                "deno cache {}",
-                start_file
-                    .to_str()
-                    .context("Failed to convert start_file to string")?
-            ));
-
-            plan.add_phase(build_phase);
-        };
-
-        if let Some(start_cmd) = DenoProvider::get_start_cmd(app)? {
-            let start_phase = NewStartPhase::new(start_cmd);
-            plan.add_start_phase(start_phase);
-        }
-
-        Ok(Some(plan))
-    }
-
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
         let re = Regex::new(r##"(?m)^import .+ from "https://deno.land/[^"]+\.ts";?$"##).unwrap();
         Ok(app.includes_file("deno.json")
@@ -66,24 +38,27 @@ impl Provider for DenoProvider {
             || app.find_match(&re, "**/*.ts")?)
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![Pkg::new("deno")])))
-    }
+    // New way of defining a provider
+    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+        let mut plan = BuildPlan::default();
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+        let mut setup_phase = Phase::new("setup");
+        setup_phase.add_nix_pkgs(vec![Pkg::new("deno")]);
+        plan.add_phase(setup_phase);
+
         if let Some(build_cmd) = DenoProvider::get_build_cmd(app)? {
-            Ok(Some(BuildPhase::new(build_cmd)))
-        } else {
-            Ok(None)
-        }
-    }
+            let mut build_phase = Phase::new("build");
+            build_phase.depends_on_phase("setup");
+            build_phase.add_cmd(build_cmd);
+            plan.add_phase(build_phase);
+        };
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(start_cmd) = DenoProvider::get_start_cmd(app)? {
-            Ok(Some(StartPhase::new(start_cmd)))
-        } else {
-            Ok(None)
+            let start_phase = StartPhase::new(start_cmd);
+            plan.add_start_phase(start_phase);
         }
+
+        Ok(Some(plan))
     }
 }
 

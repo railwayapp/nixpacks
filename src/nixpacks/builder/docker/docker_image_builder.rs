@@ -1,7 +1,6 @@
 use super::{dockerfile_generation::DockerfileGenerator, DockerBuilderOptions, ImageBuilder};
 use crate::nixpacks::{
-    environment::Environment, files, logger::Logger, plan::new_build_plan::NewBuildPlan,
-    NIX_PACKS_VERSION,
+    environment::Environment, files, logger::Logger, plan::BuildPlan, NIX_PACKS_VERSION,
 };
 use anyhow::{bail, Context, Ok, Result};
 
@@ -19,7 +18,7 @@ pub struct DockerImageBuilder {
 }
 
 impl ImageBuilder for DockerImageBuilder {
-    fn create_image(&self, app_src: &str, plan: &NewBuildPlan, env: &Environment) -> Result<()> {
+    fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
         let dir = match &self.options.out_dir {
@@ -80,7 +79,7 @@ impl DockerImageBuilder {
         DockerImageBuilder { logger, options }
     }
 
-    fn get_docker_build_cmd(&self, plan: &NewBuildPlan, name: &str, dest: &str) -> Result<Command> {
+    fn get_docker_build_cmd(&self, plan: &BuildPlan, name: &str, dest: &str) -> Result<Command> {
         let mut docker_build_cmd = Command::new("docker");
 
         if docker_build_cmd.output().is_err() {
