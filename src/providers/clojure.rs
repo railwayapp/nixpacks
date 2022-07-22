@@ -25,7 +25,7 @@ impl Provider for ClojureProvider {
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let mut install_phase = InstallPhase::new("".to_string());
         install_phase.add_cache_directory(LEIN_CACHE_DIR.to_string());
-        return Ok(Some(install_phase));
+        Ok(Some(install_phase))
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
