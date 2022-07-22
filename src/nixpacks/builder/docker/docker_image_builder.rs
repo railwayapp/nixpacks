@@ -96,6 +96,10 @@ impl DockerImageBuilder {
             docker_build_cmd.arg("--quiet");
         }
 
+        if self.options.no_cache {
+            docker_build_cmd.arg("--no-cache");
+        }
+
         // Add build environment variables
         for (name, value) in plan.variables.clone().unwrap_or_default().iter() {
             docker_build_cmd
@@ -109,6 +113,9 @@ impl DockerImageBuilder {
         }
         for l in self.options.labels.clone() {
             docker_build_cmd.arg("--label").arg(l);
+        }
+        for l in self.options.platform.clone() {
+            docker_build_cmd.arg("--platform").arg(l);
         }
 
         Ok(docker_build_cmd)
