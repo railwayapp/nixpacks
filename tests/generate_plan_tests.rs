@@ -953,7 +953,7 @@ fn test_clojure() -> Result<()> {
         plan.build.unwrap().cmds,
         Some(vec![format!(
             "{}; {}",
-            "lein uberjar".to_string(),
+            "lein uberjar",
             move_file_cmd
         )])
     );
@@ -977,7 +977,7 @@ fn test_clojure_ring_app() -> Result<()> {
         plan.build.unwrap().cmds,
         Some(vec![format!(
             "{}; {}",
-            "lein ring uberjar".to_string(),
+            "lein ring uberjar",
             move_file_cmd
         )])
     );

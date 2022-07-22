@@ -161,7 +161,7 @@ impl BuildPlan {
             box_drawing::double::VERTICAL.cyan().dimmed()
         );
 
-        return formatdoc! {"
+        formatdoc! {"
 
           {top_box}
           {packages_row}
@@ -173,7 +173,7 @@ impl BuildPlan {
           {start_row}
           {bottom_box}
           ",
-        };
+        }
     }
 }
 
