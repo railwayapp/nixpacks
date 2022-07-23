@@ -215,7 +215,7 @@ impl LegacyBuildPlan {
             box_drawing::double::VERTICAL.cyan().dimmed()
         );
 
-        return formatdoc! {"
+        formatdoc! {"
 
           {top_box}
           {packages_row}
@@ -227,7 +227,7 @@ impl LegacyBuildPlan {
           {start_row}
           {bottom_box}
           ",
-        };
+        }
     }
 }
 

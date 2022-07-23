@@ -53,8 +53,7 @@ impl Provider for ClojureProvider {
 
         Ok(Some(LegacyBuildPhase::new(format!(
             "{}; {}",
-            build_cmd.to_string(),
-            move_file_cmd
+            build_cmd, move_file_cmd
         ))))
     }
 
@@ -126,7 +125,7 @@ impl ClojureProvider {
 mod test {
     use super::*;
     use crate::nixpacks::{app::App, environment::Environment, nix::pkg::Pkg};
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
 
     #[test]
     fn test_no_version() -> Result<()> {
@@ -172,7 +171,7 @@ mod test {
         assert_eq!(
             ClojureProvider::get_nix_jdk_package(
                 &App::new("./examples/clojure-jdk-latest")?,
-                &Environment::new(HashMap::from([(
+                &Environment::new(BTreeMap::from([(
                     "NIXPACKS_JDK_VERSION".to_string(),
                     "latest".to_string()
                 )]))
@@ -188,7 +187,7 @@ mod test {
         assert_eq!(
             ClojureProvider::get_nix_jdk_package(
                 &App::new("./examples/clojure")?,
-                &Environment::new(HashMap::from([(
+                &Environment::new(BTreeMap::from([(
                     "NIXPACKS_JDK_VERSION".to_string(),
                     "11".to_string()
                 )]))

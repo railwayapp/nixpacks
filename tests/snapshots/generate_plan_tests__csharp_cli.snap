@@ -1,0 +1,36 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "0.2.9",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "dotnet-sdk"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+  },
+  "install": {
+    "cmds": [
+      "dotnet restore"
+    ]
+  },
+  "build": {
+    "cmds": [
+      "dotnet publish --no-restore -c Release -o out"
+    ]
+  },
+  "start": {
+    "cmd": "./out/csharp-cli"
+  },
+  "variables": {
+    "ASPNETCORE_ENVIRONMENT": "Production",
+    "ASPNETCORE_URLS": "http://0.0.0.0:3000",
+    "DOTNET_ROOT": "/nix/var/nix/profiles/default/"
+  },
+  "static_assets": {}
+}
