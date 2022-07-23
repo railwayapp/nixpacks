@@ -111,9 +111,10 @@ jobs:
     name: Docker Tests
     strategy:
       matrix: 
-        - tests: ${{fromJson(needs.test-plan.outputs.matrix)}}
-          # TODO: when m1 hosted runners come out, use them here (https://github.com/actions/virtual-environments/issues/2187)
-          os: [ubuntu-latest, macOS-latest, windows-latest]
+        include:
+          - tests: ${{fromJson(needs.test-plan.outputs.matrix)}}
+            # TODO: when m1 hosted runners come out, use them here (https://github.com/actions/virtual-environments/issues/2187)
+            os: [ubuntu-latest, macOS-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
     steps:      
