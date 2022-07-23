@@ -143,6 +143,14 @@ impl DockerBuilder {
         let dockerfile = self.create_dockerfile(plan, env);
 
         let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
+
+        // if a file named DOCKERFILE already exists, it will cause buildkit to fail later
+        // As calling File::create won't force a rename to Dockerfile, so better to delete before writing our Dockerfile
+        let file_exists = fs::metadata(dockerfile_path.clone()).is_ok();
+        if file_exists {
+            fs::remove_file(dockerfile_path.clone())?;
+        }
+
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
 
