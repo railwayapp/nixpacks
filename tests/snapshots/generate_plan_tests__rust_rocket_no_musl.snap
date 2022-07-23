@@ -1,0 +1,43 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "0.2.9",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "gcc"
+      },
+      {
+        "name": "rust-bin.stable.latest.default",
+        "overlay": "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [
+      "binutils"
+    ],
+    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+  },
+  "install": {},
+  "build": {
+    "cmds": [
+      "cargo build --release",
+      "cp target/release/rocket rocket"
+    ],
+    "cacheDirectories": [
+      "/root/.cargo/git",
+      "/root/.cargo/registry",
+      "target"
+    ]
+  },
+  "start": {
+    "cmd": "./rocket"
+  },
+  "variables": {
+    "NIXPACKS_NO_MUSL": "1",
+    "ROCKET_ADDRESS": "0.0.0.0"
+  },
+  "static_assets": {}
+}

@@ -390,6 +390,8 @@ fn parse_regex_into_pkg(re: &Regex, node_version: String) -> Option<String> {
 
 #[cfg(test)]
 mod test {
+    use std::collections::BTreeMap;
+
     use super::*;
 
     fn engines_node(version: &str) -> Option<HashMap<String, String>> {
@@ -500,7 +502,7 @@ mod test {
                     name: Some(String::default()),
                     ..Default::default()
                 },
-                &Environment::new(HashMap::from([(
+                &Environment::new(BTreeMap::from([(
                     "NIXPACKS_NODE_VERSION".to_string(),
                     "14".to_string()
                 )]))
