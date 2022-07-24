@@ -35,7 +35,6 @@ impl Environment {
         Ok(environment)
     }
 
-
     pub fn get_variable(&self, name: &str) -> Option<&str> {
         self.variables.get(name).map(String::as_str)
     }

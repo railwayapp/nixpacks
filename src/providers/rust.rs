@@ -31,7 +31,7 @@ impl Provider for RustProvider {
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
 
-        if let Some(target) = RustProvider::get_target(app, env) {
+        if let Some(target) = RustProvider::get_target(app, env)? {
             rust_pkg = rust_pkg.set_override("targets", format!("[\"{target}\"]").as_str());
         }
 
@@ -58,7 +58,7 @@ impl Provider for RustProvider {
     }
 
     fn build(&self, app: &App, env: &Environment) -> Result<Option<BuildPhase>> {
-        let mut build_phase = match RustProvider::get_target(app, env) {
+        let mut build_phase = match RustProvider::get_target(app, env)? {
             Some(target) => {
                 let mut build_phase =
                     BuildPhase::new(format!("cargo build --release --target {target}"));
@@ -97,7 +97,7 @@ impl Provider for RustProvider {
         let name = RustProvider::get_app_name(app)?;
 
         if let Some(name) = name {
-            let start_phase = match RustProvider::get_target(app, env) {
+            let start_phase = match RustProvider::get_target(app, env)? {
                 Some(_) => {
                     let binary_file = format!("./{name}");
                     let mut start_phase = StartPhase::new(format!("./{name}"));
@@ -143,7 +143,7 @@ impl RustProvider {
         if RustProvider::should_use_musl(app, env)? {
             Ok(Some(format!("{}-unknown-linux-musl", ARCH)))
         } else {
-            Some(format!("{}-unknown-linux-musl", ARCH))
+            Ok(None)
         }
     }
 
@@ -181,17 +181,17 @@ impl RustProvider {
         }
 
         let pkg = match RustProvider::parse_cargo_toml(app)? {
-            Some(toml_file) => toml_file
-                .package
-                .map(|package| {
-                    package
-                        .rust_version
-                        .map(|version| {
+            Some(toml_file) => toml_file.package.map_or_else(
+                || Pkg::new(DEFAULT_RUST_PACKAGE),
+                |package| {
+                    package.rust_version.map_or_else(
+                        || Pkg::new(DEFAULT_RUST_PACKAGE),
+                        |version| {
                             Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str())
-                        })
-                        .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE))
-                })
-                .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE)),
+                        },
+                    )
+                },
+            ),
             None => Pkg::new(DEFAULT_RUST_PACKAGE),
         };
 
@@ -203,7 +203,7 @@ impl RustProvider {
             return Ok(false);
         }
 
-        if RustProvider::get_rust_toolchain_file(app)?.is_some() {
+        if RustProvider::get_rust_toolchain_file(app).is_some() {
             return Ok(false);
         }
 
