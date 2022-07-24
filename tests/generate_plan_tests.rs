@@ -123,7 +123,7 @@ fn test_custom_rust_version() {
 }
 
 #[test]
-fn test_rust_rocket() {
+fn rust_rocket() {
     let plan = simple_gen_plan("./examples/rust-rocket");
     assert_eq!(
         plan.build.unwrap().cmds,
@@ -144,7 +144,7 @@ fn test_rust_rocket() {
 }
 
 #[test]
-fn test_haskell_stack() {
+fn haskell_stack() {
     let plan = simple_gen_plan("./examples/haskell-stack");
     assert_eq!(
         plan.install.unwrap().cmds,
@@ -162,7 +162,7 @@ fn test_haskell_stack() {
 
 #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "i386"))]
 #[test]
-fn test_zig_gyro() {
+fn zig_gyro() {
     let plan = simple_gen_plan("./examples/zig-gyro");
 
     assert_eq!(
