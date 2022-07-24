@@ -14,9 +14,9 @@ use crate::{
 use anyhow::{bail, Context, Ok, Result};
 
 // This line is automatically updated.
-// Last Modified: 2022-07-13 08:25:28 UTC+0000
-// https://github.com/NixOS/nixpkgs/commit/09066922296d9ef06bfadb937b2560524dd10785
-static NIXPKGS_ARCHIVE: &str = "09066922296d9ef06bfadb937b2560524dd10785";
+// Last Modified: 2022-07-18 17:26:19 UTC+0000
+// https://github.com/NixOS/nixpkgs/commit/9eb60f25aff0d2218c848dd4574a0ab5e296cabe
+static NIXPKGS_ARCHIVE: &str = "9eb60f25aff0d2218c848dd4574a0ab5e296cabe";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
@@ -31,7 +31,7 @@ pub struct GeneratePlanOptions {
 }
 
 pub struct NixpacksBuildPlanGenerator<'a> {
-    providers: Vec<&'a dyn Provider>,
+    providers: &'a [&'a dyn Provider],
     matched_provider: Option<&'a dyn Provider>,
     options: GeneratePlanOptions,
 }
@@ -39,7 +39,7 @@ pub struct NixpacksBuildPlanGenerator<'a> {
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan> {
         // If options.plan_path is specified, use that build plan
-        if let Some(plan_path) = self.options.clone().plan_path {
+        if let Some(plan_path) = &self.options.plan_path {
             let plan_json = fs::read_to_string(plan_path).context("Reading build plan")?;
             let plan: BuildPlan =
                 serde_json::from_str(&plan_json).context("Deserializing build plan")?;
@@ -81,11 +81,11 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
     }
 }
 
-impl<'a> NixpacksBuildPlanGenerator<'a> {
-    pub fn new(
-        providers: Vec<&'a dyn Provider>,
+impl NixpacksBuildPlanGenerator<'_> {
+    pub fn new<'a>(
+        providers: &'a [&'a dyn Provider],
         options: GeneratePlanOptions,
-    ) -> NixpacksBuildPlanGenerator {
+    ) -> NixpacksBuildPlanGenerator<'a> {
         NixpacksBuildPlanGenerator {
             providers,
             matched_provider: None,
@@ -94,7 +94,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
     }
 
     fn detect(&mut self, app: &App, environment: &Environment) -> Result<()> {
-        for provider in self.providers.clone() {
+        for &provider in self.providers {
             let matches = provider.detect(app, environment)?;
             if matches {
                 self.matched_provider = Some(provider);
@@ -113,13 +113,7 @@ impl<'a> NixpacksBuildPlanGenerator<'a> {
 
         let env_var_pkgs = environment
             .get_config_variable("PKGS")
-            .map(|pkg_string| {
-                pkg_string
-                    .replace('-', ".")
-                    .split(' ')
-                    .map(Pkg::new)
-                    .collect::<Vec<_>>()
-            })
+            .map(|pkg_string| pkg_string.split(' ').map(Pkg::new).collect::<Vec<_>>())
             .unwrap_or_default();
 
         // Add custom user packages

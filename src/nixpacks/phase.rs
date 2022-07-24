@@ -35,9 +35,8 @@ impl SetupPhase {
     }
 
     pub fn add_file_dependency(&mut self, file: String) {
-        if let Some(mut files) = self.only_include_files.clone() {
+        if let Some(ref mut files) = self.only_include_files {
             files.push(file);
-            self.only_include_files = Some(files);
         } else {
             self.only_include_files = Some(vec![file]);
         }
@@ -51,26 +50,25 @@ impl SetupPhase {
         self.archive = Some(archive);
     }
 
-    pub fn add_libraries(&mut self, lib: Vec<String>) {
-        if let Some(libraries) = self.libraries.clone() {
-            self.libraries = Some([libraries, lib].concat());
+    pub fn add_libraries(&mut self, mut lib: Vec<String>) {
+        if let Some(ref mut libraries) = self.libraries {
+            libraries.append(&mut lib);
         } else {
             self.libraries = Some(lib);
         }
     }
 
-    pub fn add_apt_pkgs(&mut self, apt_pkgs: Vec<String>) {
-        if let Some(apt_packages) = self.apt_pkgs.clone() {
-            self.apt_pkgs = Some([apt_packages, apt_pkgs].concat());
+    pub fn add_apt_pkgs(&mut self, mut apt_pkgs: Vec<String>) {
+        if let Some(ref mut apt_packages) = self.apt_pkgs {
+            apt_packages.append(&mut apt_pkgs);
         } else {
             self.apt_pkgs = Some(apt_pkgs);
         }
     }
 
     pub fn add_cmd(&mut self, cmd: String) {
-        if let Some(mut cmds) = self.cmds.clone() {
+        if let Some(ref mut cmds) = self.cmds {
             cmds.push(cmd);
-            self.cmds = Some(cmds);
         } else {
             self.cmds = Some(vec![cmd]);
         }
@@ -125,27 +123,24 @@ impl InstallPhase {
     }
 
     pub fn add_cache_directory(&mut self, dir: String) {
-        if let Some(mut dirs) = self.cache_directories.clone() {
+        if let Some(ref mut dirs) = self.cache_directories {
             dirs.push(dir);
-            self.cache_directories = Some(dirs);
         } else {
             self.cache_directories = Some(vec![dir]);
         }
     }
 
     pub fn add_path(&mut self, path: String) {
-        if let Some(mut paths) = self.paths.clone() {
+        if let Some(ref mut paths) = self.paths {
             paths.push(path);
-            self.paths = Some(paths);
         } else {
             self.paths = Some(vec![path]);
         }
     }
 
     pub fn add_cmd(&mut self, cmd: String) {
-        if let Some(mut cmds) = self.cmds.clone() {
+        if let Some(ref mut cmds) = self.cmds {
             cmds.push(cmd);
-            self.cmds = Some(cmds);
         } else {
             self.cmds = Some(vec![cmd]);
         }
@@ -174,27 +169,24 @@ impl BuildPhase {
     }
 
     pub fn add_file_dependency(&mut self, file: String) {
-        if let Some(mut files) = self.only_include_files.clone() {
+        if let Some(ref mut files) = self.only_include_files {
             files.push(file);
-            self.only_include_files = Some(files);
         } else {
             self.only_include_files = Some(vec![file]);
         }
     }
 
     pub fn add_cache_directory(&mut self, dir: String) {
-        if let Some(mut dirs) = self.cache_directories.clone() {
+        if let Some(ref mut dirs) = self.cache_directories {
             dirs.push(dir);
-            self.cache_directories = Some(dirs);
         } else {
             self.cache_directories = Some(vec![dir]);
         }
     }
 
     pub fn add_cmd(&mut self, cmd: String) {
-        if let Some(mut cmds) = self.cmds.clone() {
+        if let Some(ref mut cmds) = self.cmds {
             cmds.push(cmd);
-            self.cmds = Some(cmds);
         } else {
             self.cmds = Some(vec![cmd]);
         }
@@ -235,9 +227,8 @@ impl StartPhase {
     }
 
     pub fn add_file_dependency(&mut self, file: String) {
-        if let Some(mut files) = self.only_include_files.clone() {
+        if let Some(ref mut files) = self.only_include_files {
             files.push(file);
-            self.only_include_files = Some(files);
         } else {
             self.only_include_files = Some(vec![file]);
         }

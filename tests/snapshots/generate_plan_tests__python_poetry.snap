@@ -1,0 +1,40 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "0.2.9",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "python38"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+  },
+  "install": {
+    "cmds": [
+      "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install poetry==$NIXPACKS_POETRY_VERSION && poetry install --no-dev --no-interaction --no-ansi"
+    ],
+    "onlyIncludeFiles": [
+      "poetry.lock",
+      "pyproject.toml"
+    ],
+    "cacheDirectories": [
+      "/root/.cache/pip"
+    ],
+    "paths": [
+      "/opt/venv/bin"
+    ]
+  },
+  "build": {},
+  "start": {
+    "cmd": "python main.py"
+  },
+  "variables": {
+    "NIXPACKS_POETRY_VERSION": "1.1.13"
+  },
+  "static_assets": {}
+}

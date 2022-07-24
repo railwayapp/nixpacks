@@ -226,7 +226,7 @@ impl NodeProvider {
             install_cmd = "pnpm i --frozen-lockfile";
         } else if package_manager == "yarn" {
             if app.includes_file(".yarnrc.yml") {
-                install_cmd = "yarn set version berry && yarn install --immutable --check-cache";
+                install_cmd = "yarn set version berry && yarn install --check-cache";
             } else {
                 install_cmd = "yarn install --frozen-lockfile";
             }
@@ -384,6 +384,8 @@ fn parse_regex_into_pkg(re: &Regex, node_version: &str) -> Option<String> {
 
 #[cfg(test)]
 mod test {
+    use std::collections::BTreeMap;
+
     use super::*;
 
     fn engines_node(version: &str) -> HashMap<String, String> {
@@ -494,7 +496,7 @@ mod test {
                     name: Some(String::default()),
                     ..Default::default()
                 },
-                &Environment::new(HashMap::from([(
+                &Environment::new(BTreeMap::from([(
                     "NIXPACKS_NODE_VERSION".to_string(),
                     "14".to_string()
                 )]))

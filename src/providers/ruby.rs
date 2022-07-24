@@ -1,8 +1,8 @@
 use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
-    phase::{InstallPhase, SetupPhase, StartPhase},
+    environment::{Environment, EnvironmentVariables},
+    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
 use anyhow::{bail, Ok, Result};
 use regex::Regex;
@@ -37,6 +37,7 @@ impl Provider for RubyProvider {
         );
 
         setup_phase.add_cmd(format!("rvm install {}", self.get_ruby_version(app)?));
+        setup_phase.add_cmd(format!("rvm --default use {}", self.get_ruby_version(app)?));
         setup_phase.add_cmd(format!("gem install {}", self.get_bundler_version(app)));
         setup_phase
             .add_cmd("echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile".to_string());
@@ -50,6 +51,12 @@ impl Provider for RubyProvider {
         install_phase.add_cache_directory((*BUNDLE_CACHE_DIR).to_string());
 
         install_phase.add_cmd("bundle install".to_string());
+
+        // Ensure that the ruby executable is in the PATH
+        let ruby_version = self.get_ruby_version(app)?;
+        install_phase.add_path(format!("/usr/local/rvm/rubies/{}/bin", ruby_version));
+        install_phase.add_path(format!("/usr/local/rvm/gems/{}/bin", ruby_version));
+        install_phase.add_path(format!("/usr/local/rvm/gems/{}@global/bin", ruby_version));
 
         if app.includes_file("package.json") {
             install_phase.add_file_dependency("package.json".to_string());
@@ -68,6 +75,20 @@ impl Provider for RubyProvider {
         Ok(Some(install_phase))
     }
 
+    fn build(
+        &self,
+        app: &App,
+        _env: &Environment,
+    ) -> Result<Option<crate::nixpacks::phase::BuildPhase>> {
+        if self.is_rails_app(app) {
+            Ok(Some(BuildPhase::new(
+                "bundle exec rake assets:precompile".to_string(),
+            )))
+        } else {
+            Ok(None)
+        }
+    }
+
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(start_cmd) = self.get_start_command(app) {
             let start_phase = StartPhase::new(start_cmd);
@@ -75,6 +96,28 @@ impl Provider for RubyProvider {
         } else {
             Ok(None)
         }
+    }
+
+    fn environment_variables(
+        &self,
+        app: &App,
+        _env: &Environment,
+    ) -> Result<Option<crate::nixpacks::environment::EnvironmentVariables>> {
+        let ruby_version = self.get_ruby_version(app)?;
+        Ok(Some(EnvironmentVariables::from([
+            ("BUNDLE_GEMFILE".to_string(), "/app/Gemfile".to_string()),
+            (
+                "GEM_PATH".to_string(),
+                format!(
+                    "/usr/local/rvm/gems/{ruby_version}:/usr/local/rvm/gems/{ruby_version}@global",
+                    ruby_version = ruby_version
+                ),
+            ),
+            (
+                "GEM_HOME".to_string(),
+                format!("/usr/local/rvm/gems/{ruby_version}"),
+            ),
+        ])))
     }
 }
 

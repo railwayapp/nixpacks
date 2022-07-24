@@ -333,7 +333,7 @@ impl PythonProvider {
 mod test {
     use super::*;
     use crate::nixpacks::{app::App, environment::Environment, nix::pkg::Pkg};
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
 
     #[test]
     fn test_no_version() -> Result<()> {
@@ -366,7 +366,7 @@ mod test {
         assert_eq!(
             PythonProvider::get_nix_python_package(
                 &App::new("./examples/python")?,
-                &Environment::new(HashMap::from([(
+                &Environment::new(BTreeMap::from([(
                     "NIXPACKS_PYTHON_VERSION".to_string(),
                     "2.7".to_string()
                 )]))
@@ -381,10 +381,10 @@ mod test {
     fn test_numpy_detection() -> Result<()> {
         assert!(!PythonProvider::uses_numpy(&App::new(
             "./examples/python"
-        )?)?);
+        )?)?,);
         assert!(PythonProvider::uses_numpy(&App::new(
             "./examples/python-numpy"
-        )?)?);
+        )?)?,);
         Ok(())
     }
 }
