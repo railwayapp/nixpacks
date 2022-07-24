@@ -44,3 +44,5 @@ cargo_toml = "0.11.5"
 
 [dev-dependencies]
 insta = "1.16.0"
+# Lower msrv
+const-str = "0.3.2"
