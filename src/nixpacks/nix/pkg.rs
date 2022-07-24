@@ -10,7 +10,6 @@ pub struct Pkg {
 }
 
 impl Pkg {
-    #[must_use]
     pub fn new(name: &str) -> Pkg {
         Pkg {
             name: name.to_string(),
@@ -19,7 +18,6 @@ impl Pkg {
         }
     }
 
-    #[must_use]
     pub fn to_nix_string(&self) -> String {
         match &self.overrides {
             Some(overrides) => {
@@ -52,7 +50,6 @@ impl Pkg {
         self
     }
 
-    #[must_use]
     pub fn to_pretty_string(&self) -> String {
         match &self.overrides {
             Some(overrides) => {

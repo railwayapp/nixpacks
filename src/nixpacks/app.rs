@@ -33,7 +33,7 @@ impl App {
     }
 
     /// Check if a file exists
-    #[must_use]
+
     pub fn includes_file(&self, name: &str) -> bool {
         self.source.join(name).is_file()
     }
@@ -89,7 +89,7 @@ impl App {
     }
 
     /// Check if a path matching a glob exists
-    #[must_use]
+
     pub fn has_match(&self, pattern: &str) -> bool {
         match self.find_files(pattern) {
             Ok(v) => !v.is_empty(),
@@ -126,7 +126,7 @@ impl App {
     }
 
     /// Check if a directory exists
-    #[must_use]
+
     pub fn includes_directory(&self, name: &str) -> bool {
         self.source.join(name).is_dir()
     }
@@ -182,7 +182,7 @@ impl App {
     }
 
     /// Get the path in the container to an asset defined in `static_assets`.
-    #[must_use]
+
     pub fn asset_path(&self, name: &str) -> String {
         format!("{ASSETS_DIR}{name}")
     }

@@ -82,7 +82,6 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
 }
 
 impl<'a> NixpacksBuildPlanGenerator<'a> {
-    #[must_use]
     pub fn new(
         providers: Vec<&'a dyn Provider>,
         options: GeneratePlanOptions,

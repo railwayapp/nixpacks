@@ -12,6 +12,7 @@
     clippy::cast_lossless,
     clippy::unused_self,
     clippy::module_name_repetitions,
+    clippy::must_use_candidate,
     // TODO: Remove when everything is documented.
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
@@ -45,7 +46,6 @@ mod chain;
 pub mod nixpacks;
 pub mod providers;
 
-#[must_use]
 pub fn get_providers() -> Vec<&'static dyn Provider> {
     vec![
         &CrystalProvider {},

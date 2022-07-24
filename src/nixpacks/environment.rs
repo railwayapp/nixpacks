@@ -9,7 +9,6 @@ pub struct Environment {
 }
 
 impl Environment {
-    #[must_use]
     pub fn new(variables: EnvironmentVariables) -> Environment {
         Environment { variables }
     }
@@ -36,18 +35,15 @@ impl Environment {
         Ok(environment)
     }
 
-    #[must_use]
     pub fn get_variable(&self, name: &str) -> Option<String> {
         self.variables.get(name).cloned()
     }
 
-    #[must_use]
     pub fn get_config_variable(&self, name: &str) -> Option<String> {
         self.get_variable(format!("NIXPACKS_{}", name).as_str())
             .map(|var| var.replace('\n', ""))
     }
 
-    #[must_use]
     pub fn is_config_variable_truthy(&self, name: &str) -> bool {
         if let Some(var) = self.get_config_variable(name) {
             matches!(var.as_str(), "1" | "true")
@@ -60,12 +56,10 @@ impl Environment {
         self.variables.insert(name, value);
     }
 
-    #[must_use]
     pub fn get_variable_names(&self) -> Vec<String> {
         self.variables.keys().cloned().collect()
     }
 
-    #[must_use]
     pub fn clone_variables(env: &Environment) -> EnvironmentVariables {
         env.variables.clone()
     }

@@ -3,7 +3,6 @@ use indoc::formatdoc;
 
 pub mod pkg;
 
-#[must_use]
 pub fn create_nix_expression(plan: &BuildPlan) -> String {
     let setup_phase = plan.setup.clone().unwrap_or_default();
 

@@ -34,7 +34,6 @@ pub trait PlanGenerator {
 }
 
 impl BuildPlan {
-    #[must_use]
     pub fn get_build_string(&self) -> String {
         let title_str = format!(" Nixpacks v{} ", NIX_PACKS_VERSION);
         let title_width = console::measure_text_width(title_str.as_str());

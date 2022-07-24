@@ -68,7 +68,6 @@ impl Provider for ZigProvider {
 }
 
 impl ZigProvider {
-    #[must_use]
     pub fn get_gyro_download_url() -> String {
         let gyro_supported_archs: Vec<&str> = vec!["x86_64", "aarch64", "i386"];
         if gyro_supported_archs.contains(&ARCH) {

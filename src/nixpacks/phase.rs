@@ -22,7 +22,6 @@ pub struct SetupPhase {
 }
 
 impl SetupPhase {
-    #[must_use]
     pub fn new(pkgs: Vec<Pkg>) -> Self {
         Self {
             pkgs,
@@ -107,7 +106,6 @@ pub struct InstallPhase {
 }
 
 impl InstallPhase {
-    #[must_use]
     pub fn new(cmd: String) -> Self {
         Self {
             cmds: Some(vec![cmd]),
@@ -167,7 +165,6 @@ pub struct BuildPhase {
 }
 
 impl BuildPhase {
-    #[must_use]
     pub fn new(cmd: String) -> Self {
         Self {
             cmds: Some(vec![cmd]),
@@ -217,7 +214,6 @@ pub struct StartPhase {
 }
 
 impl StartPhase {
-    #[must_use]
     pub fn new(cmd: String) -> Self {
         Self {
             cmd: Some(cmd),

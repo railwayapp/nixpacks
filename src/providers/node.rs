@@ -125,7 +125,6 @@ impl Provider for NodeProvider {
 }
 
 impl NodeProvider {
-    #[must_use]
     pub fn get_node_environment_variables() -> EnvironmentVariables {
         EnvironmentVariables::from([
             ("NODE_ENV".to_string(), "production".to_string()),
@@ -208,7 +207,6 @@ impl NodeProvider {
         Ok(Pkg::new(DEFAULT_NODE_PKG_NAME))
     }
 
-    #[must_use]
     pub fn get_package_manager(app: &App) -> String {
         let mut pkg_manager = "npm";
         if app.includes_file("pnpm-lock.yaml") {
@@ -221,7 +219,6 @@ impl NodeProvider {
         pkg_manager.to_string()
     }
 
-    #[must_use]
     pub fn get_install_command(app: &App) -> String {
         let mut install_cmd = "npm i";
         let package_manager = NodeProvider::get_package_manager(app);
@@ -277,7 +274,6 @@ impl NodeProvider {
         Ok(pkgs)
     }
 
-    #[must_use]
     pub fn uses_canvas(app: &App) -> bool {
         let package_json = app.read_file("package.json").unwrap_or_default();
         let lock_json = app.read_file("package-lock.json").unwrap_or_default();
@@ -343,7 +339,6 @@ impl NodeProvider {
         Ok(all_deps)
     }
 
-    #[must_use]
     pub fn get_deps_from_package_json(json: &PackageJson) -> HashSet<String> {
         let mut all_deps: HashSet<String> = HashSet::new();
 

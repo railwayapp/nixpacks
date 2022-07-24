@@ -90,7 +90,6 @@ impl Builder for DockerBuilder {
 }
 
 impl DockerBuilder {
-    #[must_use]
     pub fn new(logger: Logger, options: DockerBuilderOptions) -> DockerBuilder {
         DockerBuilder { logger, options }
     }
