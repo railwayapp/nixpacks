@@ -9,7 +9,7 @@ expression: plan
       "name": "setup",
       "nixPackages": [],
       "nixLibraries": [],
-      "nixpacksArchive": "9eb60f25aff0d2218c848dd4574a0ab5e296cabe",
+      "nixpacksArchive": "2f0c3be57c348f4cfd8820f2d189e29a685d9c41",
       "aptPackages": []
     },
     {

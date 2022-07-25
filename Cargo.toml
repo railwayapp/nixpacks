@@ -28,7 +28,7 @@ globset = { default-features = false, version = "0.4.9" }
 walkdir = "2.3.2"
 indoc = "1.0.6"
 regex = "1.6.0"
-serde = { version = "1.0.140", default-features = false }
+serde = { version = "1.0.140", default-features = false}
 serde_json = "1.0.82"
 serde_yaml = "0.8.26"
 serde_with = { features = ["macros"], default-features = false, version = "1.14.0" }
@@ -43,4 +43,4 @@ textwrap = { default-features = false, version = "0.15.0" }
 cargo_toml = "0.11.5"
 
 [dev-dependencies]
-insta = "1.16.0"
+insta = {version = "1.16.0", features=["redactions"]}
