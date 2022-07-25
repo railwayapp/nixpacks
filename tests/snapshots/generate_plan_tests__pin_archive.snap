@@ -3,10 +3,10 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "0.2.9",
+  "version": "[version]",
   "setup": {
     "pkgs": [],
-    "archive": "9eb60f25aff0d2218c848dd4574a0ab5e296cabe",
+    "archive": "[archive]",
     "libraries": [],
     "apt_pkgs": [],
     "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"

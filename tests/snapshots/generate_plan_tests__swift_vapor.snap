@@ -3,7 +3,7 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "0.2.9",
+  "version": "[version]",
   "setup": {
     "pkgs": [
       {
@@ -22,7 +22,7 @@ expression: plan
         "name": "zlib.dev"
       }
     ],
-    "archive": "c82b46413401efa740a0b994f52e9903a4f6dcd5",
+    "archive": "[archive]",
     "libraries": [],
     "apt_pkgs": [],
     "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
