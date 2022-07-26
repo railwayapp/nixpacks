@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::{env, fs, path::PathBuf};
 
@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 use walkdir::WalkDir;
 
 pub static ASSETS_DIR: &str = "/assets/";
-pub type StaticAssets = HashMap<String, String>;
+pub type StaticAssets = BTreeMap<String, String>;
 
 #[derive(Debug, Clone)]
 pub struct App {

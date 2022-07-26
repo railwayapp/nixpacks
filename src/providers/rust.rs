@@ -10,7 +10,6 @@ use crate::nixpacks::{
 use anyhow::{Context, Result};
 use cargo_toml::Dependency::Detailed;
 use cargo_toml::Manifest;
-use serde::{Deserialize, Serialize};
 
 static RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
 static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
@@ -18,14 +17,6 @@ static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
 const CARGO_GIT_CACHE_DIR: &'static &str = &"/root/.cargo/git";
 const CARGO_REGISTRY_CACHE_DIR: &'static &str = &"/root/.cargo/registry";
 const CARGO_TARGET_CACHE_DIR: &'static &str = &"target";
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CargoTomlPackage {
-    pub name: String,
-    pub version: String,
-    #[serde(rename = "rust-version")]
-    pub rust_version: Option<String>,
-}
 
 pub struct RustProvider {}
 
@@ -65,9 +56,16 @@ impl Provider for RustProvider {
             setup_phase.add_file_dependency(toolchain_file);
         }
 
-        if !env.is_config_variable_truthy("NO_MUSL") {
+        // Custom libs for openssl
+        if RustProvider::uses_openssl(app)? {
+            setup_phase.add_libraries(vec!["openssl".to_string(), "openssl.dev".to_string()]);
+        }
+
+        if RustProvider::should_use_musl(app, env)? {
             setup_phase.add_apt_pkgs(vec!["musl-tools".to_string()]);
         }
+
+        setup_phase.add_apt_pkgs(vec!["binutils".to_string()]);
 
         Ok(Some(setup_phase))
     }
@@ -150,12 +148,12 @@ impl RustProvider {
                 return Ok(Some(name));
             }
         }
+
         Ok(None)
     }
 
-    fn get_target(_app: &App, env: &Environment) -> Result<Option<String>> {
-        // All the user to use the default target instead of compiling with musl
-        if !env.is_config_variable_truthy("NO_MUSL") {
+    fn get_target(app: &App, env: &Environment) -> Result<Option<String>> {
+        if RustProvider::should_use_musl(app, env)? {
             Ok(Some(format!("{}-unknown-linux-musl", ARCH)))
         } else {
             Ok(None)
@@ -221,12 +219,48 @@ impl RustProvider {
         }
         None
     }
+    
+    fn should_use_musl(app: &App, env: &Environment) -> Result<bool> {
+        if env.is_config_variable_truthy("NO_MUSL") {
+            return Ok(false);
+        }
+
+        if RustProvider::get_rust_toolchain_file(app)?.is_some() {
+            return Ok(false);
+        }
+
+        // Do not build for the musl target if using openssl
+        if RustProvider::uses_openssl(app)? {
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    fn uses_openssl(app: &App) -> Result<bool> {
+        // Check Cargo.toml
+        if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
+            if toml_file.dependencies.contains_key("openssl")
+                || toml_file.dev_dependencies.contains_key("openssl")
+                || toml_file.build_dependencies.contains_key("openssl")
+            {
+                return Ok(true);
+            }
+        }
+
+        // Check Cargo.lock
+        if app.includes_file("Cargo.lock") && app.read_file("Cargo.lock")?.contains("openssl") {
+            return Ok(true);
+        }
+
+        Ok(false)
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
 
     #[test]
     fn test_no_version() -> Result<()> {
@@ -272,13 +306,25 @@ mod test {
         assert_eq!(
             RustProvider::get_rust_pkg(
                 &App::new("./examples/rust-custom-toolchain")?,
-                &Environment::new(HashMap::from([(
+                &Environment::new(BTreeMap::from([(
                     "NIXPACKS_RUST_VERSION".to_string(),
                     "1.54.0".to_string()
                 )]))
             )?,
             Pkg::new("rust-bin.stable.\"1.54.0\".default")
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_uses_openssl() -> Result<()> {
+        assert!(!RustProvider::uses_openssl(&App::new(
+            "./examples/rust-custom-version"
+        )?)?,);
+        assert!(RustProvider::uses_openssl(&App::new(
+            "./examples/rust-openssl"
+        )?)?,);
 
         Ok(())
     }

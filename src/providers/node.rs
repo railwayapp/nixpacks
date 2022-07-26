@@ -194,7 +194,8 @@ impl NodeProvider {
         }
 
         // Parse `18` or `18.x` into nodejs-18_x
-        let re = Regex::new(r"^(\d+)\.?[x|X]?$").unwrap();
+        // This also supports 18.x.x, or any number in place of the x.
+        let re = Regex::new(r"^(\d+)\.?([x|X]|[0-9]+)\.?([x|X]|[0-9]+)?$").unwrap();
         if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version.clone()) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
@@ -227,7 +228,7 @@ impl NodeProvider {
             install_cmd = "pnpm i --frozen-lockfile";
         } else if package_manager == "yarn" {
             if app.includes_file(".yarnrc.yml") {
-                install_cmd = "yarn set version berry && yarn install --immutable --check-cache";
+                install_cmd = "yarn set version berry && yarn install --check-cache";
             } else {
                 install_cmd = "yarn install --frozen-lockfile";
             }
@@ -379,7 +380,12 @@ fn version_number_to_pkg(version: &u32) -> String {
 fn parse_regex_into_pkg(re: &Regex, node_version: String) -> Option<String> {
     let matches: Vec<_> = re.captures_iter(node_version.as_str()).collect();
     if let Some(m) = matches.get(0) {
-        match m[1].parse::<u32>() {
+        let capture = if node_version.contains('.') {
+            &m[1]
+        } else {
+            &m[0]
+        };
+        match capture.parse::<u32>() {
             Ok(version) => return Some(version_number_to_pkg(&version)),
             Err(_e) => {}
         }
@@ -390,6 +396,8 @@ fn parse_regex_into_pkg(re: &Regex, node_version: String) -> Option<String> {
 
 #[cfg(test)]
 mod test {
+    use std::collections::BTreeMap;
+
     use super::*;
 
     fn engines_node(version: &str) -> Option<HashMap<String, String>> {
@@ -476,6 +484,76 @@ mod test {
     }
 
     #[test]
+    fn test_advanced_engine_x() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    engines: engines_node("18.x.x"),
+                    ..Default::default()
+                },
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs-18_x")
+        );
+
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    engines: engines_node("14.X.x"),
+                    ..Default::default()
+                },
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs-14_x")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_advanced_engine_number() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    engines: engines_node("18.4.2"),
+                    ..Default::default()
+                },
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs-18_x")
+        );
+
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    engines: engines_node("14.8.x"),
+                    ..Default::default()
+                },
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs-14_x")
+        );
+
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    engines: engines_node("14.x.8"),
+                    ..Default::default()
+                },
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs-14_x")
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn test_engine_range() -> Result<()> {
         assert_eq!(
             NodeProvider::get_nix_node_pkg(
@@ -500,7 +578,7 @@ mod test {
                     name: Some(String::default()),
                     ..Default::default()
                 },
-                &Environment::new(HashMap::from([(
+                &Environment::new(BTreeMap::from([(
                     "NIXPACKS_NODE_VERSION".to_string(),
                     "14".to_string()
                 )]))

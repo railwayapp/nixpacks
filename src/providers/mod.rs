@@ -5,6 +5,7 @@ use crate::nixpacks::{
 };
 use anyhow::Result;
 
+pub mod clojure;
 pub mod crystal;
 pub mod csharp;
 pub mod dart;
