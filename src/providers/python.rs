@@ -201,8 +201,6 @@ impl PythonProvider {
         // Generate regex to find the application name
         let re = Regex::new(r#"WSGI_APPLICATION = ["|'](.*).application["|']"#).unwrap();
 
-        println!("{:?}", paths.len());
-
         // Search all settings.py matches
         for path in paths {
             let path_buf = fs::canonicalize(path)?;
