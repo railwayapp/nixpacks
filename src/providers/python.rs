@@ -199,7 +199,7 @@ impl PythonProvider {
         let paths = app.find_files("/*.py").unwrap();
 
         // Generate regex to find the application name
-        let re = Regex::new(r"WSGI_APPLICATION = '(.*).application'").unwrap();
+        let re = Regex::new(r#"WSGI_APPLICATION = ["|'](.*).application["|']"#).unwrap();
 
         // Search all settings.py matches
         for path in paths {
