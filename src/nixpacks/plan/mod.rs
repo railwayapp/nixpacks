@@ -86,51 +86,46 @@ pub trait PlanGenerator {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan>;
 }
 
-impl LegacyBuildPlan {
-    pub fn get_build_string(&self) -> String {
+impl BuildPlan {
+    pub fn get_build_string(&self) -> Result<String> {
         let title_str = format!(" Nixpacks v{} ", NIX_PACKS_VERSION);
         let title_width = console::measure_text_width(title_str.as_str());
 
-        let setup_phase = self.setup.clone().unwrap_or_default();
-        let install_phase = self.install.clone().unwrap_or_default();
-        let build_phase = self.build.clone().unwrap_or_default();
-        let start_phase = self.start.clone().unwrap_or_default();
+        let phase_contents = self
+            .get_sorted_phases()?
+            .iter()
+            .map(|phase| (phase.name.clone(), self.get_phase_content(phase)))
+            .collect::<Vec<_>>();
 
-        let pkg_list = [
-            setup_phase
-                .pkgs
-                .iter()
-                .map(|pkg| pkg.to_pretty_string())
-                .collect::<Vec<_>>(),
-            setup_phase.apt_pkgs.unwrap_or_default(),
-        ]
-        .concat()
-        .join(", ");
+        let start_contents = self
+            .start_phase
+            .clone()
+            .unwrap_or_default()
+            .cmd
+            .unwrap_or_default();
 
-        let install_cmds = install_phase.clone().cmds.unwrap_or_default();
-        let build_cmds = build_phase.clone().cmds.unwrap_or_default();
-        let start_cmd = start_phase.clone().cmd.unwrap_or_default();
-
-        let max_right_content = [
-            vec![pkg_list.clone()],
-            install_cmds,
-            build_cmds,
-            vec![start_cmd],
-        ]
-        .concat()
-        .iter()
-        .map(|line| line.len())
-        .max()
-        .unwrap_or(0);
+        let max_right_content = phase_contents
+            .iter()
+            .map(|(_, content)| {
+                content
+                    .split('\n')
+                    .map(|l| console::measure_text_width(l))
+                    .collect::<Vec<_>>()
+            })
+            .flatten()
+            .max()
+            .unwrap_or(0);
+        let max_right_content = std::cmp::max(
+            max_right_content,
+            console::measure_text_width(start_contents.as_str()),
+        );
 
         let edge = format!("{} ", box_drawing::double::VERTICAL);
         let edge_width = console::measure_text_width(edge.as_str());
 
-        let middle_padding = format!(" {} ", box_drawing::light::VERTICAL)
-            .cyan()
-            .dimmed()
-            .to_string();
+        let middle_padding = format!(" {} ", box_drawing::light::VERTICAL).to_string();
         let middle_padding_width = console::measure_text_width(middle_padding.as_str());
+        let middle_padding = middle_padding.cyan().dimmed().to_string();
 
         let box_width = std::cmp::min(
             MAX_BOX_WIDTH,
@@ -142,39 +137,6 @@ impl LegacyBuildPlan {
 
         let second_column_width =
             box_width - (edge_width * 2) - FIRST_COLUMN_WIDTH - middle_padding_width;
-
-        let packages_row = print_row(
-            "Packages",
-            pkg_list,
-            edge.clone(),
-            middle_padding.clone(),
-            second_column_width,
-            true,
-        );
-        let install_row = print_row(
-            "Install",
-            install_phase.cmds.unwrap_or_default().join("\n"),
-            edge.clone(),
-            middle_padding.clone(),
-            second_column_width,
-            false,
-        );
-        let build_row = print_row(
-            "Build",
-            build_phase.cmds.unwrap_or_default().join("\n"),
-            edge.clone(),
-            middle_padding.clone(),
-            second_column_width,
-            false,
-        );
-        let start_row = print_row(
-            "Start",
-            start_phase.cmd.unwrap_or_default(),
-            edge,
-            middle_padding,
-            second_column_width,
-            false,
-        );
 
         let title_side_padding = ((box_width as f64) - (title_width as f64) - 2.0) / 2.0;
 
@@ -215,19 +177,79 @@ impl LegacyBuildPlan {
             box_drawing::double::VERTICAL.cyan().dimmed()
         );
 
-        formatdoc! {"
+        let phase_rows = phase_contents
+            .into_iter()
+            .map(|(name, content)| {
+                print_row(
+                    uppercase_first_letter(name).as_str(),
+                    content,
+                    edge.clone(),
+                    middle_padding.clone(),
+                    second_column_width,
+                    false,
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(format!("\n{hor_sep}\n").as_str());
+
+        let start_row = print_row(
+            "Start",
+            start_contents,
+            edge.clone(),
+            middle_padding.clone(),
+            second_column_width,
+            false,
+        );
+
+        Ok(formatdoc! {"
 
           {top_box}
-          {packages_row}
-          {hor_sep}
-          {install_row}
-          {hor_sep}
-          {build_row}
+          {phase_rows}
           {hor_sep}
           {start_row}
           {bottom_box}
           ",
+        })
+    }
+
+    fn get_phase_content(&self, phase: &Phase) -> String {
+        let mut c = String::new();
+
+        let nix_pkgs = phase.nix_pkgs.clone().unwrap_or_default();
+        let apt_pkgs = phase.apt_pkgs.clone().unwrap_or_default();
+        let cmds = phase.cmds.clone().unwrap_or_default();
+        let pkgs = [
+            nix_pkgs
+                .iter()
+                .map(|pkg| pkg.to_pretty_string())
+                .collect::<Vec<_>>(),
+            apt_pkgs,
+        ]
+        .concat();
+
+        let show_label = !pkgs.is_empty() && !cmds.is_empty();
+
+        if !pkgs.is_empty() {
+            c += &format!(
+                "{}{}",
+                if show_label { "pkgs: " } else { "" },
+                pkgs.join(", ")
+            );
         }
+
+        if c != "" && !cmds.is_empty() {
+            c += "\n";
+        }
+
+        if !cmds.is_empty() {
+            c += &format!(
+                "{}{}",
+                if show_label { "cmds: " } else { "" },
+                cmds.join("\n")
+            );
+        }
+
+        c
     }
 }
 
@@ -258,8 +280,7 @@ fn print_row(
             second_column_width,
             console::Alignment::Left,
             None
-        )
-        .white(),
+        ),
         right_edge.cyan().dimmed()
     );
 
@@ -269,10 +290,14 @@ fn print_row(
             left_edge.cyan().dimmed(),
             console::pad_str("", FIRST_COLUMN_WIDTH, console::Alignment::Left, None),
             middle,
-            console::pad_str(line, second_column_width, console::Alignment::Left, None).white(),
+            console::pad_str(line, second_column_width, console::Alignment::Left, None),
             right_edge.cyan().dimmed()
         );
     }
 
     output
+}
+
+fn uppercase_first_letter(s: String) -> String {
+    s[0..1].to_uppercase() + &s[1..]
 }

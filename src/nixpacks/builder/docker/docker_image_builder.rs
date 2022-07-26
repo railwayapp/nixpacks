@@ -41,10 +41,7 @@ impl ImageBuilder for DockerImageBuilder {
             return Ok(());
         }
 
-        self.logger
-            .log_section(format!("Building (nixpacks v{})", NIX_PACKS_VERSION).as_str());
-        let build_plan_string = serde_json::to_string_pretty(plan).unwrap();
-        println!("{}", build_plan_string);
+        println!("{}", plan.get_build_string()?);
 
         self.write_app(app_src, dest).context("Writing app")?;
         self.write_dockerfile(dockerfile, dest)
