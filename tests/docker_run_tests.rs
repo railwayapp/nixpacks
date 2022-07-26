@@ -115,7 +115,7 @@ fn simple_build(path: &str) -> String {
         },
         &DockerBuilderOptions {
             name: Some(name.clone()),
-            quiet: false,
+            quiet: true,
             ..Default::default()
         },
     )
@@ -481,6 +481,7 @@ fn test_rust_diesel() {
     assert!(output.contains("Hello from rust"));
 }
 
+#[test]
 fn test_rust_openssl() {
     let name = simple_build("./examples/rust-openssl");
     let output = run_image(name, None);

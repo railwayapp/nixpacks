@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env::consts::ARCH};
+use std::env::consts::ARCH;
 
 use super::Provider;
 use crate::nixpacks::{
@@ -219,7 +219,7 @@ impl RustProvider {
         }
         None
     }
-    
+
     fn should_use_musl(app: &App, env: &Environment) -> Result<bool> {
         if env.is_config_variable_truthy("NO_MUSL") {
             return Ok(false);
