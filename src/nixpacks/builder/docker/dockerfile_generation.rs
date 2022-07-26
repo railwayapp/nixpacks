@@ -89,7 +89,7 @@ impl DockerfileGenerator for BuildPlan {
             .unwrap_or_default()
             .generate_dockerfile(options, env)?;
 
-        let base_image = DEFAULT_BASE_IMAGE.to_string();
+        let base_image = plan.build_image.clone();
 
         let dockerfile = formatdoc! {"
             FROM {base_image}

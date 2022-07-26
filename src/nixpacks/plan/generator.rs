@@ -1,7 +1,7 @@
 use super::{
     legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
     phase::{Phase, StartPhase},
-    BuildPlan, PlanGenerator,
+    BuildPlan, LegacyBuildPlan, PlanGenerator,
 };
 use crate::{
     nixpacks::{
@@ -56,38 +56,6 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
             }
         }
 
-        let setup_phase = self
-            .get_setup_phase(app, environment)
-            .context("Getting setup phase")?;
-        let install_phase = self
-            .get_install_phase(app, environment)
-            .context("Generating install phase")?;
-        let build_phase = self
-            .get_build_phase(app, environment)
-            .context("Generating build phase")?;
-        let start_phase = self
-            .get_start_phase(app, environment)
-            .context("Generating start phase")?;
-        let variables = self
-            .get_variables(app, environment)
-            .context("Getting plan variables")?;
-        let _static_assets = self
-            .get_static_assets(app, environment)
-            .context("Getting provider assets")?;
-
-        let new_setup_phase: Phase = setup_phase.into();
-        let new_install_phase: Phase = install_phase.into();
-        let new_build_phase: Phase = build_phase.into();
-        let new_start_phase: StartPhase = start_phase.into();
-
-        let mut new_build_plan = BuildPlan::new(
-            vec![new_setup_phase, new_install_phase, new_build_phase],
-            Some(new_start_phase),
-        );
-        new_build_plan.set_variables(variables);
-
-        Ok(new_build_plan)
-
         // let plan = BuildPlan {
         //     version: Some(NIX_PACKS_VERSION.to_string()),
         //     setup: Some(setup_phase),
@@ -124,6 +92,44 @@ impl NixpacksBuildPlanGenerator<'_> {
         }
 
         Ok(())
+    }
+
+    fn get_build_plan_from_legacy_phases(
+        &self,
+        app: &App,
+        environment: &Environment,
+    ) -> Result<BuildPlan> {
+        let setup_phase = self
+            .get_setup_phase(app, environment)
+            .context("Getting setup phase")?;
+        let install_phase = self
+            .get_install_phase(app, environment)
+            .context("Generating install phase")?;
+        let build_phase = self
+            .get_build_phase(app, environment)
+            .context("Generating build phase")?;
+        let start_phase = self
+            .get_start_phase(app, environment)
+            .context("Generating start phase")?;
+        let variables = self
+            .get_variables(app, environment)
+            .context("Getting plan variables")?;
+        let _static_assets = self
+            .get_static_assets(app, environment)
+            .context("Getting provider assets")?;
+
+        let new_setup_phase: Phase = setup_phase.into();
+        let new_install_phase: Phase = install_phase.into();
+        let new_build_phase: Phase = build_phase.into();
+        let new_start_phase: StartPhase = start_phase.into();
+
+        let mut new_build_plan = BuildPlan::new(
+            vec![new_setup_phase, new_install_phase, new_build_phase],
+            Some(new_start_phase),
+        );
+        new_build_plan.set_variables(variables);
+
+        Ok(new_build_plan)
     }
 
     fn get_setup_phase(&self, app: &App, environment: &Environment) -> Result<LegacySetupPhase> {

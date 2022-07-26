@@ -3,7 +3,7 @@ use self::{
     phase::{Phase, StartPhase},
     topological_sort::topological_sort,
 };
-use super::NIX_PACKS_VERSION;
+use super::{images::DEFAULT_BASE_IMAGE, NIX_PACKS_VERSION};
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
@@ -37,14 +37,12 @@ pub struct LegacyBuildPlan {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct BuildPlan {
-    // #[serde(rename = "nixpacksVersion")]
-    // pub nixpacks_version: Option<String>,
+    #[serde(rename = "nixpacksVersion")]
+    pub nixpacks_version: Option<String>,
 
-    // #[serde(rename = "nixpacksArchive")]
-    // pub nixpacks_archive: Option<String>,
+    #[serde(rename = "buildImage")]
+    pub build_image: String,
 
-    // #[serde(rename = "buildImage")]
-    // pub build_image: String,
     pub variables: Option<EnvironmentVariables>,
 
     #[serde(rename = "staticAssets")]
@@ -61,6 +59,7 @@ impl BuildPlan {
         Self {
             phases,
             start_phase,
+            build_image: DEFAULT_BASE_IMAGE.to_string(),
             ..Default::default()
         }
     }
