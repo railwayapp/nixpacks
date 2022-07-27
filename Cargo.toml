@@ -48,6 +48,8 @@ cargo_toml = "0.11.5"
 rand = "0.8.5"
 erl_tokenize = "0.5.0"
 path-slash = "0.2.1"
+# To parse erlang's rebar.config release name
+erl_tokenize = "0.5.0"
 
 [dev-dependencies]
 dotenv-parser = "0.1.3"
