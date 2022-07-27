@@ -158,6 +158,12 @@ fn test_deno_fresh() {
 }
 
 #[test]
+fn test_erlang() {
+    let plan = simple_gen_plan("./examples/erlang");
+    assert_plan_snapshot!(plan);
+}
+
+#[test]
 fn test_csharp_api() {
     let plan = simple_gen_plan("./examples/csharp-api");
     assert_plan_snapshot!(plan);

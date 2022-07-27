@@ -10,6 +10,7 @@ pub mod crystal;
 pub mod csharp;
 pub mod dart;
 pub mod deno;
+pub mod erlang;
 pub mod fsharp;
 pub mod go;
 pub mod haskell;
