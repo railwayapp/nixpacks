@@ -191,15 +191,15 @@ impl PythonProvider {
         // Check for the engine database type in settings.py
         let re = Regex::new(r"django.db.backends.postgresql").unwrap();
 
-        app.find_match(&re, "/**/settings.py")
+        app.find_match(&re, "/**/*.py")
     }
 
     fn get_django_app_name(app: &App, _env: &Environment) -> Result<String> {
         // Look for the settings.py file
-        let paths = app.find_files("/**/settings.py").unwrap();
+        let paths = app.find_files("/**/*.py").unwrap();
 
         // Generate regex to find the application name
-        let re = Regex::new(r"WSGI_APPLICATION = '(.*).application'").unwrap();
+        let re = Regex::new(r#"WSGI_APPLICATION = ["|'](.*).application["|']"#).unwrap();
 
         // Search all settings.py matches
         for path in paths {
