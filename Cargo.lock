@@ -347,7 +347,7 @@ checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
 name = "nixpacks"
-version = "0.2.10"
+version = "0.2.11"
 dependencies = [
  "anyhow",
  "base64",
