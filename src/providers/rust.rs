@@ -40,15 +40,16 @@ impl Provider for RustProvider {
             SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
 
         // Install connectors for mysql and or postgresql if the respective features are enabled for diesel.
-        if let Some(features) = RustProvider::get_dependency_features(app, "diesel") {
-            if features.contains(&"mysql".to_string()) {
-                setup_phase.add_apt_pkgs(vec!["libmariadb-dev-compat".to_string()])
-            }
-            setup_phase.add_cmd("find . -name '*mysql*.*'".to_string());
+        if RustProvider::uses_dependency_with_feature(app, "diesel", "mysql") {
+            setup_phase.add_apt_pkgs(vec!["libmariadb-dev-compat".to_string()])
+        }
 
-            if features.contains(&"postgres".to_string()) {
-                // Do postgres things
-            }
+        if RustProvider::uses_dependency_with_feature(app, "diesel", "postgres") {
+            // Do postgres things
+        }
+
+        if RustProvider::uses_dependency_with_feature(app, "diesel", "sqlite") {
+            // Do sqllite things
         }
 
         // Include the rust toolchain file so we can install that rust version with Nix
@@ -213,11 +214,18 @@ impl RustProvider {
 
     fn get_dependency_features(app: &App, dependency_name: &str) -> Option<Vec<String>> {
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app).unwrap() {
-            if let Detailed(dep) = toml_file.dependencies.get(dependency_name).unwrap() {
+            if let Some(Detailed(dep)) = toml_file.dependencies.get(dependency_name) {
                 return Some(dep.features.clone());
             }
         }
         None
+    }
+
+    fn uses_dependency_with_feature(app: &App, dep: &str, feature: &str) -> bool {
+        if let Some(dep_features) = RustProvider::get_dependency_features(app, dep) {
+            return dep_features.contains(&feature.to_string());
+        }
+        false
     }
 
     fn should_use_musl(app: &App, env: &Environment) -> Result<bool> {

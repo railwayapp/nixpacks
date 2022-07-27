@@ -455,7 +455,7 @@ fn test_rust_diesel() {
     attach_container_to_network(n.name.clone(), postgres_container.name.to_owned());
 
     // Build the rust example
-    let name = simple_build("./examples/rust-diesel-mysql");
+    let name = simple_build("./examples/rust-diesel");
     let mut merged_envvars = mysql_container
         .config
         .unwrap()
