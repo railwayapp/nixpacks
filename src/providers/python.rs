@@ -224,6 +224,8 @@ impl PythonProvider {
         // If not from configs, get it from the .python-version file
         if custom_version.is_none() && app.includes_file(".python-version") {
             custom_version = Some(app.read_file(".python-version")?);
+        } else if app.includes_file("runtime.txt") {
+            custom_version = Some(app.read_file("runtime.txt")?);
         }
 
         // If it's still none, return default
