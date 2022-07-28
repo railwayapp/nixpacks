@@ -366,6 +366,19 @@ mod test {
     }
 
     #[test]
+    fn test_custom_version_runtime_txt() -> Result<()> {
+        assert_eq!(
+            PythonProvider::get_nix_python_package(
+                &App::new("./examples/python-2-runtime")?,
+                &Environment::default()
+            )?,
+            Pkg::new("python27")
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn test_version_from_environment_variable() -> Result<()> {
         assert_eq!(
             PythonProvider::get_nix_python_package(
