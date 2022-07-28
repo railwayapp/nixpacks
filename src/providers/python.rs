@@ -235,7 +235,7 @@ impl PythonProvider {
         let custom_version = custom_version.unwrap();
 
         // Regex for reading Python versions (e.g. 3.8.0 or 3.8 or 3)
-        let python_regex = Regex::new(r#"^(?:[\s\w]+)(\d*)(?:\.*)(\d*)(?:\.\d+)?(")?$"#)?;
+        let python_regex = Regex::new(r#"^(?:[\sa-zA-Z-"']*)(\d*)(?:\.*)(\d*)(?:\.*\d*)(?:["']?)$"#)?;
 
         // Capture matches
         let matches = python_regex.captures(custom_version.as_str().trim());
