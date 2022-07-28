@@ -195,7 +195,7 @@ impl NodeProvider {
 
         // Parse `18` or `18.x` into nodejs-18_x
         // This also supports 18.x.x, or any number in place of the x.
-        let re = Regex::new(r"^(\d+)\.?([x|X]|[0-9]+)\.?([x|X]|[0-9]+)?$").unwrap();
+        let re = Regex::new(r"^(\d*)\.?([x|X]|[0-9]+)\.?([x|X]|[0-9]+)?$").unwrap();
         if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version.clone()) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
