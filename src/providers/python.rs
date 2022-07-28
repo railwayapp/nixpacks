@@ -240,6 +240,8 @@ impl PythonProvider {
         // Capture matches
         let matches = python_regex.captures(custom_version.as_str().trim());
 
+        dbg!(&matches);
+
         // If no matches, just use default
         if matches.is_none() {
             return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
