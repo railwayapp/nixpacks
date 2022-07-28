@@ -379,9 +379,8 @@ fn version_number_to_pkg(version: &u32) -> String {
 
 fn parse_regex_into_pkg(re: &Regex, node_version: String) -> Option<String> {
     let matches: Vec<_> = re.captures_iter(node_version.as_str()).collect();
-    dbg!(&matches);
     if let Some(captures) = matches.get(0) {
-        match captures[0].parse::<u32>() {
+        match captures[1].parse::<u32>() {
             Ok(version) => return Some(version_number_to_pkg(&version)),
             Err(_e) => {}
         }
