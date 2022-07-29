@@ -1,4 +1,5 @@
 use super::{
+    config::GeneratePlanConfig,
     legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
     phase::{Phase, StartPhase},
     BuildPlan, LegacyBuildPlan, PlanGenerator,
@@ -19,22 +20,10 @@ use std::collections::HashMap;
 // https://github.com/NixOS/nixpkgs/commit/2f0c3be57c348f4cfd8820f2d189e29a685d9c41
 static NIXPKGS_ARCHIVE: &str = "2f0c3be57c348f4cfd8820f2d189e29a685d9c41";
 
-#[derive(Clone, Default, Debug)]
-pub struct GeneratePlanOptions {
-    pub custom_install_cmd: Option<Vec<String>>,
-    pub custom_build_cmd: Option<Vec<String>>,
-    pub custom_start_cmd: Option<String>,
-    pub custom_pkgs: Vec<Pkg>,
-    pub custom_libs: Vec<String>,
-    pub custom_apt_pkgs: Vec<String>,
-    pub pin_pkgs: bool,
-    pub plan_path: Option<String>,
-}
-
 pub struct NixpacksBuildPlanGenerator<'a> {
     providers: &'a [&'a dyn Provider],
     matched_provider: Option<&'a dyn Provider>,
-    options: GeneratePlanOptions,
+    config: GeneratePlanConfig,
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
@@ -50,11 +39,7 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
         self.detect(app, environment)?;
 
         // If the provider defines a build plan in the new format, use that
-        if let Some(provider) = self.matched_provider {
-            if let Some(new_build_plan) = provider.get_build_plan(app, environment)? {
-                return Ok(new_build_plan);
-            }
-        }
+        let plan = self.get_build_plan(app, environment)?;
 
         // let plan = BuildPlan {
         //     version: Some(NIX_PACKS_VERSION.to_string()),
@@ -66,19 +51,19 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
         //     static_assets: Some(static_assets),
         // };
 
-        // Ok(plan)
+        Ok(plan)
     }
 }
 
 impl NixpacksBuildPlanGenerator<'_> {
     pub fn new<'a>(
         providers: &'a [&'a dyn Provider],
-        options: GeneratePlanOptions,
+        config: GeneratePlanConfig,
     ) -> NixpacksBuildPlanGenerator<'a> {
         NixpacksBuildPlanGenerator {
             providers,
             matched_provider: None,
-            options,
+            config,
         }
     }
 
@@ -92,6 +77,27 @@ impl NixpacksBuildPlanGenerator<'_> {
         }
 
         Ok(())
+    }
+
+    fn get_build_plan(&self, app: &App, environment: &Environment) -> Result<BuildPlan> {
+        // Merge the config from the CLI flags with the config from the environment variables
+        // The CLI config takes precedence
+        let config = GeneratePlanConfig::merge(
+            &GeneratePlanConfig::from_environment(environment),
+            &self.config,
+        );
+
+        println!("{:?}", config);
+
+        if let Some(provider) = self.matched_provider {
+            if let Some(build_plan) = provider.get_build_plan(app, environment)? {
+                // TODO: Apply config to build plan
+
+                return Ok(build_plan);
+            }
+        }
+
+        self.get_build_plan_from_legacy_phases(app, environment)
     }
 
     fn get_build_plan_from_legacy_phases(
@@ -114,22 +120,22 @@ impl NixpacksBuildPlanGenerator<'_> {
         let variables = self
             .get_variables(app, environment)
             .context("Getting plan variables")?;
-        let _static_assets = self
+        let static_assets = self
             .get_static_assets(app, environment)
             .context("Getting provider assets")?;
 
-        let new_setup_phase: Phase = setup_phase.into();
-        let new_install_phase: Phase = install_phase.into();
-        let new_build_phase: Phase = build_phase.into();
-        let new_start_phase: StartPhase = start_phase.into();
+        let legacy_plan = LegacyBuildPlan {
+            setup: Some(setup_phase),
+            install: Some(install_phase),
+            build: Some(build_phase),
+            start: Some(start_phase),
+            variables: Some(variables),
+            static_assets: Some(static_assets),
+            version: None,
+        };
 
-        let mut new_build_plan = BuildPlan::new(
-            vec![new_setup_phase, new_install_phase, new_build_phase],
-            Some(new_start_phase),
-        );
-        new_build_plan.set_variables(variables);
-
-        Ok(new_build_plan)
+        let plan: BuildPlan = legacy_plan.into();
+        Ok(plan)
     }
 
     fn get_setup_phase(&self, app: &App, environment: &Environment) -> Result<LegacySetupPhase> {
@@ -144,7 +150,7 @@ impl NixpacksBuildPlanGenerator<'_> {
             .unwrap_or_default();
 
         // Add custom user packages
-        let mut pkgs = [self.options.custom_pkgs.clone(), env_var_pkgs].concat();
+        let mut pkgs = [self.config.custom_pkgs.clone(), env_var_pkgs].concat();
         setup_phase.add_pkgs(&mut pkgs);
 
         let env_var_libs = environment
@@ -158,7 +164,7 @@ impl NixpacksBuildPlanGenerator<'_> {
             .unwrap_or_default();
 
         // Add custom user libraries
-        let libs = [self.options.custom_libs.clone(), env_var_libs].concat();
+        let libs = [self.config.custom_libs.clone(), env_var_libs].concat();
         setup_phase.add_libraries(libs);
 
         let env_var_apt_pkgs = environment
@@ -172,10 +178,10 @@ impl NixpacksBuildPlanGenerator<'_> {
             .unwrap_or_default();
 
         // Add custom apt packages
-        let apt_pkgs = [self.options.custom_apt_pkgs.clone(), env_var_apt_pkgs].concat();
+        let apt_pkgs = [self.config.custom_apt_pkgs.clone(), env_var_apt_pkgs].concat();
         setup_phase.add_apt_pkgs(apt_pkgs);
 
-        if self.options.pin_pkgs {
+        if self.config.pin_pkgs {
             setup_phase.set_archive(NIXPKGS_ARCHIVE.to_string())
         }
 
@@ -215,7 +221,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         // - provider
 
         install_phase.cmds = self
-            .options
+            .config
             .custom_install_cmd
             .clone()
             .or(env_install_cmd)
@@ -252,7 +258,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         // - environment variable
         // - provider
         build_phase.cmds = self
-            .options
+            .config
             .custom_build_cmd
             .clone()
             .or(env_build_cmd)
@@ -285,7 +291,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         // - procfile
         // - provider
         start_phase.cmd = self
-            .options
+            .config
             .custom_start_cmd
             .clone()
             .or_else(|| env_start_cmd.or_else(|| procfile_cmd.or(start_phase.cmd)));

@@ -1,4 +1,5 @@
 use self::{
+    config::GeneratePlanConfig,
     legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
     phase::{Phase, StartPhase},
     topological_sort::topological_sort,
@@ -13,6 +14,7 @@ use colored::Colorize;
 use indoc::formatdoc;
 use serde::{Deserialize, Serialize};
 
+pub mod config;
 pub mod generator;
 pub mod legacy_phase;
 pub mod phase;
@@ -38,7 +40,7 @@ pub struct LegacyBuildPlan {
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct BuildPlan {
     #[serde(rename = "nixpacksVersion")]
-    pub nixpacks_version: Option<String>,
+    nixpacks_version: Option<String>,
 
     #[serde(rename = "buildImage")]
     pub build_image: String,
@@ -57,6 +59,7 @@ pub struct BuildPlan {
 impl BuildPlan {
     pub fn new(phases: Vec<Phase>, start_phase: Option<StartPhase>) -> Self {
         Self {
+            nixpacks_version: Some(NIX_PACKS_VERSION.to_string()),
             phases,
             start_phase,
             build_image: DEFAULT_BASE_IMAGE.to_string(),
@@ -86,6 +89,18 @@ pub trait PlanGenerator {
 }
 
 impl BuildPlan {
+    pub fn apply_config(&mut self, config: &GeneratePlanConfig) {
+        let setup = self.get_phase("setup").unwrap_or_default();
+
+        // if let Some(setup) = self.get_phase("setup").as_mut() {
+        //     setup.add_nix_pkgs(config.custom_pkgs.clone());
+        // }
+    }
+
+    pub fn get_phase(&self, name: &str) -> Option<&Phase> {
+        self.phases.iter().find(|phase| phase.name == name)
+    }
+
     pub fn get_build_string(&self) -> Result<String> {
         let title_str = format!(" Nixpacks v{} ", NIX_PACKS_VERSION);
         let title_width = console::measure_text_width(title_str.as_str());
@@ -299,4 +314,22 @@ fn print_row(
 
 fn uppercase_first_letter(s: String) -> String {
     s[0..1].to_uppercase() + &s[1..]
+}
+
+impl From<LegacyBuildPlan> for BuildPlan {
+    fn from(legacy_plan: LegacyBuildPlan) -> Self {
+        let phases: Vec<Phase> = vec![
+            legacy_plan.setup.unwrap_or_default().into(),
+            legacy_plan.install.unwrap_or_default().into(),
+            legacy_plan.build.unwrap_or_default().into(),
+        ];
+
+        let start: StartPhase = legacy_plan.start.unwrap_or_default().into();
+
+        let mut plan = BuildPlan::new(phases, Some(start));
+        plan.static_assets = legacy_plan.static_assets;
+        plan.variables = legacy_plan.variables;
+
+        plan
+    }
 }

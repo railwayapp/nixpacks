@@ -2,7 +2,7 @@ use nixpacks::{
     generate_build_plan,
     nixpacks::{
         nix::pkg::Pkg,
-        plan::{generator::GeneratePlanOptions, LegacyBuildPlan},
+        plan::{generator::GeneratePlanConfig, LegacyBuildPlan},
     },
 };
 use nixpacks::{nixpacks::plan::BuildPlan, providers::node::NODE_OVERLAY};
@@ -18,7 +18,7 @@ macro_rules! assert_plan_snapshot {
 }
 
 fn simple_gen_plan(path: &str) -> BuildPlan {
-    generate_build_plan(path, Vec::new(), &GeneratePlanOptions::default()).unwrap()
+    generate_build_plan(path, Vec::new(), &GeneratePlanConfig::default()).unwrap()
 }
 
 #[test]
@@ -128,7 +128,7 @@ fn test_go_cgo_enabled() {
     let plan = generate_build_plan(
         "./examples/go",
         vec!["CGO_ENABLED=1"],
-        &GeneratePlanOptions::default(),
+        &GeneratePlanConfig::default(),
     )
     .unwrap();
     assert_plan_snapshot!(plan);
@@ -187,7 +187,7 @@ fn test_custom_pkgs() {
     let plan = generate_build_plan(
         "./examples/shell-hello",
         Vec::new(),
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             custom_start_cmd: Some("./start.sh".to_string()),
             custom_pkgs: vec![Pkg::new("cowsay")],
             ..Default::default()
@@ -202,7 +202,7 @@ fn test_pin_archive() {
     let plan = generate_build_plan(
         "./examples/shell-hello",
         Vec::new(),
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: true,
             ..Default::default()
         },
@@ -261,7 +261,7 @@ fn test_rust_rocket_no_musl() {
     let plan = generate_build_plan(
         "./examples/rust-rocket",
         vec!["NIXPACKS_NO_MUSL=1"],
-        &GeneratePlanOptions::default(),
+        &GeneratePlanConfig::default(),
     )
     .unwrap();
     assert_plan_snapshot!(plan);
@@ -325,7 +325,7 @@ fn test_overriding_environment_variables() {
     let plan = generate_build_plan(
         "./examples/node-variables",
         vec!["NODE_ENV=test"],
-        &GeneratePlanOptions::default(),
+        &GeneratePlanConfig::default(),
     )
     .unwrap();
     assert_plan_snapshot!(plan);
@@ -344,7 +344,7 @@ fn test_config_from_environment_variables() {
             "NIXPACKS_INSTALL_CACHE_DIRS=/tmp,foobar",
             "NIXPACKS_BUILD_CACHE_DIRS=/build,barbaz",
         ],
-        &GeneratePlanOptions::default(),
+        &GeneratePlanConfig::default(),
     )
     .unwrap();
 

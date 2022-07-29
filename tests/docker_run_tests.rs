@@ -3,7 +3,7 @@ use nixpacks::{
     create_docker_image,
     nixpacks::{
         builder::docker::DockerBuilderOptions, environment::EnvironmentVariables, nix::pkg::Pkg,
-        plan::generator::GeneratePlanOptions,
+        plan::generator::GeneratePlanConfig,
     },
 };
 use std::io::{BufRead, BufReader};
@@ -109,7 +109,7 @@ fn simple_build(path: &str) -> String {
     create_docker_image(
         path,
         Vec::new(),
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: true,
             ..Default::default()
         },
@@ -372,7 +372,7 @@ fn test_rust_custom_version() {
     create_docker_image(
         "./examples/rust-custom-version",
         vec!["NIXPACKS_NO_MUSL=1"],
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: true,
             ..Default::default()
         },
@@ -436,7 +436,7 @@ fn test_cowsay() {
     create_docker_image(
         "./examples/shell-hello",
         Vec::new(),
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: true,
             custom_start_cmd: Some("./start.sh".to_string()),
             custom_pkgs: vec![Pkg::new("cowsay")],
@@ -467,7 +467,7 @@ fn test_swift() {
     create_docker_image(
         "./examples/swift",
         Vec::new(),
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: false,
             ..Default::default()
         },

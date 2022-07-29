@@ -4,13 +4,13 @@ use crate::nixpacks::{
     environment::Environment,
     logger::Logger,
     nix::pkg::Pkg,
-    plan::{
-        generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
-        PlanGenerator,
-    },
+    plan::{generator::NixpacksBuildPlanGenerator, PlanGenerator},
 };
 use anyhow::Result;
-use nixpacks::{builder::docker::docker_image_builder::DockerImageBuilder, plan::BuildPlan};
+use nixpacks::{
+    builder::docker::docker_image_builder::DockerImageBuilder,
+    plan::{config::GeneratePlanConfig, BuildPlan},
+};
 use providers::{
     clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
     deno::DenoProvider, fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider,
@@ -49,7 +49,7 @@ pub fn get_providers() -> &'static [&'static dyn Provider] {
 pub fn generate_build_plan(
     path: &str,
     envs: Vec<&str>,
-    plan_options: &GeneratePlanOptions,
+    plan_options: &GeneratePlanConfig,
 ) -> Result<BuildPlan> {
     let app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
@@ -63,7 +63,7 @@ pub fn generate_build_plan(
 pub fn create_docker_image(
     path: &str,
     envs: Vec<&str>,
-    plan_options: &GeneratePlanOptions,
+    plan_options: &GeneratePlanConfig,
     build_options: &DockerBuilderOptions,
 ) -> Result<()> {
     let app = App::new(path)?;
