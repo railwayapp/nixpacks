@@ -269,6 +269,12 @@ fn test_elixir_no_ecto() {
 }
 
 #[test]
+fn test_erlang() {
+    let name = simple_build("./examples/erlang");
+    assert!(run_image(name, None).contains("Hello from Erlang"));
+}
+
+#[test]
 fn test_node() {
     let name = simple_build("./examples/node");
     assert!(run_image(name, None).contains("Hello from Node"));

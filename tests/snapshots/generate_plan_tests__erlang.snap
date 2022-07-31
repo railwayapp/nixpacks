@@ -1,0 +1,35 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "[version]",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "erlang"
+      },
+      {
+        "name": "rebar3"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+  },
+  "install": {
+    "cmds": [
+      "rebar3 get-deps"
+    ]
+  },
+  "build": {
+    "cmds": [
+      "rebar3 release"
+    ]
+  },
+  "start": {
+    "cmd": "./_build/default/rel/nixpacks_sample/bin/nixpacks_sample foreground"
+  },
+  "variables": {},
+  "static_assets": {}
+}

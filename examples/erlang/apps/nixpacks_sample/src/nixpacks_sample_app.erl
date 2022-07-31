@@ -10,7 +10,8 @@
 -export([start/2, stop/1]).
 
 start(_StartType, _StartArgs) ->
-    nixpacks_sample_sup:start_link().
+    io:format("Hello from Erlang~n"),
+    erlang:halt(0).
 
 stop(_State) ->
     ok.
