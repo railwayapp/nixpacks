@@ -20,6 +20,7 @@ export const sidebarItems: ISidebarSection[] = [
       { href: "/docs/providers/csharp", text: "C#/.NET" },
       { href: "/docs/providers/dart", text: "Dart" },
       { href: "/docs/providers/deno", text: "Deno" },
+      { href: "/docs/providers/erlang", text: "Erlang" },
       { href: "/docs/providers/fsharp", text: "F#" },
       { href: "/docs/providers/go", text: "Go" },
       { href: "/docs/providers/haskell", text: "Haskell" },
