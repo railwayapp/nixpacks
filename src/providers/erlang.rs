@@ -15,8 +15,7 @@ use std::fs::File;
 use std::io::Read;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
-pub struct ErlangTasks {
-}
+pub struct ErlangTasks {}
 
 pub struct ErlangProvider {}
 
