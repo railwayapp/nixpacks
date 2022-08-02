@@ -29,10 +29,13 @@ impl Provider for DenoProvider {
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        let re = Regex::new(r##"(?m)^import .+ from "https://deno.land/[^"]+\.ts";?$"##).unwrap();
+        let re = Regex::new(
+            r##"import .+ from (?:"|'|`)https://deno.land/[^"`']+\.(?:ts|js|tsx|jsx)(?:"|'|`);?"##,
+        )
+        .unwrap();
         Ok(app.includes_file("deno.json")
             || app.includes_file("deno.jsonc")
-            || app.find_match(&re, "**/*.ts")?)
+            || app.find_match(&re, "**/*.{tsx,ts,js,jsx}")?)
     }
 
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
