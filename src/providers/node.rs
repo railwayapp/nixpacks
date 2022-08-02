@@ -372,7 +372,6 @@ fn version_number_to_pkg(version: &u32) -> String {
     if AVAILABLE_NODE_VERSIONS.contains(version) {
         format!("nodejs-{}_x", version)
     } else {
-        println!("No node version could be matched, defaulting to current LTS release");
         DEFAULT_NODE_PKG_NAME.to_string()
     }
 }
