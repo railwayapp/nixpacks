@@ -46,7 +46,7 @@ impl OutputDir {
             .display()
             .to_string();
 
-        if !fs::metadata(&dot_nixpacks_dir).is_ok() {
+        if fs::metadata(&dot_nixpacks_dir).is_err() {
             fs::create_dir_all(&dot_nixpacks_dir)?;
         }
 
@@ -212,7 +212,7 @@ impl DockerBuilder {
         environment_nix_path: &str,
     ) -> Result<()> {
         let dockerfile = self.create_dockerfile(plan, env, environment_nix_path);
-        File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
+        File::create(dockerfile_path).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
 
         Ok(())
