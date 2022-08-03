@@ -194,6 +194,7 @@ impl DockerBuilder {
         env: &Environment,
     ) -> Result<()> {
         let dockerfile = self.create_dockerfile(plan, env);
+        
         File::create(dockerfile_path).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
 
