@@ -229,6 +229,23 @@ fn test_node() {
 }
 
 #[test]
+fn test_node_nx_next() {
+    let name = simple_build("./examples/node-nx");
+
+    assert!(run_image(
+        name,
+        Some(Config {
+            environment_variables: EnvironmentVariables::from([(
+                "NIXPACKS_NX_APP_NAME".to_string(),
+                "next-app".to_string()
+            )]),
+            network: Some("node_nx_next".to_string()),
+        })
+    )
+    .contains("nx express app works"));
+}
+
+#[test]
 fn test_node_custom_version() {
     let name = simple_build("./examples/node-custom-version");
     let output = run_image(name, None);

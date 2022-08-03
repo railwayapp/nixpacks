@@ -1,4 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    env,
+    path::Path,
+};
 
 use super::Provider;
 use crate::nixpacks::{
@@ -7,9 +11,11 @@ use crate::nixpacks::{
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
+use anyhow::anyhow;
 use anyhow::Result;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
@@ -22,6 +28,7 @@ const NPM_CACHE_DIR: &'static &str = &"/root/.npm";
 const BUN_CACHE_DIR: &'static &str = &"/root/.bun";
 const CYPRESS_CACHE_DIR: &'static &str = &"/root/.cache/Cypress";
 const NODE_MODULES_CACHE_DIR: &'static &str = &"node_modules/.cache";
+const NX_APP_NAME_ENV_VAR: &'static &str = &"NX_APP_NAME";
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
@@ -32,6 +39,37 @@ pub struct PackageJson {
     pub dependencies: Option<HashMap<String, String>>,
     #[serde(rename = "devDependencies")]
     pub dev_dependencies: Option<HashMap<String, String>>,
+}
+
+#[derive(Debug, Serialize, PartialEq, Deserialize)]
+struct NxJson {
+    #[serde(default)]
+    #[serde(alias = "defaultProject")]
+    default_project: Option<Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Options {
+    executor: String,
+    #[serde(alias = "outputPath")]
+    outputPath: String,
+    #[serde(default)]
+    main: Option<Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Build {
+    options: Options,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Targets {
+    build: Build,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ProjectJson {
+    targets: Targets,
 }
 
 pub struct NodeProvider {}
@@ -83,9 +121,15 @@ impl Provider for NodeProvider {
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         let mut build_phase = BuildPhase::default();
+        let pkg_manager = NodeProvider::get_package_manager(app);
 
-        if NodeProvider::has_script(app, "build")? {
-            let pkg_manager = NodeProvider::get_package_manager(app);
+        if NodeProvider::is_nx_monorepo(app) {
+            println!("aaaa{}", _env.get_variable_names().join(","));
+            if let Ok(Some(app_name)) = NodeProvider::get_nx_service_name(app, _env) {
+                println!("bbbbbbb{}", _env.get_variable_names().join(","));
+                build_phase.add_cmd(format!("{} run build {} --prod", pkg_manager, app_name));
+            }
+        } else if NodeProvider::has_script(app, "build")? {
             build_phase.add_cmd(format!("{} run build", pkg_manager));
         }
 
@@ -106,8 +150,8 @@ impl Provider for NodeProvider {
         Ok(Some(build_phase))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
+    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+        if let Some(start_cmd) = NodeProvider::get_start_cmd(app, env)? {
             Ok(Some(StartPhase::new(start_cmd)))
         } else {
             Ok(None)
@@ -142,7 +186,51 @@ impl NodeProvider {
         Ok(false)
     }
 
-    pub fn get_start_cmd(app: &App) -> Result<Option<String>> {
+    pub fn get_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
+        if NodeProvider::is_nx_monorepo(app) {
+            let app_name = NodeProvider::get_nx_service_name(app, env)?.unwrap();
+            println!("/apps/{}/project.json", &app_name.to_owned());
+            let nx_app_project_json = app
+                .read_json::<ProjectJson>(&format!("./apps/{}/project.json", &app_name.to_owned()));
+
+            if nx_app_project_json.is_err() {
+                return Err(anyhow!("Could not resolve project json nx app"));
+            }
+
+            let project_json = nx_app_project_json.unwrap();
+            let output_path = project_json.targets.build.options.outputPath;
+            let source = env::current_dir()?.join(output_path.clone());
+
+            let executor = project_json.targets.build.options.executor;
+            if executor == "@nrwl/next:build" {
+                let next_dir = source.join(".next/");
+                println!("cd {} && npm run start", source.to_str().unwrap());
+
+                return Ok(Some(format!(
+                    "cd {} && npm run start",
+                    next_dir.to_str().unwrap()
+                )));
+            }
+
+            let main = project_json.targets.build.options.main;
+            if let Some(main_path) = main {
+                println!("is express");
+                return Ok(Some(format!(
+                    "node {}",
+                    source.join(main_path.as_str().unwrap()).to_str().unwrap()
+                )));
+            } else {
+                println!("is not express");
+                return Ok(Some(format!(
+                    "node {}",
+                    source.join("index.js").to_str().unwrap()
+                )));
+            }
+
+            println!("not found");
+            return Err(anyhow!("Could not resolve start command for nx app"));
+        }
+
         let package_manager = NodeProvider::get_package_manager(app);
         if NodeProvider::has_script(app, "start")? {
             return Ok(Some(format!("{} run start", package_manager)));
@@ -365,6 +453,25 @@ impl NodeProvider {
         all_deps.extend(dev_deps.into_iter());
 
         all_deps
+    }
+
+    pub fn is_nx_monorepo(app: &App) -> bool {
+        app.includes_file("nx.json")
+    }
+
+    pub fn get_nx_service_name(app: &App, env: &Environment) -> Result<Option<String>> {
+        if let Some(app_name) = env.get_config_variable(NX_APP_NAME_ENV_VAR) {
+            return Ok(Some(app_name));
+        }
+
+        if let Ok(nx_json) = app.read_json::<NxJson>("nx.json") {
+            if let Some(default_project) = nx_json.default_project {
+                let a = default_project.as_str().unwrap().to_owned();
+                return Ok(Some(a));
+            }
+        }
+        println!("error getting app name");
+        return Err(anyhow!("Could not drive nx app to build and run. Please add a default project to your nx config or set NIXPACKS_{}", NX_APP_NAME_ENV_VAR));
     }
 }
 
