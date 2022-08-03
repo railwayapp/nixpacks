@@ -16,6 +16,7 @@ use tempdir::TempDir;
 use uuid::Uuid;
 
 const DOT_NIXPACKS_DIR: &'static &str = &".nixpacks";
+const ENVIRONMENT_NIX: &'static &str = &"environment.nix";
 
 struct OutputDir {
     root_path: PathBuf,
@@ -36,7 +37,7 @@ impl OutputDir {
 
         let dockerfile_path = PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from("Dockerfile"));
         let environment_nix_path =
-            PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from("environment.nix"));
+            PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from(ENVIRONMENT_NIX));
 
         Ok(OutputDir {
             root_path,
@@ -233,7 +234,7 @@ impl DockerBuilder {
 
     fn create_dockerfile(&self, plan: &BuildPlan, env: &Environment) -> String {
         let environment_nix_path = PathBuf::from(DOT_NIXPACKS_DIR)
-            .join(PathBuf::from("environment.nix"))
+            .join(PathBuf::from(ENVIRONMENT_NIX))
             .display()
             .to_string();
 
