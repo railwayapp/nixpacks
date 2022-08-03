@@ -20,6 +20,7 @@ const DOT_NIXPACKS_DIR: &'static &str = &".nixpacks";
 struct OutputDir {
     root_path: PathBuf,
     dockerfile_path: PathBuf,
+    environment_nix_path: PathBuf,
 }
 
 impl OutputDir {
@@ -34,19 +35,14 @@ impl OutputDir {
         }
 
         let dockerfile_path = PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from("Dockerfile"));
+        let environment_nix_path =
+            PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from("environment.nix"));
 
         Ok(OutputDir {
             root_path,
             dockerfile_path,
+            environment_nix_path,
         })
-    }
-
-    pub fn get_nixpacks_file_path(&self, file_name: String) -> String {
-        PathBuf::from(&self.root_path)
-            .join(PathBuf::from(DOT_NIXPACKS_DIR))
-            .join(PathBuf::from(file_name))
-            .display()
-            .to_string()
     }
 }
 
@@ -99,7 +95,7 @@ impl Builder for DockerBuilder {
         self.write_assets(plan, dest).context("Writing assets")?;
         self.write_dockerfile(plan, &output_dir.dockerfile_path, env)
             .context("Writing Dockerfile")?;
-        self.write_nix_expression(plan, &output_dir)
+        self.write_nix_expression(plan, &output_dir.environment_nix_path)
             .context("Writing NIx expression")?;
 
         // Only build if the --out flag was not specified
@@ -201,8 +197,7 @@ impl DockerBuilder {
         Ok(())
     }
 
-    fn write_nix_expression(&self, plan: &BuildPlan, output_dir: &OutputDir) -> Result<()> {
-        let environment_nix_path = output_dir.get_nixpacks_file_path("environment.nix".to_string());
+    fn write_nix_expression(&self, plan: &BuildPlan, environment_nix_path: &PathBuf) -> Result<()> {
         let nix_expression = nix::create_nix_expression(plan);
 
         let mut nix_file =
