@@ -29,11 +29,11 @@ impl OutputDir {
             .display()
             .to_string();
 
-        let dockerfile_path = PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from("Dockerfile"));
-
         if fs::metadata(&dot_nixpacks_dir).is_err() {
             fs::create_dir_all(&dot_nixpacks_dir)?;
         }
+
+        let dockerfile_path = PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from("Dockerfile"));
 
         Ok(OutputDir {
             root_path,
@@ -194,7 +194,7 @@ impl DockerBuilder {
         env: &Environment,
     ) -> Result<()> {
         let dockerfile = self.create_dockerfile(plan, env);
-        
+
         File::create(dockerfile_path).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
 
