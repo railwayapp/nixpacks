@@ -18,44 +18,35 @@ use uuid::Uuid;
 const DOT_NIXPACKS_DIR: &'static &str = &".nixpacks";
 
 struct OutputDir {
-    root_path: String,
-    dockerfile_path: String,
-    environment_nix_relative_path: String,
-    environment_nix_absolute_path: String,
+    root_path: PathBuf,
+    dockerfile_path: PathBuf,
 }
 
 impl OutputDir {
-    pub fn new(root_path: &str) -> Result<Self> {
-        let dot_nixpacks_dir = PathBuf::from(root_path)
+    pub fn new(root_path: PathBuf) -> Result<Self> {
+        let dot_nixpacks_dir = PathBuf::from(&root_path)
             .join(PathBuf::from(DOT_NIXPACKS_DIR))
             .display()
             .to_string();
 
-        let dockerfile_path = PathBuf::from(&dot_nixpacks_dir)
-            .join(PathBuf::from("Dockerfile"))
-            .display()
-            .to_string();
-
-        let environment_nix_relative_path = PathBuf::from(DOT_NIXPACKS_DIR)
-            .join(PathBuf::from("environment.nix"))
-            .display()
-            .to_string();
-
-        let environment_nix_absolute_path = PathBuf::from(root_path)
-            .join(PathBuf::from(&environment_nix_relative_path))
-            .display()
-            .to_string();
+        let dockerfile_path = PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from("Dockerfile"));
 
         if fs::metadata(&dot_nixpacks_dir).is_err() {
             fs::create_dir_all(&dot_nixpacks_dir)?;
         }
 
         Ok(OutputDir {
-            root_path: root_path.to_string(),
+            root_path,
             dockerfile_path,
-            environment_nix_relative_path,
-            environment_nix_absolute_path,
         })
+    }
+
+    pub fn get_nixpacks_file_path(&self, file_name: String) -> String {
+        PathBuf::from(&self.root_path)
+            .join(PathBuf::from(DOT_NIXPACKS_DIR))
+            .join(PathBuf::from(file_name))
+            .display()
+            .to_string()
     }
 }
 
@@ -89,14 +80,13 @@ impl Builder for DockerBuilder {
             }
         };
         let dest = dir.to_str().context("Invalid temp directory path")?;
-        let output_dir = OutputDir::new(dest).context("Create .nixpacks directory")?;
+        let output_dir = OutputDir::new(dir.clone()).context("Create .nixpacks directory")?;
 
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
 
         // If printing the Dockerfile, don't write anything to disk
         if self.options.print_dockerfile {
-            let dockerfile =
-                self.create_dockerfile(plan, env, &output_dir.environment_nix_relative_path);
+            let dockerfile = self.create_dockerfile(plan, env);
             println!("{dockerfile}");
 
             return Ok(());
@@ -107,22 +97,15 @@ impl Builder for DockerBuilder {
         // Write everything to destination
         self.write_app(app_src, dest).context("Writing app")?;
         self.write_assets(plan, dest).context("Writing assets")?;
-        self.write_dockerfile(
-            plan,
-            &output_dir.dockerfile_path,
-            env,
-            &output_dir.environment_nix_relative_path,
-        )
-        .context("Writing Dockerfile")?;
-        self.write_nix_expression(plan, &output_dir.environment_nix_absolute_path)
+        self.write_dockerfile(plan, &output_dir.dockerfile_path, env)
+            .context("Writing Dockerfile")?;
+        self.write_nix_expression(plan, &output_dir)
             .context("Writing NIx expression")?;
 
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
             let mut docker_build_cmd =
                 self.get_docker_build_cmd(plan, name.as_str(), &output_dir)?;
-            let answer = format!("{:?}", docker_build_cmd);
-            println!("command is {}", answer); // Execute docker build;
 
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
 
@@ -207,18 +190,18 @@ impl DockerBuilder {
     fn write_dockerfile(
         &self,
         plan: &BuildPlan,
-        dockerfile_path: &str,
+        dockerfile_path: &PathBuf,
         env: &Environment,
-        environment_nix_path: &str,
     ) -> Result<()> {
-        let dockerfile = self.create_dockerfile(plan, env, environment_nix_path);
+        let dockerfile = self.create_dockerfile(plan, env);
         File::create(dockerfile_path).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path, dockerfile).context("Writing Dockerfile")?;
 
         Ok(())
     }
 
-    fn write_nix_expression(&self, plan: &BuildPlan, environment_nix_path: &str) -> Result<()> {
+    fn write_nix_expression(&self, plan: &BuildPlan, output_dir: &OutputDir) -> Result<()> {
+        let environment_nix_path = output_dir.get_nixpacks_file_path("environment.nix".to_string());
         let nix_expression = nix::create_nix_expression(plan);
 
         let mut nix_file =
@@ -252,12 +235,12 @@ impl DockerBuilder {
         Ok(())
     }
 
-    fn create_dockerfile(
-        &self,
-        plan: &BuildPlan,
-        env: &Environment,
-        environment_nix_path: &str,
-    ) -> String {
+    fn create_dockerfile(&self, plan: &BuildPlan, env: &Environment) -> String {
+        let environment_nix_path = PathBuf::from(DOT_NIXPACKS_DIR)
+            .join(PathBuf::from("environment.nix"))
+            .display()
+            .to_string();
+
         let app_dir = "/app/";
         let assets_dir = app::ASSETS_DIR;
 
@@ -296,7 +279,7 @@ impl DockerBuilder {
         };
 
         // -- Setup
-        let mut setup_files: Vec<String> = vec![environment_nix_path.to_string()];
+        let mut setup_files: Vec<String> = vec![environment_nix_path];
         if let Some(mut setup_file_deps) = setup_phase.only_include_files {
             setup_files.append(&mut setup_file_deps);
         }
