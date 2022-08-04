@@ -152,12 +152,41 @@ impl DockerfileGenerator for StartPhase {
     ) -> Result<String> {
         // TODO: Handle run images
 
-        if let Some(cmd) = &self.cmd {
-            Ok(formatdoc! {"# start
-            CMD {cmd}"})
-        } else {
-            Ok("".to_string())
-        }
+        let start_cmd = match &self.cmd {
+            Some(cmd) => {
+                format!("CMD {cmd}")
+            }
+            None => "".to_string(),
+        };
+
+        let t = match &self.run_image {
+            Some(run_image) => {
+                let copy_cmd = utils::get_copy_from_command(
+                    "0",
+                    &self.only_include_files.clone().unwrap_or_default(),
+                    APP_DIR,
+                );
+
+                // RUN true to prevent a Docker bug https://github.com/moby/moby/issues/37965#issuecomment-426853382
+                formatdoc! {"
+                  # start
+                  FROM {run_image}
+                  WORKDIR {APP_DIR}
+                  COPY --from=0 /etc/ssl/certs /etc/ssl/certs
+                  RUN true
+                  {copy_cmd}
+                  {start_cmd}
+                "}
+            }
+            None => {
+                formatdoc! {"
+                  # start
+                  {start_cmd}
+                "}
+            }
+        };
+
+        Ok(t)
     }
 }
 
@@ -248,5 +277,45 @@ impl DockerfileGenerator for Phase {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_phase_generation() {
+        let mut phase = Phase::new("test");
+        phase.add_cmd("echo test");
+        phase.add_apt_pkgs(vec!["wget".to_owned()]);
+
+        let dockerfile = phase
+            .generate_dockerfile(&DockerBuilderOptions::default(), &Environment::default())
+            .unwrap();
+
+        assert!(dockerfile.contains("echo test"));
+        assert!(dockerfile.contains("apt-get update"));
+        assert!(dockerfile.contains("wget"));
+    }
+
+    #[test]
+    fn test_plan_generation() {
+        let mut plan = BuildPlan::default();
+
+        let mut test1 = Phase::new("test1");
+        test1.add_cmd("echo test1");
+        plan.add_phase(test1);
+
+        let mut test2 = Phase::new("test2");
+        test2.add_cmd("echo test2");
+        plan.add_phase(test2);
+
+        let dockerfile = plan
+            .generate_dockerfile(&DockerBuilderOptions::default(), &Environment::default())
+            .unwrap();
+
+        assert!(dockerfile.contains("echo test1"));
+        assert!(dockerfile.contains("echo test2"));
     }
 }

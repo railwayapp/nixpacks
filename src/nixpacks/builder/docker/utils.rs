@@ -68,4 +68,32 @@ mod tests {
 
         assert_eq!(expected, actual);
     }
+
+    #[test]
+    fn test_get_copy_command() {
+        let files = vec!["file1".to_string(), "file2".to_string()];
+        let app_dir = "app";
+
+        assert_eq!("".to_owned(), get_copy_command(&[], &app_dir));
+        assert_eq!(
+            format!("COPY {} {}", files.join(" "), app_dir),
+            get_copy_command(&files, &app_dir)
+        );
+    }
+
+    #[test]
+    fn test_get_copy_from_command() {
+        let from = "0";
+        let files = vec!["file1".to_string(), "file2".to_string()];
+        let app_dir = "app";
+
+        assert_eq!(
+            format!("COPY --from=0 {} {}", app_dir, app_dir),
+            get_copy_from_command(&from, &[], &app_dir)
+        );
+        assert_eq!(
+            format!("COPY --from={} {} {}", from, files.join(" "), app_dir),
+            get_copy_from_command(&from, &files, &app_dir)
+        );
+    }
 }
