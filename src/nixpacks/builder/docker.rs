@@ -17,6 +17,7 @@ use uuid::Uuid;
 
 const DOT_NIXPACKS_DIR: &'static &str = &".nixpacks";
 const ENVIRONMENT_NIX: &'static &str = &"environment.nix";
+const DOCKERFILE_NAME: &'static &str = &"Dockerfile";
 
 struct OutputDir {
     root_path: PathBuf,
@@ -35,7 +36,7 @@ impl OutputDir {
             fs::create_dir_all(&dot_nixpacks_dir)?;
         }
 
-        let dockerfile_path = PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from("Dockerfile"));
+        let dockerfile_path = PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from(DOCKERFILE_NAME));
         let environment_nix_path =
             PathBuf::from(&dot_nixpacks_dir).join(PathBuf::from(ENVIRONMENT_NIX));
 
