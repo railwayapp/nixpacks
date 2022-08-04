@@ -38,6 +38,8 @@ pub struct Phase {
 
     #[serde(rename = "cacheDirectories")]
     pub cache_directories: Option<Vec<String>>,
+
+    pub paths: Option<Vec<String>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -123,6 +125,10 @@ impl Phase {
     pub fn add_cache_directory<S: Into<String>>(&mut self, dir: S) {
         self.cache_directories = add_to_option_vec(self.cache_directories.clone(), dir.into());
     }
+
+    pub fn add_path(&mut self, path: String) {
+        self.paths = add_to_option_vec(self.paths.clone(), path);
+    }
 }
 
 impl StartPhase {
@@ -194,6 +200,7 @@ impl From<LegacyInstallPhase> for Phase {
             cmds: install_phase.cmds,
             only_include_files: install_phase.only_include_files,
             cache_directories: install_phase.cache_directories,
+            paths: install_phase.paths,
             ..Default::default()
         };
 

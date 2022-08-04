@@ -150,8 +150,6 @@ impl DockerfileGenerator for StartPhase {
         _options: &DockerBuilderOptions,
         _env: &Environment,
     ) -> Result<String> {
-        // TODO: Handle run images
-
         let start_cmd = match &self.cmd {
             Some(cmd) => {
                 format!("CMD {cmd}")
@@ -159,7 +157,7 @@ impl DockerfileGenerator for StartPhase {
             None => "".to_string(),
         };
 
-        let t = match &self.run_image {
+        let dockerfile: String = match &self.run_image {
             Some(run_image) => {
                 let copy_cmd = utils::get_copy_from_command(
                     "0",
@@ -186,7 +184,7 @@ impl DockerfileGenerator for StartPhase {
             }
         };
 
-        Ok(t)
+        Ok(dockerfile)
     }
 }
 
@@ -202,6 +200,17 @@ impl DockerfileGenerator for Phase {
             options.cache_key.clone()
         } else {
             None
+        };
+
+        // Ensure paths are available in the environment
+        let (build_path, run_path) = if let Some(paths) = &phase.paths {
+            let joined_paths = paths.join(":");
+            (
+                format!("ENV PATH {}:$PATH", joined_paths),
+                format!("RUN printf '\\nPATH={joined_paths}:$PATH' >> /root/.profile"),
+            )
+        } else {
+            ("".to_string(), "".to_string())
         };
 
         // Install nix packages and libraries
@@ -242,11 +251,18 @@ impl DockerfileGenerator for Phase {
             .collect::<Vec<_>>()
             .join("\n");
 
-        let dockerfile_stmts = vec![install_nix_pkgs_str, apt_pkgs_str, phase_copy_cmd, cmds_str]
-            .into_iter()
-            .filter(|stmt| !stmt.is_empty())
-            .collect::<Vec<_>>()
-            .join("\n");
+        let dockerfile_stmts = vec![
+            build_path,
+            run_path,
+            install_nix_pkgs_str,
+            apt_pkgs_str,
+            phase_copy_cmd,
+            cmds_str,
+        ]
+        .into_iter()
+        .filter(|stmt| !stmt.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n");
 
         let dockerfile = formatdoc! {"
             # {name} phase
