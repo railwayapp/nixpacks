@@ -18,6 +18,7 @@ impl GeneratePlanConfig {
         }
     }
 
+    /// Create configuration from the given environment variables.
     pub fn from_environment(environment: &Environment) -> Self {
         Self {
             custom_install_cmd: environment
@@ -43,6 +44,7 @@ impl GeneratePlanConfig {
         }
     }
 
+    /// Merge two configurations, preferring the values from the second.
     pub fn merge(c1: &Self, c2: &Self) -> Self {
         Self {
             custom_install_cmd: c1

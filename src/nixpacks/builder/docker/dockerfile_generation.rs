@@ -1,6 +1,5 @@
 use crate::nixpacks::{
     environment::Environment,
-    images::DEFAULT_BASE_IMAGE,
     nix,
     plan::{
         phase::{Phase, StartPhase},

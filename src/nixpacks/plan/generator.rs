@@ -18,7 +18,7 @@ use std::collections::HashMap;
 // This line is automatically updated.
 // Last Modified: 2022-08-01 17:09:30 UTC+0000
 // https://github.com/NixOS/nixpkgs/commit/67f49b2a3854e8b5e3f9df4422225daa0985f451
-static NIXPKGS_ARCHIVE: &str = "67f49b2a3854e8b5e3f9df4422225daa0985f451";
+pub static NIXPKGS_ARCHIVE: &str = "67f49b2a3854e8b5e3f9df4422225daa0985f451";
 
 pub struct NixpacksBuildPlanGenerator<'a> {
     providers: &'a [&'a dyn Provider],
@@ -36,6 +36,7 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
         //     return Ok(plan);
         // }
 
+        // Match a specific provider
         self.detect(app, environment)?;
 
         // If the provider defines a build plan in the new format, use that
@@ -90,8 +91,9 @@ impl NixpacksBuildPlanGenerator<'_> {
         println!("{:?}", config);
 
         if let Some(provider) = self.matched_provider {
-            if let Some(build_plan) = provider.get_build_plan(app, environment)? {
+            if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
                 // TODO: Apply config to build plan
+                let build_plan = BuildPlan::apply_config(&provider_build_plan, &config);
 
                 return Ok(build_plan);
             }
