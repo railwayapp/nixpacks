@@ -38,6 +38,7 @@ expression: plan
     "cmd": "npm run start"
   },
   "variables": {
+    "CI": "true",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
   },

@@ -128,6 +128,7 @@ impl NodeProvider {
         EnvironmentVariables::from([
             ("NODE_ENV".to_string(), "production".to_string()),
             ("NPM_CONFIG_PRODUCTION".to_string(), "false".to_string()),
+            ("CI".to_string(), "true".to_string()),
         ])
     }
 

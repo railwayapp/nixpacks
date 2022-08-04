@@ -35,6 +35,7 @@ expression: plan
     "cmd": "node index.js"
   },
   "variables": {
+    "CI": "true",
     "NODE_ENV": "test",
     "NPM_CONFIG_PRODUCTION": "false"
   },

@@ -32,6 +32,7 @@ expression: plan
     "cmd": "bun index.ts"
   },
   "variables": {
+    "CI": "true",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
   },
