@@ -50,9 +50,15 @@ impl GeneratePlanConfig {
             custom_install_cmd: c1
                 .custom_install_cmd
                 .clone()
-                .or(c2.custom_install_cmd.clone()),
-            custom_build_cmd: c1.custom_build_cmd.clone().or(c2.custom_build_cmd.clone()),
-            custom_start_cmd: c1.custom_start_cmd.clone().or(c2.custom_start_cmd.clone()),
+                .or_else(|| c2.custom_install_cmd.clone()),
+            custom_build_cmd: c1
+                .custom_build_cmd
+                .clone()
+                .or_else(|| c2.custom_build_cmd.clone()),
+            custom_start_cmd: c1
+                .custom_start_cmd
+                .clone()
+                .or_else(|| c2.custom_start_cmd.clone()),
             custom_pkgs: c1
                 .custom_pkgs
                 .iter()

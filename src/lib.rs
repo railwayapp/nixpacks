@@ -1,16 +1,17 @@
 use crate::nixpacks::{
     app::App,
-    builder::{docker::DockerBuilderOptions, ImageBuilder},
+    builder::{
+        docker::{docker_image_builder::DockerImageBuilder, DockerBuilderOptions},
+        ImageBuilder,
+    },
     environment::Environment,
     logger::Logger,
     nix::pkg::Pkg,
-    plan::{generator::NixpacksBuildPlanGenerator, PlanGenerator},
+    plan::{
+        config::GeneratePlanConfig, generator::NixpacksBuildPlanGenerator, BuildPlan, PlanGenerator,
+    },
 };
 use anyhow::Result;
-use nixpacks::{
-    builder::docker::docker_image_builder::DockerImageBuilder,
-    plan::{config::GeneratePlanConfig, BuildPlan},
-};
 use providers::{
     clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
     deno::DenoProvider, fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider,

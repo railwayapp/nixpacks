@@ -3,7 +3,7 @@ use nixpacks::{
     create_docker_image,
     nixpacks::{
         builder::docker::DockerBuilderOptions, environment::EnvironmentVariables, nix::pkg::Pkg,
-        plan::generator::GeneratePlanConfig,
+        plan::config::GeneratePlanConfig,
     },
 };
 use std::io::{BufRead, BufReader};

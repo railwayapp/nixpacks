@@ -1,13 +1,9 @@
 use super::{phase::Phase, BuildPlan};
-use crate::nixpacks::{
-    app::{App, StaticAssets},
-    environment::{Environment, EnvironmentVariables},
-    NIX_PACKS_VERSION,
-};
+use crate::nixpacks::NIX_PACKS_VERSION;
 use anyhow::Result;
 use colored::Colorize;
 use indoc::formatdoc;
-use serde::{Deserialize, Serialize};
+use std::fmt::Write;
 
 const FIRST_COLUMN_WIDTH: usize = 10;
 const MIN_BOX_WIDTH: usize = 20;
@@ -21,7 +17,7 @@ impl BuildPlan {
         let phase_contents = self
             .get_sorted_phases()?
             .iter()
-            .map(|phase| (phase.name.clone(), self.get_phase_content(phase)))
+            .map(|phase| (phase.name.clone(), self.get_phase_content(phase).unwrap()))
             .collect::<Vec<_>>();
 
         let start_contents = self
@@ -33,13 +29,12 @@ impl BuildPlan {
 
         let max_right_content = phase_contents
             .iter()
-            .map(|(_, content)| {
+            .flat_map(|(_, content)| {
                 content
                     .split('\n')
-                    .map(|l| console::measure_text_width(l))
+                    .map(console::measure_text_width)
                     .collect::<Vec<_>>()
             })
-            .flatten()
             .max()
             .unwrap_or(0);
         let max_right_content = std::cmp::max(
@@ -50,7 +45,7 @@ impl BuildPlan {
         let edge = format!("{} ", box_drawing::double::VERTICAL);
         let edge_width = console::measure_text_width(edge.as_str());
 
-        let middle_padding = format!(" {} ", box_drawing::light::VERTICAL).to_string();
+        let middle_padding = format!(" {} ", box_drawing::light::VERTICAL);
         let middle_padding_width = console::measure_text_width(middle_padding.as_str());
         let middle_padding = middle_padding.cyan().dimmed().to_string();
 
@@ -122,8 +117,8 @@ impl BuildPlan {
         let start_row = print_row(
             "Start",
             start_contents,
-            edge.clone(),
-            middle_padding.clone(),
+            edge,
+            middle_padding,
             second_column_width,
             false,
         );
@@ -139,7 +134,7 @@ impl BuildPlan {
         })
     }
 
-    fn get_phase_content(&self, phase: &Phase) -> String {
+    fn get_phase_content(&self, phase: &Phase) -> Result<String> {
         let mut c = String::new();
 
         let nix_pkgs = phase.nix_pkgs.clone().unwrap_or_default();
@@ -157,26 +152,28 @@ impl BuildPlan {
         let show_label = !pkgs.is_empty() && !cmds.is_empty();
 
         if !pkgs.is_empty() {
-            c += &format!(
+            write!(
+                c,
                 "{}{}",
                 if show_label { "pkgs: " } else { "" },
-                pkgs.join(", ")
-            );
+                pkgs.join(", "),
+            )?;
         }
 
-        if c != "" && !cmds.is_empty() {
+        if !c.is_empty() && !cmds.is_empty() {
             c += "\n";
         }
 
         if !cmds.is_empty() {
-            c += &format!(
+            write!(
+                c,
                 "{}{}",
                 if show_label { "cmds: " } else { "" },
                 cmds.join("\n")
-            );
+            )?;
         }
 
-        c
+        Ok(c)
     }
 }
 

@@ -1,12 +1,8 @@
+use nixpacks::nixpacks::plan::BuildPlan;
 use nixpacks::{
     generate_build_plan,
-    nixpacks::{
-        nix::pkg::Pkg,
-        plan::{generator::GeneratePlanConfig, LegacyBuildPlan},
-    },
+    nixpacks::{nix::pkg::Pkg, plan::config::GeneratePlanConfig},
 };
-use nixpacks::{nixpacks::plan::BuildPlan, providers::node::NODE_OVERLAY};
-use std::env::consts::ARCH;
 
 macro_rules! assert_plan_snapshot {
     ($plan:expr) => {

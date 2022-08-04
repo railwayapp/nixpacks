@@ -1,7 +1,6 @@
 use super::{
     config::GeneratePlanConfig,
     legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
-    phase::{Phase, StartPhase},
     BuildPlan, LegacyBuildPlan, PlanGenerator,
 };
 use crate::{

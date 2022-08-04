@@ -1,7 +1,5 @@
 use super::{dockerfile_generation::DockerfileGenerator, DockerBuilderOptions, ImageBuilder};
-use crate::nixpacks::{
-    environment::Environment, files, logger::Logger, plan::BuildPlan, NIX_PACKS_VERSION,
-};
+use crate::nixpacks::{environment::Environment, files, logger::Logger, plan::BuildPlan};
 use anyhow::{bail, Context, Ok, Result};
 
 use std::{

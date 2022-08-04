@@ -6,7 +6,6 @@ use crate::nixpacks::{
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     plan::{
-        legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
         phase::{Phase, StartPhase},
         BuildPlan,
     },
@@ -92,11 +91,7 @@ impl Provider for NodeProvider {
         build.add_cache_directory(NODE_MODULES_CACHE_DIR.to_string());
 
         // Start
-        let start = if let Some(start_cmd) = NodeProvider::get_start_cmd(app)? {
-            Some(StartPhase::new(start_cmd))
-        } else {
-            None
-        };
+        let start = NodeProvider::get_start_cmd(app)?.map(StartPhase::new);
 
         let mut plan = BuildPlan::new(vec![setup, install, build], start);
 

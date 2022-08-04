@@ -11,8 +11,7 @@ use crate::nixpacks::{
     environment::{Environment, EnvironmentVariables},
 };
 use anyhow::Result;
-use colored::Colorize;
-use indoc::formatdoc;
+
 use serde::{Deserialize, Serialize};
 
 pub mod config;
@@ -104,9 +103,7 @@ impl BuildPlan {
         let mut new_plan = plan.clone();
 
         // Setup config
-        let mut setup = new_plan
-            .remove_phase("setup")
-            .unwrap_or_else(|| Phase::setup());
+        let mut setup = new_plan.remove_phase("setup").unwrap_or_else(Phase::setup);
 
         // Append the packages and libraries together
         setup.apt_pkgs = Some(
@@ -142,24 +139,19 @@ impl BuildPlan {
         // Install config
         let mut install = new_plan
             .remove_phase("install")
-            .unwrap_or_else(|| Phase::install());
+            .unwrap_or_else(Phase::install);
         install.cmds = config.custom_install_cmd.clone().or(install.cmds);
         new_plan.add_phase(install);
 
         // Build config
-        let mut build = new_plan
-            .remove_phase("build")
-            .unwrap_or_else(|| Phase::build());
+        let mut build = new_plan.remove_phase("build").unwrap_or_else(Phase::build);
         build.cmds = config.custom_build_cmd.clone().or(build.cmds);
         new_plan.add_phase(build);
 
         // Start config
-        let mut start = new_plan
-            .start_phase
-            .clone()
-            .unwrap_or_else(|| StartPhase::default());
+        let mut start = new_plan.start_phase.clone().unwrap_or_default();
         start.cmd = config.custom_start_cmd.clone().or(start.cmd);
-        new_plan.start_phase = Some(start.clone());
+        new_plan.start_phase = Some(start);
 
         new_plan
     }
