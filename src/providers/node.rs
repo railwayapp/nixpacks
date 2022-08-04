@@ -188,6 +188,7 @@ impl NodeProvider {
         EnvironmentVariables::from([
             ("NODE_ENV".to_string(), "production".to_string()),
             ("NPM_CONFIG_PRODUCTION".to_string(), "false".to_string()),
+            ("CI".to_string(), "true".to_string()),
         ])
     }
 
@@ -255,7 +256,7 @@ impl NodeProvider {
 
         // Parse `18` or `18.x` into nodejs-18_x
         // This also supports 18.x.x, or any number in place of the x.
-        let re = Regex::new(r"^(\d+)\.?([x|X]|[0-9]+)\.?([x|X]|[0-9]+)?$").unwrap();
+        let re = Regex::new(r"^(\d*)(?:\.?(?:\d*|[xX]?)?)(?:\.?(?:\d*|[xX]?)?)").unwrap();
         if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version.clone()) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
@@ -445,20 +446,14 @@ fn version_number_to_pkg(version: &u32) -> String {
     if AVAILABLE_NODE_VERSIONS.contains(version) {
         format!("nodejs-{}_x", version)
     } else {
-        println!("No node version could be matched, defaulting to current LTS release");
         DEFAULT_NODE_PKG_NAME.to_string()
     }
 }
 
 fn parse_regex_into_pkg(re: &Regex, node_version: String) -> Option<String> {
     let matches: Vec<_> = re.captures_iter(node_version.as_str()).collect();
-    if let Some(m) = matches.get(0) {
-        let capture = if node_version.contains('.') {
-            &m[1]
-        } else {
-            &m[0]
-        };
-        match capture.parse::<u32>() {
+    if let Some(captures) = matches.get(0) {
+        match captures[1].parse::<u32>() {
             Ok(version) => return Some(version_number_to_pkg(&version)),
             Err(_e) => {}
         }

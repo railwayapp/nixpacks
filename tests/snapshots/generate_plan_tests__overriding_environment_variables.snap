@@ -4,7 +4,8 @@ expression: plan
 ---
 {
   "variables": {
-    "NODE_ENV": "production",
+    "CI": "true",
+    "NODE_ENV": "test",
     "NPM_CONFIG_PRODUCTION": "false"
   },
   "phases": [
