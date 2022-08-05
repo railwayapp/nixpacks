@@ -33,6 +33,7 @@ pub trait DockerfileGenerator {
 }
 
 pub static APP_DIR: &str = "/app/";
+pub static ASSETS_DIR: &str = "/assets/";
 
 impl DockerfileGenerator for BuildPlan {
     fn generate_dockerfile(
@@ -59,6 +60,13 @@ impl DockerfileGenerator for BuildPlan {
                     .collect::<Vec<_>>()
                     .join(" ")
             )
+        } else {
+            "".to_string()
+        };
+
+        let static_assets = plan.static_assets.clone().unwrap_or_default();
+        let assets_copy_cmd = if !static_assets.is_empty() {
+            format!("COPY assets/ {ASSETS_DIR}")
         } else {
             "".to_string()
         };
@@ -93,6 +101,7 @@ impl DockerfileGenerator for BuildPlan {
         let dockerfile = formatdoc! {"
             FROM {base_image}
             WORKDIR {APP_DIR}
+            {assets_copy_cmd}
 
             {dockerfile_phases_str}
 
