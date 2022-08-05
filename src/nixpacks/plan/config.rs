@@ -97,8 +97,8 @@ impl GeneratePlanConfig {
 fn combine_option_vec<T: Clone>(v1: Option<Vec<T>>, v2: Option<Vec<T>>) -> Option<Vec<T>> {
     match (v1, v2) {
         (Some(v1), Some(v2)) => Some(v1.iter().chain(v2.iter()).cloned().collect()),
-        (Some(v1), None) => Some(v1.clone()),
-        (None, Some(v2)) => Some(v2.clone()),
+        (Some(v1), None) => Some(v1),
+        (None, Some(v2)) => Some(v2),
         (None, None) => None,
     }
 }

@@ -55,7 +55,7 @@ impl Provider for DenoProvider {
 
         if let Some(start_cmd) = DenoProvider::get_start_cmd(app)? {
             let start_phase = StartPhase::new(start_cmd);
-            plan.add_start_phase(start_phase);
+            plan.set_start_phase(start_phase);
         }
 
         Ok(Some(plan))

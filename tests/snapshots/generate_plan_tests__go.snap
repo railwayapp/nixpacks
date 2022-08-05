@@ -4,26 +4,23 @@ expression: plan
 ---
 {
   "nixpacksVersion": "[version]",
-  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
+  "buildImage": "[build_image]",
   "variables": {
     "CGO_ENABLED": "0"
   },
-  "staticAssets": {},
   "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
     {
       "name": "setup",
       "nixPackages": [
         {
           "name": "go"
         }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
-    },
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
       ]
     },
     {

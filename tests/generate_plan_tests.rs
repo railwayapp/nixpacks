@@ -10,6 +10,7 @@ macro_rules! assert_plan_snapshot {
     ($plan:expr) => {
         insta::assert_json_snapshot!($plan, {
             ".nixpacksVersion" => "[version]",
+            ".buildImage" => "[build_image]",
             ".phases.*.nixpacksArchive" => "[archive]",
         });
     }
@@ -252,7 +253,7 @@ fn test_rust_rocket() {
             )
         ])
     );
-    assert!(start.clone().cmd.is_some());
+    assert!(start.cmd.is_some());
     assert_eq!(start.clone().cmd.unwrap(), "./rocket".to_string());
     assert!(start.run_image.is_some());
 }

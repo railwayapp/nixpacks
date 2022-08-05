@@ -4,7 +4,7 @@ expression: plan
 ---
 {
   "nixpacksVersion": "[version]",
-  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
+  "buildImage": "[build_image]",
   "variables": {},
   "staticAssets": {
     ".htpasswd": "# Username: nixpacks\n# Password: nixpacks\nnixpacks:$apr1$21i3ye0o$d1H1ePSg8mD2cO5O2A9dG.",

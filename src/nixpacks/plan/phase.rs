@@ -88,7 +88,7 @@ impl Phase {
     pub fn install(cmd: Option<String>) -> Self {
         Self {
             name: "install".to_string(),
-            cmds: cmd.map(|cmd| vec![cmd.into()]),
+            cmds: cmd.map(|cmd| vec![cmd]),
             depends_on: Some(vec!["setup".to_string()]),
             ..Default::default()
         }
@@ -98,7 +98,7 @@ impl Phase {
     pub fn build(cmd: Option<String>) -> Self {
         Self {
             name: "build".to_string(),
-            cmds: cmd.map(|cmd| vec![cmd.into()]),
+            cmds: cmd.map(|cmd| vec![cmd]),
             depends_on: Some(vec!["install".to_string()]),
             ..Default::default()
         }

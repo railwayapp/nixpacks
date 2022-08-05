@@ -4,7 +4,7 @@ expression: plan
 ---
 {
   "nixpacksVersion": "[version]",
-  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
+  "buildImage": "[build_image]",
   "variables": {
     "BUNDLE_GEMFILE": "/app/Gemfile",
     "GEM_HOME": "/usr/local/rvm/gems/ruby-3.1.2",

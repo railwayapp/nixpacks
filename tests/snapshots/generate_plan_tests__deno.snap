@@ -3,7 +3,8 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "buildImage": "",
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "phases": [
     {
       "name": "install",

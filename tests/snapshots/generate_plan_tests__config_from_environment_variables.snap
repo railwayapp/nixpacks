@@ -4,7 +4,7 @@ expression: plan
 ---
 {
   "nixpacksVersion": "[version]",
-  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
+  "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_BUILD_CACHE_DIRS": "/build,barbaz",
     "NIXPACKS_BUILD_CMD": "build",

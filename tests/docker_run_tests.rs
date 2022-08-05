@@ -223,6 +223,12 @@ fn run_postgres() -> Container {
 }
 
 #[test]
+fn test_deno() {
+    let name = simple_build("./examples/deno");
+    assert!(run_image(name, None).contains("Hello from Deno"));
+}
+
+#[test]
 fn test_node() {
     let name = simple_build("./examples/node");
     assert!(run_image(name, None).contains("Hello from Node"));

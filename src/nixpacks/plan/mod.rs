@@ -38,7 +38,7 @@ pub struct LegacyBuildPlan {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BuildPlan {
     #[serde(rename = "nixpacksVersion")]
     nixpacks_version: Option<String>,
@@ -72,7 +72,7 @@ impl BuildPlan {
         self.phases.push(phase);
     }
 
-    pub fn add_start_phase(&mut self, start_phase: StartPhase) {
+    pub fn set_start_phase(&mut self, start_phase: StartPhase) {
         self.start_phase = Some(start_phase);
     }
 
@@ -162,6 +162,19 @@ impl BuildPlan {
         new_plan.start_phase = Some(start);
 
         new_plan
+    }
+}
+
+impl Default for BuildPlan {
+    fn default() -> Self {
+        Self {
+            nixpacks_version: Some(NIX_PACKS_VERSION.to_string()),
+            build_image: DEFAULT_BASE_IMAGE.to_string(),
+            phases: vec![],
+            start_phase: None,
+            variables: None,
+            static_assets: None,
+        }
     }
 }
 
