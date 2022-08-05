@@ -183,6 +183,7 @@ fn main() -> Result<()> {
         custom_libs: libs,
         custom_apt_pkgs: apt_pkgs,
         pin_pkgs,
+        ..Default::default()
     };
 
     match &matches.subcommand() {
