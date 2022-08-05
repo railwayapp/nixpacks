@@ -27,7 +27,7 @@ pub struct OutputDir {
 
 impl OutputDir {
     pub fn new(root: PathBuf) -> Result<Self> {
-        let root = PathBuf::from(root);
+        let root = root;
         let asset_root = PathBuf::from(NIXPACKS_OUTPUT_DIR);
 
         Ok(Self { root, asset_root })
@@ -119,7 +119,7 @@ impl DockerfileGenerator for BuildPlan {
         let assets_copy_cmd = if !static_assets.is_empty() {
             format!(
                 "COPY {} {}",
-                output.get_relative_path("assets").display().to_string(),
+                output.get_relative_path("assets").display(),
                 app::ASSETS_DIR
             )
         } else {

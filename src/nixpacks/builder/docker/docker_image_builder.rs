@@ -7,8 +7,7 @@ use anyhow::{bail, Context, Ok, Result};
 
 use std::{
     fs::{self, File},
-    path::PathBuf,
-    process::{Command, Output},
+    process::Command,
 };
 use tempdir::TempDir;
 use uuid::Uuid;

@@ -27,29 +27,11 @@ pub struct NixpacksBuildPlanGenerator<'a> {
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan> {
-        // If options.plan_path is specified, use that build plan
-        // if let Some(plan_path) = self.options.clone().plan_path {
-        //     let plan_json = fs::read_to_string(plan_path).context("Reading build plan")?;
-        //     let plan: BuildPlan =
-        //         serde_json::from_str(&plan_json).context("Deserializing build plan")?;
-        //     return Ok(plan);
-        // }
-
         // Match a specific provider
         self.detect(app, environment)?;
 
         // If the provider defines a build plan in the new format, use that
         let plan = self.get_build_plan(app, environment)?;
-
-        // let plan = BuildPlan {
-        //     version: Some(NIX_PACKS_VERSION.to_string()),
-        //     setup: Some(setup_phase),
-        //     install: Some(install_phase),
-        //     build: Some(build_phase),
-        //     start: Some(start_phase),
-        //     variables: Some(variables),
-        //     static_assets: Some(static_assets),
-        // };
 
         Ok(plan)
     }
