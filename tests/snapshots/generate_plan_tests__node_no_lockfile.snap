@@ -3,12 +3,26 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
+  "nixpacksVersion": "[version]",
+  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
   "variables": {
     "CI": "true",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
   },
   "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "npm i"
+      ],
+      "cacheDirectories": [
+        "/root/.npm"
+      ]
+    },
     {
       "name": "setup",
       "nixPackages": [
@@ -23,18 +37,6 @@ expression: plan
       "nixLibraries": [
         "libuuid",
         "libGL"
-      ]
-    },
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
-      ],
-      "commands": [
-        "npm i"
-      ],
-      "cacheDirectories": [
-        "/root/.npm"
       ]
     },
     {

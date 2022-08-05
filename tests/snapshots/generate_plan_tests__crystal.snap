@@ -3,21 +3,9 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "variables": {},
+  "nixpacksVersion": "[version]",
+  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
   "phases": [
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "crystal"
-        },
-        {
-          "name": "shards"
-        }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
-    },
     {
       "name": "install",
       "dependsOn": [
@@ -28,12 +16,23 @@ expression: plan
       ]
     },
     {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "crystal"
+        },
+        {
+          "name": "shards"
+        }
+      ]
+    },
+    {
       "name": "build",
       "dependsOn": [
         "install"
       ],
       "commands": [
-        "shards build --release"
+        "crystal build"
       ]
     }
   ],

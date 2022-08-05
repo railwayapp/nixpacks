@@ -45,13 +45,11 @@ impl Provider for DenoProvider {
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
 
-        let mut setup_phase = Phase::setup();
-        setup_phase.add_nix_pkgs(vec![Pkg::new("deno")]);
+        let setup_phase = Phase::setup(Some(vec![Pkg::new("deno")]));
         plan.add_phase(setup_phase);
 
         if let Some(build_cmd) = DenoProvider::get_build_cmd(app)? {
-            let mut build_phase = Phase::build();
-            build_phase.add_cmd(build_cmd);
+            let build_phase = Phase::build(Some(build_cmd));
             plan.add_phase(build_phase);
         };
 

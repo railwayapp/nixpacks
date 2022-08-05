@@ -75,24 +75,30 @@ impl Phase {
         }
     }
 
-    pub fn setup() -> Self {
+    /// Shortcut for creating a setup phase from a list of nix packages.
+    pub fn setup(pkgs: Option<Vec<Pkg>>) -> Self {
         Self {
+            nix_pkgs: pkgs,
             name: "setup".to_string(),
             ..Default::default()
         }
     }
 
-    pub fn install() -> Self {
+    /// Shortcut for creating an install phase from a command
+    pub fn install(cmd: Option<String>) -> Self {
         Self {
             name: "install".to_string(),
+            cmds: cmd.map(|cmd| vec![cmd.into()]),
             depends_on: Some(vec!["setup".to_string()]),
             ..Default::default()
         }
     }
 
-    pub fn build() -> Self {
+    /// Shortcut for creating a build phase from a command
+    pub fn build(cmd: Option<String>) -> Self {
         Self {
             name: "build".to_string(),
+            cmds: cmd.map(|cmd| vec![cmd.into()]),
             depends_on: Some(vec!["install".to_string()]),
             ..Default::default()
         }

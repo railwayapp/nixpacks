@@ -7,8 +7,8 @@ use nixpacks::{
 macro_rules! assert_plan_snapshot {
     ($plan:expr) => {
         insta::assert_json_snapshot!($plan, {
-            ".version" => "[version]",
-            ".setup.archive" => "[archive]",
+            ".nixpacksVersion" => "[version]",
+            ".phases.*.nixpacksArchive" => "[archive]",
         });
     }
 }

@@ -3,7 +3,10 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
+  "nixpacksVersion": "[version]",
+  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
   "variables": {},
+  "staticAssets": {},
   "phases": [
     {
       "name": "setup",
@@ -28,6 +31,9 @@ expression: plan
       ],
       "cacheDirectories": [
         "/root/.cache/pip"
+      ],
+      "paths": [
+        "/opt/venv/bin"
       ]
     },
     {

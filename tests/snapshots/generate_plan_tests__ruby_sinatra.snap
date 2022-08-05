@@ -3,11 +3,14 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
+  "nixpacksVersion": "[version]",
+  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
   "variables": {
     "BUNDLE_GEMFILE": "/app/Gemfile",
     "GEM_HOME": "/usr/local/rvm/gems/ruby-3.1.2",
     "GEM_PATH": "/usr/local/rvm/gems/ruby-3.1.2:/usr/local/rvm/gems/ruby-3.1.2@global"
   },
+  "staticAssets": {},
   "phases": [
     {
       "name": "setup",
@@ -37,6 +40,11 @@ expression: plan
       ],
       "cacheDirectories": [
         "/root/.bundle/cache"
+      ],
+      "paths": [
+        "/usr/local/rvm/rubies/ruby-3.1.2/bin",
+        "/usr/local/rvm/gems/ruby-3.1.2/bin",
+        "/usr/local/rvm/gems/ruby-3.1.2@global/bin"
       ]
     },
     {

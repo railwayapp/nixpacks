@@ -3,24 +3,14 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
+  "nixpacksVersion": "[version]",
+  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
   "variables": {
     "CI": "true",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
   },
   "phases": [
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "nodejs-14_x"
-        },
-        {
-          "name": "pnpm-6_x",
-          "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
-        }
-      ]
-    },
     {
       "name": "install",
       "dependsOn": [
@@ -31,6 +21,18 @@ expression: plan
       ],
       "cacheDirectories": [
         "/root/.cache/pnpm"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "nodejs-14_x"
+        },
+        {
+          "name": "pnpm-6_x",
+          "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+        }
       ]
     },
     {

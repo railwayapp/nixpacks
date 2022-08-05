@@ -3,7 +3,14 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
+  "buildImage": "",
   "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
     {
       "name": "setup",
       "nixPackages": [

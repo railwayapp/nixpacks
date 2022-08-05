@@ -50,17 +50,13 @@ impl Provider for NodeProvider {
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
-        let mut setup = Phase::setup();
-        setup.add_nix_pkgs(NodeProvider::get_nix_packages(app, env)?);
-
+        let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
         if NodeProvider::uses_canvas(app) {
             setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
 
         // Install
-        let mut install = Phase::install();
-        install.add_cmd(NodeProvider::get_install_command(app));
-
+        let mut install = Phase::install(Some(NodeProvider::get_install_command(app)));
         install.add_cache_directory(NodeProvider::get_package_manager_cache_dir(app));
 
         // Cypress cache directory
@@ -70,11 +66,12 @@ impl Provider for NodeProvider {
         }
 
         // Build
-        let mut build = Phase::build();
-        if NodeProvider::has_script(app, "build")? {
+        let mut build = if NodeProvider::has_script(app, "build")? {
             let pkg_manager = NodeProvider::get_package_manager(app);
-            build.add_cmd(format!("{} run build", pkg_manager));
-        }
+            Phase::build(Some(format!("{} run build", pkg_manager)))
+        } else {
+            Phase::build(None)
+        };
 
         // Next build cache directories
         let next_cache_dirs = NodeProvider::find_next_packages(app)?;
@@ -94,7 +91,6 @@ impl Provider for NodeProvider {
         let start = NodeProvider::get_start_cmd(app)?.map(StartPhase::new);
 
         let mut plan = BuildPlan::new(vec![setup, install, build], start);
-
         plan.set_variables(NodeProvider::get_node_environment_variables());
 
         Ok(Some(plan))

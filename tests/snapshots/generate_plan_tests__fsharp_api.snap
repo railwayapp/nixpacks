@@ -3,11 +3,14 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
+  "nixpacksVersion": "[version]",
+  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
   "variables": {
     "ASPNETCORE_ENVIRONMENT": "Production",
     "ASPNETCORE_URLS": "http://0.0.0.0:3000",
     "DOTNET_ROOT": "/nix/var/nix/profiles/default/"
   },
+  "staticAssets": {},
   "phases": [
     {
       "name": "setup",

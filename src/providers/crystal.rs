@@ -32,14 +32,9 @@ impl Provider for CrystalProvider {
     }
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
-        let mut setup = Phase::setup();
-        setup.add_nix_pkgs(vec![Pkg::new("crystal"), Pkg::new("shards")]);
-
-        let mut install = Phase::install();
-        install.add_cmd("shards install");
-
-        let mut build = Phase::build();
-        build.add_cmd("shards build --release");
+        let setup = Phase::setup(Some(vec![Pkg::new("crystal"), Pkg::new("shards")]));
+        let install = Phase::install(Some("shards install".to_string()));
+        let build = Phase::build(Some("crystal build".to_string()));
 
         let config = CrystalProvider::get_config(app)?;
         let target_names = config.targets.keys().cloned().collect::<Vec<_>>();

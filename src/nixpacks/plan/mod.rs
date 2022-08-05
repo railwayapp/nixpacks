@@ -103,24 +103,26 @@ impl BuildPlan {
         let mut new_plan = plan.clone();
 
         // Setup config
-        let mut setup = new_plan.remove_phase("setup").unwrap_or_else(Phase::setup);
+        let mut setup = new_plan
+            .remove_phase("setup")
+            .unwrap_or_else(|| Phase::setup(None));
 
         // Append the packages and libraries together
-        setup.apt_pkgs = Some(
+        setup.apt_pkgs = none_if_empty(
             [
                 config.custom_apt_pkgs.clone(),
                 setup.apt_pkgs.unwrap_or_default(),
             ]
             .concat(),
         );
-        setup.nix_pkgs = Some(
+        setup.nix_pkgs = none_if_empty(
             [
                 config.custom_pkgs.clone(),
                 setup.nix_pkgs.unwrap_or_default(),
             ]
             .concat(),
         );
-        setup.nix_libraries = Some(
+        setup.nix_libraries = none_if_empty(
             [
                 config.custom_libs.clone(),
                 setup.nix_libraries.unwrap_or_default(),
@@ -139,12 +141,14 @@ impl BuildPlan {
         // Install config
         let mut install = new_plan
             .remove_phase("install")
-            .unwrap_or_else(Phase::install);
+            .unwrap_or_else(|| Phase::install(None));
         install.cmds = config.custom_install_cmd.clone().or(install.cmds);
         new_plan.add_phase(install);
 
         // Build config
-        let mut build = new_plan.remove_phase("build").unwrap_or_else(Phase::build);
+        let mut build = new_plan
+            .remove_phase("build")
+            .unwrap_or_else(|| Phase::build(None));
         build.cmds = config.custom_build_cmd.clone().or(build.cmds);
         new_plan.add_phase(build);
 
@@ -172,5 +176,13 @@ impl From<LegacyBuildPlan> for BuildPlan {
         plan.variables = legacy_plan.variables;
 
         plan
+    }
+}
+
+fn none_if_empty<T>(value: Vec<T>) -> Option<Vec<T>> {
+    if value.is_empty() {
+        None
+    } else {
+        Some(value)
     }
 }

@@ -3,13 +3,16 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
+  "nixpacksVersion": "[version]",
+  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
   "variables": {},
+  "staticAssets": {},
   "phases": [
     {
       "name": "setup",
       "nixPackages": [],
       "nixLibraries": [],
-      "nixpacksArchive": "2f0c3be57c348f4cfd8820f2d189e29a685d9c41",
+      "nixpacksArchive": "[archive]",
       "aptPackages": []
     },
     {

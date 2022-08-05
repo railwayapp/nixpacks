@@ -3,6 +3,7 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
+  "buildImage": "",
   "phases": [
     {
       "name": "setup",
@@ -10,6 +11,18 @@ expression: plan
         {
           "name": "deno"
         }
+      ]
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
       ]
     }
   ],

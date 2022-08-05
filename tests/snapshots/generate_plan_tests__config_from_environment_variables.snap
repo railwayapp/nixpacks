@@ -3,6 +3,8 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
+  "nixpacksVersion": "[version]",
+  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962",
   "variables": {
     "NIXPACKS_BUILD_CACHE_DIRS": "/build,barbaz",
     "NIXPACKS_BUILD_CMD": "build",
@@ -12,6 +14,7 @@ expression: plan
     "NIXPACKS_RUN_IMAGE": "alpine",
     "NIXPACKS_START_CMD": "start"
   },
+  "staticAssets": {},
   "phases": [
     {
       "name": "setup",
