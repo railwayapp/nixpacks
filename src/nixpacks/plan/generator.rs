@@ -49,6 +49,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         }
     }
 
+    /// Match a single provider from the given app and environment.
     fn detect(&mut self, app: &App, environment: &Environment) -> Result<()> {
         for &provider in self.providers {
             let matches = provider.detect(app, environment)?;
@@ -61,6 +62,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(())
     }
 
+    /// Get a build plan from the provider and by applying the config from the environment
     fn get_build_plan(&self, app: &App, environment: &Environment) -> Result<BuildPlan> {
         // Merge the config from the CLI flags with the config from the environment variables
         // The CLI config takes precedence
@@ -71,7 +73,6 @@ impl NixpacksBuildPlanGenerator<'_> {
 
         if let Some(provider) = self.matched_provider {
             if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
-                // TODO: Apply config to build plan
                 let build_plan = BuildPlan::apply_config(&provider_build_plan, &config);
 
                 return Ok(build_plan);
