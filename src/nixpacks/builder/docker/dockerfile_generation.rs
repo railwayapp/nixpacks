@@ -117,7 +117,11 @@ impl DockerfileGenerator for BuildPlan {
 
         let static_assets = plan.static_assets.clone().unwrap_or_default();
         let assets_copy_cmd = if !static_assets.is_empty() {
-            format!("COPY assets/ {}", app::ASSETS_DIR)
+            format!(
+                "COPY {} {}",
+                output.get_relative_path("assets").display().to_string(),
+                app::ASSETS_DIR
+            )
         } else {
             "".to_string()
         };
@@ -279,7 +283,6 @@ impl DockerfileGenerator for Phase {
         let install_nix_pkgs_str = if self.uses_nix() {
             let nix_file = output.get_relative_path(format!("{}.nix", phase.name));
             let nix_file_path = nix_file.to_str().unwrap();
-            let output_path = &output.asset_root.display().to_string();
             format!("COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path}")
         } else {
             "".to_string()

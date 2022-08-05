@@ -87,8 +87,6 @@ impl NixpacksBuildPlanGenerator<'_> {
             &self.config,
         );
 
-        println!("{:?}", config);
-
         if let Some(provider) = self.matched_provider {
             if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
                 // TODO: Apply config to build plan
