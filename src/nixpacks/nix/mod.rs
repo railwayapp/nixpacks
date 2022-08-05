@@ -1,4 +1,5 @@
 use indoc::formatdoc;
+use uuid::Uuid;
 
 use super::plan::phase::Phase;
 
@@ -48,6 +49,7 @@ pub fn create_nix_expression(phase: &Phase) -> String {
         String::new()
     };
 
+    let name = Uuid::new_v4().to_string();
     let nix_expression = formatdoc! {"
             {{ }}:
 
@@ -61,11 +63,11 @@ pub fn create_nix_expression(phase: &Phase) -> String {
                 '';
               in
                 buildEnv {{
-                  name = \"env\";
+                  name = \"{name}\";
                   paths = [
-                    (runCommand \"libraries\" {{ }} ''
+                    (runCommand \"{name}\" {{ }} ''
                       mkdir -p $out/etc/profile.d
-                      cp ${{myLibraries}} $out/etc/profile.d/libraries.sh
+                      cp ${{myLibraries}} $out/etc/profile.d/{name}.sh
                     '')
                     {nixpkgs}
                   ];

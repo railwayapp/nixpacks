@@ -1,4 +1,6 @@
+use super::{utils, DockerBuilderOptions};
 use crate::nixpacks::{
+    app,
     environment::Environment,
     nix,
     plan::{
@@ -14,32 +16,81 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::{utils, DockerBuilderOptions};
+static NIXPACKS_OUTPUT_DIR: &str = ".nixpacks";
+pub static APP_DIR: &str = "/app/";
+
+#[derive(Debug, Clone)]
+pub struct OutputDir {
+    pub root: PathBuf,
+    pub asset_root: PathBuf,
+}
+
+impl OutputDir {
+    pub fn new(root: PathBuf) -> Result<Self> {
+        let root = PathBuf::from(root);
+        let asset_root = PathBuf::from(NIXPACKS_OUTPUT_DIR);
+
+        Ok(Self { root, asset_root })
+    }
+
+    pub fn from(root: &str) -> Result<Self> {
+        Self::new(PathBuf::from(root))
+    }
+
+    /// Ensure that the output directory and all necessary subdirectories exist.
+    pub fn ensure_output_exists(&self) -> Result<()> {
+        // Create the root output directory if needed
+        if fs::metadata(&self.root).is_err() {
+            fs::create_dir_all(&self.root).context("Creating output directory")?;
+        }
+
+        // Create the assets directory if it doesn't exist
+        let full_asset_path = self.root.join(self.asset_root.clone());
+        if fs::metadata(&full_asset_path).is_err() {
+            fs::create_dir_all(&full_asset_path).context("Creating assets directory")?;
+        }
+
+        Ok(())
+    }
+
+    pub fn get_relative_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
+        self.asset_root.join(path)
+    }
+
+    pub fn get_absolute_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
+        self.root.join(self.get_relative_path(path))
+    }
+}
+
+impl Default for OutputDir {
+    fn default() -> Self {
+        Self::from(".").unwrap()
+    }
+}
 
 pub trait DockerfileGenerator {
     fn generate_dockerfile(
         &self,
         options: &DockerBuilderOptions,
         env: &Environment,
+        output: &OutputDir,
     ) -> Result<String>;
     fn write_supporting_files(
         &self,
         _options: &DockerBuilderOptions,
         _env: &Environment,
-        _dest: &str,
+        _output: &OutputDir,
     ) -> Result<()> {
         Ok(())
     }
 }
-
-pub static APP_DIR: &str = "/app/";
-pub static ASSETS_DIR: &str = "/assets/";
 
 impl DockerfileGenerator for BuildPlan {
     fn generate_dockerfile(
         &self,
         options: &DockerBuilderOptions,
         env: &Environment,
+        output: &OutputDir,
     ) -> Result<String> {
         let plan = self;
 
@@ -66,7 +117,7 @@ impl DockerfileGenerator for BuildPlan {
 
         let static_assets = plan.static_assets.clone().unwrap_or_default();
         let assets_copy_cmd = if !static_assets.is_empty() {
-            format!("COPY assets/ {ASSETS_DIR}")
+            format!("COPY assets/ {}", app::ASSETS_DIR)
         } else {
             "".to_string()
         };
@@ -76,7 +127,7 @@ impl DockerfileGenerator for BuildPlan {
             .into_iter()
             .map(|phase| {
                 let phase_dockerfile = phase
-                    .generate_dockerfile(options, env)
+                    .generate_dockerfile(options, env, output)
                     .context(format!("Generating Dockerfile for phase {}", phase.name))?;
 
                 match phase.name.as_str() {
@@ -94,7 +145,7 @@ impl DockerfileGenerator for BuildPlan {
             .start_phase
             .clone()
             .unwrap_or_default()
-            .generate_dockerfile(options, env)?;
+            .generate_dockerfile(options, env, output)?;
 
         let base_image = plan.build_image.clone();
 
@@ -115,13 +166,13 @@ impl DockerfileGenerator for BuildPlan {
         &self,
         options: &DockerBuilderOptions,
         env: &Environment,
-        dest: &str,
+        output: &OutputDir,
     ) -> Result<()> {
-        self.write_assets(self, dest).context("Writing assets")?;
+        self.write_assets(self, output).context("Writing assets")?;
 
         for phase in self.get_sorted_phases()? {
             phase
-                .write_supporting_files(options, env, dest)
+                .write_supporting_files(options, env, output)
                 .context(format!("Writing files for phase {}", phase.name))?;
         }
 
@@ -130,10 +181,10 @@ impl DockerfileGenerator for BuildPlan {
 }
 
 impl BuildPlan {
-    fn write_assets(&self, plan: &BuildPlan, dest: &str) -> Result<()> {
+    fn write_assets(&self, plan: &BuildPlan, output: &OutputDir) -> Result<()> {
         if let Some(assets) = &plan.static_assets {
             if !assets.is_empty() {
-                let static_assets_path = PathBuf::from(dest).join(PathBuf::from("assets"));
+                let static_assets_path = output.get_absolute_path("assets");
                 fs::create_dir_all(&static_assets_path).context("Creating static assets folder")?;
 
                 for (name, content) in assets {
@@ -158,6 +209,7 @@ impl DockerfileGenerator for StartPhase {
         &self,
         _options: &DockerBuilderOptions,
         _env: &Environment,
+        _output: &OutputDir,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
             Some(cmd) => {
@@ -202,6 +254,7 @@ impl DockerfileGenerator for Phase {
         &self,
         options: &DockerBuilderOptions,
         env: &Environment,
+        output: &OutputDir,
     ) -> Result<String> {
         let phase = self;
 
@@ -223,9 +276,11 @@ impl DockerfileGenerator for Phase {
         };
 
         // Install nix packages and libraries
-        let install_nix_pkgs_str = if phase.nix_pkgs.is_some() || phase.nix_libraries.is_some() {
-            let nix_file_name = format!("{}.nix", phase.name);
-            format!("COPY {nix_file_name} .\nRUN nix-env -if {nix_file_name}")
+        let install_nix_pkgs_str = if self.uses_nix() {
+            let nix_file = output.get_relative_path(format!("{}.nix", phase.name));
+            let nix_file_path = nix_file.to_str().unwrap();
+            let output_path = &output.asset_root.display().to_string();
+            format!("COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path}")
         } else {
             "".to_string()
         };
@@ -285,14 +340,12 @@ impl DockerfileGenerator for Phase {
         &self,
         _options: &DockerBuilderOptions,
         _env: &Environment,
-        dest: &str,
+        output: &OutputDir,
     ) -> Result<()> {
-        if !self.nix_pkgs.clone().unwrap_or_default().is_empty()
-            || !self.nix_libraries.clone().unwrap_or_default().is_empty()
-        {
+        if self.uses_nix() {
             // Write the Nix expressions to the output directory
             let nix_file_name = format!("{}.nix", self.name);
-            let nix_path = PathBuf::from(dest).join(PathBuf::from(nix_file_name));
+            let nix_path = output.get_absolute_path(nix_file_name);
             let nix_expression = nix::create_nix_expression(self);
 
             let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
@@ -316,7 +369,11 @@ mod tests {
         phase.add_apt_pkgs(vec!["wget".to_owned()]);
 
         let dockerfile = phase
-            .generate_dockerfile(&DockerBuilderOptions::default(), &Environment::default())
+            .generate_dockerfile(
+                &DockerBuilderOptions::default(),
+                &Environment::default(),
+                &OutputDir::default(),
+            )
             .unwrap();
 
         assert!(dockerfile.contains("echo test"));
@@ -337,7 +394,11 @@ mod tests {
         plan.add_phase(test2);
 
         let dockerfile = plan
-            .generate_dockerfile(&DockerBuilderOptions::default(), &Environment::default())
+            .generate_dockerfile(
+                &DockerBuilderOptions::default(),
+                &Environment::default(),
+                &OutputDir::default(),
+            )
             .unwrap();
 
         assert!(dockerfile.contains("echo test1"));

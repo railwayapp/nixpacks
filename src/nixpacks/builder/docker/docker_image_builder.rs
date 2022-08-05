@@ -1,11 +1,14 @@
 use super::{dockerfile_generation::DockerfileGenerator, DockerBuilderOptions, ImageBuilder};
-use crate::nixpacks::{environment::Environment, files, logger::Logger, plan::BuildPlan};
+use crate::nixpacks::{
+    builder::docker::dockerfile_generation::OutputDir, environment::Environment, files,
+    logger::Logger, plan::BuildPlan,
+};
 use anyhow::{bail, Context, Ok, Result};
 
 use std::{
     fs::{self, File},
     path::PathBuf,
-    process::Command,
+    process::{Command, Output},
 };
 use tempdir::TempDir;
 use uuid::Uuid;
@@ -26,11 +29,12 @@ impl ImageBuilder for DockerImageBuilder {
                 tmp.into_path()
             }
         };
-        let dest = dir.to_str().context("Invalid temp directory path")?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
+        let output = OutputDir::new(dir)?;
+        output.ensure_output_exists()?;
 
         let dockerfile = plan
-            .generate_dockerfile(&self.options, env)
+            .generate_dockerfile(&self.options, env, &output)
             .context("Generating Dockerfile for plan")?;
 
         // If printing the Dockerfile, don't write anything to disk
@@ -41,15 +45,15 @@ impl ImageBuilder for DockerImageBuilder {
 
         println!("{}", plan.get_build_string()?);
 
-        self.write_app(app_src, dest).context("Writing app")?;
-        self.write_dockerfile(dockerfile, dest)
+        self.write_app(app_src, &output).context("Writing app")?;
+        self.write_dockerfile(dockerfile, &output)
             .context("Writing Dockerfile")?;
-        plan.write_supporting_files(&self.options, env, dest)
+        plan.write_supporting_files(&self.options, env, &output)
             .context("Writing supporting files")?;
 
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
-            let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), dest)?;
+            let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), &output)?;
 
             // Execute docker build
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
@@ -62,7 +66,7 @@ impl ImageBuilder for DockerImageBuilder {
             println!("  docker run -it {}", name);
         } else {
             println!("\nSaved output to:");
-            println!("  {}", dest);
+            println!("  {}", output.root.to_str().unwrap());
         }
 
         Ok(())
@@ -74,7 +78,12 @@ impl DockerImageBuilder {
         DockerImageBuilder { logger, options }
     }
 
-    fn get_docker_build_cmd(&self, plan: &BuildPlan, name: &str, dest: &str) -> Result<Command> {
+    fn get_docker_build_cmd(
+        &self,
+        plan: &BuildPlan,
+        name: &str,
+        output: &OutputDir,
+    ) -> Result<Command> {
         let mut docker_build_cmd = Command::new("docker");
 
         if docker_build_cmd.output().is_err() {
@@ -84,7 +93,13 @@ impl DockerImageBuilder {
         // Enable BuildKit for all builds
         docker_build_cmd.env("DOCKER_BUILDKIT", "1");
 
-        docker_build_cmd.arg("build").arg(dest).arg("-t").arg(name);
+        docker_build_cmd
+            .arg("build")
+            .arg(&output.root)
+            .arg("-f")
+            .arg(&output.get_absolute_path("Dockerfile"))
+            .arg("-t")
+            .arg(name);
 
         if self.options.quiet {
             docker_build_cmd.arg("--quiet");
@@ -115,12 +130,12 @@ impl DockerImageBuilder {
         Ok(docker_build_cmd)
     }
 
-    fn write_app(&self, app_src: &str, dest: &str) -> Result<()> {
-        files::recursive_copy_dir(app_src, &dest)
+    fn write_app(&self, app_src: &str, output: &OutputDir) -> Result<()> {
+        files::recursive_copy_dir(app_src, &output.root)
     }
 
-    fn write_dockerfile(&self, dockerfile: String, dest: &str) -> Result<()> {
-        let dockerfile_path = PathBuf::from(dest).join(PathBuf::from("Dockerfile"));
+    fn write_dockerfile(&self, dockerfile: String, output: &OutputDir) -> Result<()> {
+        let dockerfile_path = output.get_absolute_path("Dockerfile");
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
         fs::write(dockerfile_path, dockerfile)?;
 

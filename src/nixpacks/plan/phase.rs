@@ -98,6 +98,11 @@ impl Phase {
         }
     }
 
+    pub fn uses_nix(&self) -> bool {
+        !self.nix_pkgs.clone().unwrap_or_default().is_empty()
+            || !self.nix_libraries.clone().unwrap_or_default().is_empty()
+    }
+
     pub fn depends_on_phase<S: Into<String>>(&mut self, name: S) {
         self.depends_on = add_to_option_vec(self.depends_on.clone(), name.into());
     }
