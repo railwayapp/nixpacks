@@ -80,6 +80,10 @@ impl BuildPlan {
         self.variables = Some(variables);
     }
 
+    pub fn get_phase(&self, name: &str) -> Option<&Phase> {
+        self.phases.iter().find(|phase| phase.name == name)
+    }
+
     pub fn get_phase_mut(&mut self, name: &str) -> Option<&mut Phase> {
         self.phases.iter_mut().find(|phase| phase.name == name)
     }

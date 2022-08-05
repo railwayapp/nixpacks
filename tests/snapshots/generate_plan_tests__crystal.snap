@@ -32,7 +32,7 @@ expression: plan
         "install"
       ],
       "commands": [
-        "crystal build"
+        "shards build"
       ]
     }
   ],
