@@ -48,26 +48,26 @@ struct NxJson {
     default_project: Option<Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, PartialEq, Deserialize)]
 struct Options {
-    executor: String,
     #[serde(alias = "outputPath")]
     outputPath: String,
     #[serde(default)]
     main: Option<Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, PartialEq, Deserialize)]
 struct Build {
+    executor: String,
     options: Options,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, PartialEq, Deserialize)]
 struct Targets {
     build: Build,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, PartialEq, Deserialize)]
 struct ProjectJson {
     targets: Targets,
 }
@@ -190,18 +190,24 @@ impl NodeProvider {
         if NodeProvider::is_nx_monorepo(app) {
             let app_name = NodeProvider::get_nx_service_name(app, env)?.unwrap();
             println!("/apps/{}/project.json", &app_name.to_owned());
-            let nx_app_project_json = app
-                .read_json::<ProjectJson>(&format!("./apps/{}/project.json", &app_name.to_owned()));
+
+            let project_path = format!("./apps/{}/project.json", &app_name.to_owned());
+            let nx_app_project_json = app.read_json::<ProjectJson>(&project_path);
 
             if nx_app_project_json.is_err() {
-                return Err(anyhow!("Could not resolve project json nx app"));
+                return Err(anyhow!(format!(
+                    "Could not resolve project.json for your NX app ({} , {}) {}",
+                    app_name,
+                    project_path,
+                    nx_app_project_json.err().unwrap().root_cause()
+                )));
             }
 
             let project_json = nx_app_project_json.unwrap();
             let output_path = project_json.targets.build.options.outputPath;
             let source = env::current_dir()?.join(output_path.clone());
 
-            let executor = project_json.targets.build.options.executor;
+            let executor = project_json.targets.build.executor;
             if executor == "@nrwl/next:build" {
                 let next_dir = source.join(".next/");
                 println!("cd {} && npm run start", source.to_str().unwrap());
@@ -216,8 +222,8 @@ impl NodeProvider {
             if let Some(main_path) = main {
                 println!("is express");
                 return Ok(Some(format!(
-                    "node {}",
-                    source.join(main_path.as_str().unwrap()).to_str().unwrap()
+                    "node --experimental-modules {}",
+                    (main_path.as_str().unwrap())
                 )));
             } else {
                 println!("is not express");
@@ -226,9 +232,6 @@ impl NodeProvider {
                     source.join("index.js").to_str().unwrap()
                 )));
             }
-
-            println!("not found");
-            return Err(anyhow!("Could not resolve start command for nx app"));
         }
 
         let package_manager = NodeProvider::get_package_manager(app);
