@@ -34,7 +34,7 @@ impl Provider for CrystalProvider {
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
         let setup = Phase::setup(Some(vec![Pkg::new("crystal"), Pkg::new("shards")]));
         let install = Phase::install(Some("shards install".to_string()));
-        let build = Phase::build(Some("crystal build".to_string()));
+        let build = Phase::build(Some("shards build".to_string()));
 
         let config = CrystalProvider::get_config(app)?;
         let target_names = config.targets.keys().cloned().collect::<Vec<_>>();
