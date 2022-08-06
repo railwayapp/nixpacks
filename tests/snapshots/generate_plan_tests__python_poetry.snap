@@ -8,7 +8,6 @@ expression: plan
   "variables": {
     "NIXPACKS_POETRY_VERSION": "1.1.13"
   },
-  "staticAssets": {},
   "phases": [
     {
       "name": "setup",
@@ -16,9 +15,7 @@ expression: plan
         {
           "name": "python38"
         }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
+      ]
     },
     {
       "name": "install",
