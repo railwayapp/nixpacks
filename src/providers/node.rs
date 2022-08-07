@@ -443,7 +443,7 @@ impl NodeProvider {
 
     pub fn get_nx_app_name(app: &App, env: &Environment) -> Result<Option<String>> {
         if let Some(app_name) = env.get_config_variable(NX_APP_NAME_ENV_VAR) {
-            return Ok(Some(app_name.to_owned()));
+            return Ok(Some(app_name));
         }
 
         if let Ok(nx_json) = app.read_json::<NxJson>("nx.json") {
@@ -457,7 +457,7 @@ impl NodeProvider {
 
     pub fn get_nx_project_json_for_app(app: &App, env: &Environment) -> Result<ProjectJson> {
         let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
-        let project_path = format!("./apps/{}/project.json", &app_name.to_owned());
+        let project_path = format!("./apps/{}/project.json", app_name);
         let nx_app_project_json = app.read_json::<ProjectJson>(&project_path);
 
         if nx_app_project_json.is_err() {
