@@ -1,5 +1,5 @@
 const { copyFileSync, mkdirSync } = require('node:fs');
-console.log('aaaaaaaaaaaaa');
+
 mkdirSync(__dirname + '/../../dist/apps/node-app', {
   recursive: true,
 });
