@@ -123,7 +123,7 @@ impl Provider for NodeProvider {
         let pkg_manager = NodeProvider::get_package_manager(app);
 
         if NodeProvider::is_nx_monorepo(app) {
-            let app_name = NodeProvider::get_nx_service_name(app, _env)?.unwrap();
+            let app_name = NodeProvider::get_nx_app_name(app, _env)?.unwrap();
             build_phase.add_cmd(format!(
                 "{} run build {} --configuration=production",
                 pkg_manager, app_name
@@ -438,7 +438,7 @@ impl NodeProvider {
         app.includes_file("nx.json")
     }
 
-    pub fn get_nx_service_name(app: &App, env: &Environment) -> Result<Option<String>> {
+    pub fn get_nx_app_name(app: &App, env: &Environment) -> Result<Option<String>> {
         if let Some(app_name) = env.get_config_variable(NX_APP_NAME_ENV_VAR) {
             return Ok(Some(app_name.to_owned()));
         }
@@ -453,7 +453,7 @@ impl NodeProvider {
     }
 
     pub fn get_nx_project_json_for_app(app: &App, env: &Environment) -> Result<ProjectJson> {
-        let app_name = NodeProvider::get_nx_service_name(app, env)?.unwrap();
+        let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
         let project_path = format!("./apps/{}/project.json", &app_name.to_owned());
         let nx_app_project_json = app.read_json::<ProjectJson>(&project_path);
 
@@ -482,7 +482,7 @@ impl NodeProvider {
         } else {
             Ok(format!(
                 "dist/apps/{}",
-                NodeProvider::get_nx_service_name(app, env)?.unwrap()
+                NodeProvider::get_nx_app_name(app, env)?.unwrap()
             ))
         }
     }

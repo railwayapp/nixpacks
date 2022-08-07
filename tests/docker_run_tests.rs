@@ -232,10 +232,7 @@ fn test_node() {
 fn test_node_nx_next() {
     let n = create_network();
     let config = Config {
-        environment_variables: EnvironmentVariables::from([(
-            "NIXPACKS_NX_APP_NAME".to_string(),
-            "next-app".to_string(),
-        )]),
+        environment_variables: EnvironmentVariables::from([]),
         network: Some(n.name.to_string()),
     };
 
@@ -255,6 +252,37 @@ fn test_node_nx_next() {
 
     assert!(run_image(n.name, Some(config))
         .contains("ready - started server on 0.0.0.0:3000, url: http://localhost:3000"));
+}
+
+#[test]
+fn test_node_nx_default_app() {
+    let name = simple_build("./examples/node-nx");
+    assert!(run_image(name, None).contains("nx express app works"));
+}
+
+#[test]
+fn test_node_nx_node() {
+    let n = create_network();
+    let config = Config {
+        environment_variables: EnvironmentVariables::from([]),
+        network: Some(n.name.to_string()),
+    };
+
+    create_docker_image(
+        "./examples/node-nx",
+        vec!["NIXPACKS_NX_APP_NAME=node-app"],
+        &GeneratePlanOptions {
+            ..Default::default()
+        },
+        &DockerBuilderOptions {
+            name: Some(n.name.to_string()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
+    assert!(run_image(n.name, Some(config)).contains("Hello from node-app!"));
 }
 
 #[test]

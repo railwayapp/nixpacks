@@ -4,6 +4,6 @@
   "projects": {
     "express-app": "apps/express-app",
     "next-app": "apps/next-app",
-    "next-app-e2e": "apps/next-app-e2e"
+    "node-app": "apps/node-app"
   }
 }

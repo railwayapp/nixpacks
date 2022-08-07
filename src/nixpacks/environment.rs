@@ -53,7 +53,6 @@ impl Environment {
     }
 
     pub fn set_variable(&mut self, name: String, value: String) {
-        println!("{}, {}", name, value);
         self.variables.insert(name, value);
     }
 
