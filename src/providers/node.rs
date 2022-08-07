@@ -196,7 +196,10 @@ impl NodeProvider {
 
             let executor = project_json.targets.build.executor;
             if executor == "@nrwl/next:build" {
-                return Ok(Some(format!("cd {} && npm run start", output_path)));
+                return Ok(Some(format!(
+                    "cd {} && npm run start -- -p 80",
+                    output_path
+                )));
             }
 
             let main = project_json.targets.build.options.main;

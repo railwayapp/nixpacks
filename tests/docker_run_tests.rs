@@ -251,7 +251,7 @@ fn test_node_nx_next() {
     .unwrap();
 
     assert!(run_image(n.name, Some(config))
-        .contains("ready - started server on 0.0.0.0:3000, url: http://localhost:3000"));
+        .contains("ready - started server on 0.0.0.0:80, url: http://localhost:80"));
 }
 
 #[test]
