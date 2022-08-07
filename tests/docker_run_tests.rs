@@ -230,17 +230,30 @@ fn test_node() {
 
 #[test]
 fn test_node_nx_next() {
-    let name = simple_build("./examples/node-nx");
     let n = create_network();
-
     let config = Config {
         environment_variables: EnvironmentVariables::from([(
             "NIXPACKS_NX_APP_NAME".to_string(),
             "next-app".to_string(),
         )]),
-        network: Some(n.name.clone()),
+        network: Some(n.name.to_string()),
     };
-    assert!(run_image(name, Some(config))
+
+    create_docker_image(
+        "./examples/node-nx",
+        vec!["NIXPACKS_NX_APP_NAME=next-app"],
+        &GeneratePlanOptions {
+            ..Default::default()
+        },
+        &DockerBuilderOptions {
+            name: Some(n.name.to_string()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
+    assert!(run_image(n.name, Some(config))
         .contains("ready - started server on 0.0.0.0:3000, url: http://localhost:3000"));
 }
 

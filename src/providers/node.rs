@@ -1,7 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
-    env,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 use super::Provider;
@@ -51,7 +50,7 @@ struct NxJson {
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
 pub struct Options {
     #[serde(alias = "outputPath")]
-    outputPath: Option<Value>,
+    output_path: Option<Value>,
     #[serde(default)]
     main: Option<Value>,
 }
@@ -470,12 +469,12 @@ impl NodeProvider {
 
     pub fn get_nx_output_path(app: &App, env: &Environment) -> Result<String> {
         let project_json = NodeProvider::get_nx_project_json_for_app(app, env)?;
-        if project_json.targets.build.options.outputPath.is_some() {
+        if project_json.targets.build.options.output_path.is_some() {
             Ok(project_json
                 .targets
                 .build
                 .options
-                .outputPath
+                .output_path
                 .unwrap()
                 .as_str()
                 .unwrap()
