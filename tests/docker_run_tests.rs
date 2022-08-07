@@ -231,18 +231,32 @@ fn test_node() {
 #[test]
 fn test_node_nx_next() {
     let name = simple_build("./examples/node-nx");
+    let n = create_network();
 
-    assert!(run_image(
-        name,
-        Some(Config {
-            environment_variables: EnvironmentVariables::from([(
-                "NIXPACKS_NX_APP_NAME".to_string(),
-                "next-app".to_string()
-            )]),
-            network: Some("node_nx_next".to_string()),
-        })
-    )
-    .contains("nx express app works"));
+    let config = Config {
+        environment_variables: EnvironmentVariables::from([(
+            "NIXPACKS_NX_APP_NAME".to_string(),
+            "next-app".to_string(),
+        )]),
+        network: Some(n.name.clone()),
+    };
+    assert!(run_image(name, Some(config))
+        .contains("ready - started server on 0.0.0.0:3000, url: http://localhost:3000"));
+}
+
+#[test]
+fn test_node_nx_express() {
+    let name = simple_build("./examples/node-nx");
+    let n = create_network();
+
+    let config = Config {
+        environment_variables: EnvironmentVariables::from([(
+            "NIXPACKS_NX_APP_NAME".to_string(),
+            "express-app".to_string(),
+        )]),
+        network: Some(n.name.clone()),
+    };
+    assert!(run_image(name, Some(config)).contains("nx express app works"));
 }
 
 #[test]

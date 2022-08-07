@@ -51,7 +51,7 @@ struct NxJson {
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
 pub struct Options {
     #[serde(alias = "outputPath")]
-    outputPath: String,
+    outputPath: Option<Value>,
     #[serde(default)]
     main: Option<Value>,
 }
@@ -197,7 +197,7 @@ impl NodeProvider {
 
             let executor = project_json.targets.build.executor;
             if executor == "@nrwl/next:build" {
-                return Ok(Some(format!("cd {}/.next && npm run start", output_path)));
+                return Ok(Some(format!("cd {} && npm run start", output_path)));
             }
 
             let main = project_json.targets.build.options.main;
@@ -441,7 +441,7 @@ impl NodeProvider {
 
     pub fn get_nx_service_name(app: &App, env: &Environment) -> Result<Option<String>> {
         if let Some(app_name) = env.get_config_variable(NX_APP_NAME_ENV_VAR) {
-            return Ok(Some(app_name));
+            return Ok(Some(app_name.to_owned()));
         }
 
         if let Ok(nx_json) = app.read_json::<NxJson>("nx.json") {
@@ -455,7 +455,6 @@ impl NodeProvider {
 
     pub fn get_nx_project_json_for_app(app: &App, env: &Environment) -> Result<ProjectJson> {
         let app_name = NodeProvider::get_nx_service_name(app, env)?.unwrap();
-
         let project_path = format!("./apps/{}/project.json", &app_name.to_owned());
         let nx_app_project_json = app.read_json::<ProjectJson>(&project_path);
 
@@ -471,7 +470,22 @@ impl NodeProvider {
 
     pub fn get_nx_output_path(app: &App, env: &Environment) -> Result<String> {
         let project_json = NodeProvider::get_nx_project_json_for_app(app, env)?;
-        Ok(project_json.targets.build.options.outputPath.clone())
+        if project_json.targets.build.options.outputPath.is_some() {
+            Ok(project_json
+                .targets
+                .build
+                .options
+                .outputPath
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string())
+        } else {
+            Ok(format!(
+                "dist/apps/{}",
+                NodeProvider::get_nx_service_name(app, env)?.unwrap()
+            ))
+        }
     }
 }
 
