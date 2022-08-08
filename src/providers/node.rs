@@ -10,8 +10,8 @@ use crate::nixpacks::{
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
+use anyhow::bail;
 use anyhow::Result;
-use anyhow::{anyhow, bail};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
