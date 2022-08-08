@@ -135,10 +135,6 @@ impl App {
         let contents = self.read_file(name)?;
         let value: T = serde_json::from_str(contents.as_str()).with_context(|| {
             let relative_path = self.strip_source_path(Path::new(name)).unwrap();
-            println!(
-                "Failed to parse JSON in {}",
-                relative_path.to_str().unwrap()
-            );
             format!("Error reading {} as JSON", relative_path.to_str().unwrap())
         })?;
         Ok(value)
