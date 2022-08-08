@@ -10,8 +10,8 @@ use crate::nixpacks::{
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
-use anyhow::anyhow;
 use anyhow::Result;
+use anyhow::{anyhow, bail};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -131,7 +131,6 @@ impl Provider for NodeProvider {
             // Remove the package.json so when we run node /dist/**/file.js node does
             // not look at the package.json and infer things it should not, Such as wether its a es module or not.
             build_phase.add_cmd("rm /app/package.json".to_owned());
-            build_phase.add_cache_directory(NodeProvider::get_nx_output_path(app, _env).unwrap());
         } else if NodeProvider::has_script(app, "build")? {
             build_phase.add_cmd(format!("{} run build", pkg_manager));
         }
@@ -453,42 +452,28 @@ impl NodeProvider {
             }
         }
 
-        return Err(anyhow!("Could not derive nx app to build and run. Please add a default project to your nx config or set NIXPACKS_{}", NX_APP_NAME_ENV_VAR));
+        bail!("Could not derive nx app to build and run. Please add a default project to your nx config or set NIXPACKS_{}", NX_APP_NAME_ENV_VAR);
     }
 
     pub fn get_nx_project_json_for_app(app: &App, env: &Environment) -> Result<ProjectJson> {
         let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
         let project_path = format!("./apps/{}/project.json", app_name);
-        let nx_app_project_json = app.read_json::<ProjectJson>(&project_path);
-
-        if nx_app_project_json.is_err() {
-            return Err(anyhow!(format!(
-                "Could not resolve project.json for your NX app ({}, {})",
-                app_name, project_path
-            )));
-        }
-
-        nx_app_project_json
+        app.read_json::<ProjectJson>(&project_path)
     }
 
     pub fn get_nx_output_path(app: &App, env: &Environment) -> Result<String> {
         let project_json = NodeProvider::get_nx_project_json_for_app(app, env)?;
-        if project_json.targets.build.options.output_path.is_some() {
-            Ok(project_json
-                .targets
-                .build
-                .options
-                .output_path
-                .unwrap()
-                .as_str()
-                .unwrap()
-                .to_string())
-        } else {
-            Ok(format!(
-                "dist/apps/{}",
-                NodeProvider::get_nx_app_name(app, env)?.unwrap()
-            ))
+        if let Some(output_path) = project_json.targets.build.options.output_path {
+            if let Some(output_path) = output_path.as_str() {
+                return Ok(output_path.to_string());
+            }
         }
+
+        if let Ok(Some(app_name)) = NodeProvider::get_nx_app_name(app, env) {
+            return Ok(format!("dist/apps/{}", app_name));
+        };
+
+        bail!("Could not derive nx output path. Please add an output_path to your project.json");
     }
 }
 
