@@ -15,9 +15,9 @@ use anyhow::{bail, Context, Ok, Result};
 use std::collections::HashMap;
 
 // This line is automatically updated.
-// Last Modified: 2022-08-01 17:09:30 UTC+0000
-// https://github.com/NixOS/nixpkgs/commit/67f49b2a3854e8b5e3f9df4422225daa0985f451
-pub static NIXPKGS_ARCHIVE: &str = "67f49b2a3854e8b5e3f9df4422225daa0985f451";
+// Last Modified: 2022-08-08 17:07:44 UTC+0000
+// https://github.com/NixOS/nixpkgs/commit/053fb00690945ab06650c4508b98659c6a2343b6
+static NIXPKGS_ARCHIVE: &str = "053fb00690945ab06650c4508b98659c6a2343b6";
 
 pub struct NixpacksBuildPlanGenerator<'a> {
     providers: &'a [&'a dyn Provider],
