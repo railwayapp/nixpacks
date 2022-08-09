@@ -236,7 +236,7 @@ fn test_node_nx_default_app() {
 
 #[test]
 fn test_node_nx_next() {
-    let name = simple_build("./examples/node-nx");
+    let name = Uuid::new_v4().to_string();
 
     create_docker_image(
         "./examples/node-nx",
@@ -258,7 +258,7 @@ fn test_node_nx_next() {
 
 #[test]
 fn test_node_nx_node() {
-    let name = simple_build("./examples/node-nx");
+    let name = Uuid::new_v4().to_string();
 
     create_docker_image(
         "./examples/node-nx",
@@ -279,7 +279,7 @@ fn test_node_nx_node() {
 
 #[test]
 fn test_node_nx_express() {
-    let name = simple_build("./examples/node-nx");
+    let name = Uuid::new_v4().to_string();
 
     create_docker_image(
         "./examples/node-nx",
