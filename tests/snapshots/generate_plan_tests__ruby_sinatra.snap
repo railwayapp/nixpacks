@@ -17,7 +17,7 @@ expression: plan
       "gem install bundler:2.3.7",
       "echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile"
     ],
-    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+    "baseImage": "[baseImage]"
   },
   "install": {
     "cmds": [

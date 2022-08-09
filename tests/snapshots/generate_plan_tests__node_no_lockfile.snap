@@ -19,7 +19,7 @@ expression: plan
       "libGL"
     ],
     "apt_pkgs": [],
-    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+    "baseImage": "[baseImage]"
   },
   "install": {
     "cmds": [
