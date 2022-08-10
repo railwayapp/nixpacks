@@ -12,6 +12,7 @@ macro_rules! assert_plan_snapshot {
         insta::assert_json_snapshot!($plan, {
             ".version" => "[version]",
             ".setup.archive" => "[archive]",
+            ".setup.baseImage" => "[baseImage]",
         });
     }
 }
