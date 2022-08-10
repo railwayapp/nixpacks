@@ -37,8 +37,8 @@ expression: plan
   },
   "variables": {
     "NIXPACKS_NO_MUSL": "1",
-    "ROCKET_ADDRESS": "0.0.0.0",
-    "NIXPACKS_BUILDER": "rust"
+    "NIXPACKS_BUILDER": "rust",
+    "ROCKET_ADDRESS": "0.0.0.0"
   },
   "static_assets": {}
 }
