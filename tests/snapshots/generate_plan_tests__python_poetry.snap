@@ -34,7 +34,8 @@ expression: plan
     "cmd": "python main.py"
   },
   "variables": {
-    "NIXPACKS_POETRY_VERSION": "1.1.13"
+    "NIXPACKS_POETRY_VERSION": "1.1.13",
+    "NIXPACKS_BUILDER": "python"
   },
   "static_assets": {}
 }

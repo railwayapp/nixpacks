@@ -26,6 +26,8 @@ expression: plan
   "start": {
     "cmd": "java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar"
   },
-  "variables": {},
+  "variables": {
+    "NIXPACKS_BUILDER": "java"
+  },
   "static_assets": {}
 }

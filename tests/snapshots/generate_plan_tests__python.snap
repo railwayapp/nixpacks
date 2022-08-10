@@ -32,6 +32,8 @@ expression: plan
   "start": {
     "cmd": "python main.py"
   },
-  "variables": {},
+  "variables": {
+    "NIXPACKS_BUILDER": "python"
+  },
   "static_assets": {}
 }

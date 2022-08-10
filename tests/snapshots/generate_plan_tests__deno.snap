@@ -23,6 +23,8 @@ expression: plan
   "start": {
     "cmd": "deno run --allow-all src/index.ts"
   },
-  "variables": {},
+  "variables": {
+    "NIXPACKS_BUILDER": "deno"
+  },
   "static_assets": {}
 }

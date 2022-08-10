@@ -33,6 +33,8 @@ expression: plan
   "start": {
     "cmd": "java $JAVA_OPTS -jar /app/target/*standalone.jar"
   },
-  "variables": {},
+  "variables": {
+    "NIXPACKS_BUILDER": "clojure"
+  },
   "static_assets": {}
 }

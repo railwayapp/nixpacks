@@ -27,7 +27,8 @@ expression: plan
     "cmd": "./out"
   },
   "variables": {
-    "CGO_ENABLED": "1"
+    "CGO_ENABLED": "1",
+    "NIXPACKS_BUILDER": "golang"
   },
   "static_assets": {}
 }

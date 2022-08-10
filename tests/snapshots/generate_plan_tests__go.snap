@@ -28,7 +28,8 @@ expression: plan
     "runImage": "debian:bullseye-slim"
   },
   "variables": {
-    "CGO_ENABLED": "0"
+    "CGO_ENABLED": "0",
+    "NIXPACKS_BUILDER": "golang"
   },
   "static_assets": {}
 }

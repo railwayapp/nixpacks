@@ -32,6 +32,8 @@ expression: plan
   "start": {
     "cmd": "python -m nixpacks-setuptools"
   },
-  "variables": {},
+  "variables": {
+    "NIXPACKS_BUILDER": "python"
+  },
   "static_assets": {}
 }

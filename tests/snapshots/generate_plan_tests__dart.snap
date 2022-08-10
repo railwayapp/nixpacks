@@ -30,6 +30,8 @@ expression: plan
   "start": {
     "cmd": "./bin/console_simple.exe"
   },
-  "variables": {},
+  "variables": {
+    "NIXPACKS_BUILDER": "dart"
+  },
   "static_assets": {}
 }

@@ -30,7 +30,8 @@ expression: plan
   "variables": {
     "ASPNETCORE_ENVIRONMENT": "Production",
     "ASPNETCORE_URLS": "http://0.0.0.0:3000",
-    "DOTNET_ROOT": "/nix/var/nix/profiles/default/"
+    "DOTNET_ROOT": "/nix/var/nix/profiles/default/",
+    "NIXPACKS_BUILDER": "csharp"
   },
   "static_assets": {}
 }

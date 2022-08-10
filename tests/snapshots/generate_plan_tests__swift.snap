@@ -44,6 +44,8 @@ expression: plan
   "start": {
     "cmd": "./swift"
   },
-  "variables": {},
+  "variables": {
+    "NIXPACKS_BUILDER": "swift"
+  },
   "static_assets": {}
 }

@@ -30,6 +30,8 @@ expression: plan
   "start": {
     "cmd": "./bin/crystal"
   },
-  "variables": {},
+  "variables": {
+    "NIXPACKS_BUILDER": "crystal"
+  },
   "static_assets": {}
 }

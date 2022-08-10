@@ -19,6 +19,8 @@ expression: plan
   "start": {
     "cmd": "deno run -A dev.ts"
   },
-  "variables": {},
+  "variables": {
+    "NIXPACKS_BUILDER": "deno"
+  },
   "static_assets": {}
 }

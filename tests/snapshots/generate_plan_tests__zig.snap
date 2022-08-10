@@ -23,6 +23,8 @@ expression: plan
   "start": {
     "cmd": "./zig-out/bin/zig"
   },
-  "variables": {},
+  "variables": {
+    "NIXPACKS_BUILDER": "zig"
+  },
   "static_assets": {}
 }
