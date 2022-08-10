@@ -14,7 +14,7 @@ use anyhow::bail;
 use anyhow::Result;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+mod nx;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
@@ -38,37 +38,6 @@ pub struct PackageJson {
     pub dependencies: Option<HashMap<String, String>>,
     #[serde(rename = "devDependencies")]
     pub dev_dependencies: Option<HashMap<String, String>>,
-}
-
-#[derive(Debug, Serialize, PartialEq, Deserialize)]
-struct NxJson {
-    #[serde(default)]
-    #[serde(alias = "defaultProject")]
-    default_project: Option<Value>,
-}
-
-#[derive(Debug, Serialize, PartialEq, Deserialize)]
-pub struct Options {
-    #[serde(alias = "outputPath")]
-    output_path: Option<Value>,
-    #[serde(default)]
-    main: Option<Value>,
-}
-
-#[derive(Debug, Serialize, PartialEq, Deserialize)]
-pub struct Build {
-    executor: String,
-    options: Options,
-}
-
-#[derive(Debug, Serialize, PartialEq, Deserialize)]
-pub struct Targets {
-    build: Build,
-}
-
-#[derive(Debug, Serialize, PartialEq, Deserialize)]
-pub struct ProjectJson {
-    targets: Targets,
 }
 
 pub struct NodeProvider {}
