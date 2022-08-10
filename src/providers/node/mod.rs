@@ -3,12 +3,17 @@ use std::{
     path::PathBuf,
 };
 
+use self::nx::ProjectJson;
+
 use super::Provider;
-use crate::nixpacks::{
-    app::App,
-    environment::{Environment, EnvironmentVariables},
-    nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+use crate::{
+    nixpacks::{
+        app::App,
+        environment::{Environment, EnvironmentVariables},
+        nix::pkg::Pkg,
+        phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    },
+    providers::node::nx::NxJson,
 };
 use anyhow::bail;
 use anyhow::Result;

@@ -4,32 +4,32 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
-struct NxJson {
+pub struct NxJson {
     #[serde(default)]
     #[serde(alias = "defaultProject")]
-    default_project: Option<Value>,
+    pub default_project: Option<Value>,
 }
 
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
 pub struct Options {
     #[serde(alias = "outputPath")]
-    output_path: Option<Value>,
+    pub output_path: Option<Value>,
     #[serde(default)]
-    main: Option<Value>,
+    pub main: Option<Value>,
 }
 
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
 pub struct Build {
-    executor: String,
-    options: Options,
+    pub executor: String,
+    pub options: Options,
 }
 
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
 pub struct Targets {
-    build: Build,
+    pub build: Build,
 }
 
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
 pub struct ProjectJson {
-    targets: Targets,
+    pub targets: Targets,
 }
