@@ -70,10 +70,10 @@ impl Provider for GolangProvider {
         _app: &App,
         _env: &Environment,
     ) -> Result<Option<EnvironmentVariables>> {
-        Ok(Some(EnvironmentVariables::from([(
-            "CGO_ENABLED".to_string(),
-            "0".to_string(),
-        )])))
+        Ok(Some(EnvironmentVariables::from([
+            ("CGO_ENABLED".to_string(), "0".to_string()),
+            ("NIXPACKS_BUILDER".to_string(), "golang".to_string()),
+        ])))
     }
 }
 

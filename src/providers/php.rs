@@ -101,6 +101,7 @@ impl Provider for PhpProvider {
         if app.includes_file("artisan") {
             vars.insert("IS_LARAVEL".to_string(), "yes".to_string());
         }
+        vars.insert("NIXPACKS_BUILDER".to_string(), "php".to_string());
         Ok(Some(vars))
     }
 }

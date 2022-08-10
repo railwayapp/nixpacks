@@ -1,7 +1,7 @@
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
@@ -41,6 +41,16 @@ impl Provider for JavaProvider {
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         let start_cmd = self.get_start_cmd(app)?;
         Ok(Some(StartPhase::new(start_cmd)))
+    }
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(EnvironmentVariables::from([(
+            "NIXPACKS_BUILDER".to_string(),
+            "java".to_string(),
+        )])))
     }
 }
 

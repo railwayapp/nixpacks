@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -78,6 +78,16 @@ impl Provider for HaskellStackProvider {
             .ok_or_else(|| anyhow::anyhow!("Failed to get executable name"))?;
 
         Ok(Some(StartPhase::new(format!("/root/.local/bin/{name}",))))
+    }
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(EnvironmentVariables::from([(
+            "NIXPACKS_BUILDER".to_string(),
+            "haskell".to_string(),
+        )])))
     }
 }
 

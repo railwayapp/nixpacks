@@ -140,13 +140,15 @@ impl Provider for PythonProvider {
         app: &App,
         _env: &Environment,
     ) -> Result<Option<EnvironmentVariables>> {
+        let mut vars = EnvironmentVariables::new();
         if app.includes_file("poetry.lock") {
-            return Ok(Some(EnvironmentVariables::from([(
+            vars.insert(
                 "NIXPACKS_POETRY_VERSION".to_string(),
                 POETRY_VERSION.to_string(),
-            )])));
+            );
         }
-        Ok(None)
+        vars.insert("NIXPACKS_BUILDER".to_string(), "python".to_string());
+        Ok(Some(vars))
     }
 }
 

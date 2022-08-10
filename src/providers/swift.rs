@@ -1,7 +1,7 @@
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -91,6 +91,17 @@ impl Provider for SwiftProvider {
         let name = SwiftProvider::get_executable_name(app)?;
 
         Ok(Some(StartPhase::new(format!("./{}", name))))
+    }
+
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(EnvironmentVariables::from([(
+            "NIXPACKS_BUILDER".to_string(),
+            "swift".to_string(),
+        )])))
     }
 }
 

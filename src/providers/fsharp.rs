@@ -66,6 +66,7 @@ impl Provider for FSharpProvider {
                 "DOTNET_ROOT".to_string(),
                 "/nix/var/nix/profiles/default/".to_string(),
             ),
+            ("NIXPACKS_BUILDER".to_string(), "java".to_string()),
         ]);
         Ok(Some(env_vars))
     }

@@ -1,7 +1,7 @@
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -50,6 +50,16 @@ impl Provider for DartProvider {
         let command = format!("./bin/{}.exe", pubspec.name);
 
         Ok(Some(StartPhase::new(command)))
+    }
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(EnvironmentVariables::from([(
+            "NIXPACKS_BUILDER".to_string(),
+            "dart".to_string(),
+        )])))
     }
 }
 

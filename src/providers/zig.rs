@@ -3,7 +3,7 @@ use std::env::consts::ARCH;
 
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -63,6 +63,16 @@ impl Provider for ZigProvider {
                 .map(|f| f.to_str())
                 .map_or("*", |s| s.unwrap())
         ))))
+    }
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(EnvironmentVariables::from([(
+            "NIXPACKS_BUILDER".to_string(),
+            "zig".to_string(),
+        )])))
     }
 }
 

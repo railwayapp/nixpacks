@@ -117,6 +117,7 @@ impl Provider for RubyProvider {
                 "GEM_HOME".to_string(),
                 format!("/usr/local/rvm/gems/{ruby_version}"),
             ),
+            ("NIXPACKS_BUILDER".to_string(), "ruby".to_string()),
         ])))
     }
 }

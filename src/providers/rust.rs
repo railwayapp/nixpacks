@@ -123,6 +123,7 @@ impl Provider for RustProvider {
     ) -> Result<Option<EnvironmentVariables>> {
         let mut variables = EnvironmentVariables::default();
         variables.insert("ROCKET_ADDRESS".to_string(), "0.0.0.0".to_string());
+        variables.insert("NIXPACKS_BUILDER".to_string(), "rust".to_string());
         Ok(Some(variables))
     }
 }

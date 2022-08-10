@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -54,6 +54,16 @@ impl Provider for CrystalProvider {
         ));
 
         Ok(Some(start_phase))
+    }
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(EnvironmentVariables::from([(
+            "NIXPACKS_BUILDER".to_string(),
+            "crystal".to_string(),
+        )])))
     }
 }
 

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
@@ -76,6 +76,16 @@ impl Provider for DenoProvider {
             )))),
             None => Ok(None),
         }
+    }
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(EnvironmentVariables::from([(
+            "NIXPACKS_BUILDER".to_string(),
+            "deno".to_string(),
+        )])))
     }
 }
 

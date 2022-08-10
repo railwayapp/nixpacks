@@ -1,7 +1,7 @@
 use super::Provider;
 use crate::nixpacks::{
     app::App,
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
@@ -59,6 +59,16 @@ impl Provider for ClojureProvider {
         let start_cmd = "java $JAVA_OPTS -jar /app/target/*standalone.jar";
 
         Ok(Some(StartPhase::new(start_cmd.to_string())))
+    }
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(EnvironmentVariables::from([(
+            "NIXPACKS_BUILDER".to_string(),
+            "clojure".to_string(),
+        )])))
     }
 }
 

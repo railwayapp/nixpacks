@@ -1,7 +1,7 @@
 use super::Provider;
 use crate::nixpacks::{
     app::{App, StaticAssets},
-    environment::Environment,
+    environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
@@ -123,6 +123,16 @@ impl Provider for StaticfileProvider {
             shell_cmd = shell_cmd,
             conf_location = app.asset_path("nginx.conf"),
         ))))
+    }
+    fn environment_variables(
+        &self,
+        _app: &App,
+        _env: &Environment,
+    ) -> Result<Option<EnvironmentVariables>> {
+        Ok(Some(EnvironmentVariables::from([(
+            "NIXPACKS_BUILDER".to_string(),
+            "staticfile".to_string(),
+        )])))
     }
 }
 
