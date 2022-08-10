@@ -36,6 +36,7 @@ expression: plan
   },
   "variables": {
     "CI": "true",
+    "NIXPACKS_BUILDER": "node",
     "NODE_ENV": "test",
     "NPM_CONFIG_PRODUCTION": "false"
   },
