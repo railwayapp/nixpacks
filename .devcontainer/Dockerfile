@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/vscode/devcontainers/rust:1-bullseye
+FROM rust:1-bullseye
 
 # [Option] Install zsh
 ARG INSTALL_ZSH="true"
