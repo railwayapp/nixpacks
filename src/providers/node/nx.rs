@@ -11,6 +11,23 @@ pub struct NxJson {
 }
 
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
+pub struct ProjectJson {
+    pub targets: Targets,
+}
+#[derive(Debug, Serialize, PartialEq, Deserialize)]
+pub struct Targets {
+    pub build: Target,
+    pub start: Option<Target>,
+}
+
+#[derive(Debug, Serialize, PartialEq, Deserialize)]
+pub struct Target {
+    pub executor: String,
+    pub options: Options,
+    pub configuration: Option<Configuration>,
+}
+
+#[derive(Debug, Serialize, PartialEq, Deserialize)]
 pub struct Options {
     #[serde(alias = "outputPath")]
     pub output_path: Option<Value>,
@@ -19,17 +36,6 @@ pub struct Options {
 }
 
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
-pub struct Build {
-    pub executor: String,
-    pub options: Options,
-}
-
-#[derive(Debug, Serialize, PartialEq, Deserialize)]
-pub struct Targets {
-    pub build: Build,
-}
-
-#[derive(Debug, Serialize, PartialEq, Deserialize)]
-pub struct ProjectJson {
-    pub targets: Targets,
+pub struct Configuration {
+    pub production: Option<Value>,
 }

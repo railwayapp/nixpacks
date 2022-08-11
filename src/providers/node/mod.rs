@@ -164,8 +164,25 @@ impl NodeProvider {
 
     pub fn get_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
         if NodeProvider::is_nx_monorepo(app) {
+            let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
             let output_path = NodeProvider::get_nx_output_path(app, env)?;
             let project_json = NodeProvider::get_nx_project_json_for_app(app, env)?;
+
+            if let Some(start_target) = project_json.targets.start {
+                if let Some(configuration) = start_target.configuration {
+                    if configuration.production.is_some() {
+                        return Ok(Some(format!(
+                            "nx run {}:start:production ",
+                            app_name.to_owned()
+                        )));
+                    }
+                } else {
+                    return Ok(Some(format!(
+                        "nx run {}:start:production ",
+                        app_name.to_owned()
+                    )));
+                }
+            }
 
             let executor = project_json.targets.build.executor;
             if executor == "@nrwl/next:build" {
