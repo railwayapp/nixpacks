@@ -123,6 +123,26 @@ fn simple_build(path: &str) -> String {
 
     name
 }
+
+fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
+    let name = Uuid::new_v4().to_string();
+    create_docker_image(
+        path,
+        env_vars,
+        &GeneratePlanOptions {
+            pin_pkgs: true,
+            ..Default::default()
+        },
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
+    name
+}
 const POSTGRES_IMAGE: &str = "postgres";
 
 struct Network {
@@ -236,64 +256,47 @@ fn test_node_nx_default_app() {
 
 #[test]
 fn test_node_nx_next() {
-    let name = Uuid::new_v4().to_string();
-
-    create_docker_image(
-        "./examples/node-nx",
-        vec!["NIXPACKS_NX_APP_NAME=next-app"],
-        &GeneratePlanOptions {
-            ..Default::default()
-        },
-        &DockerBuilderOptions {
-            name: Some(name.to_string()),
-            quiet: true,
-            ..Default::default()
-        },
-    )
-    .unwrap();
+    let name =
+        build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=next-app"]);
 
     assert!(run_image(name.to_owned(), None)
         .contains("ready - started server on 0.0.0.0:3000, url: http://localhost:3000"));
 }
 
 #[test]
-fn test_node_nx_node() {
-    let name = Uuid::new_v4().to_string();
-
-    create_docker_image(
+fn test_node_nx_node_start_command() {
+    let name = build_with_build_time_env_vars(
         "./examples/node-nx",
-        vec!["NIXPACKS_NX_APP_NAME=node-app"],
-        &GeneratePlanOptions {
-            ..Default::default()
-        },
-        &DockerBuilderOptions {
-            name: Some(name.to_string()),
-            quiet: true,
-            ..Default::default()
-        },
-    )
-    .unwrap();
+        vec!["NIXPACKS_NX_APP_NAME=start-command"],
+    );
+
+    assert!(run_image(name.to_owned(), None).contains("nx express app works"));
+}
+
+#[test]
+fn test_node_nx_start_command_production() {
+    let name = build_with_build_time_env_vars(
+        "./examples/node-nx",
+        vec!["NIXPACKS_NX_APP_NAME=start-command-production"],
+    );
+
+    assert!(run_image(name.to_owned(), None).contains("nx express app works"));
+}
+
+#[test]
+fn test_node_nx_node() {
+    let name =
+        build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=node-app"]);
 
     assert!(run_image(name.to_owned(), None).contains("Hello from node-app!"));
 }
 
 #[test]
 fn test_node_nx_express() {
-    let name = Uuid::new_v4().to_string();
-
-    create_docker_image(
+    let name = build_with_build_time_env_vars(
         "./examples/node-nx",
         vec!["NIXPACKS_NX_APP_NAME=express-app"],
-        &GeneratePlanOptions {
-            ..Default::default()
-        },
-        &DockerBuilderOptions {
-            name: Some(name.to_string()),
-            quiet: true,
-            ..Default::default()
-        },
-    )
-    .unwrap();
+    );
 
     assert!(run_image(name, None).contains("nx express app works"));
 }
