@@ -84,11 +84,11 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      - name: Install 1.56.1 rust toolchain
+      - name: Install 1.57 rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.56.1
+          toolchain: 1.57
           override: true
 
       - uses: Swatinem/rust-cache@v2
