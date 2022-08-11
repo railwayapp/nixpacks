@@ -31,7 +31,6 @@ pub struct Target {
 pub struct Options {
     #[serde(alias = "outputPath")]
     pub output_path: Option<Value>,
-    #[serde(default)]
     pub main: Option<Value>,
 }
 
