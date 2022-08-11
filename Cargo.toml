@@ -8,7 +8,7 @@ description = "Generate an OCI compliant image based off app source"
 readme = "README.md"
 homepage = "https://github.com/railwayapp/nixpacks"
 repository = "https://github.com/railwayapp/nixpacks"
-rust-version = "1.56.1"
+rust-version = "1.57"
 exclude = ["examples/", "docs/"]
 
 [[bin]]
@@ -42,10 +42,6 @@ console = { default-features = false, version = "0.15.0" }
 box_drawing = "0.1.2"
 textwrap = { default-features = false, version = "0.15.0" }
 cargo_toml = "0.11.5"
-
-# Why does cargo update this dependency to the latest version
-# `clap_lex` uses 6.0 (https://github.com/clap-rs/clap/blob/master/clap_lex/Cargo.toml#L41)
-os_str_bytes = { default-features = false, version = "=6.0", features = ["raw_os_str"] }
 
 [dev-dependencies]
 insta = { version = "1.16.0", features = ["redactions"] }
