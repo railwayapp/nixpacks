@@ -14,7 +14,7 @@
 	"customizations": {
 		// Configure properties specific to VS Code.
 		"vscode": {	
-            "settings": { 
+            		"settings": { 
 				"lldb.executable": "/usr/bin/lldb",
 				// VS Code don't watch files under ./target
 				"files.watcherExclude": {
@@ -26,11 +26,10 @@
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"ms-azuretools.vscode-docker",
-                "vadimcn.vscode-lldb",
+                		"vadimcn.vscode-lldb",
 				"mutantdino.resourcemonitor",
 				"rust-lang.rust-analyzer",
-				"tamasfe.even-better-toml",
-				"serayuzgur.crates"
+				"tamasfe.even-better-toml"
 			]
 		}
 	},
