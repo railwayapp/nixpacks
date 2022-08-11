@@ -84,7 +84,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      - name: Install stable toolchain
+      - name: Install 1.56.1 rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
