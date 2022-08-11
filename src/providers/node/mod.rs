@@ -43,6 +43,8 @@ pub struct PackageJson {
     pub dependencies: Option<HashMap<String, String>>,
     #[serde(rename = "devDependencies")]
     pub dev_dependencies: Option<HashMap<String, String>>,
+    #[serde(rename = "type")]
+    pub project_type: Option<String>,
 }
 
 pub struct NodeProvider {}
@@ -102,9 +104,6 @@ impl Provider for NodeProvider {
                 "{} run build {} --configuration=production",
                 pkg_manager, app_name
             ));
-            // Remove the package.json so when we run node /dist/**/file.js node does
-            // not look at the package.json and infer things it should not, Such as wether its a es module or not.
-            build_phase.add_cmd("rm /app/package.json".to_owned());
         } else if NodeProvider::has_script(app, "build")? {
             build_phase.add_cmd(format!("{} run build", pkg_manager));
         }
