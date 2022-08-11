@@ -7,7 +7,7 @@ use anyhow::{bail, Context, Result};
 use globset::Glob;
 use regex::Regex;
 use serde::de::DeserializeOwned;
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
 
 pub static ASSETS_DIR: &str = "/assets/";
 pub type StaticAssets = BTreeMap<String, String>;
@@ -33,6 +33,7 @@ impl App {
     }
 
     /// Check if a file exists
+
     pub fn includes_file(&self, name: &str) -> bool {
         self.source.join(name).is_file()
     }
@@ -79,8 +80,8 @@ impl App {
         let relative_paths = walker
             .sort_by_file_name()
             .into_iter()
-            .filter_map(|result| result.ok()) // remove bad ones
-            .map(|dir| dir.into_path()) // convert to paths
+            .filter_map(Result::ok) // remove bad ones
+            .map(DirEntry::into_path) // convert to paths
             .filter(|path| glob.is_match(path)) // find matches
             .collect();
 
@@ -88,6 +89,7 @@ impl App {
     }
 
     /// Check if a path matching a glob exists
+
     pub fn has_match(&self, pattern: &str) -> bool {
         match self.find_files(pattern) {
             Ok(v) => !v.is_empty(),
@@ -124,6 +126,7 @@ impl App {
     }
 
     /// Check if a directory exists
+
     pub fn includes_directory(&self, name: &str) -> bool {
         self.source.join(name).is_dir()
     }
@@ -179,6 +182,7 @@ impl App {
     }
 
     /// Get the path in the container to an asset defined in `static_assets`.
+
     pub fn asset_path(&self, name: &str) -> String {
         format!("{ASSETS_DIR}{name}")
     }
