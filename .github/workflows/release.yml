@@ -31,7 +31,7 @@ jobs:
 
       - name: Build Changelog
         id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v3.2.0
+        uses: mikepenz/release-changelog-builder-action@v3.3.0
         with:
           configuration: ".github/changelog-configuration.json"
         env:
