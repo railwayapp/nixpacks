@@ -81,7 +81,7 @@ impl ClojureProvider {
 
     fn parse_custom_version(custom_version: &str) -> Result<String> {
         // Regex for reading JDK versions (e.g. 8 or 11 or latest)
-        let jdk_regex = Regex::new(r"(^[0-9][0-9]?$)|(^latest$)")?;
+        let jdk_regex = Regex::new(r"^([0-9][0-9]?|latest)$")?;
 
         // Capture matches
         let matches = jdk_regex.captures(custom_version.trim());
@@ -92,11 +92,7 @@ impl ClojureProvider {
         }
 
         let matches = matches.unwrap();
-        let matched_value = if matches.get(0).is_some() {
-            matches.get(0)
-        } else {
-            matches.get(1)
-        };
+        let matched_value = matches.get(0);
 
         let value = match matched_value {
             Some(m) => m.as_str(),

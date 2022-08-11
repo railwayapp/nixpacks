@@ -3,7 +3,7 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "0.2.9",
+  "version": "[version]",
   "setup": {
     "pkgs": [
       {
@@ -16,7 +16,7 @@ expression: plan
     ],
     "libraries": [],
     "apt_pkgs": [],
-    "baseImage": "ghcr.io/railwayapp/nixpacks:debian-1657820962"
+    "baseImage": "[baseImage]"
   },
   "install": {
     "cmds": [
@@ -35,6 +35,7 @@ expression: plan
     "cmd": "node index.js"
   },
   "variables": {
+    "CI": "true",
     "NODE_ENV": "test",
     "NPM_CONFIG_PRODUCTION": "false"
   },

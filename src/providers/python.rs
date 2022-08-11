@@ -191,15 +191,15 @@ impl PythonProvider {
         // Check for the engine database type in settings.py
         let re = Regex::new(r"django.db.backends.postgresql").unwrap();
 
-        app.find_match(&re, "/**/settings.py")
+        app.find_match(&re, "/**/*.py")
     }
 
     fn get_django_app_name(app: &App, _env: &Environment) -> Result<String> {
         // Look for the settings.py file
-        let paths = app.find_files("/**/settings.py").unwrap();
+        let paths = app.find_files("/**/*.py").unwrap();
 
         // Generate regex to find the application name
-        let re = Regex::new(r"WSGI_APPLICATION = '(.*).application'").unwrap();
+        let re = Regex::new(r#"WSGI_APPLICATION = ["|'](.*).application["|']"#).unwrap();
 
         // Search all settings.py matches
         for path in paths {
@@ -232,6 +232,8 @@ impl PythonProvider {
         // If not from configs, get it from the .python-version file
         if custom_version.is_none() && app.includes_file(".python-version") {
             custom_version = Some(app.read_file(".python-version")?);
+        } else if app.includes_file("runtime.txt") {
+            custom_version = Some(app.read_file("runtime.txt")?);
         }
 
         // If it's still none, return default
@@ -241,7 +243,8 @@ impl PythonProvider {
         let custom_version = custom_version.unwrap();
 
         // Regex for reading Python versions (e.g. 3.8.0 or 3.8 or 3)
-        let python_regex = Regex::new(r"^(\d)\.(\d+)(?:\.\d+)?$")?;
+        let python_regex =
+            Regex::new(r#"^(?:[\sa-zA-Z-"']*)(\d*)(?:\.*)(\d*)(?:\.*\d*)(?:["']?)$"#)?;
 
         // Capture matches
         let matches = python_regex.captures(custom_version.as_str().trim());
@@ -353,6 +356,19 @@ mod test {
         assert_eq!(
             PythonProvider::get_nix_python_package(
                 &App::new("./examples/python-2")?,
+                &Environment::default()
+            )?,
+            Pkg::new("python27")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_custom_version_runtime_txt() -> Result<()> {
+        assert_eq!(
+            PythonProvider::get_nix_python_package(
+                &App::new("./examples/python-2-runtime")?,
                 &Environment::default()
             )?,
             Pkg::new("python27")
