@@ -176,12 +176,8 @@ impl NodeProvider {
                             app_name.to_owned()
                         )));
                     }
-                } else {
-                    return Ok(Some(format!(
-                        "nx run {}:start:production ",
-                        app_name.to_owned()
-                    )));
                 }
+                return Ok(Some(format!("nx run {}:start ", app_name.to_owned())));
             }
 
             let executor = project_json.targets.build.executor;
