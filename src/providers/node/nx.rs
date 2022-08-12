@@ -5,7 +5,6 @@ use serde_json::Value;
 
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
 pub struct NxJson {
-    #[serde(default)]
     #[serde(alias = "defaultProject")]
     pub default_project: Option<Value>,
 }
