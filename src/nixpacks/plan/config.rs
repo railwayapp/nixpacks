@@ -1,6 +1,6 @@
 use crate::nixpacks::{environment::Environment, nix::pkg::Pkg};
 
-#[derive(PartialEq, Clone, Default, Debug)]
+#[derive(Eq, PartialEq, Clone, Default, Debug)]
 pub struct GeneratePlanConfig {
     pub custom_install_cmd: Option<Vec<String>>,
     pub custom_build_cmd: Option<Vec<String>>,
