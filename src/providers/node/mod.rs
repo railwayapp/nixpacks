@@ -100,10 +100,7 @@ impl Provider for NodeProvider {
 
         if NodeProvider::is_nx_monorepo(app) {
             let app_name = NodeProvider::get_nx_app_name(app, _env)?.unwrap();
-            build_phase.add_cmd(format!(
-                "{} run build {} --configuration=production",
-                pkg_manager, app_name
-            ));
+            build_phase.add_cmd(format!("npx nx run {}:build:production", app_name));
         } else if NodeProvider::has_script(app, "build")? {
             build_phase.add_cmd(format!("{} run build", pkg_manager));
         }
@@ -169,15 +166,15 @@ impl NodeProvider {
             let project_json = NodeProvider::get_nx_project_json_for_app(app, env)?;
 
             if let Some(start_target) = project_json.targets.start {
-                if let Some(configuration) = start_target.configuration {
-                    if configuration.production.is_some() {
-                        return Ok(Some(format!(
-                            "nx run {}:start:production ",
-                            app_name.to_owned()
-                        )));
-                    }
+                if start_target.configurations.is_some()
+                    && start_target.configurations.unwrap().production.is_some()
+                {
+                    return Ok(Some(format!(
+                        "npx nx run {}:start:production ",
+                        app_name.to_owned()
+                    )));
                 }
-                return Ok(Some(format!("nx run {}:start ", app_name.to_owned())));
+                return Ok(Some(format!("npx nx run {}:start", app_name.to_owned())));
             }
 
             let executor = project_json.targets.build.executor;

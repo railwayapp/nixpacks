@@ -24,7 +24,7 @@ pub struct Targets {
 pub struct Target {
     pub executor: String,
     pub options: Options,
-    pub configuration: Option<Configuration>,
+    pub configurations: Option<Configuration>,
 }
 
 #[derive(Debug, Serialize, PartialEq, Deserialize)]

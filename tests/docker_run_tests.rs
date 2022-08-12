@@ -264,7 +264,7 @@ fn test_node_nx_next() {
 }
 
 #[test]
-fn test_node_nx_node_start_command() {
+fn test_node_nx_start_command() {
     let name = build_with_build_time_env_vars(
         "./examples/node-nx",
         vec!["NIXPACKS_NX_APP_NAME=start-command"],
