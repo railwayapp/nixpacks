@@ -5,7 +5,6 @@ use std::{
 
 use self::nx::ProjectJson;
 
-use self::nx::ProjectJson;
 use super::Provider;
 use crate::{
     nixpacks::{
@@ -175,8 +174,7 @@ impl NodeProvider {
                 return Ok(Some(format!("npx nx run {}:start", app_name)));
             }
 
-            let executor = project_json.targets.build.executor;
-            if executor == "@nrwl/next:build" {
+            if project_json.targets.build.executor == "@nrwl/next:build" {
                 return Ok(Some(format!("cd {} && npm run start", output_path)));
             }
 
