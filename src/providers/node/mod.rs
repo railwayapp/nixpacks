@@ -100,7 +100,10 @@ impl Provider for NodeProvider {
 
         if NodeProvider::is_nx_monorepo(app) {
             let app_name = NodeProvider::get_nx_app_name(app, _env)?.unwrap();
-            build_phase.add_cmd(format!("{} run {}:build:production", pkg_manager, app_name));
+            build_phase.add_cmd(format!(
+                "{} run build {} --configuration=production",
+                pkg_manager, app_name
+            ));
         } else if NodeProvider::has_script(app, "build")? {
             build_phase.add_cmd(format!("{} run build", pkg_manager));
         }
