@@ -109,7 +109,7 @@ impl DockerImageBuilder {
         }
 
         // Add build environment variables
-        for (name, value) in plan.variables.clone().unwrap_or_default().iter() {
+        for (name, value) in &plan.variables.clone().unwrap_or_default() {
             docker_build_cmd
                 .arg("--build-arg")
                 .arg(format!("{}={}", name, value));

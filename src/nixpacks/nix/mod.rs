@@ -10,7 +10,7 @@ pub fn create_nix_expression(phase: &Phase) -> String {
 
     let nixpkgs = pkgs
         .iter()
-        .map(|p| p.to_nix_string())
+        .map(pkg::Pkg::to_nix_string)
         .collect::<Vec<String>>()
         .join(" ");
 

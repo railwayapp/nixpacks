@@ -8,7 +8,7 @@ use crate::nixpacks::{
     },
 };
 use anyhow::Result;
-use std::env::consts::ARCH;
+use std::{env::consts::ARCH, ffi::OsStr};
 
 pub struct ZigProvider;
 
@@ -60,8 +60,8 @@ impl Provider for ZigProvider {
             "./zig-out/bin/{}",
             app.source
                 .file_name()
-                .map(|f| f.to_str())
-                .map_or("*", |s| s.unwrap())
+                .map(OsStr::to_str)
+                .map_or("*", Option::unwrap)
         ))))
     }
 }

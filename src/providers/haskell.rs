@@ -47,7 +47,7 @@ impl Provider for HaskellStackProvider {
                 "clang".to_string(),
                 "ninja-build".to_string(),
                 "zlib1g-dev".to_string(),
-            ])
+            ]);
         }
 
         Ok(Some(setup_phase))
@@ -55,15 +55,15 @@ impl Provider for HaskellStackProvider {
 
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
         let mut install_phase = LegacyInstallPhase::new("stack setup".to_string());
-        install_phase.add_cache_directory(STACK_CACHE_DIR.to_string());
+        install_phase.add_cache_directory((*STACK_CACHE_DIR).to_string());
 
         Ok(Some(install_phase))
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         let mut build_phase = LegacyBuildPhase::new("stack install".to_string());
-        build_phase.add_cache_directory(STACK_CACHE_DIR.to_string());
-        build_phase.add_cache_directory(STACK_WORK_CACHE_DIR.to_string());
+        build_phase.add_cache_directory((*STACK_CACHE_DIR).to_string());
+        build_phase.add_cache_directory((*STACK_WORK_CACHE_DIR).to_string());
 
         Ok(Some(build_phase))
     }
@@ -83,6 +83,7 @@ impl Provider for HaskellStackProvider {
 }
 
 #[derive(Deserialize)]
+#[allow(clippy::zero_sized_map_values)]
 struct HaskellStackPackageYaml {
     pub executables: BTreeMap<String, HaskellStackExecutableDefinition>,
 }

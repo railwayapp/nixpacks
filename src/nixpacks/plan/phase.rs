@@ -110,35 +110,44 @@ impl Phase {
     }
 
     pub fn depends_on_phase<S: Into<String>>(&mut self, name: S) {
-        self.depends_on = add_to_option_vec(self.depends_on.clone(), name.into());
+        self.depends_on = Some(add_to_option_vec(self.depends_on.clone(), name.into()));
     }
 
     pub fn add_nix_pkgs(&mut self, new_pkgs: Vec<Pkg>) {
-        self.nix_pkgs = add_multiple_to_option_vec(self.nix_pkgs.clone(), new_pkgs);
+        self.nix_pkgs = Some(add_multiple_to_option_vec(self.nix_pkgs.clone(), new_pkgs));
     }
 
     pub fn add_pkgs_libs(&mut self, new_libraries: Vec<String>) {
-        self.nix_libraries = add_multiple_to_option_vec(self.nix_libraries.clone(), new_libraries);
+        self.nix_libraries = Some(add_multiple_to_option_vec(
+            self.nix_libraries.clone(),
+            new_libraries,
+        ));
     }
 
     pub fn add_apt_pkgs(&mut self, new_pkgs: Vec<String>) {
-        self.apt_pkgs = add_multiple_to_option_vec(self.apt_pkgs.clone(), new_pkgs);
+        self.apt_pkgs = Some(add_multiple_to_option_vec(self.apt_pkgs.clone(), new_pkgs));
     }
 
     pub fn add_cmd<S: Into<String>>(&mut self, cmd: S) {
-        self.cmds = add_to_option_vec(self.cmds.clone(), cmd.into());
+        self.cmds = Some(add_to_option_vec(self.cmds.clone(), cmd.into()));
     }
 
     pub fn add_file_dependency<S: Into<String>>(&mut self, file: S) {
-        self.only_include_files = add_to_option_vec(self.only_include_files.clone(), file.into());
+        self.only_include_files = Some(add_to_option_vec(
+            self.only_include_files.clone(),
+            file.into(),
+        ));
     }
 
     pub fn add_cache_directory<S: Into<String>>(&mut self, dir: S) {
-        self.cache_directories = add_to_option_vec(self.cache_directories.clone(), dir.into());
+        self.cache_directories = Some(add_to_option_vec(
+            self.cache_directories.clone(),
+            dir.into(),
+        ));
     }
 
     pub fn add_path(&mut self, path: String) {
-        self.paths = add_to_option_vec(self.paths.clone(), path);
+        self.paths = Some(add_to_option_vec(self.paths.clone(), path));
     }
 }
 
@@ -163,27 +172,27 @@ impl StartPhase {
     }
 
     pub fn add_file_dependency<S: Into<String>>(&mut self, file: S) {
-        self.only_include_files = add_to_option_vec(self.only_include_files.clone(), file.into());
+        self.only_include_files = Some(add_to_option_vec(
+            self.only_include_files.clone(),
+            file.into(),
+        ));
     }
 }
 
-fn add_to_option_vec<T>(values: Option<Vec<T>>, v: T) -> Option<Vec<T>> {
+fn add_to_option_vec<T>(values: Option<Vec<T>>, v: T) -> Vec<T> {
     if let Some(mut values) = values {
         values.push(v);
-        Some(values)
+        values
     } else {
-        Some(vec![v])
+        vec![v]
     }
 }
 
-fn add_multiple_to_option_vec<T: Clone>(
-    values: Option<Vec<T>>,
-    new_values: Vec<T>,
-) -> Option<Vec<T>> {
+fn add_multiple_to_option_vec<T: Clone>(values: Option<Vec<T>>, new_values: Vec<T>) -> Vec<T> {
     if let Some(values) = values {
-        Some([values, new_values].concat())
+        [values, new_values].concat()
     } else {
-        Some(new_values)
+        new_values
     }
 }
 

@@ -78,13 +78,13 @@ impl LegacySetupPhase {
 impl Default for LegacySetupPhase {
     fn default() -> Self {
         Self {
-            pkgs: Default::default(),
-            libraries: Default::default(),
+            pkgs: Vec::new(),
+            libraries: None,
             apt_pkgs: None,
-            archive: Default::default(),
-            only_include_files: Default::default(),
+            archive: None,
+            only_include_files: None,
             base_image: DEFAULT_BASE_IMAGE.to_string(),
-            cmds: Default::default(),
+            cmds: None,
         }
     }
 }

@@ -51,7 +51,7 @@ impl Provider for PythonProvider {
         if app.includes_file("poetry.lock") {
             plan.set_variables(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),
-                POETRY_VERSION.to_string(),
+                (*POETRY_VERSION).to_string(),
             )]));
         }
 
@@ -66,7 +66,7 @@ impl Provider for PythonProvider {
         if app.includes_file("poetry.lock") {
             return Ok(Some(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),
-                POETRY_VERSION.to_string(),
+                (*POETRY_VERSION).to_string(),
             )])));
         }
         Ok(None)
@@ -138,7 +138,7 @@ impl PythonProvider {
             install_phase.add_file_dependency("requirements.txt".to_string());
             install_phase.add_path(format!("{}/bin", env_loc));
 
-            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+            install_phase.add_cache_directory((*PIP_CACHE_DIR).to_string());
 
             return Ok(Some(install_phase));
         } else if app.includes_file("pyproject.toml") {
@@ -153,7 +153,7 @@ impl PythonProvider {
                 install_phase.add_file_dependency("pyproject.toml".to_string());
                 install_phase.add_path(format!("{}/bin", env_loc));
 
-                install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+                install_phase.add_cache_directory((*PIP_CACHE_DIR).to_string());
 
                 return Ok(Some(install_phase));
             }
@@ -165,7 +165,7 @@ impl PythonProvider {
             install_phase.add_file_dependency("pyproject.toml".to_string());
             install_phase.add_path(format!("{}/bin", env_loc));
 
-            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+            install_phase.add_cache_directory((*PIP_CACHE_DIR).to_string());
 
             return Ok(Some(install_phase));
         }
@@ -240,6 +240,14 @@ impl PythonProvider {
     }
 
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
+        // Fetch python versions into tuples with defaults
+        fn as_default(v: Option<Match>) -> &str {
+            match v {
+                Some(m) => m.as_str(),
+                None => "_",
+            }
+        }
+
         // Fetch version from configs
         let mut custom_version = env.get_config_variable("PYTHON_VERSION");
 
@@ -268,14 +276,6 @@ impl PythonProvider {
             return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
         }
         let matches = matches.unwrap();
-
-        // Fetch python versions into tuples with defaults
-        fn as_default(v: Option<Match>) -> &str {
-            match v {
-                Some(m) => m.as_str(),
-                None => "_",
-            }
-        }
         let python_version = (as_default(matches.get(1)), as_default(matches.get(2)));
 
         // Match major and minor versions
@@ -285,9 +285,7 @@ impl PythonProvider {
             ("3", "9") => Ok(Pkg::new("python39")),
             ("3", "8") => Ok(Pkg::new("python38")),
             ("3", "7") => Ok(Pkg::new("python37")),
-            ("3", "_") => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
-            ("2", "7") => Ok(Pkg::new("python27")),
-            ("2", "_") => Ok(Pkg::new("python27")),
+            ("2", "7" | "_") => Ok(Pkg::new("python27")),
             _ => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
         }
     }
@@ -307,7 +305,7 @@ impl PythonProvider {
             .project
             .as_ref()
             .and_then(|proj| proj.name.as_ref())
-            .map(|name| name.to_owned());
+            .cloned();
 
         let module_name = chain!(project.project.clone() =>
             (
@@ -319,11 +317,11 @@ impl PythonProvider {
                 |mods| mods.get(0).cloned()
             );
             (
-                |_| project_name.to_owned()
+                |_| project_name.clone()
             )
         );
 
-        let entry_point = module_name.to_owned().map(EntryPoint::Module);
+        let entry_point = module_name.clone().map(EntryPoint::Module);
 
         ProjectMeta {
             project_name,

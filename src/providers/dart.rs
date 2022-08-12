@@ -49,8 +49,8 @@ impl Provider for DartProvider {
         Ok(Some(LegacyBuildPhase::new(command)))
     }
 
-    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
-        let pubspec = DartProvider::get_pubspec(_app)?;
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+        let pubspec = DartProvider::get_pubspec(app)?;
         let command = format!("./bin/{}.exe", pubspec.name);
 
         Ok(Some(LegacyStartPhase::new(command)))

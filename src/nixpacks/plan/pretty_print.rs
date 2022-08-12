@@ -1,5 +1,5 @@
 use super::{phase::Phase, BuildPlan};
-use crate::nixpacks::NIX_PACKS_VERSION;
+use crate::nixpacks::{nix::pkg::Pkg, NIX_PACKS_VERSION};
 use anyhow::Result;
 use colored::Colorize;
 use indoc::formatdoc;
@@ -103,10 +103,10 @@ impl BuildPlan {
             .into_iter()
             .map(|(name, content)| {
                 print_row(
-                    uppercase_first_letter(name).as_str(),
-                    content,
-                    edge.clone(),
-                    middle_padding.clone(),
+                    uppercase_first_letter(name.as_str()).as_str(),
+                    content.as_str(),
+                    edge.as_str(),
+                    middle_padding.as_str(),
                     second_column_width,
                     false,
                 )
@@ -116,9 +116,9 @@ impl BuildPlan {
 
         let start_row = print_row(
             "Start",
-            start_contents,
-            edge,
-            middle_padding,
+            start_contents.as_str(),
+            edge.as_str(),
+            middle_padding.as_str(),
             second_column_width,
             false,
         );
@@ -143,7 +143,7 @@ impl BuildPlan {
         let pkgs = [
             nix_pkgs
                 .iter()
-                .map(|pkg| pkg.to_pretty_string())
+                .map(Pkg::to_pretty_string)
                 .collect::<Vec<_>>(),
             apt_pkgs,
         ]
@@ -179,9 +179,9 @@ impl BuildPlan {
 
 fn print_row(
     title: &str,
-    content: String,
-    left_edge: String,
-    middle: String,
+    content: &str,
+    left_edge: &str,
+    middle: &str,
     second_column_width: usize,
     indent_second_line: bool,
 ) -> String {
@@ -193,7 +193,7 @@ fn print_row(
 
     let right_edge = left_edge.chars().rev().collect::<String>();
 
-    let list_lines = textwrap::wrap(content.as_str(), textwrap_opts);
+    let list_lines = textwrap::wrap(content, textwrap_opts);
     let mut output = format!(
         "{}{}{}{}{}",
         left_edge.cyan().dimmed(),
@@ -222,6 +222,6 @@ fn print_row(
     output
 }
 
-fn uppercase_first_letter(s: String) -> String {
+fn uppercase_first_letter(s: &str) -> String {
     s[0..1].to_uppercase() + &s[1..]
 }

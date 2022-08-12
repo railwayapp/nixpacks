@@ -120,7 +120,7 @@ impl SwiftProvider {
                 })
                 .collect::<Vec<_>>()
                 .first()
-                .map(|s| s.to_owned());
+                .cloned();
 
             if let Some(version) = version {
                 Ok(version)
@@ -159,7 +159,7 @@ impl SwiftProvider {
             .iter()
             .find(|(ver, _rev)| *ver == version);
 
-        matched_version.map(|(_ver, rev)| rev.to_string())
+        matched_version.map(|(_ver, rev)| (*rev).to_string())
     }
 }
 

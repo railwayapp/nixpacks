@@ -95,7 +95,9 @@ impl DockerfileGenerator for BuildPlan {
         let plan = self;
 
         let variables = plan.variables.clone().unwrap_or_default();
-        let args_string = if !variables.is_empty() {
+        let args_string = if variables.is_empty() {
+            "".to_string()
+        } else {
             format!(
                 "ARG {}\nENV {}",
                 // Pull the variables in from docker `--build-arg`
@@ -111,19 +113,17 @@ impl DockerfileGenerator for BuildPlan {
                     .collect::<Vec<_>>()
                     .join(" ")
             )
-        } else {
-            "".to_string()
         };
 
         let static_assets = plan.static_assets.clone().unwrap_or_default();
-        let assets_copy_cmd = if !static_assets.is_empty() {
+        let assets_copy_cmd = if static_assets.is_empty() {
+            "".to_string()
+        } else {
             format!(
                 "COPY {} {}",
                 output.get_relative_path("assets").display(),
                 app::ASSETS_DIR
             )
-        } else {
-            "".to_string()
         };
 
         let dockerfile_phases = plan
@@ -290,13 +290,13 @@ impl DockerfileGenerator for Phase {
 
         // Install apt packages
         let apt_pkgs = phase.apt_pkgs.clone().unwrap_or_default();
-        let apt_pkgs_str = if !apt_pkgs.is_empty() {
+        let apt_pkgs_str = if apt_pkgs.is_empty() {
+            "".to_string()
+        } else {
             format!(
                 "RUN apt-get update && apt-get install -y {}",
                 apt_pkgs.join(" ")
             )
-        } else {
-            "".to_string()
         };
 
         // Copy over app files

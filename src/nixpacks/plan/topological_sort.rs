@@ -9,9 +9,7 @@ pub trait TopItem {
 
 pub fn topological_sort<T>(items: Vec<T>) -> Result<Vec<T>>
 where
-    T: Clone,
-    T: TopItem,
-    T: std::fmt::Debug,
+    T: Clone + TopItem,
 {
     let mut lookup = HashMap::<String, T>::new();
     for item in items.clone() {
@@ -69,10 +67,10 @@ where
         );
 
         // Update the indegree of the dependent items
-        for (name, _) in no_deps.into_iter() {
+        for (name, _) in no_deps {
             adj_list.remove(&name);
 
-            for (dep_name, dependents) in adj_list.iter_mut() {
+            for (dep_name, dependents) in &mut adj_list {
                 if dependents.remove(&name) {
                     indegree.entry(dep_name.clone()).and_modify(|e| *e -= 1);
                 }
@@ -85,7 +83,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{topological_sort, TopItem};
+    use crate::nixpacks::plan::topological_sort;
+
+    use super::TopItem;
 
     #[derive(Clone, Debug)]
     struct TestItem {
@@ -125,7 +125,7 @@ mod tests {
             topological_sort(items)
                 .unwrap()
                 .iter()
-                .map(|item| item.get_name())
+                .map(topological_sort::TopItem::get_name)
                 .collect::<Vec<_>>(),
             vec!["a", "b", "c", "d"]
         );

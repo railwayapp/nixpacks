@@ -10,6 +10,7 @@ use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
 };
+
 use anyhow::Result;
 
 use serde::{Deserialize, Serialize};
