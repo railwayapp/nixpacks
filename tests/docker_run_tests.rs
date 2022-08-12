@@ -143,6 +143,7 @@ fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
 
     name
 }
+
 const POSTGRES_IMAGE: &str = "postgres";
 
 struct Network {

@@ -169,12 +169,9 @@ impl NodeProvider {
                 if start_target.configurations.is_some()
                     && start_target.configurations.unwrap().production.is_some()
                 {
-                    return Ok(Some(format!(
-                        "npx nx run {}:start:production ",
-                        app_name.to_owned()
-                    )));
+                    return Ok(Some(format!("npx nx run {}:start:production ", app_name)));
                 }
-                return Ok(Some(format!("npx nx run {}:start", app_name.to_owned())));
+                return Ok(Some(format!("npx nx run {}:start", app_name)));
             }
 
             let executor = project_json.targets.build.executor;
