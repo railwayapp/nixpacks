@@ -14,6 +14,5 @@ app.get('/api', (_req, res) => {
 const port = process.env.port || 3333;
 const server = app.listen(port, () => {
   console.log(`nx express app works`);
-  process.exit(0);
 });
 server.on('error', console.error);
