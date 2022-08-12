@@ -13,6 +13,7 @@ pub struct NxJson {
 pub struct ProjectJson {
     pub targets: Targets,
 }
+
 #[derive(Debug, Serialize, PartialEq, Deserialize)]
 pub struct Targets {
     pub build: Target,
