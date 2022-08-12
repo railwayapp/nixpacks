@@ -45,8 +45,8 @@ impl Provider for DartProvider {
         Ok(Some(BuildPhase::new(command)))
     }
 
-    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        let pubspec = DartProvider::get_pubspec(_app)?;
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+        let pubspec = DartProvider::get_pubspec(app)?;
         let command = format!("./bin/{}.exe", pubspec.name);
 
         Ok(Some(StartPhase::new(command)))

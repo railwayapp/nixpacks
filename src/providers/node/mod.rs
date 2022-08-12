@@ -5,6 +5,7 @@ use std::{
 
 use self::nx::ProjectJson;
 
+use self::nx::ProjectJson;
 use super::Provider;
 use crate::{
     nixpacks::{
@@ -75,20 +76,20 @@ impl Provider for NodeProvider {
         // Package manage cache directories
         let package_manager = NodeProvider::get_package_manager(app);
         if package_manager == "yarn" {
-            install_phase.add_cache_directory(YARN_CACHE_DIR.to_string());
+            install_phase.add_cache_directory((*YARN_CACHE_DIR).to_string());
         } else if package_manager == "pnpm" {
-            install_phase.add_cache_directory(PNPM_CACHE_DIR.to_string());
+            install_phase.add_cache_directory((*PNPM_CACHE_DIR).to_string());
         } else if package_manager == "bun" {
-            install_phase.add_cache_directory(BUN_CACHE_DIR.to_string());
+            install_phase.add_cache_directory((*BUN_CACHE_DIR).to_string());
         } else {
-            install_phase.add_cache_directory(NPM_CACHE_DIR.to_string());
+            install_phase.add_cache_directory((*NPM_CACHE_DIR).to_string());
         }
 
         let all_deps = NodeProvider::get_all_deps(app)?;
 
         // Cypress cache directory
         if all_deps.get("cypress").is_some() {
-            install_phase.add_cache_directory(CYPRESS_CACHE_DIR.to_string());
+            install_phase.add_cache_directory((*CYPRESS_CACHE_DIR).to_string());
         }
 
         Ok(Some(install_phase))
@@ -117,7 +118,7 @@ impl Provider for NodeProvider {
         }
 
         // Node modules cache directory
-        build_phase.add_cache_directory(NODE_MODULES_CACHE_DIR.to_string());
+        build_phase.add_cache_directory((*NODE_MODULES_CACHE_DIR).to_string());
 
         Ok(Some(build_phase))
     }
@@ -200,18 +201,16 @@ impl NodeProvider {
             if app.includes_file(&main) {
                 if package_manager == "bun" {
                     return Ok(Some(format!("bun {}", main)));
-                } else {
-                    return Ok(Some(format!("node {}", main)));
                 }
+                return Ok(Some(format!("node {}", main)));
             }
         }
 
         if app.includes_file("index.js") {
             if package_manager == "bun" {
                 return Ok(Some("bun index.js".to_string()));
-            } else {
-                return Ok(Some("node index.js".to_string()));
             }
+            return Ok(Some("node index.js".to_string()));
         } else if app.includes_file("index.ts") && package_manager == "bun" {
             return Ok(Some("bun index.ts".to_string()));
         }
@@ -226,7 +225,7 @@ impl NodeProvider {
         let pkg_node_version = package_json
             .engines
             .clone()
-            .and_then(|engines| engines.get("node").map(|v| v.to_owned()));
+            .and_then(|engines| engines.get("node").cloned());
 
         let node_version = pkg_node_version.or(env_node_version);
 
@@ -240,16 +239,15 @@ impl NodeProvider {
             return Ok(Pkg::new(DEFAULT_NODE_PKG_NAME));
         }
 
-        // Parse `18` or `18.x` into nodejs-18_x
         // This also supports 18.x.x, or any number in place of the x.
         let re = Regex::new(r"^(\d*)(?:\.?(?:\d*|[xX]?)?)(?:\.?(?:\d*|[xX]?)?)").unwrap();
-        if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version.clone()) {
+        if let Some(node_pkg) = parse_regex_into_pkg(&re, &node_version) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
 
         // Parse `>=14.10.3 <16` into nodejs-14_x
         let re = Regex::new(r"^>=(\d+)").unwrap();
-        if let Some(node_pkg) = parse_regex_into_pkg(&re, node_version) {
+        if let Some(node_pkg) = parse_regex_into_pkg(&re, &node_version) {
             return Ok(Pkg::new(node_pkg.as_str()));
         }
 
@@ -394,18 +392,13 @@ impl NodeProvider {
         let deps = json
             .dependencies
             .clone()
-            .map(|deps| deps.keys().map(|k| k.to_string()).collect::<Vec<String>>())
+            .map(|deps| deps.keys().cloned().collect::<Vec<String>>())
             .unwrap_or_default();
 
         let dev_deps = json
             .dev_dependencies
             .clone()
-            .map(|dev_deps| {
-                dev_deps
-                    .keys()
-                    .map(|k| k.to_string())
-                    .collect::<Vec<String>>()
-            })
+            .map(|dev_deps| dev_deps.keys().cloned().collect::<Vec<String>>())
             .unwrap_or_default();
 
         all_deps.extend(deps.into_iter());
@@ -454,19 +447,19 @@ impl NodeProvider {
     }
 }
 
-fn version_number_to_pkg(version: &u32) -> String {
-    if AVAILABLE_NODE_VERSIONS.contains(version) {
+fn version_number_to_pkg(version: u32) -> String {
+    if AVAILABLE_NODE_VERSIONS.contains(&version) {
         format!("nodejs-{}_x", version)
     } else {
-        DEFAULT_NODE_PKG_NAME.to_string()
+        (*DEFAULT_NODE_PKG_NAME).to_string()
     }
 }
 
-fn parse_regex_into_pkg(re: &Regex, node_version: String) -> Option<String> {
-    let matches: Vec<_> = re.captures_iter(node_version.as_str()).collect();
+fn parse_regex_into_pkg(re: &Regex, node_version: &str) -> Option<String> {
+    let matches: Vec<_> = re.captures_iter(node_version).collect();
     if let Some(captures) = matches.get(0) {
         match captures[1].parse::<u32>() {
-            Ok(version) => return Some(version_number_to_pkg(&version)),
+            Ok(version) => return Some(version_number_to_pkg(version)),
             Err(_e) => {}
         }
     }
@@ -480,8 +473,8 @@ mod test {
 
     use super::*;
 
-    fn engines_node(version: &str) -> Option<HashMap<String, String>> {
-        Some(HashMap::from([("node".to_string(), version.to_string())]))
+    fn engines_node(version: &str) -> HashMap<String, String> {
+        HashMap::from([("node".to_string(), version.to_string())])
     }
 
     #[test]
@@ -506,7 +499,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("*"),
+                    engines: Some(engines_node("*")),
                     ..Default::default()
                 },
                 &Environment::default()
@@ -523,7 +516,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("14"),
+                    engines: Some(engines_node("14")),
                     ..Default::default()
                 },
                 &Environment::default()
@@ -540,7 +533,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("18.x"),
+                    engines: Some(engines_node("18.x")),
                     ..Default::default()
                 },
                 &Environment::default()
@@ -552,7 +545,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("14.X"),
+                    engines: Some(engines_node("14.X")),
                     ..Default::default()
                 },
                 &Environment::default()
@@ -569,7 +562,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("18.x.x"),
+                    engines: Some(engines_node("18.x.x")),
                     ..Default::default()
                 },
                 &Environment::default()
@@ -581,7 +574,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("14.X.x"),
+                    engines: Some(engines_node("14.X.x")),
                     ..Default::default()
                 },
                 &Environment::default()
@@ -598,7 +591,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("18.4.2"),
+                    engines: Some(engines_node("18.4.2")),
                     ..Default::default()
                 },
                 &Environment::default()
@@ -610,7 +603,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("14.8.x"),
+                    engines: Some(engines_node("14.8.x")),
                     ..Default::default()
                 },
                 &Environment::default()
@@ -622,7 +615,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("14.x.8"),
+                    engines: Some(engines_node("14.x.8")),
                     ..Default::default()
                 },
                 &Environment::default()
@@ -639,7 +632,7 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node(">=14.10.3 <16"),
+                    engines: Some(engines_node(">=14.10.3 <16")),
                     ..Default::default()
                 },
                 &Environment::default()
@@ -676,12 +669,11 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: engines_node("15"),
+                    engines: Some(engines_node("15")),
                     ..Default::default()
                 },
                 &Environment::default()
-            )
-            .unwrap()
+            )?
             .name,
             "nodejs"
         );
