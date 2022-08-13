@@ -4,7 +4,6 @@ use crate::nixpacks::{
     environment::Environment,
     nix::pkg::Pkg,
     plan::{
-        legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
         phase::{Phase, StartPhase},
         BuildPlan,
     },

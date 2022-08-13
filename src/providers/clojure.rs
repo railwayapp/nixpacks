@@ -3,15 +3,16 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    plan::legacy_phase::{
-        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    plan::{
+        legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
+        phase::{Phase, StartPhase},
+        BuildPlan,
     },
 };
 use anyhow::Result;
 use regex::Regex;
 
 const DEFAULT_JDK_PKG_NAME: &'static &str = &"jdk8";
-const LEIN_CACHE_DIR: &'static &str = &"~/.m2";
 
 pub struct ClojureProvider {}
 
@@ -24,20 +25,12 @@ impl Provider for ClojureProvider {
         Ok(app.includes_file("project.clj"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<LegacySetupPhase>> {
-        Ok(Some(LegacySetupPhase::new(vec![
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+        let setup = Phase::setup(Some(vec![
             Pkg::new("leiningen"),
             ClojureProvider::get_nix_jdk_package(app, env)?,
-        ])))
-    }
+        ]));
 
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
-        let mut install_phase = LegacyInstallPhase::new("".to_string());
-        install_phase.add_cache_directory((*LEIN_CACHE_DIR).to_string());
-        Ok(Some(install_phase))
-    }
-
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         let has_lein_ring_plugin = app
             .read_file("project.clj")?
             .to_lowercase()
@@ -51,17 +44,12 @@ impl Provider for ClojureProvider {
 
         // based on project config, uberjar can be created under ./target/uberjar or ./target, This ensure file will be found on the same place whatevery the project config is
         let move_file_cmd = "if [ -f /app/target/uberjar/*standalone.jar ]; then  mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi";
+        let build = Phase::build(Some(format!("{}; {}", build_cmd, move_file_cmd)));
 
-        Ok(Some(LegacyBuildPhase::new(format!(
-            "{}; {}",
-            build_cmd, move_file_cmd
-        ))))
-    }
+        let start = StartPhase::new("java $JAVA_OPTS -jar /app/target/*standalone.jar");
 
-    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
-        let start_cmd = "java $JAVA_OPTS -jar /app/target/*standalone.jar";
-
-        Ok(Some(LegacyStartPhase::new(start_cmd.to_string())))
+        let plan = BuildPlan::new(vec![setup, build], Some(start));
+        Ok(Some(plan))
     }
 }
 
