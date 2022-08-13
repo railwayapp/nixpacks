@@ -41,7 +41,6 @@ impl Provider for DenoProvider {
             || app.find_match(&re, "**/*.{tsx,ts,js,jsx}")?)
     }
 
-    // New way of defining a provider
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
 

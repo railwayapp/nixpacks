@@ -5,19 +5,7 @@ expression: plan
 {
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
-  "variables": {},
-  "staticAssets": {},
   "phases": [
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "dart"
-        }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
-    },
     {
       "name": "install",
       "dependsOn": [
@@ -28,6 +16,14 @@ expression: plan
       ],
       "onlyIncludeFiles": [
         "pubspec.yaml"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "dart"
+        }
       ]
     },
     {
