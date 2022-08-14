@@ -161,7 +161,7 @@ impl DockerBuilder {
         }
 
         // Add build environment variables
-        for (name, value) in plan.variables.clone().unwrap_or_default().iter() {
+        for (name, value) in &plan.variables.clone().unwrap_or_default() {
             docker_build_cmd
                 .arg("--build-arg")
                 .arg(format!("{}={}", name, value));
@@ -256,7 +256,9 @@ impl DockerBuilder {
         };
 
         // -- Variables
-        let args_string = if !variables.is_empty() {
+        let args_string = if variables.is_empty() {
+            "".to_string()
+        } else {
             format!(
                 "ARG {}\nENV {}",
                 // Pull the variables in from docker `--build-arg`
@@ -272,8 +274,6 @@ impl DockerBuilder {
                     .collect::<Vec<_>>()
                     .join(" ")
             )
-        } else {
-            "".to_string()
         };
 
         // -- Setup
@@ -298,14 +298,14 @@ impl DockerBuilder {
             .join("\n");
 
         // -- Static Assets
-        let assets_copy_cmd = if !static_assets.is_empty() {
+        let assets_copy_cmd = if static_assets.is_empty() {
+            "".to_string()
+        } else {
             static_assets
                 .into_keys()
                 .map(|name| format!("COPY assets/{} {}{}", name, assets_dir, name))
                 .collect::<Vec<String>>()
                 .join("\n")
-        } else {
-            "".to_string()
         };
 
         // -- Install
@@ -359,8 +359,7 @@ impl DockerBuilder {
         // -- Start
         let start_cmd = start_phase
             .cmd
-            .map(|cmd| format!("CMD {}", cmd))
-            .unwrap_or_else(|| "".to_string());
+            .map_or_else(|| "".to_string(), |cmd| format!("CMD {}", cmd));
 
         // If we haven't yet copied over the entire app, do that before starting
         let start_files = start_phase.only_include_files.clone();
@@ -432,7 +431,7 @@ fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<St
             .iter()
             .map(|dir| {
                 let sanitized_dir = dir.replace('~', "/root");
-                let sanitized_key = sanitize_cache_key(format!("{cache_key}-{sanitized_dir}"));
+                let sanitized_key = sanitize_cache_key(&format!("{cache_key}-{sanitized_dir}"));
                 format!("--mount=type=cache,id={sanitized_key},target={sanitized_dir}")
             })
             .collect::<Vec<String>>()

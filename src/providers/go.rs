@@ -24,9 +24,9 @@ impl Provider for GolangProvider {
         Ok(app.includes_file("main.go") || app.includes_file("go.mod"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        let go_mod = self.read_go_mod_if_exists(_app)?;
-        let nix_pkg = GolangProvider::get_nix_golang_pkg(go_mod)?;
+    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+        let go_mod = self.read_go_mod_if_exists(app)?;
+        let nix_pkg = GolangProvider::get_nix_golang_pkg(go_mod.as_ref())?;
 
         Ok(Some(SetupPhase::new(vec![Pkg::new(&nix_pkg)])))
     }
@@ -34,7 +34,7 @@ impl Provider for GolangProvider {
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         if app.includes_file("go.mod") {
             let mut install_phase = InstallPhase::new("go get".to_string());
-            install_phase.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
+            install_phase.add_cache_directory((*GO_BUILD_CACHE_DIR).to_string());
             return Ok(Some(install_phase));
         }
         Ok(None)
@@ -47,7 +47,7 @@ impl Provider for GolangProvider {
             BuildPhase::new(format!("go build -o {} main.go", BINARY_NAME))
         };
 
-        build_phase.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
+        build_phase.add_cache_directory((*GO_BUILD_CACHE_DIR).to_string());
 
         Ok(Some(build_phase))
     }
@@ -86,7 +86,7 @@ impl GolangProvider {
         }
     }
 
-    pub fn get_nix_golang_pkg(go_mod_contents: Option<String>) -> Result<String> {
+    pub fn get_nix_golang_pkg(go_mod_contents: Option<&String>) -> Result<String> {
         if go_mod_contents.is_some() {
             let mut lines = go_mod_contents.as_ref().unwrap().lines();
             let go_version_line = lines.find(|line| line.trim().starts_with("go"));
@@ -94,23 +94,20 @@ impl GolangProvider {
             if let Some(go_version_line) = go_version_line {
                 let go_version = go_version_line.split_whitespace().nth(1).unwrap();
 
-                if let Some(nix_pkg) = version_number_to_pkg(go_version)? {
+                if let Some(nix_pkg) = version_number_to_pkg(go_version) {
                     return Ok(nix_pkg);
                 }
             }
         }
 
-        Ok(DEFAULT_GO_PKG_NAME.to_string())
+        Ok((*DEFAULT_GO_PKG_NAME).to_string())
     }
 }
 
-fn version_number_to_pkg(version: &str) -> Result<Option<String>> {
+fn version_number_to_pkg(version: &str) -> Option<String> {
     let matched_version = AVAILABLE_GO_VERSIONS.iter().find(|(v, _)| v == &version);
 
-    match matched_version {
-        Some((_, pkg)) => Ok(Some(pkg.to_string())),
-        None => Ok(None),
-    }
+    matched_version.map(|(_, pkg)| (*pkg).to_string())
 }
 
 #[cfg(test)]
@@ -121,7 +118,7 @@ mod test {
     fn test_no_go_mod() -> Result<()> {
         assert_eq!(
             GolangProvider::get_nix_golang_pkg(None)?,
-            DEFAULT_GO_PKG_NAME.to_string()
+            (*DEFAULT_GO_PKG_NAME).to_string()
         );
 
         Ok(())
@@ -134,7 +131,7 @@ mod test {
         "#;
 
         assert_eq!(
-            GolangProvider::get_nix_golang_pkg(Some(go_mod_contents.to_string()))?,
+            GolangProvider::get_nix_golang_pkg(Some(&go_mod_contents.to_string()))?,
             "go_1_18".to_string()
         );
 
@@ -148,8 +145,8 @@ mod test {
         "#;
 
         assert_eq!(
-            GolangProvider::get_nix_golang_pkg(Some(go_mod_contents.to_string()))?,
-            DEFAULT_GO_PKG_NAME.to_string()
+            GolangProvider::get_nix_golang_pkg(Some(&go_mod_contents.to_string()))?,
+            (*DEFAULT_GO_PKG_NAME).to_string()
         );
 
         Ok(())

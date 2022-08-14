@@ -3,6 +3,7 @@ use crate::nixpacks::{
     environment::{Environment, EnvironmentVariables},
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
+use crate::Pkg;
 use anyhow::Result;
 use colored::Colorize;
 use indoc::formatdoc;
@@ -46,7 +47,7 @@ impl BuildPlan {
             setup_phase
                 .pkgs
                 .iter()
-                .map(|pkg| pkg.to_pretty_string())
+                .map(Pkg::to_pretty_string)
                 .collect::<Vec<_>>(),
             setup_phase.apt_pkgs.unwrap_or_default(),
         ]
@@ -65,7 +66,7 @@ impl BuildPlan {
         ]
         .concat()
         .iter()
-        .map(|line| line.len())
+        .map(String::len)
         .max()
         .unwrap_or(0);
 
@@ -91,33 +92,33 @@ impl BuildPlan {
 
         let packages_row = print_row(
             "Packages",
-            pkg_list,
-            edge.clone(),
-            middle_padding.clone(),
+            &pkg_list,
+            &edge,
+            &middle_padding,
             second_column_width,
             true,
         );
         let install_row = print_row(
             "Install",
-            install_phase.cmds.unwrap_or_default().join("\n"),
-            edge.clone(),
-            middle_padding.clone(),
+            &install_phase.cmds.unwrap_or_default().join("\n"),
+            &edge,
+            &middle_padding,
             second_column_width,
             false,
         );
         let build_row = print_row(
             "Build",
-            build_phase.cmds.unwrap_or_default().join("\n"),
-            edge.clone(),
-            middle_padding.clone(),
+            &build_phase.cmds.unwrap_or_default().join("\n"),
+            &edge,
+            &middle_padding,
             second_column_width,
             false,
         );
         let start_row = print_row(
             "Start",
-            start_phase.cmd.unwrap_or_default(),
-            edge,
-            middle_padding,
+            &start_phase.cmd.unwrap_or_default(),
+            &edge,
+            &middle_padding,
             second_column_width,
             false,
         );
@@ -179,9 +180,9 @@ impl BuildPlan {
 
 fn print_row(
     title: &str,
-    content: String,
-    left_edge: String,
-    middle: String,
+    content: &str,
+    left_edge: &str,
+    middle: &str,
     second_column_width: usize,
     indent_second_line: bool,
 ) -> String {
@@ -193,7 +194,7 @@ fn print_row(
 
     let right_edge = left_edge.chars().rev().collect::<String>();
 
-    let list_lines = textwrap::wrap(content.as_str(), textwrap_opts);
+    let list_lines = textwrap::wrap(content, textwrap_opts);
     let mut output = format!(
         "{}{}{}{}{}",
         left_edge.cyan().dimmed(),
