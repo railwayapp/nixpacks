@@ -268,6 +268,19 @@ fn test_rust_rocket_no_musl() {
 }
 
 #[test]
+fn test_rust_cargo_workspaces() {
+    let plan = simple_gen_plan("./examples/rust-cargo-workspaces");
+
+    assert_eq!(
+        plan.build.unwrap().cmds.unwrap()[0],
+        format!(
+            "cargo build --release --package binary --target {}-unknown-linux-musl",
+            ARCH
+        )
+    );
+}
+
+#[test]
 pub fn test_python() {
     let plan = simple_gen_plan("./examples/python");
     assert_plan_snapshot!(plan);
