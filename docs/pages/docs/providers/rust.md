@@ -51,4 +51,4 @@ These directories are cached between builds
 
 Nixpacks will auto-detect if you are using Cargo Workspaces.
 To set which workspace Nixpacks will build, just set the `NIXPACKS_CARGO_WORKSPACE`
-environment variable and Nixpacks will use it as the `--package` argument
+environment variable and Nixpacks will use it as the `--package` argument.
