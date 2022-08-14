@@ -73,7 +73,31 @@ impl Provider for RustProvider {
     }
 
     fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
-        RustProvider::get_start_phase(app, env)
+        if (RustProvider::get_target(app, env)?).is_some() {
+            if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
+                let mut start_phase = StartPhase::new(format!("./{}", workspace));
+
+                start_phase.run_in_slim_image();
+                start_phase.add_file_dependency(format!("./{}", workspace));
+
+                Ok(Some(start_phase))
+            } else if let Some(name) = RustProvider::get_app_name(app)? {
+                let mut start_phase = StartPhase::new(format!("./{}", name));
+
+                start_phase.run_in_slim_image();
+                start_phase.add_file_dependency(format!("./{}", name));
+
+                Ok(Some(start_phase))
+            } else {
+                Ok(None)
+            }
+        } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
+            Ok(Some(StartPhase::new(format!("./{}", workspace))))
+        } else if let Some(name) = RustProvider::get_app_name(app)? {
+            Ok(Some(StartPhase::new(format!("./{}", name))))
+        } else {
+            Ok(None)
+        }
     }
 
     fn environment_variables(
@@ -327,34 +351,6 @@ impl RustProvider {
             }
 
             Ok(build_phase)
-        }
-    }
-
-    fn get_start_phase(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
-        if (RustProvider::get_target(app, env)?).is_some() {
-            if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-                let mut start_phase = StartPhase::new(format!("./{}", workspace));
-
-                start_phase.run_in_slim_image();
-                start_phase.add_file_dependency(format!("./{}", workspace));
-
-                Ok(Some(start_phase))
-            } else if let Some(name) = RustProvider::get_app_name(app)? {
-                let mut start_phase = StartPhase::new(format!("./{}", name));
-
-                start_phase.run_in_slim_image();
-                start_phase.add_file_dependency(format!("./{}", name));
-
-                Ok(Some(start_phase))
-            } else {
-                Ok(None)
-            }
-        } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-            Ok(Some(StartPhase::new(format!("./{}", workspace))))
-        } else if let Some(name) = RustProvider::get_app_name(app)? {
-            Ok(Some(StartPhase::new(format!("./{}", name))))
-        } else {
-            Ok(None)
         }
     }
 }
