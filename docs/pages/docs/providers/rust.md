@@ -46,3 +46,9 @@ These directories are cached between builds
 - Build: `~/.cargo/git`
 - Build: `~/.cargo/registry`
 - Build: `target`
+
+## [Workspaces](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html)
+
+Nixpacks will auto-detect if you are using Cargo Workspaces.
+To set which workspace Nixpacks will build, just set the `NIXPACKS_CARGO_WORKSPACE`
+environment variable and Nixpacks will use it as the `--package` argument
