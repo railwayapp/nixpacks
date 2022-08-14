@@ -1,0 +1,46 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "[version]",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "nodejs"
+      },
+      {
+        "name": "pnpm-7_x",
+        "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "[baseImage]"
+  },
+  "install": {
+    "cmds": [
+      "pnpm i --frozen-lockfile"
+    ],
+    "cacheDirectories": [
+      "/root/.cache/pnpm"
+    ]
+  },
+  "build": {
+    "cmds": [
+      "pnpm run build"
+    ],
+    "cacheDirectories": [
+      "node_modules/.cache"
+    ]
+  },
+  "start": {
+    "cmd": "pnpm run start"
+  },
+  "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false"
+  },
+  "static_assets": {}
+}
