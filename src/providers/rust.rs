@@ -203,13 +203,35 @@ impl RustProvider {
         let manifest = RustProvider::parse_cargo_toml(app)?.context("Missing Cargo.toml")?;
 
         if let Some(workspace) = manifest.workspace {
-            for default_member in workspace.default_members {
-                if let Ok(mut manifest) =
-                    app.read_toml::<Manifest>(&format!("{}/Cargo.toml", default_member))
-                {
+            for default_member in workspace
+                .default_members
+                .iter()
+                .filter(|default_member| !workspace.exclude.contains(default_member))
+            {
+                // a member can have globs
+                if default_member.contains('*') || default_member.contains('?') {
+                    for member in app.find_directories(default_member)? {
+                        let mut manifest =
+                            app.read_toml::<Manifest>(&format!("{}/Cargo.toml", member.display()))?;
+
+                        manifest.complete_from_path(
+                            &app.source.join(format!("{}/Cargo.toml", member.display())),
+                        )?;
+
+                        if let Some(package) = manifest.package {
+                            if !manifest.bin.is_empty() || manifest.lib.is_none() {
+                                return Ok(Some(package.name));
+                            }
+                        }
+                    }
+                } else {
+                    let mut manifest =
+                        app.read_toml::<Manifest>(&format!("{}/Cargo.toml", default_member))?;
+
                     manifest.complete_from_path(
                         &app.source.join(format!("{}/Cargo.toml", default_member)),
                     )?;
+
                     if let Some(package) = manifest.package {
                         if !manifest.bin.is_empty() || manifest.lib.is_none() {
                             return Ok(Some(package.name));
@@ -218,10 +240,31 @@ impl RustProvider {
                 }
             }
 
-            for member in workspace.members {
-                if let Ok(mut manifest) =
-                    app.read_toml::<Manifest>(&format!("{}/Cargo.toml", member))
-                {
+            for member in workspace
+                .members
+                .iter()
+                .filter(|member| !workspace.exclude.contains(member))
+            {
+                // a member can have globs
+                if member.contains('*') || member.contains('?') {
+                    for member in app.find_directories(member)? {
+                        let mut manifest =
+                            app.read_toml::<Manifest>(&format!("{}/Cargo.toml", member.display()))?;
+
+                        manifest.complete_from_path(
+                            &app.source.join(format!("{}/Cargo.toml", member.display())),
+                        )?;
+
+                        if let Some(package) = manifest.package {
+                            if !manifest.bin.is_empty() || manifest.lib.is_none() {
+                                return Ok(Some(package.name));
+                            }
+                        }
+                    }
+                } else {
+                    let mut manifest =
+                        app.read_toml::<Manifest>(&format!("{}/Cargo.toml", member))?;
+
                     manifest
                         .complete_from_path(&app.source.join(format!("{}/Cargo.toml", member)))?;
 
