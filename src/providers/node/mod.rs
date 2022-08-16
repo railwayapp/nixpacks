@@ -94,12 +94,12 @@ impl Provider for NodeProvider {
         Ok(Some(install_phase))
     }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+    fn build(&self, app: &App, env: &Environment) -> Result<Option<BuildPhase>> {
         let mut build_phase = BuildPhase::default();
         let pkg_manager = NodeProvider::get_package_manager(app);
 
         if NodeProvider::is_nx_monorepo(app) {
-            let app_name = NodeProvider::get_nx_app_name(app, _env)?.unwrap();
+            let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
             build_phase.add_cmd(format!("npx nx run {}:build:production", app_name));
         } else if NodeProvider::has_script(app, "build")? {
             build_phase.add_cmd(format!("{} run build", pkg_manager));
@@ -184,9 +184,8 @@ impl NodeProvider {
                 let file_name = current_path.file_stem().unwrap().to_str().unwrap();
 
                 return Ok(Some(format!("node {}/{}.js", output_path, file_name)));
-            } else {
-                return Ok(Some(format!("node {}/index.js", output_path)));
             }
+            return Ok(Some(format!("node {}/index.js", output_path)));
         }
 
         let package_manager = NodeProvider::get_package_manager(app);
