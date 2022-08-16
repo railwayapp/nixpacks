@@ -92,7 +92,7 @@ impl Provider for NodeProvider {
         let start = NodeProvider::get_start_cmd(app)?.map(StartPhase::new);
 
         let mut plan = BuildPlan::new(vec![setup, install, build], start);
-        plan.set_variables(NodeProvider::get_node_environment_variables());
+        plan.add_variables(NodeProvider::get_node_environment_variables());
 
         Ok(Some(plan))
     }

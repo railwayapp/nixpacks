@@ -56,7 +56,7 @@ impl Provider for GolangProvider {
         }
         plan.set_start_phase(start);
 
-        plan.set_variables(EnvironmentVariables::from([(
+        plan.add_variables(EnvironmentVariables::from([(
             "CGO_ENABLED".to_string(),
             "0".to_string(),
         )]));

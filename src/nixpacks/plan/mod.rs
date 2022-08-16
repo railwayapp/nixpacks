@@ -77,8 +77,17 @@ impl BuildPlan {
         self.start_phase = Some(start_phase);
     }
 
-    pub fn set_variables(&mut self, variables: EnvironmentVariables) {
-        self.variables = Some(variables);
+    pub fn add_variables(&mut self, variables: EnvironmentVariables) {
+        match self.variables.as_mut() {
+            Some(vars) => {
+                for (key, value) in &variables {
+                    vars.insert(key.to_string(), value.to_string());
+                }
+            }
+            None => {
+                self.variables = Some(variables);
+            }
+        }
     }
 
     pub fn get_phase(&self, name: &str) -> Option<&Phase> {
