@@ -19,7 +19,7 @@ jobs:
           days-before-issue-stale: -1 # Issues never go stale or close
           days-before-issue-close: -1
           stale-pr-label: 'no-pr-activity'
-          stale-pr-message: 'This pull request is stale because it has been open 30 days with no activity. Remove stale label or comment or this will be closed in 5 days'
+          stale-pr-message: 'This pull request is stale because it has been open 10 days with no activity. Remove stale label or comment or this will be closed in 5 days'
           close-pr-message: 'This pull request was closed for lack of activity. Feel free to reopen later.'
           exempt-pr-labels: 'awaiting-approval,work-in-progress'
         env:
