@@ -22,6 +22,5 @@ jobs:
           stale-pr-message: 'This pull request is stale because it has been open 30 days with no activity. Remove stale label or comment or this will be closed in 5 days'
           close-pr-message: 'This pull request was closed for lack of activity. Feel free to reopen later.'
           exempt-pr-labels: 'awaiting-approval,work-in-progress'
-          only-labels: 'awaiting-feedback,awaiting-answers'
         env:
           ACTIONS_STEP_DEBUG: true
