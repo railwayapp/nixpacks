@@ -9,11 +9,11 @@ use anyhow::Result;
 
 pub struct GolangProvider {}
 
-const BINARY_NAME: &'static &str = &"out";
+const BINARY_NAME: &str = "out";
 const AVAILABLE_GO_VERSIONS: &[(&str, &str)] = &[("1.17", "go"), ("1.18", "go_1_18")];
-const DEFAULT_GO_PKG_NAME: &'static &str = &"go";
+const DEFAULT_GO_PKG_NAME: &str = "go";
 
-const GO_BUILD_CACHE_DIR: &'static &str = &"/root/.cache/go-build";
+const GO_BUILD_CACHE_DIR: &str = "/root/.cache/go-build";
 
 impl Provider for GolangProvider {
     fn name(&self) -> &str {
@@ -34,7 +34,7 @@ impl Provider for GolangProvider {
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         if app.includes_file("go.mod") {
             let mut install_phase = InstallPhase::new("go get".to_string());
-            install_phase.add_cache_directory((*GO_BUILD_CACHE_DIR).to_string());
+            install_phase.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
             return Ok(Some(install_phase));
         }
         Ok(None)
@@ -47,7 +47,7 @@ impl Provider for GolangProvider {
             BuildPhase::new(format!("go build -o {} main.go", BINARY_NAME))
         };
 
-        build_phase.add_cache_directory((*GO_BUILD_CACHE_DIR).to_string());
+        build_phase.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
 
         Ok(Some(build_phase))
     }
@@ -100,7 +100,7 @@ impl GolangProvider {
             }
         }
 
-        Ok((*DEFAULT_GO_PKG_NAME).to_string())
+        Ok(DEFAULT_GO_PKG_NAME.to_string())
     }
 }
 
@@ -118,7 +118,7 @@ mod test {
     fn test_no_go_mod() -> Result<()> {
         assert_eq!(
             GolangProvider::get_nix_golang_pkg(None)?,
-            (*DEFAULT_GO_PKG_NAME).to_string()
+            DEFAULT_GO_PKG_NAME.to_string()
         );
 
         Ok(())
@@ -146,7 +146,7 @@ mod test {
 
         assert_eq!(
             GolangProvider::get_nix_golang_pkg(Some(&go_mod_contents.to_string()))?,
-            (*DEFAULT_GO_PKG_NAME).to_string()
+            DEFAULT_GO_PKG_NAME.to_string()
         );
 
         Ok(())

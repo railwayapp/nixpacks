@@ -34,7 +34,7 @@ jobs:
 
           sed -i "/\/\/ Last Modified:/c\/\/ Last Modified: ${DATE}" src/nixpacks/plan/generator.rs
           sed -i "/\/\/ https:\/\/github.com\/NixOS\/nixpkgs\/commit/c\/\/ $URL" src/nixpacks/plan/generator.rs
-          sed -i "/static NIXPKGS_ARCHIVE: &str/c\static NIXPKGS_ARCHIVE: &str = \"$SHA\";" src/nixpacks/plan/generator.rs
+          sed -i "/const NIXPKGS_ARCHIVE: &str/c\const NIXPKGS_ARCHIVE: &str = \"$SHA\";" src/nixpacks/plan/generator.rs
 
           echo "::set-output name=sha::$SHA"
           echo "::set-output name=url::$URL"
