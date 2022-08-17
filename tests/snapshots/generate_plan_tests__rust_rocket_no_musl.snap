@@ -38,6 +38,7 @@ expression: plan
       ],
       "commands": [
         "mkdir -p bin",
+        "cargo build --release",
         "cp target/release/rocket bin"
       ],
       "cacheDirectories": [
