@@ -321,7 +321,7 @@ impl NodeProvider {
     }
 
     pub fn uses_node_dependency(app: &App, dependency: &str) -> bool {
-        file_names = vec![
+        let file_names = vec![
             "package.json",
             "yarn.lock",
             "pnpm-lock.yaml",
@@ -330,22 +330,13 @@ impl NodeProvider {
         ];
         for file_name in file_names {
             if app.includes_file(file_name) {
-                let package_json: PackageJson = app.read_json(file_name).unwrap_or_default();
-                if package_json.dependencies.contains_key(dependency) {
+                let package_json = app.read_file(file_name).unwrap_or_default();
+                if package_json.contains(dependency) {
                     return true;
                 }
             }
         }
-        return false;
-        let package_json = app.read_file("package.json").unwrap_or_default();
-        let lock_json = app.read_file("package-lock.json").unwrap_or_default();
-        let yarn_lock = app.read_file("yarn.lock").unwrap_or_default();
-        let pnpm_yaml = app.read_file("pnpm-lock.yaml").unwrap_or_default();
-
-        package_json.contains("\"canvas\"")
-            || lock_json.contains("/canvas/")
-            || yarn_lock.contains("/canvas/")
-            || pnpm_yaml.contains("/canvas/")
+        false
     }
 
     pub fn uses_puppeteer(app: &App) -> bool {
