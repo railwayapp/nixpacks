@@ -71,6 +71,7 @@ impl Provider for NodeProvider {
         // Install
         let mut install = Phase::install(Some(NodeProvider::get_install_command(app)));
         install.add_cache_directory(NodeProvider::get_package_manager_cache_dir(app));
+        install.add_path("/app/node_modules/.bin".to_string());
 
         // Cypress cache directory
         let all_deps = NodeProvider::get_all_deps(app)?;
@@ -79,7 +80,6 @@ impl Provider for NodeProvider {
         }
 
         // Build
-
         let mut build = if NodeProvider::is_nx_monorepo(app) {
             let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
             Phase::build(Some(format!("npx nx run {}:build:production", app_name)))
