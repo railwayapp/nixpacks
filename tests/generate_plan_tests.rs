@@ -15,7 +15,7 @@ fn test_custom_rust_version() {
             format!("mkdir -p bin"),
             format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
             format!(
-                "cp target/{}-unknown-linux-musl/release/rust-custom-version bin/rust-custom-version",
+                "cp target/{}-unknown-linux-musl/release/rust-custom-version bin",
                 ARCH
             )
         ])
@@ -42,14 +42,11 @@ fn test_rust_rocket() {
         Some(vec![
             format!("mkdir -p bin"),
             format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
-            format!(
-                "cp target/{}-unknown-linux-musl/release/rocket bin/rocket",
-                ARCH
-            )
+            format!("cp target/{}-unknown-linux-musl/release/rocket bin", ARCH)
         ])
     );
     assert!(start.cmd.is_some());
-    assert_eq!(start.clone().cmd.unwrap(), "./bin/rocket".to_string());
+    assert_eq!(start.clone().cmd.unwrap(), "./rocket".to_string());
     assert!(start.run_image.is_some());
 }
 

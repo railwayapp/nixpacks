@@ -11,7 +11,7 @@ use crate::nixpacks::{
 use anyhow::Result;
 use regex::Regex;
 
-const DEFAULT_JDK_PKG_NAME: &str = &"jdk8";
+const DEFAULT_JDK_PKG_NAME: &str = "jdk8";
 
 pub struct ClojureProvider {}
 

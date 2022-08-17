@@ -38,7 +38,7 @@ expression: plan
       ],
       "commands": [
         "mkdir -p bin",
-        "cp target/release/rocket bin/rocket"
+        "cp target/release/rocket bin"
       ],
       "cacheDirectories": [
         "/root/.cargo/git",
