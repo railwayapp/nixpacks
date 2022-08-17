@@ -5,14 +5,12 @@ use crate::nixpacks::{
     nix::pkg::Pkg,
     phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
-use anyhow::{Error, Result};
+use anyhow::{bail, Error, Result};
 use serde::{Deserialize, Serialize};
 
 use erl_tokenize::tokens::AtomToken;
 use erl_tokenize::Token::{self, Atom};
 use erl_tokenize::Tokenizer;
-use std::fs::File;
-use std::io::Read;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct ErlangTasks {}
@@ -36,26 +34,24 @@ impl Provider for ErlangProvider {
     }
 
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        Ok(Some(InstallPhase::new("rebar3 get-deps".into())))
+        Ok(Some(InstallPhase::new("rebar3 as prod get-deps".into())))
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new("rebar3 release".into())))
+        Ok(Some(BuildPhase::new("rebar3 as prod release".into())))
     }
 
     fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         if let Some(rebar_file) = app.find_files("rebar.config")?.get(0) {
             if let Ok(Some(name)) =
-                get_release_name_from_rebar_config(&rebar_file.to_string_lossy())
+                get_release_name_from_rebar_config(app, &rebar_file.to_string_lossy())
             {
                 Ok(Some(StartPhase::new(format!(
-                    "./_build/default/rel/{}/bin/{} foreground",
+                    "./_build/prod/rel/{}/bin/{} foreground",
                     name, name
                 ))))
             } else {
-                Err(anyhow::anyhow!(
-                    "Couldn't find release name in rebar.config"
-                ))
+                bail!("Couldn't find release name in rebar.config")
             }
         } else {
             Err(anyhow::anyhow!(
@@ -65,11 +61,8 @@ impl Provider for ErlangProvider {
     }
 }
 
-fn get_release_name_from_rebar_config(path: &str) -> Result<Option<String>, Error> {
-    let mut file = File::open(path)?;
-    let mut src = String::new();
-    file.read_to_string(&mut src)?;
-
+fn get_release_name_from_rebar_config(app: &App, path: &str) -> Result<Option<String>, Error> {
+    let src = app.read_file(path)?;
     let tokenizer = Tokenizer::new(&src);
     let release_name_atom = tokenizer
         .filter(|t| matches!(t, Ok(Atom(_))))
