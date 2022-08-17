@@ -117,12 +117,12 @@ impl RustProvider {
             build.add_cmd(format!("cp target/release/{name} bin", name = name));
         }
 
-        build.add_cache_directory((*CARGO_GIT_CACHE_DIR).to_string());
-        build.add_cache_directory((*CARGO_REGISTRY_CACHE_DIR).to_string());
+        build.add_cache_directory(CARGO_GIT_CACHE_DIR.to_string());
+        build.add_cache_directory(CARGO_REGISTRY_CACHE_DIR.to_string());
 
         if RustProvider::get_app_name(app)?.is_some() {
             // Cache target directory
-            build.add_cache_directory((*CARGO_TARGET_CACHE_DIR).to_string());
+            build.add_cache_directory(CARGO_TARGET_CACHE_DIR.to_string());
         }
 
         Ok(build)

@@ -16,8 +16,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-static NIXPACKS_OUTPUT_DIR: &str = ".nixpacks";
-pub static APP_DIR: &str = "/app/";
+const NIXPACKS_OUTPUT_DIR: &str = ".nixpacks";
+pub const APP_DIR: &str = "/app/";
 
 #[derive(Debug, Clone)]
 pub struct OutputDir {

@@ -11,7 +11,7 @@ use anyhow::{Context, Result};
 
 pub struct FSharpProvider {}
 
-pub const ARTIFACT_DIR: &'static &str = &"out";
+pub const ARTIFACT_DIR: &str = &"out";
 
 impl Provider for FSharpProvider {
     fn name(&self) -> &str {

@@ -51,7 +51,7 @@ impl Provider for PythonProvider {
         if app.includes_file("poetry.lock") {
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),
-                (*POETRY_VERSION).to_string(),
+                POETRY_VERSION.to_string(),
             )]));
         }
 
@@ -66,7 +66,7 @@ impl Provider for PythonProvider {
         if app.includes_file("poetry.lock") {
             return Ok(Some(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),
-                (*POETRY_VERSION).to_string(),
+                POETRY_VERSION.to_string(),
             )])));
         }
         Ok(None)

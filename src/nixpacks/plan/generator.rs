@@ -135,7 +135,6 @@ impl NixpacksBuildPlanGenerator<'_> {
         let plan: BuildPlan = legacy_plan.into();
         Ok(plan)
     }
-}
 
     fn get_setup_phase(&self, app: &App, environment: &Environment) -> Result<LegacySetupPhase> {
         let mut setup_phase: LegacySetupPhase = match self.matched_provider {

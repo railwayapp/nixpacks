@@ -36,7 +36,7 @@ impl Provider for GolangProvider {
 
         if app.includes_file("go.mod") {
             let mut install = Phase::install(Some("go get".to_string()));
-            install.add_cache_directory((*GO_BUILD_CACHE_DIR).to_string());
+            install.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
             plan.add_phase(install);
         }
 
@@ -45,7 +45,7 @@ impl Provider for GolangProvider {
         } else {
             Phase::build(Some(format!("go build -o {} main.go", BINARY_NAME)))
         };
-        build.add_cache_directory((*GO_BUILD_CACHE_DIR).to_string());
+        build.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
         plan.add_phase(build);
 
         let mut start = StartPhase::new(format!("./{}", BINARY_NAME));
