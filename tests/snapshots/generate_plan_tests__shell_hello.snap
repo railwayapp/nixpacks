@@ -1,0 +1,18 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "[version]",
+  "setup": {
+    "pkgs": [],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "[baseImage]"
+  },
+  "install": {},
+  "build": {},
+  "start": {},
+  "variables": {},
+  "static_assets": {}
+}

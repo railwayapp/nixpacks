@@ -1,0 +1,38 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "[version]",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "leiningen"
+      },
+      {
+        "name": "jdk"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "[baseImage]"
+  },
+  "install": {
+    "cmds": [
+      ""
+    ],
+    "cacheDirectories": [
+      "~/.m2"
+    ]
+  },
+  "build": {
+    "cmds": [
+      "lein uberjar; if [ -f /app/target/uberjar/*standalone.jar ]; then  mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi"
+    ]
+  },
+  "start": {
+    "cmd": "java $JAVA_OPTS -jar /app/target/*standalone.jar"
+  },
+  "variables": {},
+  "static_assets": {}
+}

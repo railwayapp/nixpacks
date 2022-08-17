@@ -135,3 +135,30 @@ jobs:
         with:
           command: test
           args: --package nixpacks --test docker_run_tests -- ${{ matrix.tests }} --exact
+
+  msrv:
+    name: Test Suite (MSRV)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.10.0
+        with:
+          access_token: ${{ github.token }}
+        
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install 1.57 rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.57
+          override: true
+
+      - uses: Swatinem/rust-cache@v2
+      
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --package nixpacks --lib --test generate_plan_tests

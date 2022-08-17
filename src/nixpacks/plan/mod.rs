@@ -164,16 +164,25 @@ impl BuildPlan {
 
         formatdoc! {"
 
-          {top_box}
-          {packages_row}
-          {hor_sep}
-          {install_row}
-          {hor_sep}
-          {build_row}
-          {hor_sep}
-          {start_row}
-          {bottom_box}
+          {}
+          {}
+          {}
+          {}
+          {}
+          {}
+          {}
+          {}
+          {}
           ",
+          top_box,
+          packages_row,
+          hor_sep,
+          install_row,
+          hor_sep,
+          build_row,
+          hor_sep,
+          start_row,
+          bottom_box
         }
     }
 }
@@ -212,7 +221,8 @@ fn print_row(
 
     for line in list_lines.iter().skip(1) {
         output = format!(
-            "{output}\n{}{}{}{}{}",
+            "{}\n{}{}{}{}{}",
+            output,
             left_edge.cyan().dimmed(),
             console::pad_str("", FIRST_COLUMN_WIDTH, console::Alignment::Left, None),
             middle,

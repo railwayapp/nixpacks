@@ -33,8 +33,8 @@ impl Provider for JavaProvider {
 
     fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         let mvn_exe = self.get_maven_exe(app);
-        Ok(Some(BuildPhase::new(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
-            mvn_exe=mvn_exe
+        Ok(Some(BuildPhase::new(format!("{} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
+            mvn_exe
         ))))
     }
 

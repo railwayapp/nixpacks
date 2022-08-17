@@ -33,7 +33,7 @@ impl Provider for RustProvider {
         let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
 
         if let Some(target) = RustProvider::get_target(app, env)? {
-            rust_pkg = rust_pkg.set_override("targets", format!("[\"{target}\"]").as_str());
+            rust_pkg = rust_pkg.set_override("targets", &format!("[\"{}\"]", target));
         }
 
         let mut setup_phase =
@@ -154,15 +154,17 @@ impl RustProvider {
     // Get the rust package version by parsing the `rust-version` field in `Cargo.toml`
     fn get_rust_pkg(app: &App, env: &Environment) -> Result<Pkg> {
         if let Some(version) = env.get_config_variable("RUST_VERSION") {
-            return Ok(Pkg::new(
-                format!("rust-bin.stable.\"{}\".default", version).as_str(),
-            ));
+            return Ok(Pkg::new(&format!(
+                "rust-bin.stable.\"{}\".default",
+                version
+            )));
         }
 
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
-            return Ok(Pkg::new(
-                format!("(rust-bin.fromRustupToolchainFile ./{})", toolchain_file).as_str(),
-            ));
+            return Ok(Pkg::new(&format!(
+                "(rust-bin.fromRustupToolchainFile ./{})",
+                toolchain_file
+            )));
         }
 
         let pkg = match RustProvider::parse_cargo_toml(app)? {

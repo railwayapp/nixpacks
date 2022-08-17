@@ -119,8 +119,8 @@ impl Provider for StaticfileProvider {
         // shell command to edit 0.0.0.0:80 to $PORT
         let shell_cmd = "[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\"";
         Ok(Some(StartPhase::new(format!(
-            "{shell_cmd} {conf_location} && nginx -c {conf_location}",
-            shell_cmd = shell_cmd,
+            "{} {conf_location} && nginx -c {conf_location}",
+            shell_cmd,
             conf_location = app.asset_path("nginx.conf"),
         ))))
     }
