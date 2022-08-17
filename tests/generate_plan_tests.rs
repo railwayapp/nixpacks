@@ -1,7 +1,4 @@
-use nixpacks::{
-    generate_build_plan,
-    nixpacks::plan::{config::GeneratePlanConfig, generator::GeneratePlanOptions},
-};
+use nixpacks::{generate_build_plan, nixpacks::plan::config::GeneratePlanConfig};
 use std::env::consts::ARCH;
 
 test_helper::generate_plan_tests!();
