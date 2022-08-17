@@ -260,7 +260,7 @@ fn test_node_nx_next() {
     let name =
         build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=next-app"]);
 
-    assert!(run_image(name.to_owned(), None)
+    assert!(run_image(name, None)
         .contains("ready - started server on 0.0.0.0:3000, url: http://localhost:3000"));
 }
 
@@ -271,7 +271,7 @@ fn test_node_nx_start_command() {
         vec!["NIXPACKS_NX_APP_NAME=start-command"],
     );
 
-    assert!(run_image(name.to_owned(), None).contains("nx express app works"));
+    assert!(run_image(name, None).contains("nx express app works"));
 }
 
 #[test]
@@ -281,7 +281,7 @@ fn test_node_nx_start_command_production() {
         vec!["NIXPACKS_NX_APP_NAME=start-command-production"],
     );
 
-    assert!(run_image(name.to_owned(), None).contains("nx express app works"));
+    assert!(run_image(name, None).contains("nx express app works"));
 }
 
 #[test]
@@ -289,7 +289,7 @@ fn test_node_nx_node() {
     let name =
         build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=node-app"]);
 
-    assert!(run_image(name.to_owned(), None).contains("Hello from node-app!"));
+    assert!(run_image(name, None).contains("Hello from node-app!"));
 }
 
 #[test]
