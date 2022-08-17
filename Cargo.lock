@@ -359,7 +359,6 @@ dependencies = [
  "globset",
  "indoc",
  "insta",
- "os_str_bytes",
  "regex",
  "serde",
  "serde_json",
