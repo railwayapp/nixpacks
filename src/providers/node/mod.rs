@@ -64,11 +64,11 @@ impl Provider for NodeProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
-        if NodeProvider::uses_canvas(app) {
+        if NodeProvider::uses_node_dependency(app, "canvas") {
             setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
 
-        if NodeProvider::uses_puppeteer(app) {
+        if NodeProvider::uses_node_dependency(app, "puppeteer") {
             setup.add_apt_pkgs(vec![
                 "libnss3".to_string(),
                 "libatk1.0-0".to_string(),
@@ -324,14 +324,6 @@ impl NodeProvider {
         NodeProvider::get_all_deps(app)
             .unwrap_or_default()
             .contains(dependency)
-    }
-
-    pub fn uses_puppeteer(app: &App) -> bool {
-        NodeProvider::uses_node_dependency(app, "puppeteer")
-    }
-
-    pub fn uses_canvas(app: &App) -> bool {
-        NodeProvider::uses_node_dependency(app, "canvas")
     }
 
     pub fn find_next_packages(app: &App) -> Result<Vec<String>> {
