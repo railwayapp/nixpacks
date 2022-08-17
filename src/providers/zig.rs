@@ -14,7 +14,7 @@ use super::Provider;
 pub struct ZigProvider;
 
 //TODO: CHANGE THIS WHEN ZIG IS UPDATED OR EVERYTHING WILL BREAK!
-static GYRO_VERSION: &str = "0.6.0";
+const GYRO_VERSION: &str = "0.6.0";
 
 impl Provider for ZigProvider {
     fn name(&self) -> &str {

@@ -23,16 +23,16 @@ mod nx;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const DEFAULT_NODE_PKG_NAME: &'static &str = &"nodejs";
+const DEFAULT_NODE_PKG_NAME: &str = "nodejs";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 
-const YARN_CACHE_DIR: &'static &str = &"/usr/local/share/.cache/yarn/v6";
-const PNPM_CACHE_DIR: &'static &str = &"/root/.cache/pnpm";
-const NPM_CACHE_DIR: &'static &str = &"/root/.npm";
-const BUN_CACHE_DIR: &'static &str = &"/root/.bun";
-const CYPRESS_CACHE_DIR: &'static &str = &"/root/.cache/Cypress";
-const NODE_MODULES_CACHE_DIR: &'static &str = &"node_modules/.cache";
-const NX_APP_NAME_ENV_VAR: &'static &str = &"NX_APP_NAME";
+const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
+const PNPM_CACHE_DIR: &str = "/root/.cache/pnpm";
+const NPM_CACHE_DIR: &str = "/root/.npm";
+const BUN_CACHE_DIR: &str = "/root/.bun";
+const CYPRESS_CACHE_DIR: &str = "/root/.cache/Cypress";
+const NODE_MODULES_CACHE_DIR: &str = "node_modules/.cache";
+const NX_APP_NAME_ENV_VAR: &str = "NX_APP_NAME";
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
@@ -75,20 +75,20 @@ impl Provider for NodeProvider {
         // Package manage cache directories
         let package_manager = NodeProvider::get_package_manager(app);
         if package_manager == "yarn" {
-            install_phase.add_cache_directory((*YARN_CACHE_DIR).to_string());
+            install_phase.add_cache_directory(YARN_CACHE_DIR.to_string());
         } else if package_manager == "pnpm" {
-            install_phase.add_cache_directory((*PNPM_CACHE_DIR).to_string());
+            install_phase.add_cache_directory(PNPM_CACHE_DIR.to_string());
         } else if package_manager == "bun" {
-            install_phase.add_cache_directory((*BUN_CACHE_DIR).to_string());
+            install_phase.add_cache_directory(BUN_CACHE_DIR.to_string());
         } else {
-            install_phase.add_cache_directory((*NPM_CACHE_DIR).to_string());
+            install_phase.add_cache_directory(NPM_CACHE_DIR.to_string());
         }
 
         let all_deps = NodeProvider::get_all_deps(app)?;
 
         // Cypress cache directory
         if all_deps.get("cypress").is_some() {
-            install_phase.add_cache_directory((*CYPRESS_CACHE_DIR).to_string());
+            install_phase.add_cache_directory(CYPRESS_CACHE_DIR.to_string());
         }
 
         Ok(Some(install_phase))
@@ -117,7 +117,7 @@ impl Provider for NodeProvider {
         }
 
         // Node modules cache directory
-        build_phase.add_cache_directory((*NODE_MODULES_CACHE_DIR).to_string());
+        build_phase.add_cache_directory(NODE_MODULES_CACHE_DIR.to_string());
 
         Ok(Some(build_phase))
     }
@@ -448,7 +448,7 @@ fn version_number_to_pkg(version: u32) -> String {
     if AVAILABLE_NODE_VERSIONS.contains(&version) {
         format!("nodejs-{}_x", version)
     } else {
-        (*DEFAULT_NODE_PKG_NAME).to_string()
+        DEFAULT_NODE_PKG_NAME.to_string()
     }
 }
 

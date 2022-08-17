@@ -13,8 +13,8 @@ use anyhow::Result;
 use super::Provider;
 use std::env::consts::ARCH;
 
-const STACK_CACHE_DIR: &'static &str = &"/root/.stack";
-const STACK_WORK_CACHE_DIR: &'static &str = &".stack-work";
+const STACK_CACHE_DIR: &str = "/root/.stack";
+const STACK_WORK_CACHE_DIR: &str = ".stack-work";
 
 pub struct HaskellStackProvider {}
 
@@ -56,15 +56,15 @@ impl Provider for HaskellStackProvider {
 
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let mut install_phase = InstallPhase::new("stack setup".to_string());
-        install_phase.add_cache_directory((*STACK_CACHE_DIR).to_string());
+        install_phase.add_cache_directory(STACK_CACHE_DIR.to_string());
 
         Ok(Some(install_phase))
     }
 
     fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
         let mut build_phase = BuildPhase::new("stack install".to_string());
-        build_phase.add_cache_directory((*STACK_CACHE_DIR).to_string());
-        build_phase.add_cache_directory((*STACK_WORK_CACHE_DIR).to_string());
+        build_phase.add_cache_directory(STACK_CACHE_DIR.to_string());
+        build_phase.add_cache_directory(STACK_WORK_CACHE_DIR.to_string());
 
         Ok(Some(build_phase))
     }

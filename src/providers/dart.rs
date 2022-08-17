@@ -8,7 +8,7 @@ use crate::nixpacks::{
 use anyhow::{Context, Result};
 use serde::Deserialize;
 
-pub const DEFAULT_DART_PKG_NAME: &'static &str = &"dart";
+pub const DEFAULT_DART_PKG_NAME: &str = "dart";
 
 #[derive(Deserialize, Debug)]
 pub struct DartPubspec {

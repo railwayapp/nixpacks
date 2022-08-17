@@ -15,9 +15,9 @@ use indoc::formatdoc;
 use tempdir::TempDir;
 use uuid::Uuid;
 
-const DOT_NIXPACKS_DIR: &'static &str = &".nixpacks";
-const ENVIRONMENT_NIX: &'static &str = &"environment.nix";
-const DOCKERFILE_NAME: &'static &str = &"Dockerfile";
+const DOT_NIXPACKS_DIR: &str = ".nixpacks";
+const ENVIRONMENT_NIX: &str = "environment.nix";
+const DOCKERFILE_NAME: &str = "Dockerfile";
 
 struct OutputDir {
     root_path: PathBuf,

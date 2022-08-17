@@ -8,8 +8,8 @@ use crate::nixpacks::{
 use anyhow::Result;
 use regex::Regex;
 
-const DEFAULT_JDK_PKG_NAME: &'static &str = &"jdk8";
-const LEIN_CACHE_DIR: &'static &str = &"~/.m2";
+const DEFAULT_JDK_PKG_NAME: &str = "jdk8";
+const LEIN_CACHE_DIR: &str = "~/.m2";
 
 pub struct ClojureProvider {}
 
@@ -24,7 +24,7 @@ impl Provider for ClojureProvider {
 
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let mut install_phase = InstallPhase::new("".to_string());
-        install_phase.add_cache_directory((*LEIN_CACHE_DIR).to_string());
+        install_phase.add_cache_directory(LEIN_CACHE_DIR.to_string());
         Ok(Some(install_phase))
     }
 
@@ -75,7 +75,7 @@ impl ClojureProvider {
 
         match custom_version {
             Some(v) => Ok(v),
-            None => Ok((*DEFAULT_JDK_PKG_NAME).to_string()),
+            None => Ok(DEFAULT_JDK_PKG_NAME.to_string()),
         }
     }
 
@@ -88,7 +88,7 @@ impl ClojureProvider {
 
         // If no matches, just use default
         if matches.is_none() {
-            return Ok((*DEFAULT_JDK_PKG_NAME).to_string());
+            return Ok(DEFAULT_JDK_PKG_NAME.to_string());
         }
 
         let matches = matches.unwrap();

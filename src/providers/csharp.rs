@@ -9,7 +9,7 @@ use anyhow::{Context, Result};
 
 pub struct CSharpProvider {}
 
-pub const ARTIFACT_DIR: &'static &str = &"out";
+pub const ARTIFACT_DIR: &str = "out";
 
 impl Provider for CSharpProvider {
     fn name(&self) -> &str {
