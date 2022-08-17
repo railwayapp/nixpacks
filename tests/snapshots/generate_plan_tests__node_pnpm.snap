@@ -21,6 +21,9 @@ expression: plan
       ],
       "cacheDirectories": [
         "/root/.cache/pnpm"
+      ],
+      "paths": [
+        "/app/node_modules/.bin"
       ]
     },
     {
