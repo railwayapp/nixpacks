@@ -1,4 +1,5 @@
 use std::env::consts::ARCH;
+use std::fmt::Write as _;
 
 use super::Provider;
 use crate::nixpacks::{
@@ -8,7 +9,7 @@ use crate::nixpacks::{
     phase::{BuildPhase, SetupPhase, StartPhase},
 };
 use anyhow::{Context, Result};
-use cargo_toml::Manifest;
+use cargo_toml::{Manifest, Workspace};
 
 static RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
 static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
@@ -58,33 +59,7 @@ impl Provider for RustProvider {
     }
 
     fn build(&self, app: &App, env: &Environment) -> Result<Option<BuildPhase>> {
-        let mut build_phase = match RustProvider::get_target(app, env)? {
-            Some(target) => {
-                let mut build_phase =
-                    BuildPhase::new(format!("cargo build --release --target {}", target));
-
-                if let Some(name) = RustProvider::get_app_name(app)? {
-                    // Copy the binary out of the target directory
-                    build_phase.add_cmd(format!(
-                        "cp target/{}/release/{name} {name}",
-                        target,
-                        name = name
-                    ));
-                }
-
-                build_phase
-            }
-            None => {
-                let mut build_phase = BuildPhase::new("cargo build --release".to_string());
-
-                if let Some(name) = RustProvider::get_app_name(app)? {
-                    // Copy the binary out of the target directory
-                    build_phase.add_cmd(format!("cp target/release/{name} {name}", name = name));
-                }
-
-                build_phase
-            }
-        };
+        let mut build_phase = RustProvider::get_build_phase(app, env)?;
 
         build_phase.add_cache_directory((*CARGO_GIT_CACHE_DIR).to_string());
         build_phase.add_cache_directory((*CARGO_REGISTRY_CACHE_DIR).to_string());
@@ -98,23 +73,28 @@ impl Provider for RustProvider {
     }
 
     fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
-        let name = RustProvider::get_app_name(app)?;
+        if (RustProvider::get_target(app, env)?).is_some() {
+            if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
+                let mut start_phase = StartPhase::new(format!("./{}", workspace));
 
-        if let Some(name) = name {
-            let start_phase = match RustProvider::get_target(app, env)? {
-                Some(_) => {
-                    let binary_file = format!("./{}", name);
-                    let mut start_phase = StartPhase::new(format!("./{}", name));
+                start_phase.run_in_slim_image();
+                start_phase.add_file_dependency(format!("./{}", workspace));
 
-                    start_phase.run_in_slim_image();
-                    start_phase.add_file_dependency(binary_file);
+                Ok(Some(start_phase))
+            } else if let Some(name) = RustProvider::get_app_name(app)? {
+                let mut start_phase = StartPhase::new(format!("./{}", name));
 
-                    start_phase
-                }
-                None => StartPhase::new(format!("./{}", name)),
-            };
+                start_phase.run_in_slim_image();
+                start_phase.add_file_dependency(format!("./{}", name));
 
-            Ok(Some(start_phase))
+                Ok(Some(start_phase))
+            } else {
+                Ok(None)
+            }
+        } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
+            Ok(Some(StartPhase::new(format!("./{}", workspace))))
+        } else if let Some(name) = RustProvider::get_app_name(app)? {
+            Ok(Some(StartPhase::new(format!("./{}", name))))
         } else {
             Ok(None)
         }
@@ -154,6 +134,7 @@ impl RustProvider {
     fn parse_cargo_toml(app: &App) -> Result<Option<Manifest>> {
         if app.includes_file("Cargo.toml") {
             let cargo_toml: Manifest = app.read_toml("Cargo.toml").context("Reading Cargo.toml")?;
+
             return Ok(Some(cargo_toml));
         }
 
@@ -238,6 +219,124 @@ impl RustProvider {
         }
 
         Ok(false)
+    }
+
+    fn resolve_cargo_workspace(app: &App, env: &Environment) -> Result<Option<String>> {
+        if let Some(name) = env.get_config_variable("CARGO_WORKSPACE") {
+            return Ok(Some(name));
+        }
+
+        let manifest = RustProvider::parse_cargo_toml(app)?.context("Missing Cargo.toml")?;
+
+        if let Some(workspace) = manifest.workspace {
+            if let Some(binary) = RustProvider::find_binary_in_workspace(app, &workspace)? {
+                return Ok(Some(binary));
+            }
+        }
+
+        Ok(None)
+    }
+
+    fn find_binary_in_workspace(app: &App, workspace: &Workspace) -> Result<Option<String>> {
+        let find_binary = |member: &str| -> Result<Option<String>> {
+            let mut manifest = app.read_toml::<Manifest>(&format!("{}/Cargo.toml", member))?;
+
+            manifest.complete_from_path(&app.source.join(format!("{}/Cargo.toml", member)))?;
+
+            if let Some(package) = manifest.package {
+                if !manifest.bin.is_empty() || manifest.lib.is_none() {
+                    return Ok(Some(package.name));
+                }
+            }
+
+            Ok(None)
+        };
+
+        for default_member in workspace
+            .default_members
+            .iter()
+            .filter(|default_member| !workspace.exclude.contains(default_member))
+        {
+            // a member can have globs
+            if default_member.contains('*') || default_member.contains('?') {
+                for member in app.find_directories(default_member)? {
+                    if let Some(bin) = find_binary(&member.to_string_lossy())? {
+                        return Ok(Some(bin));
+                    }
+                }
+            } else if let Some(bin) = find_binary(default_member)? {
+                return Ok(Some(bin));
+            }
+        }
+
+        for member in workspace
+            .members
+            .iter()
+            .filter(|member| !workspace.exclude.contains(member))
+        {
+            // a member can have globs
+            if member.contains('*') || member.contains('?') {
+                for member in app.find_directories(member)? {
+                    if let Some(bin) = find_binary(&member.to_string_lossy())? {
+                        return Ok(Some(bin));
+                    }
+                }
+            } else if let Some(bin) = find_binary(member)? {
+                return Ok(Some(bin));
+            }
+        }
+
+        Ok(None)
+    }
+
+    fn get_build_phase(app: &App, env: &Environment) -> Result<BuildPhase> {
+        let mut build_cmd = "cargo build --release".to_string();
+
+        if let Some(target) = RustProvider::get_target(app, env)? {
+            if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
+                write!(build_cmd, " --package {} --target {}", workspace, target)?;
+
+                let mut build_phase = BuildPhase::new(build_cmd);
+
+                build_phase.add_cmd(format!(
+                    "cp target/{}/release/{name} {name}",
+                    target,
+                    name = workspace
+                ));
+
+                Ok(build_phase)
+            } else {
+                write!(build_cmd, " --target {}", target)?;
+
+                let mut build_phase = BuildPhase::new(build_cmd);
+
+                if let Some(name) = RustProvider::get_app_name(app)? {
+                    build_phase.add_cmd(format!(
+                        "cp target/{}/release/{name} {name}",
+                        target,
+                        name = name
+                    ));
+                }
+
+                Ok(build_phase)
+            }
+        } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
+            write!(build_cmd, " --package {}", workspace)?;
+
+            let mut build_phase = BuildPhase::new(build_cmd);
+
+            build_phase.add_cmd(format!("cp target/release/{name} {name}", name = workspace));
+
+            Ok(build_phase)
+        } else {
+            let mut build_phase = BuildPhase::new(build_cmd);
+
+            if let Some(name) = RustProvider::get_app_name(app)? {
+                build_phase.add_cmd(format!("cp target/release/{name} {name}", name = name));
+            }
+
+            Ok(build_phase)
+        }
     }
 }
 

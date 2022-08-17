@@ -477,6 +477,20 @@ fn test_rust_openssl() {
 }
 
 #[test]
+fn test_rust_cargo_workspaces() {
+    let name = simple_build("./examples/rust-cargo-workspaces");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from rust"));
+}
+
+#[test]
+fn test_rust_cargo_workspaces_glob() {
+    let name = simple_build("./examples/rust-cargo-workspaces-glob");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from rust"));
+}
+
+#[test]
 fn test_go() {
     let name = simple_build("./examples/go");
     let output = run_image(name, None);

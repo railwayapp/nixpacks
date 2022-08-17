@@ -60,6 +60,19 @@ fn test_rust_rocket_no_musl() {
 }
 
 #[test]
+fn test_rust_cargo_workspaces() {
+    let plan = simple_gen_plan("./examples/rust-cargo-workspaces");
+
+    assert_eq!(
+        plan.build.unwrap().cmds.unwrap()[0],
+        format!(
+            "cargo build --release --package binary --target {}-unknown-linux-musl",
+            ARCH
+        )
+    );
+}
+
+#[test]
 fn test_haskell_stack() {
     let plan = simple_gen_plan("./examples/haskell-stack");
     assert_eq!(
