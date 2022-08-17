@@ -10,6 +10,8 @@ const IGNORE: &[&str] = &[
     "rust-ring",
     "rust-openssl",
     "rust-custom-toolchain",
+    "rust-cargo-workspaces",
+    "rust-cargo-workspaces-glob",
     "ruby-no-version",
 ];
 
