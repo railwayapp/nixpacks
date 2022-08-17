@@ -77,7 +77,7 @@ impl Provider for HaskellStackProvider {
             .get(0)
             .ok_or_else(|| anyhow::anyhow!("Failed to get executable name"))?;
 
-        Ok(Some(StartPhase::new(format!("/root/.local/bin/{name}",))))
+        Ok(Some(StartPhase::new(format!("/root/.local/bin/{}", name))))
     }
 }
 

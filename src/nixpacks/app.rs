@@ -184,7 +184,7 @@ impl App {
     /// Get the path in the container to an asset defined in `static_assets`.
 
     pub fn asset_path(&self, name: &str) -> String {
-        format!("{ASSETS_DIR}{name}")
+        format!("{}{}", ASSETS_DIR, name)
     }
 }
 

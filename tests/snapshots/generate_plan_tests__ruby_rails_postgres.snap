@@ -1,0 +1,53 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "[version]",
+  "setup": {
+    "pkgs": [],
+    "libraries": [],
+    "apt_pkgs": [
+      "procps",
+      "libpq-dev"
+    ],
+    "cmds": [
+      "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh",
+      "rvm install 3.1.2",
+      "rvm --default use 3.1.2",
+      "gem install bundler:2.3.7",
+      "echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile"
+    ],
+    "baseImage": "[baseImage]"
+  },
+  "install": {
+    "cmds": [
+      "bundle install"
+    ],
+    "onlyIncludeFiles": [
+      "Gemfile*"
+    ],
+    "cacheDirectories": [
+      "/root/.bundle/cache"
+    ],
+    "paths": [
+      "/usr/local/rvm/rubies/3.1.2/bin",
+      "/usr/local/rvm/gems/3.1.2/bin",
+      "/usr/local/rvm/gems/3.1.2@global/bin"
+    ]
+  },
+  "build": {
+    "cmds": [
+      "bundle exec rake assets:precompile"
+    ]
+  },
+  "start": {
+    "cmd": "rake db:migrate && bundle exec bin/rails server -b 0.0.0.0 -p ${PORT:-3000}"
+  },
+  "variables": {
+    "BUNDLE_GEMFILE": "/app/Gemfile",
+    "GEM_HOME": "/usr/local/rvm/gems/3.1.2",
+    "GEM_PATH": "/usr/local/rvm/gems/3.1.2:/usr/local/rvm/gems/3.1.2@global"
+  },
+  "static_assets": {}
+}

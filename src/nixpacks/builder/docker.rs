@@ -85,7 +85,7 @@ impl Builder for DockerBuilder {
         // If printing the Dockerfile, don't write anything to disk
         if self.options.print_dockerfile {
             let dockerfile = self.create_dockerfile(plan, env);
-            println!("{dockerfile}");
+            println!("{}", dockerfile);
 
             return Ok(());
         }
@@ -223,9 +223,9 @@ impl DockerBuilder {
                     fs::create_dir_all(parent)
                         .context(format!("Creating parent directory for {}", name))?;
                     let mut file =
-                        File::create(path).context(format!("Creating asset file for {name}"))?;
+                        File::create(path).context(format!("Creating asset file for {}", name))?;
                     file.write_all(content.as_bytes())
-                        .context(format!("Writing asset {name}"))?;
+                        .context(format!("Writing asset {}", name))?;
                 }
             }
         }
@@ -323,7 +323,10 @@ impl DockerBuilder {
             let joined_paths = paths.join(":");
             (
                 format!("ENV PATH {}:$PATH", joined_paths),
-                format!("RUN printf '\\nPATH={joined_paths}:$PATH' >> /root/.profile"),
+                format!(
+                    "RUN printf '\\nPATH={}:$PATH' >> /root/.profile",
+                    joined_paths
+                ),
             )
         } else {
             ("".to_string(), "".to_string())
@@ -368,15 +371,15 @@ impl DockerBuilder {
             Some(run_image) => {
                 // RUN true to prevent a Docker bug https://github.com/moby/moby/issues/37965#issuecomment-426853382
                 format! {"
-                FROM {run_image}
-                WORKDIR {app_dir}
+                FROM {}
+                WORKDIR {}
                 COPY --from=0 /etc/ssl/certs /etc/ssl/certs
                 RUN true
-                {copy_cmd}
+                {}
             ",
-                    run_image=run_image,
-                    app_dir=app_dir,
-                    copy_cmd=get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir)
+                    run_image,
+                    app_dir,
+                    get_copy_from_command("0", &start_files.unwrap_or_default(), app_dir)
                 }
             }
             None => get_copy_command(
@@ -387,39 +390,52 @@ impl DockerBuilder {
         };
 
         let dockerfile = formatdoc! {"
-          FROM {base_image}
+                FROM {}
 
-          WORKDIR {app_dir}
+                WORKDIR {}
 
-          # Setup
-          {setup_copy_cmd}
-          RUN nix-env -if environment.nix
-          {apt_get_cmd}
-          {setup_cmd}
+                # Setup
+                {}
+                RUN nix-env -if environment.nix
+                {}
+                {}
           
-          {assets_copy_cmd}
+                {}
 
-          # Load environment variables
-          {args_string}
+                # Load environment variables
+                {}
 
-          # Install
-          {install_copy_cmd}
-          {install_cmd}
+                # Install
+                {}
+                {}
 
-          {build_path}
-          {run_path}
+                {}
+                {}
 
-          # Build
-          {build_copy_cmd}
-          {build_cmd}
+                # Build
+                {}
+                {}
 
-          # Start
-          {run_image_setup}
-          {start_cmd}
-        ",
-        base_image=setup_phase.base_image,
-        install_copy_cmd=get_copy_command(&install_files, app_dir),
-        build_copy_cmd=get_copy_command(&build_files, app_dir)};
+                # Start
+                {}
+                {}
+            ",
+            setup_phase.base_image,
+            app_dir,
+            setup_copy_cmd,
+            apt_get_cmd,
+            setup_cmd,
+            assets_copy_cmd,
+            args_string,
+            get_copy_command(&install_files, app_dir),
+            install_cmd,
+            build_path,
+            run_path,
+            get_copy_command(&build_files, app_dir),
+            build_cmd,
+            run_image_setup,
+            start_cmd
+        };
 
         dockerfile
     }
@@ -431,8 +447,11 @@ fn get_cache_mount(cache_key: &Option<String>, cache_directories: &Option<Vec<St
             .iter()
             .map(|dir| {
                 let sanitized_dir = dir.replace('~', "/root");
-                let sanitized_key = sanitize_cache_key(&format!("{cache_key}-{sanitized_dir}"));
-                format!("--mount=type=cache,id={sanitized_key},target={sanitized_dir}")
+                let sanitized_key = sanitize_cache_key(&format!("{}-{}", cache_key, sanitized_dir));
+                format!(
+                    "--mount=type=cache,id={},target={}",
+                    sanitized_key, sanitized_dir
+                )
             })
             .collect::<Vec<String>>()
             .join(" "),
