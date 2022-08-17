@@ -8,6 +8,7 @@ description = "Generate an OCI compliant image based off app source"
 readme = "README.md"
 homepage = "https://github.com/railwayapp/nixpacks"
 repository = "https://github.com/railwayapp/nixpacks"
+rust-version = "1.57"
 exclude = ["examples/", "docs/"]
 
 [[bin]]
@@ -25,13 +26,13 @@ members = ["test-helper"]
 
 [dependencies]
 anyhow = "1.0.58"
-clap = { version = "3.2.14", features = ["std"], default-features = false }
+clap = { version = "3.2.16", features = ["std"], default-features = false }
 colored = "2.0.0"
 globset = { default-features = false, version = "0.4.9" }
 walkdir = "2.3.2"
 indoc = "1.0.6"
 regex = "1.6.0"
-serde = { version = "1.0.140", default-features = false}
+serde = { version = "1.0.140", default-features = false }
 serde_json = "1.0.82"
 serde_yaml = "0.8.26"
 serde_with = { features = ["macros"], default-features = false, version = "1.14.0" }

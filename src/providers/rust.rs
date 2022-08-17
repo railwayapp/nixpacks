@@ -32,7 +32,7 @@ impl Provider for RustProvider {
         let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
 
         if let Some(target) = RustProvider::get_target(app, env)? {
-            rust_pkg = rust_pkg.set_override("targets", format!("[\"{target}\"]").as_str());
+            rust_pkg = rust_pkg.set_override("targets", &format!("[\"{}\"]", target));
         }
 
         let mut setup_phase =
@@ -61,11 +61,15 @@ impl Provider for RustProvider {
         let mut build_phase = match RustProvider::get_target(app, env)? {
             Some(target) => {
                 let mut build_phase =
-                    BuildPhase::new(format!("cargo build --release --target {target}"));
+                    BuildPhase::new(format!("cargo build --release --target {}", target));
 
                 if let Some(name) = RustProvider::get_app_name(app)? {
                     // Copy the binary out of the target directory
-                    build_phase.add_cmd(format!("cp target/{target}/release/{name} {name}"));
+                    build_phase.add_cmd(format!(
+                        "cp target/{}/release/{name} {name}",
+                        target,
+                        name = name
+                    ));
                 }
 
                 build_phase
@@ -75,7 +79,7 @@ impl Provider for RustProvider {
 
                 if let Some(name) = RustProvider::get_app_name(app)? {
                     // Copy the binary out of the target directory
-                    build_phase.add_cmd(format!("cp target/release/{name} {name}"));
+                    build_phase.add_cmd(format!("cp target/release/{name} {name}", name = name));
                 }
 
                 build_phase
@@ -99,15 +103,15 @@ impl Provider for RustProvider {
         if let Some(name) = name {
             let start_phase = match RustProvider::get_target(app, env)? {
                 Some(_) => {
-                    let binary_file = format!("./{name}");
-                    let mut start_phase = StartPhase::new(format!("./{name}"));
+                    let binary_file = format!("./{}", name);
+                    let mut start_phase = StartPhase::new(format!("./{}", name));
 
                     start_phase.run_in_slim_image();
                     start_phase.add_file_dependency(binary_file);
 
                     start_phase
                 }
-                None => StartPhase::new(format!("./{name}")),
+                None => StartPhase::new(format!("./{}", name)),
             };
 
             Ok(Some(start_phase))
@@ -169,15 +173,17 @@ impl RustProvider {
     // Get the rust package version by parsing the `rust-version` field in `Cargo.toml`
     fn get_rust_pkg(app: &App, env: &Environment) -> Result<Pkg> {
         if let Some(version) = env.get_config_variable("RUST_VERSION") {
-            return Ok(Pkg::new(
-                format!("rust-bin.stable.\"{}\".default", version).as_str(),
-            ));
+            return Ok(Pkg::new(&format!(
+                "rust-bin.stable.\"{}\".default",
+                version
+            )));
         }
 
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
-            return Ok(Pkg::new(
-                format!("(rust-bin.fromRustupToolchainFile ./{})", toolchain_file).as_str(),
-            ));
+            return Ok(Pkg::new(&format!(
+                "(rust-bin.fromRustupToolchainFile ./{})",
+                toolchain_file
+            )));
         }
 
         let pkg = match RustProvider::parse_cargo_toml(app)? {
