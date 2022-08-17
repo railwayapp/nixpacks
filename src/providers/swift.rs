@@ -85,7 +85,8 @@ impl Provider for SwiftProvider {
             "CC=clang++ swift build -c release --static-swift-stdlib".to_string(),
         );
         build_phase.add_cmd(format!(
-            "cp ./.build/release/{name} ./{name} && rm -rf ./.build"
+            "cp ./.build/release/{name} ./{name} && rm -rf ./.build",
+            name = name
         ));
         Ok(Some(build_phase))
     }

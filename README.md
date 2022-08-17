@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/railwayapp/bb/actions/workflows/ci.yml/badge.svg)](https://github.com/railwayapp/bb/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/nixpacks)](https://crates.io/crates/nixpacks)
+[![Rust: 1.57+](https://img.shields.io/badge/rust-1.57+-93450a)](https://blog.rust-lang.org/2021/12/02/Rust-1.57.0.html)
 
 **App source + Nix packages + Docker = Image**
 

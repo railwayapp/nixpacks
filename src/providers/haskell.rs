@@ -77,7 +77,8 @@ impl Provider for HaskellStackProvider {
             .ok_or_else(|| anyhow::anyhow!("Failed to get executable name"))?;
 
         Ok(Some(LegacyStartPhase::new(format!(
-            "/root/.local/bin/{name}",
+            "/root/.local/bin/{}",
+            name
         ))))
     }
 }

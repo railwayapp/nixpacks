@@ -42,9 +42,9 @@ pub fn create_nix_expression(phase: &Phase) -> String {
     // In the future, we will probably want a generic way for providers to set variables based off Nix package locations
     let openssl_dirs = if libraries.contains("openssl") {
         formatdoc! {"
-      export OPENSSL_DIR=\"${{openssl.dev}}\"
-      export OPENSSL_LIB_DIR=\"${{openssl.out}}/lib\"
-    "}
+          export OPENSSL_DIR=\"${{openssl.dev}}\"
+          export OPENSSL_LIB_DIR=\"${{openssl.out}}/lib\"
+        "}
     } else {
         String::new()
     };
@@ -53,13 +53,13 @@ pub fn create_nix_expression(phase: &Phase) -> String {
     let nix_expression = formatdoc! {"
             {{ }}:
 
-            let pkgs = {pkg_import} {{ overlays = [ {overlays_string} ]; }};
+            let pkgs = {} {{ overlays = [ {} ]; }};
             in with pkgs;
               let
-                APPEND_LIBRARY_PATH = \"${{lib.makeLibraryPath [ {libraries} ] }}\";
+                APPEND_LIBRARY_PATH = \"${{lib.makeLibraryPath [ {} ] }}\";
                 myLibraries = writeText \"libraries\" ''
                   export LD_LIBRARY_PATH=\"${{APPEND_LIBRARY_PATH}}:$LD_LIBRARY_PATH\"
-                  {openssl_dirs}
+                  {}
                 '';
               in
                 buildEnv {{
@@ -69,10 +69,16 @@ pub fn create_nix_expression(phase: &Phase) -> String {
                       mkdir -p $out/etc/profile.d
                       cp ${{myLibraries}} $out/etc/profile.d/{name}.sh
                     '')
-                    {nixpkgs}
+                    {}
                   ];
                 }}
-        "};
+        ",
+        pkg_import,
+        overlays_string,
+        libraries,
+        openssl_dirs,
+        nixpkgs
+    };
 
     nix_expression
 }

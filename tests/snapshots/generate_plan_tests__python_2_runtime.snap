@@ -1,0 +1,24 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "[version]",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "python27"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "[baseImage]"
+  },
+  "install": {},
+  "build": {},
+  "start": {
+    "cmd": "python main.py"
+  },
+  "variables": {},
+  "static_assets": {}
+}

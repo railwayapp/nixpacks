@@ -1,0 +1,43 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "[version]",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "python38"
+      },
+      {
+        "name": "postgresql"
+      },
+      {
+        "name": "gcc"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "[baseImage]"
+  },
+  "install": {
+    "cmds": [
+      "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"
+    ],
+    "onlyIncludeFiles": [
+      "requirements.txt"
+    ],
+    "cacheDirectories": [
+      "/root/.cache/pip"
+    ],
+    "paths": [
+      "/opt/venv/bin"
+    ]
+  },
+  "build": {},
+  "start": {
+    "cmd": "python manage.py migrate && gunicorn mysite.wsgi"
+  },
+  "variables": {},
+  "static_assets": {}
+}

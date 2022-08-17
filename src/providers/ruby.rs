@@ -113,7 +113,7 @@ impl Provider for RubyProvider {
             ),
             (
                 "GEM_HOME".to_string(),
-                format!("/usr/local/rvm/gems/{ruby_version}"),
+                format!("/usr/local/rvm/gems/{}", ruby_version),
             ),
         ])))
     }
