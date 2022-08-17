@@ -112,7 +112,7 @@ impl BuildPlan {
                 )
             })
             .collect::<Vec<_>>()
-            .join(format!("\n{hor_sep}\n").as_str());
+            .join(format!("\n{}\n", hor_sep).as_str());
 
         let start_row = print_row(
             "Start",
@@ -125,12 +125,17 @@ impl BuildPlan {
 
         Ok(formatdoc! {"
 
-          {top_box}
-          {phase_rows}
-          {hor_sep}
-          {start_row}
-          {bottom_box}
+          {}
+          {}
+          {}
+          {}
+          {}
           ",
+          top_box,
+          phase_rows,
+          hor_sep,
+          start_row,
+          bottom_box
         })
     }
 
@@ -210,7 +215,8 @@ fn print_row(
 
     for line in list_lines.iter().skip(1) {
         output = format!(
-            "{output}\n{}{}{}{}{}",
+            "{}\n{}{}{}{}{}",
+            output,
             left_edge.cyan().dimmed(),
             console::pad_str("", FIRST_COLUMN_WIDTH, console::Alignment::Left, None),
             middle,

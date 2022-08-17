@@ -38,7 +38,7 @@ impl ImageBuilder for DockerImageBuilder {
 
         // If printing the Dockerfile, don't write anything to disk
         if self.options.print_dockerfile {
-            println!("{dockerfile}");
+            println!("{}", dockerfile);
             return Ok(());
         }
 

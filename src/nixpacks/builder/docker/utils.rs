@@ -9,8 +9,11 @@ pub fn get_cache_mount(
             .iter()
             .map(|dir| {
                 let sanitized_dir = dir.replace('~', "/root");
-                let sanitized_key = sanitize_cache_key(&format!("{cache_key}-{sanitized_dir}"));
-                format!("--mount=type=cache,id={sanitized_key},target={sanitized_dir}")
+                let sanitized_key = sanitize_cache_key(&format!("{}-{}", cache_key, sanitized_dir));
+                format!(
+                    "--mount=type=cache,id={},target={}",
+                    sanitized_key, sanitized_dir
+                )
             })
             .collect::<Vec<String>>()
             .join(" "),

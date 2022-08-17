@@ -77,7 +77,8 @@ pub fn create_nix_expression(phase: &Phase) -> String {
         overlays_string,
         libraries,
         openssl_dirs,
-        nixpkgs
+        nixpkgs,
+        name=name,
     };
 
     nix_expression

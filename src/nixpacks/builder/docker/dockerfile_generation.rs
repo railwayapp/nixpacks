@@ -137,7 +137,8 @@ impl DockerfileGenerator for BuildPlan {
                 match phase.name.as_str() {
                     // We want to load the variables immediately after the setup phase
                     "setup" => Ok(format!(
-                        "{phase_dockerfile}\n# load variables\n{args_string}\n"
+                        "{}\n# load variables\n{}\n",
+                        phase_dockerfile, args_string
                     )),
                     _ => Ok(phase_dockerfile),
                 }
@@ -161,7 +162,12 @@ impl DockerfileGenerator for BuildPlan {
             {dockerfile_phases_str}
 
             {start_phase_str}
-        "};
+        ", 
+        base_image=base_image,
+        APP_DIR=APP_DIR,
+        assets_copy_cmd=assets_copy_cmd,
+        dockerfile_phases_str=dockerfile_phases_str,
+        start_phase_str=start_phase_str};
 
         Ok(dockerfile)
     }
@@ -197,9 +203,9 @@ impl BuildPlan {
                     fs::create_dir_all(parent)
                         .context(format!("Creating parent directory for {}", name))?;
                     let mut file =
-                        File::create(path).context(format!("Creating asset file for {name}"))?;
+                        File::create(path).context(format!("Creating asset file for {}", name))?;
                     file.write_all(content.as_bytes())
-                        .context(format!("Writing asset {name}"))?;
+                        .context(format!("Writing asset {}", name))?;
                 }
             }
         }
@@ -217,7 +223,7 @@ impl DockerfileGenerator for StartPhase {
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
             Some(cmd) => {
-                format!("CMD {cmd}")
+                format!("CMD {}", cmd)
             }
             None => "".to_string(),
         };
@@ -239,13 +245,18 @@ impl DockerfileGenerator for StartPhase {
                   RUN true
                   {copy_cmd}
                   {start_cmd}
-                "}
+                ",
+                run_image=run_image,
+                APP_DIR=APP_DIR,
+                copy_cmd=copy_cmd,
+                start_cmd=start_cmd,}
             }
             None => {
                 formatdoc! {"
                   # start
-                  {start_cmd}
-                "}
+                  {}
+                ",
+                start_cmd}
             }
         };
 
@@ -273,7 +284,10 @@ impl DockerfileGenerator for Phase {
             let joined_paths = paths.join(":");
             (
                 format!("ENV PATH {}:$PATH", joined_paths),
-                format!("RUN printf '\\nPATH={joined_paths}:$PATH' >> /root/.profile"),
+                format!(
+                    "RUN printf '\\nPATH={}:$PATH' >> /root/.profile",
+                    joined_paths
+                ),
             )
         } else {
             ("".to_string(), "".to_string())
@@ -283,7 +297,10 @@ impl DockerfileGenerator for Phase {
         let install_nix_pkgs_str = if self.uses_nix() {
             let nix_file = output.get_relative_path(format!("{}.nix", phase.name));
             let nix_file_path = nix_file.to_str().unwrap();
-            format!("COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path}")
+            format!(
+                "COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path}",
+                nix_file_path = nix_file_path
+            )
         } else {
             "".to_string()
         };
@@ -334,7 +351,10 @@ impl DockerfileGenerator for Phase {
         let dockerfile = formatdoc! {"
             # {name} phase
             {dockerfile_stmts}
-        ", name=phase.name};
+        ", 
+          name=phase.name,
+          dockerfile_stmts=dockerfile_stmts
+        };
 
         Ok(dockerfile)
     }
