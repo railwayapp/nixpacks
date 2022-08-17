@@ -3,44 +3,52 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "nodejs"
-      },
-      {
-        "name": "npm-8_x",
-        "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {
-    "cmds": [
-      "npm ci"
-    ],
-    "cacheDirectories": [
-      "/root/.npm"
-    ]
-  },
-  "build": {
-    "cmds": [
-      "npm run build"
-    ],
-    "cacheDirectories": [
-      "node_modules/.cache"
-    ]
-  },
-  "start": {
-    "cmd": "npm run start"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {
     "CI": "true",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
   },
-  "static_assets": {}
+  "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "npm ci"
+      ],
+      "cacheDirectories": [
+        "/root/.npm"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "nodejs"
+        },
+        {
+          "name": "npm-8_x",
+          "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "npm run build"
+      ],
+      "cacheDirectories": [
+        "node_modules/.cache"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "npm run start"
+  }
 }

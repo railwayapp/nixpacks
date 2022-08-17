@@ -6,14 +6,17 @@ use std::{
 use self::nx::ProjectJson;
 
 use super::Provider;
-use crate::nixpacks::{
-    app::App,
-    environment::{Environment, EnvironmentVariables},
-    nix::pkg::Pkg,
-    plan::{
-        phase::{Phase, StartPhase},
-        BuildPlan,
+use crate::{
+    nixpacks::{
+        app::App,
+        environment::{Environment, EnvironmentVariables},
+        nix::pkg::Pkg,
+        plan::{
+            phase::{Phase, StartPhase},
+            BuildPlan,
+        },
     },
+    providers::node::nx::NxJson,
 };
 use anyhow::bail;
 use anyhow::Result;
@@ -102,7 +105,7 @@ impl Provider for NodeProvider {
         build.add_cache_directory((*NODE_MODULES_CACHE_DIR).to_string());
 
         // Start
-        let start = NodeProvider::get_start_cmd(app)?.map(StartPhase::new);
+        let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
 
         let mut plan = BuildPlan::new(vec![setup, install, build], start);
         plan.add_variables(NodeProvider::get_node_environment_variables());

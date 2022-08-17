@@ -129,7 +129,7 @@ fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
     create_docker_image(
         path,
         env_vars,
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: true,
             ..Default::default()
         },

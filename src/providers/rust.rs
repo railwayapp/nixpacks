@@ -58,7 +58,7 @@ impl Provider for RustProvider {
         Ok(Some(setup_phase))
     }
 
-    fn build(&self, app: &App, env: &Environment) -> Result<Option<BuildPhase>> {
+    fn build(&self, app: &App, env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         let mut build_phase = RustProvider::get_build_phase(app, env)?;
 
         build_phase.add_cache_directory((*CARGO_GIT_CACHE_DIR).to_string());
@@ -72,17 +72,17 @@ impl Provider for RustProvider {
         Ok(Some(build_phase))
     }
 
-    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, app: &App, env: &Environment) -> Result<Option<LegacyStartPhase>> {
         if (RustProvider::get_target(app, env)?).is_some() {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-                let mut start_phase = StartPhase::new(format!("./{}", workspace));
+                let mut start_phase = LegacyStartPhase::new(format!("./{}", workspace));
 
                 start_phase.run_in_slim_image();
                 start_phase.add_file_dependency(format!("./{}", workspace));
 
                 Ok(Some(start_phase))
             } else if let Some(name) = RustProvider::get_app_name(app)? {
-                let mut start_phase = StartPhase::new(format!("./{}", name));
+                let mut start_phase = LegacyStartPhase::new(format!("./{}", name));
 
                 start_phase.run_in_slim_image();
                 start_phase.add_file_dependency(format!("./{}", name));
@@ -92,9 +92,9 @@ impl Provider for RustProvider {
                 Ok(None)
             }
         } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-            Ok(Some(StartPhase::new(format!("./{}", workspace))))
+            Ok(Some(LegacyStartPhase::new(format!("./{}", workspace))))
         } else if let Some(name) = RustProvider::get_app_name(app)? {
-            Ok(Some(StartPhase::new(format!("./{}", name))))
+            Ok(Some(LegacyStartPhase::new(format!("./{}", name))))
         } else {
             Ok(None)
         }
@@ -289,14 +289,14 @@ impl RustProvider {
         Ok(None)
     }
 
-    fn get_build_phase(app: &App, env: &Environment) -> Result<BuildPhase> {
+    fn get_build_phase(app: &App, env: &Environment) -> Result<LegacyBuildPhase> {
         let mut build_cmd = "cargo build --release".to_string();
 
         if let Some(target) = RustProvider::get_target(app, env)? {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
                 write!(build_cmd, " --package {} --target {}", workspace, target)?;
 
-                let mut build_phase = BuildPhase::new(build_cmd);
+                let mut build_phase = LegacyBuildPhase::new(build_cmd);
 
                 build_phase.add_cmd(format!(
                     "cp target/{}/release/{name} {name}",
@@ -308,7 +308,7 @@ impl RustProvider {
             } else {
                 write!(build_cmd, " --target {}", target)?;
 
-                let mut build_phase = BuildPhase::new(build_cmd);
+                let mut build_phase = LegacyBuildPhase::new(build_cmd);
 
                 if let Some(name) = RustProvider::get_app_name(app)? {
                     build_phase.add_cmd(format!(
@@ -323,13 +323,13 @@ impl RustProvider {
         } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
             write!(build_cmd, " --package {}", workspace)?;
 
-            let mut build_phase = BuildPhase::new(build_cmd);
+            let mut build_phase = LegacyBuildPhase::new(build_cmd);
 
             build_phase.add_cmd(format!("cp target/release/{name} {name}", name = workspace));
 
             Ok(build_phase)
         } else {
-            let mut build_phase = BuildPhase::new(build_cmd);
+            let mut build_phase = LegacyBuildPhase::new(build_cmd);
 
             if let Some(name) = RustProvider::get_app_name(app)? {
                 build_phase.add_cmd(format!("cp target/release/{name} {name}", name = name));

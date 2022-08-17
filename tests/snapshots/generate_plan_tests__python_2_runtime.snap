@@ -3,22 +3,31 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "python27"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {},
-  "build": {},
-  "start": {
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
+  "phases": [
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "python27"
+        }
+      ]
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ]
+    }
+  ],
+  "startPhase": {
     "cmd": "python main.py"
-  },
-  "variables": {},
-  "static_assets": {}
+  }
 }
