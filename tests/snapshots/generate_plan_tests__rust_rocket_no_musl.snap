@@ -9,8 +9,13 @@ expression: plan
     "NIXPACKS_NO_MUSL": "1",
     "ROCKET_ADDRESS": "0.0.0.0"
   },
-  "staticAssets": {},
   "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
     {
       "name": "setup",
       "nixPackages": [
@@ -22,15 +27,8 @@ expression: plan
           "overlay": "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
         }
       ],
-      "nixLibraries": [],
       "aptPackages": [
         "binutils"
-      ]
-    },
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
       ]
     },
     {
@@ -39,8 +37,8 @@ expression: plan
         "install"
       ],
       "commands": [
-        "cargo build --release",
-        "cp target/release/rocket rocket"
+        "mkdir -p bin",
+        "cp target/release/rocket bin/rocket"
       ],
       "cacheDirectories": [
         "/root/.cargo/git",
@@ -50,6 +48,6 @@ expression: plan
     }
   ],
   "startPhase": {
-    "cmd": "./rocket"
+    "cmd": "./bin/rocket"
   }
 }

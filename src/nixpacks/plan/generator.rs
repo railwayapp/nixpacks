@@ -85,7 +85,11 @@ impl NixpacksBuildPlanGenerator<'_> {
 
         if let Some(provider) = self.matched_provider {
             if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
-                let build_plan = BuildPlan::apply_config(&provider_build_plan, &config);
+                let mut build_plan = BuildPlan::apply_config(&provider_build_plan, &config);
+
+                if !environment.get_variable_names().is_empty() {
+                    build_plan.add_variables(Environment::clone_variables(environment));
+                }
 
                 return Ok(build_plan);
             }

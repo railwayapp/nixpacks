@@ -12,9 +12,10 @@ fn test_custom_rust_version() {
     assert_eq!(
         build.cmds,
         Some(vec![
+            format!("mkdir -p bin"),
             format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
             format!(
-                "cp target/{}-unknown-linux-musl/release/rust-custom-version rust-custom-version",
+                "cp target/{}-unknown-linux-musl/release/rust-custom-version bin/rust-custom-version",
                 ARCH
             )
         ])
@@ -39,15 +40,16 @@ fn test_rust_rocket() {
     assert_eq!(
         build.cmds,
         Some(vec![
+            format!("mkdir -p bin"),
             format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
             format!(
-                "cp target/{}-unknown-linux-musl/release/rocket rocket",
+                "cp target/{}-unknown-linux-musl/release/rocket bin/rocket",
                 ARCH
             )
         ])
     );
     assert!(start.cmd.is_some());
-    assert_eq!(start.clone().cmd.unwrap(), "./rocket".to_string());
+    assert_eq!(start.clone().cmd.unwrap(), "./bin/rocket".to_string());
     assert!(start.run_image.is_some());
 }
 
@@ -68,7 +70,7 @@ fn test_rust_cargo_workspaces() {
     let build = plan.get_phase("build").unwrap();
 
     assert_eq!(
-        build.clone().cmds.unwrap()[0],
+        build.clone().cmds.unwrap()[1],
         format!(
             "cargo build --release --package binary --target {}-unknown-linux-musl",
             ARCH

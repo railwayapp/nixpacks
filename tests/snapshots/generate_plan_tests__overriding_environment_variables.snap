@@ -7,7 +7,7 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "CI": "true",
-    "NODE_ENV": "production",
+    "NODE_ENV": "test",
     "NPM_CONFIG_PRODUCTION": "false"
   },
   "phases": [
