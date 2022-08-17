@@ -1,0 +1,45 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "[version]",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "stack"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [
+      "libgmp-dev",
+      "gcc",
+      "binutils",
+      "make",
+      "zlib1g-dev"
+    ],
+    "baseImage": "[baseImage]"
+  },
+  "install": {
+    "cmds": [
+      "stack setup"
+    ],
+    "cacheDirectories": [
+      "/root/.stack"
+    ]
+  },
+  "build": {
+    "cmds": [
+      "stack install"
+    ],
+    "cacheDirectories": [
+      "/root/.stack",
+      ".stack-work"
+    ]
+  },
+  "start": {
+    "cmd": "/root/.local/bin/haskell-stack-exe"
+  },
+  "variables": {},
+  "static_assets": {}
+}

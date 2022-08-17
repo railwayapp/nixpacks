@@ -1,3 +1,23 @@
+#![warn(clippy::pedantic)]
+#![allow(
+    // Allowed as they are too pedantic.
+    clippy::cast_possible_truncation,
+    clippy::unreadable_literal,
+    clippy::cast_possible_wrap,
+    clippy::wildcard_imports,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss,
+    clippy::too_many_lines,
+    clippy::doc_markdown,
+    clippy::cast_lossless,
+    clippy::unused_self,
+    clippy::module_name_repetitions,
+    clippy::must_use_candidate,
+    // TODO: Remove when everything is documented.
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+)]
+
 use crate::nixpacks::{
     app::App,
     builder::{
@@ -56,7 +76,7 @@ pub fn generate_build_plan(
     let app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
 
-    let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.to_owned());
+    let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
     let plan = generator.generate_plan(&app, &environment)?;
 
     Ok(plan)
@@ -71,11 +91,11 @@ pub fn create_docker_image(
     let app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
 
-    let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.to_owned());
+    let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
     let plan = generator.generate_plan(&app, &environment)?;
 
     let logger = Logger::new();
-    let builder = DockerBuilder::new(logger, build_options.to_owned());
+    let builder = DockerBuilder::new(logger, build_options.clone());
     builder.create_image(app.source.to_str().unwrap(), &plan, &environment)?;
 
     Ok(())

@@ -39,7 +39,7 @@ impl Provider for RustProvider {
             SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
 
         // Include the rust toolchain file so we can install that rust version with Nix
-        if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app)? {
+        if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
             setup_phase.add_file_dependency(toolchain_file);
         }
 
@@ -86,12 +86,12 @@ impl Provider for RustProvider {
             }
         };
 
-        build_phase.add_cache_directory(CARGO_GIT_CACHE_DIR.to_string());
-        build_phase.add_cache_directory(CARGO_REGISTRY_CACHE_DIR.to_string());
+        build_phase.add_cache_directory((*CARGO_GIT_CACHE_DIR).to_string());
+        build_phase.add_cache_directory((*CARGO_REGISTRY_CACHE_DIR).to_string());
 
         if RustProvider::get_app_name(app)?.is_some() {
             // Cache target directory
-            build_phase.add_cache_directory(CARGO_TARGET_CACHE_DIR.to_string());
+            build_phase.add_cache_directory((*CARGO_TARGET_CACHE_DIR).to_string());
         }
 
         Ok(Some(build_phase))
@@ -160,13 +160,13 @@ impl RustProvider {
         Ok(None)
     }
 
-    fn get_rust_toolchain_file(app: &App) -> Result<Option<String>> {
+    fn get_rust_toolchain_file(app: &App) -> Option<String> {
         if app.includes_file("rust-toolchain") {
-            Ok(Some("rust-toolchain".to_string()))
+            Some("rust-toolchain".to_string())
         } else if app.includes_file("rust-toolchain.toml") {
-            Ok(Some("rust-toolchain.toml".to_string()))
+            Some("rust-toolchain.toml".to_string())
         } else {
-            Ok(None)
+            None
         }
     }
 
@@ -179,7 +179,7 @@ impl RustProvider {
             )));
         }
 
-        if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app)? {
+        if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
             return Ok(Pkg::new(&format!(
                 "(rust-bin.fromRustupToolchainFile ./{})",
                 toolchain_file
@@ -187,17 +187,17 @@ impl RustProvider {
         }
 
         let pkg = match RustProvider::parse_cargo_toml(app)? {
-            Some(toml_file) => toml_file
-                .package
-                .map(|package| {
-                    package
-                        .rust_version
-                        .map(|version| {
-                            Pkg::new(&format!("rust-bin.stable.\"{}\".default", version))
-                        })
-                        .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE))
-                })
-                .unwrap_or_else(|| Pkg::new(DEFAULT_RUST_PACKAGE)),
+            Some(toml_file) => toml_file.package.map_or_else(
+                || Pkg::new(DEFAULT_RUST_PACKAGE),
+                |package| {
+                    package.rust_version.map_or_else(
+                        || Pkg::new(DEFAULT_RUST_PACKAGE),
+                        |version| {
+                            Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str())
+                        },
+                    )
+                },
+            ),
             None => Pkg::new(DEFAULT_RUST_PACKAGE),
         };
 
@@ -209,7 +209,7 @@ impl RustProvider {
             return Ok(false);
         }
 
-        if RustProvider::get_rust_toolchain_file(app)?.is_some() {
+        if RustProvider::get_rust_toolchain_file(app).is_some() {
             return Ok(false);
         }
 

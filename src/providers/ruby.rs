@@ -23,7 +23,7 @@ impl Provider for RubyProvider {
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
         let mut pkgs = vec![];
         if app.includes_file("package.json") {
-            pkgs = NodeProvider::get_nix_packages(app, env)?
+            pkgs = NodeProvider::get_nix_packages(app, env)?;
         }
         let mut setup_phase = SetupPhase::new(pkgs);
         setup_phase.add_apt_pkgs(vec!["procps".to_string()]);
@@ -48,7 +48,7 @@ impl Provider for RubyProvider {
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let mut install_phase = InstallPhase::default();
         install_phase.add_file_dependency("Gemfile*".to_string());
-        install_phase.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
+        install_phase.add_cache_directory((*BUNDLE_CACHE_DIR).to_string());
 
         install_phase.add_cmd("bundle install".to_string());
 
@@ -66,9 +66,9 @@ impl Provider for RubyProvider {
                 .unwrap_or_default()
                 .insert(0, NodeProvider::get_install_command(app));
 
-            for file in ["package.json", "package-lock.json"].iter() {
+            for file in &["package.json", "package-lock.json"] {
                 if app.includes_file(file) {
-                    install_phase.add_file_dependency(file.to_string());
+                    install_phase.add_file_dependency((*file).to_string());
                 }
             }
         }

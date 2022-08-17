@@ -24,7 +24,7 @@ impl Provider for ClojureProvider {
 
     fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         let mut install_phase = InstallPhase::new("".to_string());
-        install_phase.add_cache_directory(LEIN_CACHE_DIR.to_string());
+        install_phase.add_cache_directory((*LEIN_CACHE_DIR).to_string());
         Ok(Some(install_phase))
     }
 
@@ -41,9 +41,10 @@ impl Provider for ClojureProvider {
             .to_lowercase()
             .contains("[lein-ring ");
 
-        let build_cmd = match has_lein_ring_plugin {
-            true => "lein ring uberjar",
-            false => "lein uberjar",
+        let build_cmd = if has_lein_ring_plugin {
+            "lein ring uberjar"
+        } else {
+            "lein uberjar"
         };
 
         // based on project config, uberjar can be created under ./target/uberjar or ./target, This ensure file will be found on the same place whatevery the project config is
@@ -74,20 +75,20 @@ impl ClojureProvider {
 
         match custom_version {
             Some(v) => Ok(v),
-            None => Ok(DEFAULT_JDK_PKG_NAME.to_string()),
+            None => Ok((*DEFAULT_JDK_PKG_NAME).to_string()),
         }
     }
 
-    fn parse_custom_version(custom_version: String) -> Result<String> {
+    fn parse_custom_version(custom_version: &str) -> Result<String> {
         // Regex for reading JDK versions (e.g. 8 or 11 or latest)
         let jdk_regex = Regex::new(r"^([0-9][0-9]?|latest)$")?;
 
         // Capture matches
-        let matches = jdk_regex.captures(custom_version.as_str().trim());
+        let matches = jdk_regex.captures(custom_version.trim());
 
         // If no matches, just use default
         if matches.is_none() {
-            return Ok(DEFAULT_JDK_PKG_NAME.to_string());
+            return Ok((*DEFAULT_JDK_PKG_NAME).to_string());
         }
 
         let matches = matches.unwrap();
@@ -103,7 +104,7 @@ impl ClojureProvider {
 
     pub fn get_nix_jdk_package(app: &App, env: &Environment) -> Result<Pkg> {
         let custom_version = ClojureProvider::get_custom_version(app, env)?;
-        let parsed_version = ClojureProvider::parse_custom_version(custom_version)?;
+        let parsed_version = ClojureProvider::parse_custom_version(&custom_version)?;
 
         let pkg_name = match parsed_version.as_str() {
             "latest" => "jdk",
