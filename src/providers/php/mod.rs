@@ -113,9 +113,9 @@ impl PhpProvider {
 
     fn static_assets() -> StaticAssets {
         static_asset_list! {
-            "nginx.template.conf" => include_str!("php/nginx.template.conf"),
-            "transform-config.pl" => include_str!("php/transform-config.pl"),
-            "php-fpm.conf" => include_str!("php/php-fpm.conf")
+            "nginx.template.conf" => include_str!("nginx.template.conf"),
+            "transform-config.pl" => include_str!("transform-config.pl"),
+            "php-fpm.conf" => include_str!("php-fpm.conf")
         }
     }
 
