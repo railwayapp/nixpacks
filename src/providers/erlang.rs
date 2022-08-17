@@ -14,8 +14,6 @@ use serde::{Deserialize, Serialize};
 use erl_tokenize::tokens::AtomToken;
 use erl_tokenize::Token::{self, Atom};
 use erl_tokenize::Tokenizer;
-use std::fs::File;
-use std::io::Read;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct ErlangTasks {}
@@ -44,7 +42,7 @@ impl Provider for ErlangProvider {
 
         if let Some(rebar_file) = app.find_files("rebar.config")?.get(0) {
             if let Ok(Some(name)) =
-                get_release_name_from_rebar_config(&rebar_file.to_string_lossy())
+                get_release_name_from_rebar_config(app, &rebar_file.to_string_lossy())
             {
                 let start_phase = StartPhase::new(format!(
                     "./_build/default/rel/{}/bin/{} foreground",
@@ -61,11 +59,8 @@ impl Provider for ErlangProvider {
     }
 }
 
-fn get_release_name_from_rebar_config(path: &str) -> Result<Option<String>, Error> {
-    let mut file = File::open(path)?;
-    let mut src = String::new();
-    file.read_to_string(&mut src)?;
-
+fn get_release_name_from_rebar_config(app: &App, path: &str) -> Result<Option<String>, Error> {
+    let src = app.read_file(path)?;
     let tokenizer = Tokenizer::new(&src);
     let release_name_atom = tokenizer
         .filter(|t| matches!(t, Ok(Atom(_))))

@@ -19,16 +19,16 @@ expression: plan
   },
   "install": {
     "cmds": [
-      "rebar3 get-deps"
+      "rebar3 as prod get-deps"
     ]
   },
   "build": {
     "cmds": [
-      "rebar3 release"
+      "rebar3 as prod release"
     ]
   },
   "start": {
-    "cmd": "./_build/default/rel/nixpacks_sample/bin/nixpacks_sample foreground"
+    "cmd": "./_build/prod/rel/nixpacks_sample/bin/nixpacks_sample foreground"
   },
   "variables": {},
   "static_assets": {}
