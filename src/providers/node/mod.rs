@@ -321,22 +321,9 @@ impl NodeProvider {
     }
 
     pub fn uses_node_dependency(app: &App, dependency: &str) -> bool {
-        let file_names = vec![
-            "package.json",
-            "yarn.lock",
-            "pnpm-lock.yaml",
-            "package-lock.json",
-            "bun.lockb",
-        ];
-        for file_name in file_names {
-            if app.includes_file(file_name) {
-                let package_json = app.read_file(file_name).unwrap_or_default();
-                if package_json.contains(dependency) {
-                    return true;
-                }
-            }
-        }
-        false
+        NodeProvider::get_all_deps(app)
+            .unwrap_or_default()
+            .contains(dependency)
     }
 
     pub fn uses_puppeteer(app: &App) -> bool {
