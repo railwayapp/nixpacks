@@ -92,7 +92,7 @@ impl RustProvider {
 
                 build.add_cmd(build_cmd);
                 build.add_cmd(format!(
-                    "cp target/{}/release/{name} bin/{name}",
+                    "cp target/{}/release/{name} bin",
                     target,
                     name = workspace
                 ));
@@ -102,7 +102,7 @@ impl RustProvider {
                 if let Some(name) = RustProvider::get_app_name(app)? {
                     build.add_cmd(build_cmd);
                     build.add_cmd(format!(
-                        "cp target/{}/release/{name} bin/{name}",
+                        "cp target/{}/release/{name} bin",
                         target,
                         name = name
                     ));
@@ -112,12 +112,9 @@ impl RustProvider {
             write!(build_cmd, " --package {}", workspace)?;
             build.add_cmd(build_cmd);
 
-            build.add_cmd(format!(
-                "cp target/release/{name} bin/{name}",
-                name = workspace
-            ));
+            build.add_cmd(format!("cp target/release/{name} bin", name = workspace));
         } else if let Some(name) = RustProvider::get_app_name(app)? {
-            build.add_cmd(format!("cp target/release/{name} bin/{name}", name = name));
+            build.add_cmd(format!("cp target/release/{name} bin", name = name));
         }
 
         build.add_cache_directory((*CARGO_GIT_CACHE_DIR).to_string());
@@ -134,13 +131,13 @@ impl RustProvider {
     fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if (RustProvider::get_target(app, env)?).is_some() {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-                let mut start = StartPhase::new(format!("./bin/{}", workspace));
+                let mut start = StartPhase::new(format!("./{}", workspace));
                 start.run_in_slim_image();
                 start.add_file_dependency(format!("./bin/{}", workspace));
 
                 Ok(Some(start))
             } else if let Some(name) = RustProvider::get_app_name(app)? {
-                let mut start = StartPhase::new(format!("./bin/{}", name));
+                let mut start = StartPhase::new(format!("./{}", name));
                 start.run_in_slim_image();
                 start.add_file_dependency(format!("./bin/{}", name));
 
