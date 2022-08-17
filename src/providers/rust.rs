@@ -7,7 +7,6 @@ use crate::nixpacks::{
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
     plan::{
-        legacy_phase::{LegacyBuildPhase, LegacySetupPhase, LegacyStartPhase},
         phase::{Phase, StartPhase},
         BuildPlan,
     },
@@ -117,10 +116,8 @@ impl RustProvider {
                 "cp target/release/{name} bin/{name}",
                 name = workspace
             ));
-        } else {
-            if let Some(name) = RustProvider::get_app_name(app)? {
-                build.add_cmd(format!("cp target/release/{name} bin/{name}", name = name));
-            }
+        } else if let Some(name) = RustProvider::get_app_name(app)? {
+            build.add_cmd(format!("cp target/release/{name} bin/{name}", name = name));
         }
 
         build.add_cache_directory((*CARGO_GIT_CACHE_DIR).to_string());
