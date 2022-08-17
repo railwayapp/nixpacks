@@ -10,18 +10,7 @@ expression: plan
     "ASPNETCORE_URLS": "http://0.0.0.0:3000",
     "DOTNET_ROOT": "/nix/var/nix/profiles/default/"
   },
-  "staticAssets": {},
   "phases": [
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "dotnet-sdk"
-        }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
-    },
     {
       "name": "install",
       "dependsOn": [
@@ -29,6 +18,14 @@ expression: plan
       ],
       "commands": [
         "dotnet restore"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "dotnet-sdk"
+        }
       ]
     },
     {

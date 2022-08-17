@@ -10,12 +10,9 @@ expression: plan
     "GEM_HOME": "/usr/local/rvm/gems/ruby-3.1.2",
     "GEM_PATH": "/usr/local/rvm/gems/ruby-3.1.2:/usr/local/rvm/gems/ruby-3.1.2@global"
   },
-  "staticAssets": {},
   "phases": [
     {
       "name": "setup",
-      "nixPackages": [],
-      "nixLibraries": [],
       "aptPackages": [
         "procps"
       ],

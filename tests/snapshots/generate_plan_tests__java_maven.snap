@@ -5,9 +5,13 @@ expression: plan
 {
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
-  "variables": {},
-  "staticAssets": {},
   "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
     {
       "name": "setup",
       "nixPackages": [
@@ -17,14 +21,6 @@ expression: plan
         {
           "name": "jdk8"
         }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
-    },
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
       ]
     },
     {

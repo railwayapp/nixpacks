@@ -16,6 +16,17 @@ expression: plan
   },
   "phases": [
     {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx",
+        "composer install",
+        "npm i"
+      ]
+    },
+    {
       "name": "setup",
       "nixPackages": [
         {
@@ -37,19 +48,6 @@ expression: plan
           "name": "npm-8_x",
           "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
         }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
-    },
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
-      ],
-      "commands": [
-        "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx",
-        "composer install",
-        "npm i"
       ]
     },
     {

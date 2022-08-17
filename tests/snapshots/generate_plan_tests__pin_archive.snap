@@ -5,15 +5,10 @@ expression: plan
 {
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
-  "variables": {},
-  "staticAssets": {},
   "phases": [
     {
       "name": "setup",
-      "nixPackages": [],
-      "nixLibraries": [],
-      "nixpacksArchive": "[archive]",
-      "aptPackages": []
+      "nixpacksArchive": "[archive]"
     },
     {
       "name": "install",

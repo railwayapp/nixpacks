@@ -1,14 +1,6 @@
-use super::{
-    config::GeneratePlanConfig,
-    legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
-    BuildPlan, LegacyBuildPlan, PlanGenerator,
-};
+use super::{config::GeneratePlanConfig, BuildPlan, PlanGenerator};
 use crate::{
-    nixpacks::{
-        app::{App, StaticAssets},
-        environment::{Environment, EnvironmentVariables},
-        nix::pkg::Pkg,
-    },
+    nixpacks::{app::App, environment::Environment, nix::pkg::Pkg},
     providers::Provider,
 };
 use anyhow::{bail, Context, Ok, Result};
@@ -83,257 +75,36 @@ impl NixpacksBuildPlanGenerator<'_> {
             &self.config,
         );
 
+        let mut plan = BuildPlan::default();
+
         if let Some(provider) = self.matched_provider {
             if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
-                let mut build_plan = BuildPlan::apply_config(&provider_build_plan, &config);
-
-                if !environment.get_variable_names().is_empty() {
-                    build_plan.add_variables(Environment::clone_variables(environment));
-                }
-
-                return Ok(build_plan);
+                plan = provider_build_plan;
             }
         }
 
-        self.get_build_plan_from_legacy_phases(app, environment)
-    }
+        // The Procfile start command has precedence over the provider's start command
+        if let Some(procfile_start) = self.get_procfile_start_cmd(app)? {
+            plan.start_phase.as_mut().map(|start| {
+                start.cmd = Some(procfile_start);
+                start
+            });
+        }
 
-    fn get_build_plan_from_legacy_phases(
-        &self,
-        app: &App,
-        environment: &Environment,
-    ) -> Result<BuildPlan> {
-        let setup_phase = self
-            .get_setup_phase(app, environment)
-            .context("Getting setup phase")?;
-        let install_phase = self
-            .get_install_phase(app, environment)
-            .context("Generating install phase")?;
-        let build_phase = self
-            .get_build_phase(app, environment)
-            .context("Generating build phase")?;
-        let start_phase = self
-            .get_start_phase(app, environment)
-            .context("Generating start phase")?;
-        let variables = self
-            .get_variables(app, environment)
-            .context("Getting plan variables")?;
-        let static_assets = self
-            .get_static_assets(app, environment)
-            .context("Getting provider assets")?;
+        // The Procfiles release command is append to the provider's build command
+        if let Some(procfile_release) = self.get_procfile_release_cmd(app)? {
+            if let Some(build) = plan.get_phase_mut("build") {
+                build.add_cmd(procfile_release);
+            }
+        }
 
-        let legacy_plan = LegacyBuildPlan {
-            setup: Some(setup_phase),
-            install: Some(install_phase),
-            build: Some(build_phase),
-            start: Some(start_phase),
-            variables: Some(variables),
-            static_assets: Some(static_assets),
-            version: None,
-        };
+        plan = BuildPlan::apply_config(&plan, &config);
 
-        let plan: BuildPlan = legacy_plan.into();
+        if !environment.get_variable_names().is_empty() {
+            plan.add_variables(Environment::clone_variables(environment));
+        }
+
         Ok(plan)
-    }
-
-    fn get_setup_phase(&self, app: &App, environment: &Environment) -> Result<LegacySetupPhase> {
-        let mut setup_phase: LegacySetupPhase = match self.matched_provider {
-            Some(provider) => provider.setup(app, environment)?.unwrap_or_default(),
-            None => LegacySetupPhase::default(),
-        };
-
-        let env_var_pkgs = environment
-            .get_config_variable("PKGS")
-            .map(|pkg_string| pkg_string.split(' ').map(Pkg::new).collect::<Vec<_>>())
-            .unwrap_or_default();
-
-        // Add custom user packages
-        let mut pkgs = [self.config.custom_pkgs.clone(), env_var_pkgs].concat();
-        setup_phase.add_pkgs(&mut pkgs);
-
-        let env_var_libs = environment
-            .get_config_variable("LIBS")
-            .map(|lib_string| {
-                lib_string
-                    .split(' ')
-                    .map(ToString::to_string)
-                    .collect::<Vec<String>>()
-            })
-            .unwrap_or_default();
-
-        // Add custom user libraries
-        let libs = [self.config.custom_libs.clone(), env_var_libs].concat();
-        setup_phase.add_libraries(libs);
-
-        let env_var_apt_pkgs = environment
-            .get_config_variable("APT_PKGS")
-            .map(|apt_pkgs_string| {
-                apt_pkgs_string
-                    .split(' ')
-                    .map(ToString::to_string)
-                    .collect::<Vec<String>>()
-            })
-            .unwrap_or_default();
-
-        // Add custom apt packages
-        let apt_pkgs = [self.config.custom_apt_pkgs.clone(), env_var_apt_pkgs].concat();
-        setup_phase.add_apt_pkgs(apt_pkgs);
-
-        if self.config.pin_pkgs {
-            setup_phase.set_archive(NIXPKGS_ARCHIVE.to_string());
-        }
-
-        Ok(setup_phase)
-    }
-
-    fn get_install_phase(
-        &self,
-        app: &App,
-        environment: &Environment,
-    ) -> Result<LegacyInstallPhase> {
-        let mut install_phase = match self.matched_provider {
-            Some(provider) => provider.install(app, environment)?.unwrap_or_default(),
-            None => LegacyInstallPhase::default(),
-        };
-
-        let mut env_install_cmd = None;
-        if let Some(install_cmd) = environment.get_config_variable("INSTALL_CMD") {
-            env_install_cmd = Some(vec![install_cmd]);
-        }
-
-        if let Some(install_cache_dirs) = environment.get_config_variable("INSTALL_CACHE_DIRS") {
-            let custom_install_cache_dirs = install_cache_dirs
-                .split(',')
-                .map(ToString::to_string)
-                .collect::<Vec<_>>();
-
-            install_phase.cache_directories = match install_phase.cache_directories {
-                Some(dirs) => Some([dirs, custom_install_cache_dirs].concat()),
-                None => Some(custom_install_cache_dirs),
-            }
-        }
-
-        // Start command priority
-        // - custom install command
-        // - environment variable
-        // - provider
-
-        install_phase.cmds = self
-            .config
-            .custom_install_cmd
-            .clone()
-            .or(env_install_cmd)
-            .or(install_phase.cmds);
-
-        Ok(install_phase)
-    }
-
-    fn get_build_phase(&self, app: &App, environment: &Environment) -> Result<LegacyBuildPhase> {
-        let mut build_phase = match self.matched_provider {
-            Some(provider) => provider.build(app, environment)?.unwrap_or_default(),
-            None => LegacyBuildPhase::default(),
-        };
-
-        let mut env_build_cmd = None;
-        if let Some(build_cmd) = environment.get_config_variable("BUILD_CMD") {
-            env_build_cmd = Some(vec![build_cmd]);
-        }
-
-        if let Some(build_cache_dirs) = environment.get_config_variable("BUILD_CACHE_DIRS") {
-            let custom_build_cache_dirs = build_cache_dirs
-                .split(',')
-                .map(ToString::to_string)
-                .collect::<Vec<_>>();
-
-            build_phase.cache_directories = match build_phase.cache_directories {
-                Some(dirs) => Some([dirs, custom_build_cache_dirs].concat()),
-                None => Some(custom_build_cache_dirs),
-            }
-        }
-
-        // Build command priority
-        // - custom build command
-        // - environment variable
-        // - provider
-        build_phase.cmds = self
-            .config
-            .custom_build_cmd
-            .clone()
-            .or(env_build_cmd)
-            .or(build_phase.cmds);
-
-        // Release process type
-        if let Some(release_cmd) = self.get_procfile_release_cmd(app)? {
-            build_phase
-                .cmds
-                .clone()
-                .unwrap_or_default()
-                .push(release_cmd);
-        }
-        Ok(build_phase)
-    }
-
-    fn get_start_phase(&self, app: &App, environment: &Environment) -> Result<LegacyStartPhase> {
-        let procfile_cmd = self.get_procfile_start_cmd(app)?;
-
-        let mut start_phase = match self.matched_provider {
-            Some(provider) => provider.start(app, environment)?.unwrap_or_default(),
-            None => LegacyStartPhase::default(),
-        };
-
-        let env_start_cmd = environment.get_config_variable("START_CMD");
-
-        // Start command priority
-        // - custom start command
-        // - environment variable
-        // - procfile
-        // - provider
-        start_phase.cmd = self
-            .config
-            .custom_start_cmd
-            .clone()
-            .or_else(|| env_start_cmd.or_else(|| procfile_cmd.or(start_phase.cmd)));
-
-        // Allow the user to override the run image with an environment variable
-        if let Some(env_run_image) = environment.get_config_variable("RUN_IMAGE") {
-            // If the env var is "falsy", then unset the run image on the start phase
-            start_phase.run_image = match env_run_image.as_str() {
-                "0" | "false" => None,
-                img if img.is_empty() => None,
-                img => Some(img.to_owned()),
-            };
-        }
-
-        Ok(start_phase)
-    }
-
-    fn get_variables(&self, app: &App, environment: &Environment) -> Result<EnvironmentVariables> {
-        // Get a copy of the variables in the environment
-        let variables = Environment::clone_variables(environment);
-
-        let new_variables = match self.matched_provider {
-            Some(provider) => {
-                // Merge provider variables
-                let provider_variables = provider
-                    .environment_variables(app, environment)?
-                    .unwrap_or_default();
-                provider_variables.into_iter().chain(variables).collect()
-            }
-            None => variables,
-        };
-
-        Ok(new_variables)
-    }
-
-    fn get_static_assets(&self, app: &App, environment: &Environment) -> Result<StaticAssets> {
-        let static_assets = match self.matched_provider {
-            Some(provider) => provider
-                .static_assets(app, environment)?
-                .unwrap_or_default(),
-            None => StaticAssets::new(),
-        };
-
-        Ok(static_assets)
     }
 
     fn get_procfile_start_cmd(&self, app: &App) -> Result<Option<String>> {
