@@ -327,11 +327,11 @@ impl NodeProvider {
     }
 
     pub fn uses_puppeteer(app: &App) -> bool {
-        NodeProvider::uses_node_dependency(app, "canvas")
+        NodeProvider::uses_node_dependency(app, "puppeteer")
     }
 
     pub fn uses_canvas(app: &App) -> bool {
-        NodeProvider::uses_node_dependency(app, "puppeteer")
+        NodeProvider::uses_node_dependency(app, "canvas")
     }
 
     pub fn find_next_packages(app: &App) -> Result<Vec<String>> {
