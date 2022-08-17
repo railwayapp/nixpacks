@@ -49,7 +49,7 @@ pub fn create_nix_expression(phase: &Phase) -> String {
         String::new()
     };
 
-    let name = Uuid::new_v4().to_string();
+    let name = format!("{}-env", phase.name);
     let nix_expression = formatdoc! {"
             {{ }}:
 
