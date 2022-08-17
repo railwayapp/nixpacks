@@ -1,0 +1,73 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/start-command-production/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/node:webpack",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/start-command-production",
+        "main": "apps/start-command-production/src/main.ts",
+        "tsConfig": "apps/start-command-production/tsconfig.app.json",
+        "assets": ["apps/start-command-production/src/assets"]
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/start-command-production/src/environments/environment.ts",
+              "with": "apps/start-command-production/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "outputPath": "dist/apps/start-command-production",
+        "commands": [
+          { "command": "node dist/apps/start-command-production/main.js" }
+        ]
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/node:node",
+      "options": {
+        "buildTarget": "start-command-production:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "start-command-production:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/start-command-production/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/apps/start-command-production"],
+      "options": {
+        "jestConfig": "apps/start-command-production/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/nx/schemas/workspace-schema.json",
+  "version": 2,
+  "projects": {
+    "express-app": "apps/express-app",
+    "next-app": "apps/next-app",
+    "node-app": "apps/node-app",
+    "start-command": "apps/start-command",
+    "start-command-production": "apps/start-command-production"
+  }
+}

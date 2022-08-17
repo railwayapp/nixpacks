@@ -1,0 +1,64 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/start-command/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/node:webpack",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/start-command",
+        "main": "apps/start-command/src/main.ts",
+        "tsConfig": "apps/start-command/tsconfig.app.json",
+        "assets": ["apps/start-command/src/assets"]
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/start-command/src/environments/environment.ts",
+              "with": "apps/start-command/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "outputPath": "dist/apps/start-command",
+        "commands": [{ "command": "node dist/apps/start-command/main.js" }]
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/node:node",
+      "options": {
+        "buildTarget": "start-command:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "start-command:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/start-command/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/apps/start-command"],
+      "options": {
+        "jestConfig": "apps/start-command/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}

@@ -1,0 +1,48 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "version": "[version]",
+  "setup": {
+    "pkgs": [
+      {
+        "name": "nodejs"
+      },
+      {
+        "name": "npm-8_x",
+        "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+      }
+    ],
+    "libraries": [],
+    "apt_pkgs": [],
+    "baseImage": "[baseImage]"
+  },
+  "install": {
+    "cmds": [
+      "npm ci"
+    ],
+    "cacheDirectories": [
+      "/root/.npm",
+      "/root/.cache/Cypress"
+    ]
+  },
+  "build": {
+    "cmds": [
+      "npx nx run express-app:build:production"
+    ],
+    "cacheDirectories": [
+      ".next/cache",
+      "node_modules/.cache"
+    ]
+  },
+  "start": {
+    "cmd": "node dist/apps/express-app/main.js"
+  },
+  "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false"
+  },
+  "static_assets": {}
+}

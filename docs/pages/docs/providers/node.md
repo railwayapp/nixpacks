@@ -12,6 +12,7 @@ The Node provider sets the following environment variables:
 
 - `NODE_ENV=production`
 - `NPM_CONFIG_PRODUCTION=false`: Ensure that dev deps are always installed
+- `NIXPACKS_NX_APP_NAME`: Provide a name of the NX app you want to build from your NX Monorepo
 
 ## Setup
 
@@ -38,12 +39,17 @@ All dependencies found in `packages.json` are installed with either NPM, Yarn, o
 
 ## Build
 
-The build script found in `package.json` if it exists.
+The build script found in `package.json` if it exists or if its an NX Monorepo `(npm|pnpm|yarn|bun) run build <NxAppName> --configuration=production`.
 
 ## Start
 
 The start command priority is
 
+- If its an NX Monorepo
+  - If the app has a `start` target `npx nx run <appName>:start:production` or just `npx nx run <appName>:start` if no production configuration is present
+  - If the app is a NextJS project: `npm run start`
+  - If `targets.build.options.main` exists in the apps `Project.json`: `node <outputPath>/<mainFileName>.js` (e.g `node dist/apps/my-app/main.js`)
+  - Fallback: `node <outputPath>/index.js` (e.g `node dist/apps/my-app/index.js`)
 - Start script in `package.json`
 - Main file
 - `index.js`
@@ -56,3 +62,4 @@ These directories are cached between builds
 - Install (if Cypress detected): `~/.cache/Cypress`
 - Build: `node_modules/.cache`
 - Build (if NextJS detected): `.next/cache`
+- Build (if its an NX Monorepo): `<outputPathForApp>`
