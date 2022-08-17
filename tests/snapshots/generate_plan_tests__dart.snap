@@ -3,33 +3,40 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "dart"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {
-    "cmds": [
-      "dart pub get"
-    ],
-    "onlyIncludeFiles": [
-      "pubspec.yaml"
-    ]
-  },
-  "build": {
-    "cmds": [
-      "dart compile exe bin/console_simple.dart"
-    ]
-  },
-  "start": {
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
+  "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "dart pub get"
+      ],
+      "onlyIncludeFiles": [
+        "pubspec.yaml"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "dart"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "dart compile exe bin/console_simple.dart"
+      ]
+    }
+  ],
+  "startPhase": {
     "cmd": "./bin/console_simple.exe"
-  },
-  "variables": {},
-  "static_assets": {}
+  }
 }

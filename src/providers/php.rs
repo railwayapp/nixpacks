@@ -6,7 +6,9 @@ use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::legacy_phase::{
+        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    },
 };
 
 use super::{node::NodeProvider, Provider};
@@ -25,7 +27,7 @@ impl Provider for PhpProvider {
         Ok(app.includes_file("composer.json") || app.includes_file("index.php"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<LegacySetupPhase>> {
         let php_pkg = match self.get_php_package(app) {
             Ok(php_package) => php_package,
             _ => "php".to_string(),
@@ -46,12 +48,13 @@ impl Provider for PhpProvider {
             pkgs.append(&mut NodeProvider::get_nix_packages(app, env)?);
         }
 
-        Ok(Some(SetupPhase::new(pkgs)))
+        Ok(Some(LegacySetupPhase::new(pkgs)))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let mut install_phase =
-            InstallPhase::new("mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx".to_string());
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+        let mut install_phase = LegacyInstallPhase::new(
+            "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx".to_string(),
+        );
         if app.includes_file("composer.json") {
             install_phase.add_cmd("composer install".to_string());
         };
@@ -61,21 +64,21 @@ impl Provider for PhpProvider {
         Ok(Some(install_phase))
     }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         if let Ok(true) = NodeProvider::has_script(app, "prod") {
-            return Ok(Some(BuildPhase::new(
+            return Ok(Some(LegacyBuildPhase::new(
                 NodeProvider::get_package_manager(app) + " run prod",
             )));
         } else if let Ok(true) = NodeProvider::has_script(app, "build") {
-            return Ok(Some(BuildPhase::new(
+            return Ok(Some(LegacyBuildPhase::new(
                 NodeProvider::get_package_manager(app) + " run build",
             )));
         }
         Ok(None)
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        Ok(Some(StartPhase::new(format!(
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+        Ok(Some(LegacyStartPhase::new(format!(
             "([ -e /app/storage ] && chmod -R ugo+w /app/storage); perl {} {} /nginx.conf && echo \"Server starting on port $PORT\" && (php-fpm -y {} & nginx -c /nginx.conf)",
             app.asset_path("transform-config.pl"),
             app.asset_path("nginx.template.conf"),

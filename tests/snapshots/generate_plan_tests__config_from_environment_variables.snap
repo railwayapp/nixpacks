@@ -3,42 +3,8 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "cowsay"
-      },
-      {
-        "name": "ripgrep"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {
-    "cmds": [
-      "install"
-    ],
-    "cacheDirectories": [
-      "/tmp",
-      "foobar"
-    ]
-  },
-  "build": {
-    "cmds": [
-      "build"
-    ],
-    "cacheDirectories": [
-      "/build",
-      "barbaz"
-    ]
-  },
-  "start": {
-    "cmd": "start",
-    "runImage": "alpine"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_BUILD_CACHE_DIRS": "/build,barbaz",
     "NIXPACKS_BUILD_CMD": "build",
@@ -48,5 +14,50 @@ expression: plan
     "NIXPACKS_RUN_IMAGE": "alpine",
     "NIXPACKS_START_CMD": "start"
   },
-  "static_assets": {}
+  "staticAssets": {},
+  "phases": [
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "cowsay"
+        },
+        {
+          "name": "ripgrep"
+        }
+      ],
+      "nixLibraries": [],
+      "aptPackages": []
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "install"
+      ],
+      "cacheDirectories": [
+        "/tmp",
+        "foobar"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "build"
+      ],
+      "cacheDirectories": [
+        "/build",
+        "barbaz"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "start",
+    "runImage": "alpine"
+  }
 }

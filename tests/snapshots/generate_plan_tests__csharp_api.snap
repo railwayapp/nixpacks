@@ -3,34 +3,45 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "dotnet-sdk"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {
-    "cmds": [
-      "dotnet restore"
-    ]
-  },
-  "build": {
-    "cmds": [
-      "dotnet publish --no-restore -c Release -o out"
-    ]
-  },
-  "start": {
-    "cmd": "./out/csharp-api"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {
     "ASPNETCORE_ENVIRONMENT": "Production",
     "ASPNETCORE_URLS": "http://0.0.0.0:3000",
     "DOTNET_ROOT": "/nix/var/nix/profiles/default/"
   },
-  "static_assets": {}
+  "staticAssets": {},
+  "phases": [
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "dotnet-sdk"
+        }
+      ],
+      "nixLibraries": [],
+      "aptPackages": []
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "dotnet restore"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "dotnet publish --no-restore -c Release -o out"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "./out/csharp-api"
+  }
 }

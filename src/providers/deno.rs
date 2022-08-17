@@ -5,7 +5,10 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    phase::{BuildPhase, SetupPhase, StartPhase},
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
+    },
 };
 use anyhow::{Context, Result};
 use regex::Regex;
@@ -38,48 +41,64 @@ impl Provider for DenoProvider {
             || app.find_match(&re, "**/*.{tsx,ts,js,jsx}")?)
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![Pkg::new("deno")])))
-    }
+    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+        let mut plan = BuildPlan::default();
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        match DenoProvider::get_start_file(app)? {
-            Some(start_file) => Ok(Some(BuildPhase::new(format!(
+        let setup_phase = Phase::setup(Some(vec![Pkg::new("deno")]));
+        plan.add_phase(setup_phase);
+
+        if let Some(build_cmd) = DenoProvider::get_build_cmd(app)? {
+            let build_phase = Phase::build(Some(build_cmd));
+            plan.add_phase(build_phase);
+        };
+
+        if let Some(start_cmd) = DenoProvider::get_start_cmd(app)? {
+            let start_phase = StartPhase::new(start_cmd);
+            plan.set_start_phase(start_phase);
+        }
+
+        Ok(Some(plan))
+    }
+}
+
+impl DenoProvider {
+    fn get_build_cmd(app: &App) -> Result<Option<String>> {
+        if let Some(start_file) = DenoProvider::get_start_file(app)? {
+            Ok(Some(format!(
                 "deno cache {}",
                 start_file
                     .to_str()
                     .context("Failed to convert start_file to string")?
-            )))),
-            None => Ok(None),
+            )))
+        } else {
+            Ok(None)
         }
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+    fn get_start_cmd(app: &App) -> Result<Option<String>> {
         // First check for a deno.json and see if we can rip the start command from there
         if app.includes_file("deno.json") {
             let deno_json: DenoJson = app.read_json("deno.json")?;
 
             if let Some(tasks) = deno_json.tasks {
                 if let Some(start) = tasks.start {
-                    return Ok(Some(StartPhase::new(start)));
+                    return Ok(Some(start));
                 }
             }
         }
 
         // Barring that, just try and start the index with sane defaults
         match DenoProvider::get_start_file(app)? {
-            Some(start_file) => Ok(Some(StartPhase::new(format!(
+            Some(start_file) => Ok(Some(format!(
                 "deno run --allow-all {}",
                 start_file
                     .to_str()
                     .context("Failed to convert start_file to string")?
-            )))),
+            ))),
             None => Ok(None),
         }
     }
-}
 
-impl DenoProvider {
     // Find the first index.ts or index.js file to run
     fn get_start_file(app: &App) -> Result<Option<PathBuf>> {
         // Find the first index.ts or index.js file to run

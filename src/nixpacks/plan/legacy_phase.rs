@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-use super::{
+use crate::nixpacks::{
     images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
     nix::pkg::Pkg,
 };
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct SetupPhase {
+pub struct LegacySetupPhase {
     pub pkgs: Vec<Pkg>,
     pub archive: Option<String>,
     pub libraries: Option<Vec<String>>,
@@ -21,7 +21,7 @@ pub struct SetupPhase {
     pub base_image: String,
 }
 
-impl SetupPhase {
+impl LegacySetupPhase {
     pub fn new(pkgs: Vec<Pkg>) -> Self {
         Self {
             pkgs,
@@ -75,7 +75,7 @@ impl SetupPhase {
     }
 }
 
-impl Default for SetupPhase {
+impl Default for LegacySetupPhase {
     fn default() -> Self {
         Self {
             pkgs: Vec::new(),
@@ -91,7 +91,7 @@ impl Default for SetupPhase {
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct InstallPhase {
+pub struct LegacyInstallPhase {
     pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
@@ -103,7 +103,7 @@ pub struct InstallPhase {
     pub paths: Option<Vec<String>>,
 }
 
-impl InstallPhase {
+impl LegacyInstallPhase {
     pub fn new(cmd: String) -> Self {
         Self {
             cmds: Some(vec![cmd]),
@@ -149,7 +149,7 @@ impl InstallPhase {
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct BuildPhase {
+pub struct LegacyBuildPhase {
     pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
@@ -159,7 +159,7 @@ pub struct BuildPhase {
     pub cache_directories: Option<Vec<String>>,
 }
 
-impl BuildPhase {
+impl LegacyBuildPhase {
     pub fn new(cmd: String) -> Self {
         Self {
             cmds: Some(vec![cmd]),
@@ -195,7 +195,7 @@ impl BuildPhase {
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct StartPhase {
+pub struct LegacyStartPhase {
     pub cmd: Option<String>,
 
     #[serde(rename = "runImage")]
@@ -205,7 +205,7 @@ pub struct StartPhase {
     pub only_include_files: Option<Vec<String>>,
 }
 
-impl StartPhase {
+impl LegacyStartPhase {
     pub fn new(cmd: String) -> Self {
         Self {
             cmd: Some(cmd),

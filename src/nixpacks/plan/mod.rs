@@ -1,235 +1,215 @@
+use self::{
+    config::GeneratePlanConfig,
+    generator::NIXPKGS_ARCHIVE,
+    legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
+    phase::{Phase, StartPhase},
+    topological_sort::topological_sort,
+};
+use super::{images::DEFAULT_BASE_IMAGE, NIX_PACKS_VERSION};
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
 };
-use crate::Pkg;
+
 use anyhow::Result;
-use colored::Colorize;
-use indoc::formatdoc;
+
 use serde::{Deserialize, Serialize};
 
-use super::NIX_PACKS_VERSION;
-
+pub mod config;
 pub mod generator;
-
-const FIRST_COLUMN_WIDTH: usize = 10;
-const MIN_BOX_WIDTH: usize = 20;
-const MAX_BOX_WIDTH: usize = 80;
-
-#[serde_with::skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct BuildPlan {
-    pub version: Option<String>,
-    pub setup: Option<SetupPhase>,
-    pub install: Option<InstallPhase>,
-    pub build: Option<BuildPhase>,
-    pub start: Option<StartPhase>,
-    pub variables: Option<EnvironmentVariables>,
-    pub static_assets: Option<StaticAssets>,
-}
+pub mod legacy_phase;
+pub mod phase;
+pub mod pretty_print;
+mod topological_sort;
 
 pub trait PlanGenerator {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan>;
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LegacyBuildPlan {
+    pub version: Option<String>,
+    pub setup: Option<LegacySetupPhase>,
+    pub install: Option<LegacyInstallPhase>,
+    pub build: Option<LegacyBuildPhase>,
+    pub start: Option<LegacyStartPhase>,
+    pub variables: Option<EnvironmentVariables>,
+    pub static_assets: Option<StaticAssets>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BuildPlan {
+    #[serde(rename = "nixpacksVersion")]
+    nixpacks_version: Option<String>,
+
+    #[serde(rename = "buildImage")]
+    pub build_image: String,
+
+    pub variables: Option<EnvironmentVariables>,
+
+    #[serde(rename = "staticAssets")]
+    pub static_assets: Option<StaticAssets>,
+
+    pub phases: Vec<Phase>,
+
+    #[serde(rename = "startPhase")]
+    pub start_phase: Option<StartPhase>,
+}
+
 impl BuildPlan {
-    pub fn get_build_string(&self) -> String {
-        let title_str = format!(" Nixpacks v{} ", NIX_PACKS_VERSION);
-        let title_width = console::measure_text_width(title_str.as_str());
+    pub fn new(phases: Vec<Phase>, start_phase: Option<StartPhase>) -> Self {
+        Self {
+            nixpacks_version: Some(NIX_PACKS_VERSION.to_string()),
+            phases,
+            start_phase,
+            build_image: DEFAULT_BASE_IMAGE.to_string(),
+            ..Default::default()
+        }
+    }
 
-        let setup_phase = self.setup.clone().unwrap_or_default();
-        let install_phase = self.install.clone().unwrap_or_default();
-        let build_phase = self.build.clone().unwrap_or_default();
-        let start_phase = self.start.clone().unwrap_or_default();
+    pub fn add_phase(&mut self, phase: Phase) {
+        self.phases.push(phase);
+    }
 
-        let pkg_list = [
-            setup_phase
-                .pkgs
-                .iter()
-                .map(Pkg::to_pretty_string)
-                .collect::<Vec<_>>(),
-            setup_phase.apt_pkgs.unwrap_or_default(),
-        ]
-        .concat()
-        .join(", ");
+    pub fn set_start_phase(&mut self, start_phase: StartPhase) {
+        self.start_phase = Some(start_phase);
+    }
 
-        let install_cmds = install_phase.clone().cmds.unwrap_or_default();
-        let build_cmds = build_phase.clone().cmds.unwrap_or_default();
-        let start_cmd = start_phase.clone().cmd.unwrap_or_default();
+    pub fn add_variables(&mut self, variables: EnvironmentVariables) {
+        match self.variables.as_mut() {
+            Some(vars) => {
+                for (key, value) in &variables {
+                    vars.insert(key.to_string(), value.to_string());
+                }
+            }
+            None => {
+                self.variables = Some(variables);
+            }
+        }
+    }
 
-        let max_right_content = [
-            vec![pkg_list.clone()],
-            install_cmds,
-            build_cmds,
-            vec![start_cmd],
-        ]
-        .concat()
-        .iter()
-        .map(String::len)
-        .max()
-        .unwrap_or(0);
+    pub fn get_phase(&self, name: &str) -> Option<&Phase> {
+        self.phases.iter().find(|phase| phase.name == name)
+    }
 
-        let edge = format!("{} ", box_drawing::double::VERTICAL);
-        let edge_width = console::measure_text_width(edge.as_str());
+    pub fn get_phase_mut(&mut self, name: &str) -> Option<&mut Phase> {
+        self.phases.iter_mut().find(|phase| phase.name == name)
+    }
 
-        let middle_padding = format!(" {} ", box_drawing::light::VERTICAL)
-            .cyan()
-            .dimmed()
-            .to_string();
-        let middle_padding_width = console::measure_text_width(middle_padding.as_str());
+    pub fn remove_phase(&mut self, name: &str) -> Option<Phase> {
+        let index = self.phases.iter().position(|phase| phase.name == name);
+        if let Some(index) = index {
+            let phase = self.phases.swap_remove(index);
+            Some(phase)
+        } else {
+            None
+        }
+    }
 
-        let box_width = std::cmp::min(
-            MAX_BOX_WIDTH,
-            std::cmp::max(
-                MIN_BOX_WIDTH,
-                (edge_width * 2) + FIRST_COLUMN_WIDTH + middle_padding_width + max_right_content,
-            ),
+    pub fn get_sorted_phases(&self) -> Result<Vec<Phase>> {
+        topological_sort(self.phases.clone())
+    }
+
+    /// Create a new build plan by applying the given configuration
+    pub fn apply_config(plan: &BuildPlan, config: &GeneratePlanConfig) -> BuildPlan {
+        let mut new_plan = plan.clone();
+
+        // Setup config
+        let mut setup = new_plan
+            .remove_phase("setup")
+            .unwrap_or_else(|| Phase::setup(None));
+
+        // Append the packages and libraries together
+        setup.apt_pkgs = none_if_empty(
+            [
+                config.custom_apt_pkgs.clone(),
+                setup.apt_pkgs.unwrap_or_default(),
+            ]
+            .concat(),
         );
-
-        let second_column_width =
-            box_width - (edge_width * 2) - FIRST_COLUMN_WIDTH - middle_padding_width;
-
-        let packages_row = print_row(
-            "Packages",
-            &pkg_list,
-            &edge,
-            &middle_padding,
-            second_column_width,
-            true,
+        setup.nix_pkgs = none_if_empty(
+            [
+                config.custom_pkgs.clone(),
+                setup.nix_pkgs.unwrap_or_default(),
+            ]
+            .concat(),
         );
-        let install_row = print_row(
-            "Install",
-            &install_phase.cmds.unwrap_or_default().join("\n"),
-            &edge,
-            &middle_padding,
-            second_column_width,
-            false,
+        setup.nix_libraries = none_if_empty(
+            [
+                config.custom_libs.clone(),
+                setup.nix_libraries.unwrap_or_default(),
+            ]
+            .concat(),
         );
-        let build_row = print_row(
-            "Build",
-            &build_phase.cmds.unwrap_or_default().join("\n"),
-            &edge,
-            &middle_padding,
-            second_column_width,
-            false,
-        );
-        let start_row = print_row(
-            "Start",
-            &start_phase.cmd.unwrap_or_default(),
-            &edge,
-            &middle_padding,
-            second_column_width,
-            false,
-        );
+        setup.nixpacks_archive = setup.nixpacks_archive.or_else(|| {
+            if config.pin_pkgs {
+                Some(NIXPKGS_ARCHIVE.to_string())
+            } else {
+                None
+            }
+        });
+        new_plan.add_phase(setup);
 
-        let title_side_padding = ((box_width as f64) - (title_width as f64) - 2.0) / 2.0;
+        // Install config
+        let mut install = new_plan
+            .remove_phase("install")
+            .unwrap_or_else(|| Phase::install(None));
+        install.cmds = config.custom_install_cmd.clone().or(install.cmds);
+        new_plan.add_phase(install);
 
-        let top_box = format!(
-            "{}{}{}{}{}",
-            box_drawing::double::DOWN_RIGHT.cyan().dimmed(),
-            str::repeat(
-                box_drawing::double::HORIZONTAL,
-                title_side_padding.ceil() as usize
-            )
-            .cyan()
-            .dimmed(),
-            title_str.magenta().bold(),
-            str::repeat(
-                box_drawing::double::HORIZONTAL,
-                title_side_padding.floor() as usize
-            )
-            .cyan()
-            .dimmed(),
-            box_drawing::double::DOWN_LEFT.cyan().dimmed(),
-        );
+        // Build config
+        let mut build = new_plan
+            .remove_phase("build")
+            .unwrap_or_else(|| Phase::build(None));
+        build.cmds = config.custom_build_cmd.clone().or(build.cmds);
+        new_plan.add_phase(build);
 
-        let bottom_box = format!(
-            "{}{}{}",
-            box_drawing::double::UP_RIGHT.cyan().dimmed(),
-            str::repeat(box_drawing::double::HORIZONTAL, box_width - 2)
-                .cyan()
-                .dimmed(),
-            box_drawing::double::UP_LEFT.cyan().dimmed()
-        );
+        // Start config
+        let mut start = new_plan.start_phase.clone().unwrap_or_default();
+        start.cmd = config.custom_start_cmd.clone().or(start.cmd);
+        new_plan.start_phase = Some(start);
 
-        let hor_sep = format!(
-            "{}{}{}",
-            box_drawing::double::VERTICAL.cyan().dimmed(),
-            str::repeat(box_drawing::light::HORIZONTAL, box_width - 2)
-                .cyan()
-                .dimmed(),
-            box_drawing::double::VERTICAL.cyan().dimmed()
-        );
+        new_plan
+    }
+}
 
-        formatdoc! {"
-
-          {}
-          {}
-          {}
-          {}
-          {}
-          {}
-          {}
-          {}
-          {}
-          ",
-          top_box,
-          packages_row,
-          hor_sep,
-          install_row,
-          hor_sep,
-          build_row,
-          hor_sep,
-          start_row,
-          bottom_box
+impl Default for BuildPlan {
+    fn default() -> Self {
+        Self {
+            nixpacks_version: Some(NIX_PACKS_VERSION.to_string()),
+            build_image: DEFAULT_BASE_IMAGE.to_string(),
+            phases: vec![],
+            start_phase: None,
+            variables: None,
+            static_assets: None,
         }
     }
 }
 
-fn print_row(
-    title: &str,
-    content: &str,
-    left_edge: &str,
-    middle: &str,
-    second_column_width: usize,
-    indent_second_line: bool,
-) -> String {
-    let mut textwrap_opts = textwrap::Options::new(second_column_width);
-    textwrap_opts.break_words = true;
-    if indent_second_line {
-        textwrap_opts.subsequent_indent = " ";
+impl From<LegacyBuildPlan> for BuildPlan {
+    fn from(legacy_plan: LegacyBuildPlan) -> Self {
+        let phases: Vec<Phase> = vec![
+            legacy_plan.setup.unwrap_or_default().into(),
+            legacy_plan.install.unwrap_or_default().into(),
+            legacy_plan.build.unwrap_or_default().into(),
+        ];
+
+        let start: StartPhase = legacy_plan.start.unwrap_or_default().into();
+
+        let mut plan = BuildPlan::new(phases, Some(start));
+        plan.static_assets = legacy_plan.static_assets;
+        plan.variables = legacy_plan.variables;
+
+        plan
     }
+}
 
-    let right_edge = left_edge.chars().rev().collect::<String>();
-
-    let list_lines = textwrap::wrap(content, textwrap_opts);
-    let mut output = format!(
-        "{}{}{}{}{}",
-        left_edge.cyan().dimmed(),
-        console::pad_str(title, FIRST_COLUMN_WIDTH, console::Alignment::Left, None),
-        middle,
-        console::pad_str(
-            &list_lines[0],
-            second_column_width,
-            console::Alignment::Left,
-            None
-        )
-        .white(),
-        right_edge.cyan().dimmed()
-    );
-
-    for line in list_lines.iter().skip(1) {
-        output = format!(
-            "{}\n{}{}{}{}{}",
-            output,
-            left_edge.cyan().dimmed(),
-            console::pad_str("", FIRST_COLUMN_WIDTH, console::Alignment::Left, None),
-            middle,
-            console::pad_str(line, second_column_width, console::Alignment::Left, None).white(),
-            right_edge.cyan().dimmed()
-        );
+fn none_if_empty<T>(value: Vec<T>) -> Option<Vec<T>> {
+    if value.is_empty() {
+        None
+    } else {
+        Some(value)
     }
-
-    output
 }

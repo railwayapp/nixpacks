@@ -5,7 +5,10 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
+    },
 };
 use anyhow::{Context, Result};
 use serde::Deserialize;
@@ -28,32 +31,22 @@ impl Provider for CrystalProvider {
         Ok(app.includes_file("shard.yml"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
-        Ok(Some(SetupPhase::new(vec![
-            Pkg::new("crystal"),
-            Pkg::new("shards"),
-        ])))
-    }
+    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+        let setup = Phase::setup(Some(vec![Pkg::new("crystal"), Pkg::new("shards")]));
+        let install = Phase::install(Some("shards install".to_string()));
+        let build = Phase::build(Some("shards build".to_string()));
 
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        Ok(Some(InstallPhase::new("shards install".to_string())))
-    }
-
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new("shards build --release".to_string())))
-    }
-
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
         let config = CrystalProvider::get_config(app)?;
         let target_names = config.targets.keys().cloned().collect::<Vec<_>>();
-        let start_phase = StartPhase::new(format!(
+        let start = StartPhase::new(format!(
             "./bin/{}",
             target_names
                 .get(0)
                 .ok_or_else(|| anyhow::anyhow!("Unable to get executable name"))?
         ));
 
-        Ok(Some(start_phase))
+        let plan = BuildPlan::new(vec![setup, install, build], Some(start));
+        Ok(Some(plan))
     }
 }
 

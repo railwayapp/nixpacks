@@ -3,35 +3,43 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "python38"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {
-    "cmds": [
-      "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"
-    ],
-    "onlyIncludeFiles": [
-      "requirements.txt"
-    ],
-    "cacheDirectories": [
-      "/root/.cache/pip"
-    ],
-    "paths": [
-      "/opt/venv/bin"
-    ]
-  },
-  "build": {},
-  "start": {
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
+  "phases": [
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "python38"
+        }
+      ]
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"
+      ],
+      "onlyIncludeFiles": [
+        "requirements.txt"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/pip"
+      ],
+      "paths": [
+        "/opt/venv/bin"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ]
+    }
+  ],
+  "startPhase": {
     "cmd": "python main.py"
-  },
-  "variables": {},
-  "static_assets": {}
+  }
 }

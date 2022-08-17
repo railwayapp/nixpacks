@@ -3,6 +3,6 @@ use anyhow::Result;
 
 pub mod docker;
 
-pub trait Builder {
+pub trait ImageBuilder {
     fn create_image(&self, app_source: &str, plan: &BuildPlan, env: &Environment) -> Result<()>;
 }

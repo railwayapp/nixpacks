@@ -9,8 +9,9 @@ use regex::Regex;
 use serde::de::DeserializeOwned;
 use walkdir::{DirEntry, WalkDir};
 
-pub const ASSETS_DIR: &str = "/assets/";
 pub type StaticAssets = BTreeMap<String, String>;
+
+pub const ASSETS_DIR: &str = "/assets/";
 
 #[derive(Debug, Clone)]
 pub struct App {

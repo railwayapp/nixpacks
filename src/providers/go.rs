@@ -3,7 +3,10 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
+    },
 };
 use anyhow::Result;
 
@@ -24,56 +27,41 @@ impl Provider for GolangProvider {
         Ok(app.includes_file("main.go") || app.includes_file("go.mod"))
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+        let mut plan = BuildPlan::default();
+
         let go_mod = self.read_go_mod_if_exists(app)?;
         let nix_pkg = GolangProvider::get_nix_golang_pkg(go_mod.as_ref())?;
+        plan.add_phase(Phase::setup(Some(vec![Pkg::new(&nix_pkg)])));
 
-        Ok(Some(SetupPhase::new(vec![Pkg::new(&nix_pkg)])))
-    }
-
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
         if app.includes_file("go.mod") {
-            let mut install_phase = InstallPhase::new("go get".to_string());
-            install_phase.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
-            return Ok(Some(install_phase));
+            let mut install = Phase::install(Some("go get".to_string()));
+            install.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
+            plan.add_phase(install);
         }
-        Ok(None)
-    }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        let mut build_phase = if app.includes_file("go.mod") {
-            BuildPhase::new(format!("go build -o {}", BINARY_NAME))
+        let mut build = if app.includes_file("go.mod") {
+            Phase::build(Some(format!("go build -o {}", BINARY_NAME)))
         } else {
-            BuildPhase::new(format!("go build -o {} main.go", BINARY_NAME))
+            Phase::build(Some(format!("go build -o {} main.go", BINARY_NAME)))
         };
+        build.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
+        plan.add_phase(build);
 
-        build_phase.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
-
-        Ok(Some(build_phase))
-    }
-
-    fn start(&self, _app: &App, env: &Environment) -> Result<Option<StartPhase>> {
-        let mut start_phase = StartPhase::new(format!("./{}", BINARY_NAME));
-
+        let mut start = StartPhase::new(format!("./{}", BINARY_NAME));
         let cgo = env.get_variable("CGO_ENABLED").unwrap_or("0");
-
         // Only run in a new image if CGO_ENABLED=0 (default)
         if cgo != "1" {
-            start_phase.run_in_slim_image();
+            start.run_in_slim_image();
         }
+        plan.set_start_phase(start);
 
-        Ok(Some(start_phase))
-    }
-
-    fn environment_variables(
-        &self,
-        _app: &App,
-        _env: &Environment,
-    ) -> Result<Option<EnvironmentVariables>> {
-        Ok(Some(EnvironmentVariables::from([(
+        plan.add_variables(EnvironmentVariables::from([(
             "CGO_ENABLED".to_string(),
             "0".to_string(),
-        )])))
+        )]));
+
+        Ok(Some(plan))
     }
 }
 

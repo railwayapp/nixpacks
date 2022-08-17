@@ -1,21 +1,20 @@
-use std::{collections::HashMap, fs};
-
-use anyhow::{bail, Context, Ok, Result};
-
-use std::result::Result::Ok as OkResult;
-
-use regex::{Match, Regex};
-use serde::Deserialize;
-
 use crate::{
     chain,
     nixpacks::{
         app::App,
         environment::{Environment, EnvironmentVariables},
-        phase::{InstallPhase, SetupPhase, StartPhase},
+        plan::{
+            phase::{Phase, StartPhase},
+            BuildPlan,
+        },
     },
     Pkg,
 };
+use anyhow::{bail, Context, Ok, Result};
+use regex::{Match, Regex};
+use serde::Deserialize;
+use std::result::Result::Ok as OkResult;
+use std::{collections::HashMap, fs};
 
 use super::Provider;
 
@@ -36,103 +35,27 @@ impl Provider for PythonProvider {
             || app.includes_file("pyproject.toml"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
-        let mut pkgs: Vec<Pkg> = vec![];
-        let python_base_package = PythonProvider::get_nix_python_package(app, env)?;
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+        let mut plan = BuildPlan::default();
 
-        pkgs.append(&mut vec![python_base_package]);
-
-        if PythonProvider::is_django(app, env)? && PythonProvider::is_using_postgres(app, env)? {
-            // Django with Postgres requires postgresql and gcc on top of the original python packages
-            pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
+        if let Some(setup) = self.setup(app, env)? {
+            plan.add_phase(setup);
+        }
+        if let Some(install) = self.install(app, env)? {
+            plan.add_phase(install);
+        }
+        if let Some(start) = self.start(app, env)? {
+            plan.set_start_phase(start);
         }
 
-        let mut setup_phase = SetupPhase::new(pkgs);
-
-        // Numpy needs some C headers to be available
-        // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
-        if PythonProvider::uses_numpy(app)? {
-            setup_phase.add_libraries(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
+        if app.includes_file("poetry.lock") {
+            plan.add_variables(EnvironmentVariables::from([(
+                "NIXPACKS_POETRY_VERSION".to_string(),
+                POETRY_VERSION.to_string(),
+            )]));
         }
 
-        Ok(Some(setup_phase))
-    }
-
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let env_loc = "/opt/venv";
-        let create_env = format!("python -m venv {}", env_loc);
-        let activate_env = format!(". {}/bin/activate", env_loc);
-
-        if app.includes_file("requirements.txt") {
-            let mut install_phase = InstallPhase::new(format!(
-                "{} && {} && pip install -r requirements.txt",
-                create_env, activate_env
-            ));
-
-            install_phase.add_file_dependency("requirements.txt".to_string());
-            install_phase.add_path(format!("{}/bin", env_loc));
-
-            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
-
-            return Ok(Some(install_phase));
-        } else if app.includes_file("pyproject.toml") {
-            if app.includes_file("poetry.lock") {
-                let install_poetry = "pip install poetry==$NIXPACKS_POETRY_VERSION".to_string();
-                let mut install_phase = InstallPhase::new(format!(
-                    "{} && {} && {} && poetry install --no-dev --no-interaction --no-ansi",
-                    create_env, activate_env, install_poetry
-                ));
-
-                install_phase.add_file_dependency("poetry.lock".to_string());
-                install_phase.add_file_dependency("pyproject.toml".to_string());
-                install_phase.add_path(format!("{}/bin", env_loc));
-
-                install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
-
-                return Ok(Some(install_phase));
-            }
-            let mut install_phase = InstallPhase::new(format!(
-                "{} && {} && pip install --upgrade build setuptools && pip install .",
-                create_env, activate_env
-            ));
-
-            install_phase.add_file_dependency("pyproject.toml".to_string());
-            install_phase.add_path(format!("{}/bin", env_loc));
-
-            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
-
-            return Ok(Some(install_phase));
-        }
-
-        Ok(None)
-    }
-
-    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
-        if PythonProvider::is_django(app, env)? {
-            let app_name = PythonProvider::get_django_app_name(app, env)?;
-
-            return Ok(Some(StartPhase::new(format!(
-                "python manage.py migrate && gunicorn {}",
-                app_name
-            ))));
-        }
-
-        if app.includes_file("pyproject.toml") {
-            if let OkResult(meta) = PythonProvider::parse_pyproject(app) {
-                if let Some(entry_point) = meta.entry_point {
-                    return Ok(Some(StartPhase::new(match entry_point {
-                        EntryPoint::Command(cmd) => cmd,
-                        EntryPoint::Module(module) => format!("python -m {}", module),
-                    })));
-                }
-            }
-        }
-        // falls through
-        if app.includes_file("main.py") {
-            return Ok(Some(StartPhase::new("python main.py".to_string())));
-        }
-
-        Ok(None)
+        Ok(Some(plan))
     }
 
     fn environment_variables(
@@ -179,6 +102,105 @@ enum EntryPoint {
 }
 
 impl PythonProvider {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
+        let mut pkgs: Vec<Pkg> = vec![];
+        let python_base_package = PythonProvider::get_nix_python_package(app, env)?;
+
+        pkgs.append(&mut vec![python_base_package]);
+
+        if PythonProvider::is_django(app, env)? && PythonProvider::is_using_postgres(app, env)? {
+            // Django with Postgres requires postgresql and gcc on top of the original python packages
+            pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
+        }
+
+        let mut setup_phase = Phase::setup(Some(pkgs));
+
+        // Numpy needs some C headers to be available
+        // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
+        if PythonProvider::uses_numpy(app)? {
+            setup_phase.add_pkgs_libs(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
+        }
+
+        Ok(Some(setup_phase))
+    }
+
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<Phase>> {
+        let env_loc = "/opt/venv";
+        let create_env = format!("python -m venv {}", env_loc);
+        let activate_env = format!(". {}/bin/activate", env_loc);
+
+        if app.includes_file("requirements.txt") {
+            let mut install_phase = Phase::install(Some(format!(
+                "{} && {} && pip install -r requirements.txt",
+                create_env, activate_env
+            )));
+
+            install_phase.add_file_dependency("requirements.txt".to_string());
+            install_phase.add_path(format!("{}/bin", env_loc));
+
+            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+
+            return Ok(Some(install_phase));
+        } else if app.includes_file("pyproject.toml") {
+            if app.includes_file("poetry.lock") {
+                let install_poetry = "pip install poetry==$NIXPACKS_POETRY_VERSION".to_string();
+                let mut install_phase = Phase::install(Some(format!(
+                    "{} && {} && {} && poetry install --no-dev --no-interaction --no-ansi",
+                    create_env, activate_env, install_poetry
+                )));
+
+                install_phase.add_file_dependency("poetry.lock".to_string());
+                install_phase.add_file_dependency("pyproject.toml".to_string());
+                install_phase.add_path(format!("{}/bin", env_loc));
+
+                install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+
+                return Ok(Some(install_phase));
+            }
+            let mut install_phase = Phase::install(Some(format!(
+                "{} && {} && pip install --upgrade build setuptools && pip install .",
+                create_env, activate_env
+            )));
+
+            install_phase.add_file_dependency("pyproject.toml".to_string());
+            install_phase.add_path(format!("{}/bin", env_loc));
+
+            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+
+            return Ok(Some(install_phase));
+        }
+
+        Ok(None)
+    }
+
+    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+        if PythonProvider::is_django(app, env)? {
+            let app_name = PythonProvider::get_django_app_name(app, env)?;
+
+            return Ok(Some(StartPhase::new(format!(
+                "python manage.py migrate && gunicorn {}",
+                app_name
+            ))));
+        }
+
+        if app.includes_file("pyproject.toml") {
+            if let OkResult(meta) = PythonProvider::parse_pyproject(app) {
+                if let Some(entry_point) = meta.entry_point {
+                    return Ok(Some(StartPhase::new(match entry_point {
+                        EntryPoint::Command(cmd) => cmd,
+                        EntryPoint::Module(module) => format!("python -m {}", module),
+                    })));
+                }
+            }
+        }
+        // falls through
+        if app.includes_file("main.py") {
+            return Ok(Some(StartPhase::new("python main.py".to_string())));
+        }
+
+        Ok(None)
+    }
+
     fn is_django(app: &App, _env: &Environment) -> Result<bool> {
         Ok(app.includes_file("manage.py")
             && app

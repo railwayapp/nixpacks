@@ -3,47 +3,58 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "coreutils"
-      },
-      {
-        "name": "swift"
-      },
-      {
-        "name": "clang"
-      },
-      {
-        "name": "zlib"
-      },
-      {
-        "name": "zlib.dev"
-      }
-    ],
-    "archive": "[archive]",
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {
-    "cmds": [
-      "swift package resolve"
-    ],
-    "onlyIncludeFiles": [
-      "Package.swift"
-    ]
-  },
-  "build": {
-    "cmds": [
-      "CC=clang++ swift build -c release --static-swift-stdlib",
-      "cp ./.build/release/swift ./swift && rm -rf ./.build"
-    ]
-  },
-  "start": {
-    "cmd": "./swift"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {},
-  "static_assets": {}
+  "staticAssets": {},
+  "phases": [
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "coreutils"
+        },
+        {
+          "name": "swift"
+        },
+        {
+          "name": "clang"
+        },
+        {
+          "name": "zlib"
+        },
+        {
+          "name": "zlib.dev"
+        }
+      ],
+      "nixLibraries": [],
+      "nixpacksArchive": "[archive]",
+      "aptPackages": []
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "swift package resolve"
+      ],
+      "onlyIncludeFiles": [
+        "Package.swift"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "CC=clang++ swift build -c release --static-swift-stdlib",
+        "cp ./.build/release/swift ./swift && rm -rf ./.build"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "./swift"
+  }
 }

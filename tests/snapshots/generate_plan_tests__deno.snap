@@ -3,26 +3,34 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "deno"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {},
-  "build": {
-    "cmds": [
-      "deno cache src/index.ts"
-    ]
-  },
-  "start": {
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
+  "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "deno"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "deno cache src/index.ts"
+      ]
+    }
+  ],
+  "startPhase": {
     "cmd": "deno run --allow-all src/index.ts"
-  },
-  "variables": {},
-  "static_assets": {}
+  }
 }

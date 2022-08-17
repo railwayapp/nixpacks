@@ -3,38 +3,46 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "bun",
-        "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {
-    "cmds": [
-      "bun i --no-save"
-    ],
-    "cacheDirectories": [
-      "/root/.bun"
-    ]
-  },
-  "build": {
-    "cacheDirectories": [
-      "node_modules/.cache"
-    ]
-  },
-  "start": {
-    "cmd": "bun index.ts"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {
     "CI": "true",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
   },
-  "static_assets": {}
+  "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "bun i --no-save"
+      ],
+      "cacheDirectories": [
+        "/root/.bun"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "bun",
+          "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cacheDirectories": [
+        "node_modules/.cache"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "bun index.ts"
+  }
 }

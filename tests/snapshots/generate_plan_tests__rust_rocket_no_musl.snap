@@ -3,41 +3,52 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "gcc"
-      },
-      {
-        "name": "rust-bin.stable.latest.default",
-        "overlay": "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [
-      "binutils"
-    ],
-    "baseImage": "[baseImage]"
-  },
-  "install": {},
-  "build": {
-    "cmds": [
-      "cargo build --release",
-      "cp target/release/rocket rocket"
-    ],
-    "cacheDirectories": [
-      "/root/.cargo/git",
-      "/root/.cargo/registry",
-      "target"
-    ]
-  },
-  "start": {
-    "cmd": "./rocket"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_NO_MUSL": "1",
     "ROCKET_ADDRESS": "0.0.0.0"
   },
-  "static_assets": {}
+  "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "gcc"
+        },
+        {
+          "name": "rust-bin.stable.latest.default",
+          "overlay": "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
+        }
+      ],
+      "aptPackages": [
+        "binutils"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "mkdir -p bin",
+        "cargo build --release",
+        "cp target/release/rocket bin"
+      ],
+      "cacheDirectories": [
+        "/root/.cargo/git",
+        "/root/.cargo/registry",
+        "target"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "./bin/rocket"
+  }
 }

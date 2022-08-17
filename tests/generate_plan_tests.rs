@@ -1,4 +1,4 @@
-use nixpacks::{generate_build_plan, nixpacks::plan::generator::GeneratePlanOptions};
+use nixpacks::{generate_build_plan, nixpacks::plan::config::GeneratePlanConfig};
 use std::env::consts::ARCH;
 
 test_helper::generate_plan_tests!();
@@ -6,20 +6,24 @@ test_helper::generate_plan_tests!();
 #[test]
 fn test_custom_rust_version() {
     let plan = simple_gen_plan("./examples/rust-custom-version");
+    let setup = plan.get_phase("setup").unwrap().clone();
+    let build = plan.get_phase("build").unwrap().clone();
+
     assert_eq!(
-        plan.build.unwrap().cmds,
+        build.cmds,
         Some(vec![
+            format!("mkdir -p bin"),
             format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
             format!(
-                "cp target/{}-unknown-linux-musl/release/rust-custom-version rust-custom-version",
+                "cp target/{}-unknown-linux-musl/release/rust-custom-version bin",
                 ARCH
             )
         ])
     );
     assert_eq!(
-        plan.setup
+        setup
+            .nix_pkgs
             .unwrap()
-            .pkgs
             .iter()
             .filter(|p| p.name.contains("1.56.0"))
             .count(),
@@ -30,22 +34,20 @@ fn test_custom_rust_version() {
 #[test]
 fn test_rust_rocket() {
     let plan = simple_gen_plan("./examples/rust-rocket");
+    let build = plan.get_phase("build").unwrap();
+    let start = plan.start_phase.clone().unwrap();
+
     assert_eq!(
-        plan.build.unwrap().cmds,
+        build.cmds,
         Some(vec![
+            format!("mkdir -p bin"),
             format!("cargo build --release --target {}-unknown-linux-musl", ARCH),
-            format!(
-                "cp target/{}-unknown-linux-musl/release/rocket rocket",
-                ARCH
-            )
+            format!("cp target/{}-unknown-linux-musl/release/rocket bin", ARCH)
         ])
     );
-    assert!(plan.start.clone().unwrap().cmd.is_some());
-    assert_eq!(
-        plan.start.clone().unwrap().cmd.unwrap(),
-        "./rocket".to_string()
-    );
-    assert!(plan.start.unwrap().run_image.is_some());
+    assert!(start.cmd.is_some());
+    assert_eq!(start.clone().cmd.unwrap(), "./rocket".to_string());
+    assert!(start.run_image.is_some());
 }
 
 #[test]
@@ -53,7 +55,7 @@ fn test_rust_rocket_no_musl() {
     let plan = generate_build_plan(
         "./examples/rust-rocket",
         vec!["NIXPACKS_NO_MUSL=1"],
-        &GeneratePlanOptions::default(),
+        &GeneratePlanConfig::default(),
     )
     .unwrap();
     assert_plan_snapshot!(plan);
@@ -62,9 +64,10 @@ fn test_rust_rocket_no_musl() {
 #[test]
 fn test_rust_cargo_workspaces() {
     let plan = simple_gen_plan("./examples/rust-cargo-workspaces");
+    let build = plan.get_phase("build").unwrap();
 
     assert_eq!(
-        plan.build.unwrap().cmds.unwrap()[0],
+        build.clone().cmds.unwrap()[1],
         format!(
             "cargo build --release --package binary --target {}-unknown-linux-musl",
             ARCH
@@ -75,16 +78,14 @@ fn test_rust_cargo_workspaces() {
 #[test]
 fn test_haskell_stack() {
     let plan = simple_gen_plan("./examples/haskell-stack");
+    let install = plan.get_phase("install").unwrap();
+    let build = plan.get_phase("build").unwrap();
+    let start = plan.start_phase.clone().unwrap();
+
+    assert_eq!(install.cmds, Some(vec!["stack setup".to_string()]));
+    assert_eq!(build.cmds, Some(vec!["stack install".to_string()]));
     assert_eq!(
-        plan.install.unwrap().cmds,
-        Some(vec!["stack setup".to_string()])
-    );
-    assert_eq!(
-        plan.build.unwrap().cmds,
-        Some(vec!["stack install".to_string()])
-    );
-    assert_eq!(
-        plan.start.unwrap().cmd,
+        start.cmd,
         Some("/root/.local/bin/haskell-stack-exe".to_string())
     );
 }
@@ -93,18 +94,16 @@ fn test_haskell_stack() {
 #[test]
 fn test_zig_gyro() {
     let plan = simple_gen_plan("./examples/zig-gyro");
+    let install = plan.get_phase("install").unwrap().clone();
+    let build = plan.get_phase("build").unwrap();
+    let start = plan.start_phase.clone().unwrap();
 
     assert_eq!(
-        plan.build.unwrap().cmds,
+        build.cmds,
         Some(vec!["zig build -Drelease-safe=true".to_string()])
     );
-    assert_eq!(
-        plan.start.unwrap().cmd,
-        Some("./zig-out/bin/zig-gyro".to_string())
-    );
-    assert!(plan
-        .install
-        .unwrap()
+    assert_eq!(start.cmd, Some("./zig-out/bin/zig-gyro".to_string()));
+    assert!(install
         .cmds
         .unwrap()
         .get(0)

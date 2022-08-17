@@ -3,29 +3,41 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "nginx"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {},
-  "build": {
-    "cmds": [
-      "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/"
-    ]
-  },
-  "start": {
-    "cmd": "[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\" /assets/nginx.conf && nginx -c /assets/nginx.conf"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {},
-  "static_assets": {
+  "staticAssets": {
     ".htpasswd": "# Username: nixpacks\n# Password: nixpacks\nnixpacks:$apr1$21i3ye0o$d1H1ePSg8mD2cO5O2A9dG.",
     "nginx.conf": "daemon off;\nerror_log /dev/stdout info;\nworker_processes  auto;\nevents {\n    worker_connections  1024;\n}\n\nhttp {\n    include /nix/store/*-user-environment/conf/mime.types;\n    access_log /dev/stdout;\n    default_type  application/octet-stream;\n    sendfile       on;\n    keepalive_timeout  60;\n    types_hash_max_size 4096;\n    server {\n        listen    0.0.0.0:80;\n        gzip  \t  on;\n        root\t  /app/site;\n        location / {\n            auth_basic\t\"Password Required\";\nauth_basic_user_file\t/assets/.htpasswd;\n            autoindex off;\n        }\n\n    }\n}\n"
+  },
+  "phases": [
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "nginx"
+        }
+      ],
+      "nixLibraries": [],
+      "aptPackages": []
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\" /assets/nginx.conf && nginx -c /assets/nginx.conf"
   }
 }

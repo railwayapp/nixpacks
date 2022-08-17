@@ -3,22 +3,35 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "cowsay"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {},
-  "build": {},
-  "start": {
-    "cmd": "./start.sh"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {},
-  "static_assets": {}
+  "staticAssets": {},
+  "phases": [
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "cowsay"
+        }
+      ],
+      "nixLibraries": [],
+      "aptPackages": []
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "./start.sh"
+  }
 }

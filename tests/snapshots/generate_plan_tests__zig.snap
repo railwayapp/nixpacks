@@ -3,26 +3,38 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "zig"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {},
-  "build": {
-    "cmds": [
-      "zig build -Drelease-safe=true"
-    ]
-  },
-  "start": {
-    "cmd": "./zig-out/bin/zig"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {},
-  "static_assets": {}
+  "staticAssets": {},
+  "phases": [
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "zig"
+        }
+      ],
+      "nixLibraries": [],
+      "aptPackages": []
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "zig build -Drelease-safe=true"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "./zig-out/bin/zig"
+  }
 }

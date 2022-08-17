@@ -3,32 +3,41 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "go"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {},
-  "build": {
-    "cmds": [
-      "go build -o out main.go"
-    ],
-    "cacheDirectories": [
-      "/root/.cache/go-build"
-    ]
-  },
-  "start": {
-    "cmd": "./out",
-    "runImage": "debian:bullseye-slim"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {
     "CGO_ENABLED": "0"
   },
-  "static_assets": {}
+  "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "go"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "go build -o out main.go"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/go-build"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "./out",
+    "runImage": "debian:bullseye-slim"
+  }
 }

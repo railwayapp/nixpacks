@@ -11,7 +11,10 @@ use crate::{
         app::App,
         environment::{Environment, EnvironmentVariables},
         nix::pkg::Pkg,
-        phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+        plan::{
+            phase::{Phase, StartPhase},
+            BuildPlan,
+        },
     },
     providers::node::nx::NxJson,
 };
@@ -58,58 +61,40 @@ impl Provider for NodeProvider {
         Ok(app.includes_file("package.json"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
-        let packages = NodeProvider::get_nix_packages(app, env)?;
-        let mut setup_phase = SetupPhase::new(packages);
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+        // Setup
+        let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
         if NodeProvider::uses_canvas(app) {
-            setup_phase.add_libraries(vec!["libuuid".to_string(), "libGL".to_string()]);
-        }
-        Ok(Some(setup_phase))
-    }
-
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let install_cmd = NodeProvider::get_install_command(app);
-
-        let mut install_phase = InstallPhase::new(install_cmd);
-
-        // Package manage cache directories
-        let package_manager = NodeProvider::get_package_manager(app);
-        if package_manager == "yarn" {
-            install_phase.add_cache_directory(YARN_CACHE_DIR.to_string());
-        } else if package_manager == "pnpm" {
-            install_phase.add_cache_directory(PNPM_CACHE_DIR.to_string());
-        } else if package_manager == "bun" {
-            install_phase.add_cache_directory(BUN_CACHE_DIR.to_string());
-        } else {
-            install_phase.add_cache_directory(NPM_CACHE_DIR.to_string());
+            setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
 
-        let all_deps = NodeProvider::get_all_deps(app)?;
+        // Install
+        let mut install = Phase::install(Some(NodeProvider::get_install_command(app)));
+        install.add_cache_directory(NodeProvider::get_package_manager_cache_dir(app));
 
         // Cypress cache directory
+        let all_deps = NodeProvider::get_all_deps(app)?;
         if all_deps.get("cypress").is_some() {
-            install_phase.add_cache_directory(CYPRESS_CACHE_DIR.to_string());
+            install.add_cache_directory((*CYPRESS_CACHE_DIR).to_string());
         }
 
-        Ok(Some(install_phase))
-    }
+        // Build
 
-    fn build(&self, app: &App, env: &Environment) -> Result<Option<BuildPhase>> {
-        let mut build_phase = BuildPhase::default();
-        let pkg_manager = NodeProvider::get_package_manager(app);
-
-        if NodeProvider::is_nx_monorepo(app) {
+        let mut build = if NodeProvider::is_nx_monorepo(app) {
             let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
-            build_phase.add_cmd(format!("npx nx run {}:build:production", app_name));
+            Phase::build(Some(format!("npx nx run {}:build:production", app_name)))
         } else if NodeProvider::has_script(app, "build")? {
-            build_phase.add_cmd(format!("{} run build", pkg_manager));
-        }
+            let pkg_manager = NodeProvider::get_package_manager(app);
+            Phase::build(Some(format!("{} run build", pkg_manager)))
+        } else {
+            Phase::build(None)
+        };
 
         // Next build cache directories
         let next_cache_dirs = NodeProvider::find_next_packages(app)?;
         for dir in next_cache_dirs {
             let next_cache_dir = ".next/cache";
-            build_phase.add_cache_directory(if dir.is_empty() {
+            build.add_cache_directory(if dir.is_empty() {
                 next_cache_dir.to_string()
             } else {
                 format!("{}/{}", dir, next_cache_dir)
@@ -117,25 +102,15 @@ impl Provider for NodeProvider {
         }
 
         // Node modules cache directory
-        build_phase.add_cache_directory(NODE_MODULES_CACHE_DIR.to_string());
+        build.add_cache_directory((*NODE_MODULES_CACHE_DIR).to_string());
 
-        Ok(Some(build_phase))
-    }
+        // Start
+        let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
 
-    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
-        if let Some(start_cmd) = NodeProvider::get_start_cmd(app, env)? {
-            Ok(Some(StartPhase::new(start_cmd)))
-        } else {
-            Ok(None)
-        }
-    }
+        let mut plan = BuildPlan::new(vec![setup, install, build], start);
+        plan.add_variables(NodeProvider::get_node_environment_variables());
 
-    fn environment_variables(
-        &self,
-        _app: &App,
-        _env: &Environment,
-    ) -> Result<Option<EnvironmentVariables>> {
-        Ok(Some(NodeProvider::get_node_environment_variables()))
+        Ok(Some(plan))
     }
 }
 
@@ -280,6 +255,19 @@ impl NodeProvider {
             install_cmd = "bun i --no-save";
         }
         install_cmd.to_string()
+    }
+
+    fn get_package_manager_cache_dir(app: &App) -> String {
+        let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager == "yarn" {
+            (*YARN_CACHE_DIR).to_string()
+        } else if package_manager == "pnpm" {
+            (*PNPM_CACHE_DIR).to_string()
+        } else if package_manager == "bun" {
+            (*BUN_CACHE_DIR).to_string()
+        } else {
+            (*NPM_CACHE_DIR).to_string()
+        }
     }
 
     /// Returns the nodejs nix package and the appropriate package manager nix image.

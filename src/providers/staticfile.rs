@@ -3,7 +3,7 @@ use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::Environment,
     nix::pkg::Pkg,
-    phase::{BuildPhase, SetupPhase, StartPhase},
+    plan::legacy_phase::{LegacyBuildPhase, LegacySetupPhase, LegacyStartPhase},
 };
 use anyhow::Result;
 use indoc::formatdoc;
@@ -34,9 +34,9 @@ impl Provider for StaticfileProvider {
             || app.includes_file("index.html"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
         let pkg = Pkg::new("nginx");
-        Ok(Some(SetupPhase::new(vec![pkg])))
+        Ok(Some(LegacySetupPhase::new(vec![pkg])))
     }
 
     fn static_assets(&self, app: &App, env: &Environment) -> Result<Option<StaticAssets>> {
@@ -109,18 +109,18 @@ impl Provider for StaticfileProvider {
         Ok(Some(assets))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new(
+    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+        Ok(Some(LegacyBuildPhase::new(
             "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string(),
         )))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
         // shell command to edit 0.0.0.0:80 to $PORT
         let shell_cmd = "[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\"";
-        Ok(Some(StartPhase::new(format!(
-            "{} {conf_location} && nginx -c {conf_location}",
-            shell_cmd,
+        Ok(Some(LegacyStartPhase::new(format!(
+            "{shell_cmd} {conf_location} && nginx -c {conf_location}",
+            shell_cmd = shell_cmd,
             conf_location = app.asset_path("nginx.conf"),
         ))))
     }

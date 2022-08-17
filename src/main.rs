@@ -10,7 +10,7 @@ use clap::{arg, Arg, Command};
 use nixpacks::{
     create_docker_image, generate_build_plan,
     nixpacks::{
-        builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::generator::GeneratePlanOptions,
+        builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::config::GeneratePlanConfig,
     },
 };
 
@@ -86,13 +86,6 @@ fn main() -> Result<()> {
                         .long("no-cache")
                         .help("Disable building with the cache"),
                 ),
-        )
-        .arg(
-            Arg::new("plan")
-                .long("plan")
-                .help("Existing build plan file to use")
-                .takes_value(true)
-                .global(true),
         )
         .arg(
             Arg::new("install_cmd")
@@ -183,9 +176,7 @@ fn main() -> Result<()> {
         None => Vec::new(),
     };
 
-    let plan_path = matches.value_of("plan").map(ToString::to_string);
-
-    let plan_options = &GeneratePlanOptions {
+    let plan_options = &GeneratePlanConfig {
         custom_install_cmd: install_cmd,
         custom_start_cmd: start_cmd,
         custom_build_cmd: build_cmd,
@@ -193,7 +184,7 @@ fn main() -> Result<()> {
         custom_libs: libs,
         custom_apt_pkgs: apt_pkgs,
         pin_pkgs,
-        plan_path,
+        ..Default::default()
     };
 
     match &matches.subcommand() {

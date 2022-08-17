@@ -1,15 +1,14 @@
-use anyhow::Result;
-use std::env::consts::ARCH;
-use std::ffi::OsStr;
-
+use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::legacy_phase::{
+        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    },
 };
-
-use super::Provider;
+use anyhow::Result;
+use std::{env::consts::ARCH, ffi::OsStr};
 
 pub struct ZigProvider;
 
@@ -25,16 +24,16 @@ impl Provider for ZigProvider {
         Ok(app.has_match("*.zig") || app.has_match("**/*.zig") || app.has_match("gyro.zzz"))
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
         let mut pkgs = vec![Pkg::new("zig")];
         if app.includes_file("gyro.zzz") {
             pkgs.push(Pkg::new("wget"));
         }
-        Ok(Some(SetupPhase::new(pkgs)))
+        Ok(Some(LegacySetupPhase::new(pkgs)))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let mut phase = InstallPhase::default();
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+        let mut phase = LegacyInstallPhase::default();
         if app.includes_file(".gitmodules") {
             phase.add_cmd("git submodule update --init".to_string());
         }
@@ -50,14 +49,14 @@ impl Provider for ZigProvider {
         Ok(Some(phase))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
-        Ok(Some(BuildPhase::new(
+    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+        Ok(Some(LegacyBuildPhase::new(
             "zig build -Drelease-safe=true".to_string(),
         )))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
-        Ok(Some(StartPhase::new(format!(
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+        Ok(Some(LegacyStartPhase::new(format!(
             "./zig-out/bin/{}",
             app.source
                 .file_name()

@@ -21,15 +21,14 @@
 use crate::nixpacks::{
     app::App,
     builder::{
-        docker::{DockerBuilder, DockerBuilderOptions},
-        Builder,
+        docker::{docker_image_builder::DockerImageBuilder, DockerBuilderOptions},
+        ImageBuilder,
     },
     environment::Environment,
     logger::Logger,
     nix::pkg::Pkg,
     plan::{
-        generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
-        BuildPlan, PlanGenerator,
+        config::GeneratePlanConfig, generator::NixpacksBuildPlanGenerator, BuildPlan, PlanGenerator,
     },
 };
 use anyhow::Result;
@@ -71,7 +70,7 @@ pub fn get_providers() -> &'static [&'static dyn Provider] {
 pub fn generate_build_plan(
     path: &str,
     envs: Vec<&str>,
-    plan_options: &GeneratePlanOptions,
+    plan_options: &GeneratePlanConfig,
 ) -> Result<BuildPlan> {
     let app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
@@ -85,7 +84,7 @@ pub fn generate_build_plan(
 pub fn create_docker_image(
     path: &str,
     envs: Vec<&str>,
-    plan_options: &GeneratePlanOptions,
+    plan_options: &GeneratePlanConfig,
     build_options: &DockerBuilderOptions,
 ) -> Result<()> {
     let app = App::new(path)?;
@@ -95,7 +94,7 @@ pub fn create_docker_image(
     let plan = generator.generate_plan(&app, &environment)?;
 
     let logger = Logger::new();
-    let builder = DockerBuilder::new(logger, build_options.clone());
+    let builder = DockerImageBuilder::new(logger, build_options.clone());
     builder.create_image(app.source.to_str().unwrap(), &plan, &environment)?;
 
     Ok(())

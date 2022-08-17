@@ -6,7 +6,10 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
-    phase::{BuildPhase, SetupPhase, StartPhase},
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
+    },
 };
 use anyhow::{Context, Result};
 use cargo_toml::{Manifest, Workspace};
@@ -29,89 +32,128 @@ impl Provider for RustProvider {
         Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+        let setup = RustProvider::get_setup(app, env)?;
+        let build = RustProvider::get_build(app, env)?;
+        let start = RustProvider::get_start(app, env)?;
+
+        let mut plan = BuildPlan::new(vec![setup, build], start);
+        plan.add_variables(EnvironmentVariables::from([(
+            "ROCKET_ADDRESS".to_string(),
+            "0.0.0.0".to_string(),
+        )]));
+
+        Ok(Some(plan))
+    }
+}
+
+impl RustProvider {
+    fn get_setup(app: &App, env: &Environment) -> Result<Phase> {
         let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
 
         if let Some(target) = RustProvider::get_target(app, env)? {
             rust_pkg = rust_pkg.set_override("targets", &format!("[\"{}\"]", target));
         }
 
-        let mut setup_phase =
-            SetupPhase::new(vec![Pkg::new("gcc"), rust_pkg.from_overlay(RUST_OVERLAY)]);
+        let mut setup = Phase::setup(Some(vec![
+            Pkg::new("gcc"),
+            rust_pkg.from_overlay(RUST_OVERLAY),
+        ]));
 
         // Include the rust toolchain file so we can install that rust version with Nix
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
-            setup_phase.add_file_dependency(toolchain_file);
+            setup.add_file_dependency(toolchain_file);
         }
 
         // Custom libs for openssl
         if RustProvider::uses_openssl(app)? {
-            setup_phase.add_libraries(vec!["openssl".to_string(), "openssl.dev".to_string()]);
+            setup.add_pkgs_libs(vec!["openssl".to_string(), "openssl.dev".to_string()]);
         }
 
         if RustProvider::should_use_musl(app, env)? {
-            setup_phase.add_apt_pkgs(vec!["musl-tools".to_string()]);
+            setup.add_apt_pkgs(vec!["musl-tools".to_string()]);
         }
 
-        setup_phase.add_apt_pkgs(vec!["binutils".to_string()]);
+        setup.add_apt_pkgs(vec!["binutils".to_string()]);
 
-        Ok(Some(setup_phase))
+        Ok(setup)
     }
 
-    fn build(&self, app: &App, env: &Environment) -> Result<Option<BuildPhase>> {
-        let mut build_phase = RustProvider::get_build_phase(app, env)?;
+    fn get_build(app: &App, env: &Environment) -> Result<Phase> {
+        let mut build = Phase::build(None);
 
-        build_phase.add_cache_directory(CARGO_GIT_CACHE_DIR.to_string());
-        build_phase.add_cache_directory(CARGO_REGISTRY_CACHE_DIR.to_string());
+        build.add_cmd("mkdir -p bin");
+
+        let mut build_cmd = "cargo build --release".to_string();
+
+        if let Some(target) = RustProvider::get_target(app, env)? {
+            if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
+                write!(build_cmd, " --package {} --target {}", workspace, target)?;
+
+                build.add_cmd(build_cmd);
+                build.add_cmd(format!(
+                    "cp target/{}/release/{name} bin",
+                    target,
+                    name = workspace
+                ));
+            } else {
+                write!(build_cmd, " --target {}", target)?;
+
+                if let Some(name) = RustProvider::get_app_name(app)? {
+                    build.add_cmd(build_cmd);
+                    build.add_cmd(format!(
+                        "cp target/{}/release/{name} bin",
+                        target,
+                        name = name
+                    ));
+                }
+            }
+        } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
+            write!(build_cmd, " --package {}", workspace)?;
+            build.add_cmd(build_cmd);
+            build.add_cmd(format!("cp target/release/{name} bin", name = workspace));
+        } else if let Some(name) = RustProvider::get_app_name(app)? {
+            build.add_cmd(build_cmd);
+            build.add_cmd(format!("cp target/release/{name} bin", name = name));
+        }
+
+        build.add_cache_directory(CARGO_GIT_CACHE_DIR.to_string());
+        build.add_cache_directory(CARGO_REGISTRY_CACHE_DIR.to_string());
 
         if RustProvider::get_app_name(app)?.is_some() {
             // Cache target directory
-            build_phase.add_cache_directory(CARGO_TARGET_CACHE_DIR.to_string());
+            build.add_cache_directory(CARGO_TARGET_CACHE_DIR.to_string());
         }
 
-        Ok(Some(build_phase))
+        Ok(build)
     }
 
-    fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+    fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if (RustProvider::get_target(app, env)?).is_some() {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-                let mut start_phase = StartPhase::new(format!("./{}", workspace));
+                let mut start = StartPhase::new(format!("./{}", workspace));
+                start.run_in_slim_image();
+                start.add_file_dependency(format!("./bin/{}", workspace));
 
-                start_phase.run_in_slim_image();
-                start_phase.add_file_dependency(format!("./{}", workspace));
-
-                Ok(Some(start_phase))
+                Ok(Some(start))
             } else if let Some(name) = RustProvider::get_app_name(app)? {
-                let mut start_phase = StartPhase::new(format!("./{}", name));
+                let mut start = StartPhase::new(format!("./{}", name));
+                start.run_in_slim_image();
+                start.add_file_dependency(format!("./bin/{}", name));
 
-                start_phase.run_in_slim_image();
-                start_phase.add_file_dependency(format!("./{}", name));
-
-                Ok(Some(start_phase))
+                Ok(Some(start))
             } else {
                 Ok(None)
             }
         } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-            Ok(Some(StartPhase::new(format!("./{}", workspace))))
+            Ok(Some(StartPhase::new(format!("./bin/{}", workspace))))
         } else if let Some(name) = RustProvider::get_app_name(app)? {
-            Ok(Some(StartPhase::new(format!("./{}", name))))
+            Ok(Some(StartPhase::new(format!("./bin/{}", name))))
         } else {
             Ok(None)
         }
     }
 
-    fn environment_variables(
-        &self,
-        _app: &App,
-        _env: &Environment,
-    ) -> Result<Option<EnvironmentVariables>> {
-        let mut variables = EnvironmentVariables::default();
-        variables.insert("ROCKET_ADDRESS".to_string(), "0.0.0.0".to_string());
-        Ok(Some(variables))
-    }
-}
-
-impl RustProvider {
     fn get_app_name(app: &App) -> Result<Option<String>> {
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
             if let Some(package) = toml_file.package {
@@ -287,56 +329,6 @@ impl RustProvider {
         }
 
         Ok(None)
-    }
-
-    fn get_build_phase(app: &App, env: &Environment) -> Result<BuildPhase> {
-        let mut build_cmd = "cargo build --release".to_string();
-
-        if let Some(target) = RustProvider::get_target(app, env)? {
-            if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-                write!(build_cmd, " --package {} --target {}", workspace, target)?;
-
-                let mut build_phase = BuildPhase::new(build_cmd);
-
-                build_phase.add_cmd(format!(
-                    "cp target/{}/release/{name} {name}",
-                    target,
-                    name = workspace
-                ));
-
-                Ok(build_phase)
-            } else {
-                write!(build_cmd, " --target {}", target)?;
-
-                let mut build_phase = BuildPhase::new(build_cmd);
-
-                if let Some(name) = RustProvider::get_app_name(app)? {
-                    build_phase.add_cmd(format!(
-                        "cp target/{}/release/{name} {name}",
-                        target,
-                        name = name
-                    ));
-                }
-
-                Ok(build_phase)
-            }
-        } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-            write!(build_cmd, " --package {}", workspace)?;
-
-            let mut build_phase = BuildPhase::new(build_cmd);
-
-            build_phase.add_cmd(format!("cp target/release/{name} {name}", name = workspace));
-
-            Ok(build_phase)
-        } else {
-            let mut build_phase = BuildPhase::new(build_cmd);
-
-            if let Some(name) = RustProvider::get_app_name(app)? {
-                build_phase.add_cmd(format!("cp target/release/{name} {name}", name = name));
-            }
-
-            Ok(build_phase)
-        }
     }
 }
 

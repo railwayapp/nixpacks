@@ -3,33 +3,40 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "crystal"
-      },
-      {
-        "name": "shards"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {
-    "cmds": [
-      "shards install"
-    ]
-  },
-  "build": {
-    "cmds": [
-      "shards build --release"
-    ]
-  },
-  "start": {
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
+  "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "shards install"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "crystal"
+        },
+        {
+          "name": "shards"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "shards build"
+      ]
+    }
+  ],
+  "startPhase": {
     "cmd": "./bin/crystal"
-  },
-  "variables": {},
-  "static_assets": {}
+  }
 }

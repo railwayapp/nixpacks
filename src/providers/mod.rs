@@ -1,7 +1,10 @@
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::{
+        legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
+        BuildPlan,
+    },
 };
 use anyhow::Result;
 
@@ -25,17 +28,23 @@ pub mod zig;
 
 pub trait Provider {
     fn name(&self) -> &str;
+
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<SetupPhase>> {
+
+    fn get_build_plan(&self, _app: &App, _environment: &Environment) -> Result<Option<BuildPlan>> {
         Ok(None)
     }
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
+
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
         Ok(None)
     }
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPhase>> {
+    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
         Ok(None)
     }
-    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+        Ok(None)
+    }
+    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
         Ok(None)
     }
     fn static_assets(&self, _app: &App, _env: &Environment) -> Result<Option<StaticAssets>> {

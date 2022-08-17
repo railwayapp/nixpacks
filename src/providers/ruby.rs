@@ -2,7 +2,9 @@ use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    phase::{BuildPhase, InstallPhase, SetupPhase, StartPhase},
+    plan::legacy_phase::{
+        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    },
 };
 use anyhow::{bail, Ok, Result};
 use regex::Regex;
@@ -20,12 +22,12 @@ impl Provider for RubyProvider {
         Ok(app.includes_file("Gemfile"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<SetupPhase>> {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<LegacySetupPhase>> {
         let mut pkgs = vec![];
         if app.includes_file("package.json") {
             pkgs = NodeProvider::get_nix_packages(app, env)?;
         }
-        let mut setup_phase = SetupPhase::new(pkgs);
+        let mut setup_phase = LegacySetupPhase::new(pkgs);
         setup_phase.add_apt_pkgs(vec!["procps".to_string()]);
 
         if self.uses_postgres(app)? {
@@ -45,8 +47,8 @@ impl Provider for RubyProvider {
         Ok(Some(setup_phase))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<InstallPhase>> {
-        let mut install_phase = InstallPhase::default();
+    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+        let mut install_phase = LegacyInstallPhase::default();
         install_phase.add_file_dependency("Gemfile*".to_string());
         install_phase.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
@@ -75,13 +77,9 @@ impl Provider for RubyProvider {
         Ok(Some(install_phase))
     }
 
-    fn build(
-        &self,
-        app: &App,
-        _env: &Environment,
-    ) -> Result<Option<crate::nixpacks::phase::BuildPhase>> {
+    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         if self.is_rails_app(app) {
-            Ok(Some(BuildPhase::new(
+            Ok(Some(LegacyBuildPhase::new(
                 "bundle exec rake assets:precompile".to_string(),
             )))
         } else {
@@ -89,9 +87,9 @@ impl Provider for RubyProvider {
         }
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<StartPhase>> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
         if let Some(start_cmd) = self.get_start_command(app) {
-            let start_phase = StartPhase::new(start_cmd);
+            let start_phase = LegacyStartPhase::new(start_cmd);
             Ok(Some(start_phase))
         } else {
             Ok(None)

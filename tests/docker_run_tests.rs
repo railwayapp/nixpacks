@@ -3,7 +3,7 @@ use nixpacks::{
     create_docker_image,
     nixpacks::{
         builder::docker::DockerBuilderOptions, environment::EnvironmentVariables, nix::pkg::Pkg,
-        plan::generator::GeneratePlanOptions,
+        plan::config::GeneratePlanConfig,
     },
 };
 use std::io::{BufRead, BufReader};
@@ -109,7 +109,7 @@ fn simple_build(path: &str) -> String {
     create_docker_image(
         path,
         Vec::new(),
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: true,
             ..Default::default()
         },
@@ -129,7 +129,7 @@ fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
     create_docker_image(
         path,
         env_vars,
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: true,
             ..Default::default()
         },
@@ -241,6 +241,12 @@ fn run_postgres() -> Container {
             network: None,
         }),
     }
+}
+
+#[test]
+fn test_deno() {
+    let name = simple_build("./examples/deno");
+    assert!(run_image(name, None).contains("Hello from Deno"));
 }
 
 #[test]
@@ -446,7 +452,7 @@ fn test_rust_custom_version() {
     create_docker_image(
         "./examples/rust-custom-version",
         vec!["NIXPACKS_NO_MUSL=1"],
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: true,
             ..Default::default()
         },
@@ -524,7 +530,7 @@ fn test_cowsay() {
     create_docker_image(
         "./examples/shell-hello",
         Vec::new(),
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: true,
             custom_start_cmd: Some("./start.sh".to_string()),
             custom_pkgs: vec![Pkg::new("cowsay")],
@@ -555,7 +561,7 @@ fn test_swift() {
     create_docker_image(
         "./examples/swift",
         Vec::new(),
-        &GeneratePlanOptions {
+        &GeneratePlanConfig {
             pin_pkgs: false,
             ..Default::default()
         },

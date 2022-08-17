@@ -3,29 +3,41 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "version": "[version]",
-  "setup": {
-    "pkgs": [
-      {
-        "name": "maven"
-      },
-      {
-        "name": "jdk8"
-      }
-    ],
-    "libraries": [],
-    "apt_pkgs": [],
-    "baseImage": "[baseImage]"
-  },
-  "install": {},
-  "build": {
-    "cmds": [
-      "mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install"
-    ]
-  },
-  "start": {
-    "cmd": "java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar"
-  },
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {},
-  "static_assets": {}
+  "staticAssets": {},
+  "phases": [
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "maven"
+        },
+        {
+          "name": "jdk8"
+        }
+      ],
+      "nixLibraries": [],
+      "aptPackages": []
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar"
+  }
 }
