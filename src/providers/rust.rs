@@ -111,9 +111,9 @@ impl RustProvider {
         } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
             write!(build_cmd, " --package {}", workspace)?;
             build.add_cmd(build_cmd);
-
             build.add_cmd(format!("cp target/release/{name} bin", name = workspace));
         } else if let Some(name) = RustProvider::get_app_name(app)? {
+            build.add_cmd(build_cmd);
             build.add_cmd(format!("cp target/release/{name} bin", name = name));
         }
 

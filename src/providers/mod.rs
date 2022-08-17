@@ -29,11 +29,12 @@ pub mod zig;
 pub trait Provider {
     fn name(&self) -> &str;
 
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
+
     fn get_build_plan(&self, _app: &App, _environment: &Environment) -> Result<Option<BuildPlan>> {
         Ok(None)
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
     fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
         Ok(None)
     }
