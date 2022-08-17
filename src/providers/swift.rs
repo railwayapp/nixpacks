@@ -3,8 +3,9 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    plan::legacy_phase::{
-        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
     },
 };
 use anyhow::{bail, Result};
@@ -38,23 +39,25 @@ impl Provider for SwiftProvider {
         Ok(app.includes_file("Package.swift"))
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
-        let mut setup_phase = LegacySetupPhase::new(vec![
+    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+        let _plan = BuildPlan::default();
+
+        let mut setup = Phase::setup(Some(vec![
             Pkg::new("coreutils"),
             Pkg::new("swift"),
             Pkg::new("clang"),
             Pkg::new("zlib"),
             Pkg::new("zlib.dev"),
-        ]);
+        ]));
 
         let swift_version = SwiftProvider::get_swift_version(app)?;
         let rev = SwiftProvider::version_number_to_rev(&swift_version);
 
         if let Some(rev) = rev {
-            setup_phase.set_archive(rev);
+            setup.set_nix_archive(rev);
         } else {
             // Safe to unwrap, "5.4.2" exists on `AVAILABLE_SWIFT_VERSIONS`
-            setup_phase.set_archive(
+            setup.set_nix_archive(
                 AVAILABLE_SWIFT_VERSIONS
                     .iter()
                     .find(|(ver, _rev)| *ver == DEFAULT_SWIFT_VERSION)
@@ -64,37 +67,27 @@ impl Provider for SwiftProvider {
             );
         }
 
-        Ok(Some(setup_phase))
-    }
-
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
-        let mut install_phase = LegacyInstallPhase::new("swift package resolve".to_string());
-
-        install_phase.add_file_dependency("Package.swift".to_string());
-
+        let mut install = Phase::install(Some("swift package resolve".to_string()));
+        install.add_file_dependency("Package.swift".to_string());
         if app.includes_file("Package.resolved") {
-            install_phase.add_file_dependency("Package.resolved".to_string());
+            install.add_file_dependency("Package.resolved".to_string());
         }
 
-        Ok(Some(install_phase))
-    }
-
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         let name = SwiftProvider::get_executable_name(app)?;
-        let mut build_phase = LegacyBuildPhase::new(
+        let mut build = Phase::build(Some(
             "CC=clang++ swift build -c release --static-swift-stdlib".to_string(),
-        );
-        build_phase.add_cmd(format!(
+        ));
+        build.add_cmd(format!(
             "cp ./.build/release/{name} ./{name} && rm -rf ./.build",
             name = name
         ));
-        Ok(Some(build_phase))
-    }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
         let name = SwiftProvider::get_executable_name(app)?;
+        let start = StartPhase::new(format!("./{}", name));
 
-        Ok(Some(LegacyStartPhase::new(format!("./{}", name))))
+        let plan = BuildPlan::new(vec![setup, install, build], Some(start));
+
+        Ok(Some(plan))
     }
 }
 

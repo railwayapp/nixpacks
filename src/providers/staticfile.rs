@@ -3,7 +3,10 @@ use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::Environment,
     nix::pkg::Pkg,
-    plan::legacy_phase::{LegacyBuildPhase, LegacySetupPhase, LegacyStartPhase},
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
+    },
 };
 use anyhow::Result;
 use indoc::formatdoc;
@@ -34,12 +37,48 @@ impl Provider for StaticfileProvider {
             || app.includes_file("index.html"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
-        let pkg = Pkg::new("nginx");
-        Ok(Some(LegacySetupPhase::new(vec![pkg])))
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+        let setup = Phase::setup(Some(vec![Pkg::new("nginx")]));
+        let build = Phase::build(Some(
+            "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string(),
+        ));
+
+        // shell command to edit 0.0.0.0:80 to $PORT
+        let shell_cmd = "[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\"";
+        let start = StartPhase::new(format!(
+            "{shell_cmd} {conf_location} && nginx -c {conf_location}",
+            shell_cmd = shell_cmd,
+            conf_location = app.asset_path("nginx.conf"),
+        ));
+
+        let static_assets = StaticfileProvider::get_static_assets(app, env)?;
+
+        let mut plan = BuildPlan::new(vec![setup, build], Some(start));
+        plan.add_static_assets(static_assets);
+
+        Ok(Some(plan))
+    }
+}
+
+impl StaticfileProvider {
+    pub fn get_root(app: &App, env: &Environment, staticfile_root: String) -> String {
+        let mut root = "".to_string();
+        if let Some(staticfile_root) = env.get_config_variable("STATICFILE_ROOT") {
+            root = staticfile_root;
+        } else if !staticfile_root.is_empty() {
+            root = staticfile_root;
+        } else if app.includes_directory("public") {
+            root = "public".to_string();
+        } else if app.includes_directory("dist") {
+            root = "dist".to_string();
+        } else if app.includes_directory("index") {
+            root = "index".to_string();
+        }
+
+        root
     }
 
-    fn static_assets(&self, app: &App, env: &Environment) -> Result<Option<StaticAssets>> {
+    fn get_static_assets(app: &App, env: &Environment) -> Result<StaticAssets> {
         let mut assets = StaticAssets::new();
 
         let mut mime_types = "include /nix/store/*-user-environment/conf/mime.types;".to_string();
@@ -106,41 +145,7 @@ impl Provider for StaticfileProvider {
         error_page = error_page
         };
         assets.insert("nginx.conf".to_string(), nginx_conf);
-        Ok(Some(assets))
-    }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
-        Ok(Some(LegacyBuildPhase::new(
-            "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string(),
-        )))
-    }
-
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
-        // shell command to edit 0.0.0.0:80 to $PORT
-        let shell_cmd = "[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\"";
-        Ok(Some(LegacyStartPhase::new(format!(
-            "{shell_cmd} {conf_location} && nginx -c {conf_location}",
-            shell_cmd = shell_cmd,
-            conf_location = app.asset_path("nginx.conf"),
-        ))))
-    }
-}
-
-impl StaticfileProvider {
-    pub fn get_root(app: &App, env: &Environment, staticfile_root: String) -> String {
-        let mut root = "".to_string();
-        if let Some(staticfile_root) = env.get_config_variable("STATICFILE_ROOT") {
-            root = staticfile_root;
-        } else if !staticfile_root.is_empty() {
-            root = staticfile_root;
-        } else if app.includes_directory("public") {
-            root = "public".to_string();
-        } else if app.includes_directory("dist") {
-            root = "dist".to_string();
-        } else if app.includes_directory("index") {
-            root = "index".to_string();
-        }
-
-        root
+        Ok(assets)
     }
 }

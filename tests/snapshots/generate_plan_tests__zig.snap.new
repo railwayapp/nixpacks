@@ -1,0 +1,37 @@
+---
+source: tests/generate_plan_tests.rs
+assertion_line: 4
+expression: plan
+---
+{
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
+  "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "zig"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "zig build -Drelease-safe=true"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "./zig-out/bin/zig"
+  }
+}

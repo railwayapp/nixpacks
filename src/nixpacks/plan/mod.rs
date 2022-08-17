@@ -90,6 +90,19 @@ impl BuildPlan {
         }
     }
 
+    pub fn add_static_assets(&mut self, static_assets: StaticAssets) {
+        match self.static_assets.as_mut() {
+            Some(assets) => {
+                for (key, value) in &static_assets {
+                    assets.insert(key.to_string(), value.to_string());
+                }
+            }
+            None => {
+                self.static_assets = Some(static_assets);
+            }
+        }
+    }
+
     pub fn get_phase(&self, name: &str) -> Option<&Phase> {
         self.phases.iter().find(|phase| phase.name == name)
     }

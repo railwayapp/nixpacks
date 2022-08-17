@@ -2,8 +2,9 @@ use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    plan::legacy_phase::{
-        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
     },
 };
 use anyhow::{bail, Ok, Result};
@@ -22,47 +23,68 @@ impl Provider for RubyProvider {
         Ok(app.includes_file("Gemfile"))
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<LegacySetupPhase>> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+        let setup = self.get_setup(app, env)?;
+        let install = self.get_install(app)?;
+        let build = self.get_build(app)?;
+        let start = self.get_start(app)?;
+
+        let mut plan = BuildPlan::new(
+            vec![setup, install, build]
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>(),
+            start,
+        );
+
+        plan.add_variables(self.get_environment_variables(app)?);
+
+        Ok(Some(plan))
+    }
+}
+
+impl RubyProvider {
+    fn get_setup(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
         let mut pkgs = vec![];
         if app.includes_file("package.json") {
             pkgs = NodeProvider::get_nix_packages(app, env)?;
         }
-        let mut setup_phase = LegacySetupPhase::new(pkgs);
-        setup_phase.add_apt_pkgs(vec!["procps".to_string()]);
+
+        let mut setup = Phase::setup(Some(pkgs));
+        setup.add_apt_pkgs(vec!["procps".to_string()]);
 
         if self.uses_postgres(app)? {
-            setup_phase.add_apt_pkgs(vec!["libpq-dev".to_string()]);
+            setup.add_apt_pkgs(vec!["libpq-dev".to_string()]);
         }
 
-        setup_phase.add_cmd(
+        setup.add_cmd(
             "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh".to_string(),
         );
 
-        setup_phase.add_cmd(format!("rvm install {}", self.get_ruby_version(app)?));
-        setup_phase.add_cmd(format!("rvm --default use {}", self.get_ruby_version(app)?));
-        setup_phase.add_cmd(format!("gem install {}", self.get_bundler_version(app)));
-        setup_phase
-            .add_cmd("echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile".to_string());
+        setup.add_cmd(format!("rvm install {}", self.get_ruby_version(app)?));
+        setup.add_cmd(format!("rvm --default use {}", self.get_ruby_version(app)?));
+        setup.add_cmd(format!("gem install {}", self.get_bundler_version(app)));
+        setup.add_cmd("echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile".to_string());
 
-        Ok(Some(setup_phase))
+        Ok(Some(setup))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
-        let mut install_phase = LegacyInstallPhase::default();
-        install_phase.add_file_dependency("Gemfile*".to_string());
-        install_phase.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
+    fn get_install(&self, app: &App) -> Result<Option<Phase>> {
+        let mut install = Phase::install(None);
+        install.add_file_dependency("Gemfile*".to_string());
+        install.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
-        install_phase.add_cmd("bundle install".to_string());
+        install.add_cmd("bundle install".to_string());
 
         // Ensure that the ruby executable is in the PATH
         let ruby_version = self.get_ruby_version(app)?;
-        install_phase.add_path(format!("/usr/local/rvm/rubies/{}/bin", ruby_version));
-        install_phase.add_path(format!("/usr/local/rvm/gems/{}/bin", ruby_version));
-        install_phase.add_path(format!("/usr/local/rvm/gems/{}@global/bin", ruby_version));
+        install.add_path(format!("/usr/local/rvm/rubies/{}/bin", ruby_version));
+        install.add_path(format!("/usr/local/rvm/gems/{}/bin", ruby_version));
+        install.add_path(format!("/usr/local/rvm/gems/{}@global/bin", ruby_version));
 
         if app.includes_file("package.json") {
-            install_phase.add_file_dependency("package.json".to_string());
-            install_phase
+            install.add_file_dependency("package.json".to_string());
+            install
                 .cmds
                 .clone()
                 .unwrap_or_default()
@@ -70,39 +92,35 @@ impl Provider for RubyProvider {
 
             for file in ["package.json", "package-lock.json"] {
                 if app.includes_file(file) {
-                    install_phase.add_file_dependency(file.to_string());
+                    install.add_file_dependency(file.to_string());
                 }
             }
         }
-        Ok(Some(install_phase))
+
+        Ok(Some(install))
     }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+    fn get_build(&self, app: &App) -> Result<Option<Phase>> {
         if self.is_rails_app(app) {
-            Ok(Some(LegacyBuildPhase::new(
+            Ok(Some(Phase::build(Some(
                 "bundle exec rake assets:precompile".to_string(),
-            )))
+            ))))
         } else {
             Ok(None)
         }
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+    fn get_start(&self, app: &App) -> Result<Option<StartPhase>> {
         if let Some(start_cmd) = self.get_start_command(app) {
-            let start_phase = LegacyStartPhase::new(start_cmd);
-            Ok(Some(start_phase))
+            Ok(Some(StartPhase::new(start_cmd)))
         } else {
             Ok(None)
         }
     }
 
-    fn environment_variables(
-        &self,
-        app: &App,
-        _env: &Environment,
-    ) -> Result<Option<crate::nixpacks::environment::EnvironmentVariables>> {
+    fn get_environment_variables(&self, app: &App) -> Result<EnvironmentVariables> {
         let ruby_version = self.get_ruby_version(app)?;
-        Ok(Some(EnvironmentVariables::from([
+        Ok(EnvironmentVariables::from([
             ("BUNDLE_GEMFILE".to_string(), "/app/Gemfile".to_string()),
             (
                 "GEM_PATH".to_string(),
@@ -115,11 +133,9 @@ impl Provider for RubyProvider {
                 "GEM_HOME".to_string(),
                 format!("/usr/local/rvm/gems/{}", ruby_version),
             ),
-        ])))
+        ]))
     }
-}
 
-impl RubyProvider {
     fn get_start_command(&self, app: &App) -> Option<String> {
         if self.is_rails_app(app) {
             if app.includes_file("rails") {

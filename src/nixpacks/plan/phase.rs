@@ -149,6 +149,10 @@ impl Phase {
     pub fn add_path(&mut self, path: String) {
         self.paths = Some(add_to_option_vec(self.paths.clone(), path));
     }
+
+    pub fn set_nix_archive(&mut self, archive: String) {
+        self.nixpacks_archive = Some(archive);
+    }
 }
 
 impl StartPhase {
