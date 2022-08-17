@@ -340,11 +340,11 @@ impl NodeProvider {
     }
 
     pub fn uses_puppeteer(app: &App) -> bool {
-        app.includes_file("canvas")
+        NodeProvider::uses_node_dependency(app, "canvas")
     }
 
     pub fn uses_canvas(app: &App) -> bool {
-        app.includes_file("puppeteer")
+        NodeProvider::uses_node_dependency(app, "puppeteer")
     }
 
     pub fn find_next_packages(app: &App) -> Result<Vec<String>> {
