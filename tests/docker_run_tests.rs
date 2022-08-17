@@ -123,6 +123,27 @@ fn simple_build(path: &str) -> String {
 
     name
 }
+
+fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
+    let name = Uuid::new_v4().to_string();
+    create_docker_image(
+        path,
+        env_vars,
+        &GeneratePlanOptions {
+            pin_pkgs: true,
+            ..Default::default()
+        },
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
+    name
+}
+
 const POSTGRES_IMAGE: &str = "postgres";
 
 struct Network {
@@ -226,6 +247,59 @@ fn run_postgres() -> Container {
 fn test_node() {
     let name = simple_build("./examples/node");
     assert!(run_image(name, None).contains("Hello from Node"));
+}
+
+#[test]
+fn test_node_nx_default_app() {
+    let name = simple_build("./examples/node-nx");
+    assert!(run_image(name, None).contains("nx express app works"));
+}
+
+#[test]
+fn test_node_nx_next() {
+    let name =
+        build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=next-app"]);
+
+    assert!(run_image(name, None)
+        .contains("ready - started server on 0.0.0.0:3000, url: http://localhost:3000"));
+}
+
+#[test]
+fn test_node_nx_start_command() {
+    let name = build_with_build_time_env_vars(
+        "./examples/node-nx",
+        vec!["NIXPACKS_NX_APP_NAME=start-command"],
+    );
+
+    assert!(run_image(name, None).contains("nx express app works"));
+}
+
+#[test]
+fn test_node_nx_start_command_production() {
+    let name = build_with_build_time_env_vars(
+        "./examples/node-nx",
+        vec!["NIXPACKS_NX_APP_NAME=start-command-production"],
+    );
+
+    assert!(run_image(name, None).contains("nx express app works"));
+}
+
+#[test]
+fn test_node_nx_node() {
+    let name =
+        build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=node-app"]);
+
+    assert!(run_image(name, None).contains("Hello from node-app!"));
+}
+
+#[test]
+fn test_node_nx_express() {
+    let name = build_with_build_time_env_vars(
+        "./examples/node-nx",
+        vec!["NIXPACKS_NX_APP_NAME=express-app"],
+    );
+
+    assert!(run_image(name, None).contains("nx express app works"));
 }
 
 #[test]
