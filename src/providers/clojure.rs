@@ -64,7 +64,7 @@ impl ClojureProvider {
 
         match custom_version {
             Some(v) => Ok(v),
-            None => Ok((*DEFAULT_JDK_PKG_NAME).to_string()),
+            None => Ok(DEFAULT_JDK_PKG_NAME.to_string()),
         }
     }
 
@@ -77,7 +77,7 @@ impl ClojureProvider {
 
         // If no matches, just use default
         if matches.is_none() {
-            return Ok((*DEFAULT_JDK_PKG_NAME).to_string());
+            return Ok(DEFAULT_JDK_PKG_NAME.to_string());
         }
 
         let matches = matches.unwrap();

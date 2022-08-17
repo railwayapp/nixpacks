@@ -11,7 +11,7 @@ use walkdir::{DirEntry, WalkDir};
 
 pub type StaticAssets = BTreeMap<String, String>;
 
-pub static ASSETS_DIR: &str = "/assets/";
+pub const ASSETS_DIR: &str = "/assets/";
 
 #[derive(Debug, Clone)]
 pub struct App {

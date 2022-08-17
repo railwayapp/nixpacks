@@ -12,8 +12,8 @@ use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::env::consts::ARCH;
 
-const STACK_CACHE_DIR: &'static &str = &"/root/.stack";
-const STACK_WORK_CACHE_DIR: &'static &str = &".stack-work";
+const STACK_CACHE_DIR: &str = "/root/.stack";
+const STACK_WORK_CACHE_DIR: &str = ".stack-work";
 
 pub struct HaskellStackProvider {}
 

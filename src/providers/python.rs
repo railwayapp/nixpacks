@@ -18,9 +18,9 @@ use std::{collections::HashMap, fs};
 
 use super::Provider;
 
-const DEFAULT_PYTHON_PKG_NAME: &'static &str = &"python38";
-const POETRY_VERSION: &'static &str = &"1.1.13";
-const PIP_CACHE_DIR: &'static &str = &"/root/.cache/pip";
+const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
+const POETRY_VERSION: &str = "1.1.13";
+const PIP_CACHE_DIR: &str = "/root/.cache/pip";
 
 pub struct PythonProvider {}
 
@@ -138,7 +138,7 @@ impl PythonProvider {
             install_phase.add_file_dependency("requirements.txt".to_string());
             install_phase.add_path(format!("{}/bin", env_loc));
 
-            install_phase.add_cache_directory((*PIP_CACHE_DIR).to_string());
+            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
             return Ok(Some(install_phase));
         } else if app.includes_file("pyproject.toml") {
@@ -153,7 +153,7 @@ impl PythonProvider {
                 install_phase.add_file_dependency("pyproject.toml".to_string());
                 install_phase.add_path(format!("{}/bin", env_loc));
 
-                install_phase.add_cache_directory((*PIP_CACHE_DIR).to_string());
+                install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
                 return Ok(Some(install_phase));
             }
@@ -165,7 +165,7 @@ impl PythonProvider {
             install_phase.add_file_dependency("pyproject.toml".to_string());
             install_phase.add_path(format!("{}/bin", env_loc));
 
-            install_phase.add_cache_directory((*PIP_CACHE_DIR).to_string());
+            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
             return Ok(Some(install_phase));
         }

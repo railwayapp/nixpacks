@@ -14,12 +14,12 @@ use crate::nixpacks::{
 use anyhow::{Context, Result};
 use cargo_toml::{Manifest, Workspace};
 
-static RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
-static DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
+const RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
+const DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
 
-const CARGO_GIT_CACHE_DIR: &'static &str = &"/root/.cargo/git";
-const CARGO_REGISTRY_CACHE_DIR: &'static &str = &"/root/.cargo/registry";
-const CARGO_TARGET_CACHE_DIR: &'static &str = &"target";
+const CARGO_GIT_CACHE_DIR: &str = "/root/.cargo/git";
+const CARGO_REGISTRY_CACHE_DIR: &str = "/root/.cargo/registry";
+const CARGO_TARGET_CACHE_DIR: &str = "target";
 
 pub struct RustProvider {}
 

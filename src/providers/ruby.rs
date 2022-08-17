@@ -11,7 +11,7 @@ use regex::Regex;
 
 pub struct RubyProvider {}
 
-const BUNDLE_CACHE_DIR: &'static &str = &"/root/.bundle/cache";
+const BUNDLE_CACHE_DIR: &str = "/root/.bundle/cache";
 
 impl Provider for RubyProvider {
     fn name(&self) -> &str {
@@ -50,7 +50,7 @@ impl Provider for RubyProvider {
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
         let mut install_phase = LegacyInstallPhase::default();
         install_phase.add_file_dependency("Gemfile*".to_string());
-        install_phase.add_cache_directory((*BUNDLE_CACHE_DIR).to_string());
+        install_phase.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
         install_phase.add_cmd("bundle install".to_string());
 
@@ -68,9 +68,9 @@ impl Provider for RubyProvider {
                 .unwrap_or_default()
                 .insert(0, NodeProvider::get_install_command(app));
 
-            for file in &["package.json", "package-lock.json"] {
+            for file in ["package.json", "package-lock.json"] {
                 if app.includes_file(file) {
-                    install_phase.add_file_dependency((*file).to_string());
+                    install_phase.add_file_dependency(file.to_string());
                 }
             }
         }

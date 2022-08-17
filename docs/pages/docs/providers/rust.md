@@ -47,9 +47,9 @@ These directories are cached between builds
 - Build: `~/.cargo/registry`
 - Build: `target`
 
-## [Workspaces](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html)
+## Workspaces
 
-Nixpacks will auto-detect if you are using Cargo Workspaces.
+Nixpacks will auto-detect if you are using [Cargo Workspaces](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html).
 This checks `workspace.default_members` first and then `workspace.members`.
 It also respects the `workspace.exclude` field.
 

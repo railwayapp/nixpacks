@@ -17,7 +17,7 @@ use std::collections::HashMap;
 // This line is automatically updated.
 // Last Modified: 2022-08-15 17:08:57 UTC+0000
 // https://github.com/NixOS/nixpkgs/commit/441dc5d512153039f19ef198e662e4f3dbb9fd65
-pub static NIXPKGS_ARCHIVE: &str = "441dc5d512153039f19ef198e662e4f3dbb9fd65";
+pub const NIXPKGS_ARCHIVE: &str = "441dc5d512153039f19ef198e662e4f3dbb9fd65";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
@@ -135,6 +135,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         let plan: BuildPlan = legacy_plan.into();
         Ok(plan)
     }
+}
 
     fn get_setup_phase(&self, app: &App, environment: &Environment) -> Result<LegacySetupPhase> {
         let mut setup_phase: LegacySetupPhase = match self.matched_provider {
