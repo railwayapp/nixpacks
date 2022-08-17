@@ -5,10 +5,7 @@ use crate::nixpacks::{
     nix::pkg::Pkg,
 };
 
-use super::{
-    legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
-    topological_sort::TopItem,
-};
+use super::topological_sort::TopItem;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
@@ -149,6 +146,10 @@ impl Phase {
     pub fn add_path(&mut self, path: String) {
         self.paths = Some(add_to_option_vec(self.paths.clone(), path));
     }
+
+    pub fn set_nix_archive(&mut self, archive: String) {
+        self.nixpacks_archive = Some(archive);
+    }
 }
 
 impl StartPhase {
@@ -193,63 +194,5 @@ fn add_multiple_to_option_vec<T: Clone>(values: Option<Vec<T>>, new_values: Vec<
         [values, new_values].concat()
     } else {
         new_values
-    }
-}
-
-// Legacy intos
-
-impl From<LegacySetupPhase> for Phase {
-    fn from(setup_phase: LegacySetupPhase) -> Self {
-        Phase {
-            name: "setup".to_string(),
-            nix_pkgs: Some(setup_phase.pkgs),
-            nix_libraries: setup_phase.libraries,
-            nixpacks_archive: setup_phase.archive,
-            apt_pkgs: setup_phase.apt_pkgs,
-            cmds: setup_phase.cmds,
-            only_include_files: setup_phase.only_include_files,
-            ..Default::default()
-        }
-    }
-}
-
-impl From<LegacyInstallPhase> for Phase {
-    fn from(install_phase: LegacyInstallPhase) -> Self {
-        let mut i = Phase {
-            name: "install".to_string(),
-            cmds: install_phase.cmds,
-            only_include_files: install_phase.only_include_files,
-            cache_directories: install_phase.cache_directories,
-            paths: install_phase.paths,
-            ..Default::default()
-        };
-
-        i.depends_on_phase("setup");
-        i
-    }
-}
-
-impl From<LegacyBuildPhase> for Phase {
-    fn from(build_phase: LegacyBuildPhase) -> Self {
-        let mut p = Phase {
-            name: "build".to_string(),
-            cmds: build_phase.cmds,
-            only_include_files: build_phase.only_include_files,
-            cache_directories: build_phase.cache_directories,
-            ..Default::default()
-        };
-
-        p.depends_on_phase("install");
-        p
-    }
-}
-
-impl From<LegacyStartPhase> for StartPhase {
-    fn from(start_phase: LegacyStartPhase) -> Self {
-        StartPhase {
-            run_image: start_phase.run_image,
-            cmd: start_phase.cmd,
-            ..Default::default()
-        }
     }
 }

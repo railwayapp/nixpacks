@@ -3,8 +3,9 @@ use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
     nix::pkg::Pkg,
-    plan::legacy_phase::{
-        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
     },
 };
 use anyhow::{Context, Result};
@@ -22,40 +23,24 @@ impl Provider for FSharpProvider {
         Ok(!app.find_files("*.fsproj")?.is_empty())
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
-        Ok(Some(LegacySetupPhase::new(vec![Pkg::new("dotnet-sdk")])))
-    }
-
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
-        Ok(Some(LegacyInstallPhase::new("dotnet restore".to_string())))
-    }
-
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
-        Ok(Some(LegacyBuildPhase::new(format!(
+    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+        let setup = Phase::setup(Some(vec![Pkg::new("dotnet-sdk")]));
+        let install = Phase::install(Some("dotnet restore".to_string()));
+        let build = Phase::build(Some(format!(
             "dotnet publish --no-restore -c Release -o {}",
             ARTIFACT_DIR
-        ))))
-    }
+        )));
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
         let fsproj = &app.find_files("*.fsproj")?[0].with_extension("");
         let project_name = fsproj
             .file_name()
             .context("Invalid file_name")?
             .to_str()
             .context("Invalid project_name")?;
-        Ok(Some(LegacyStartPhase::new(format!(
-            "./{}/{}",
-            ARTIFACT_DIR, project_name
-        ))))
-    }
+        let start = StartPhase::new(format!("./{}/{}", ARTIFACT_DIR, project_name));
 
-    fn environment_variables(
-        &self,
-        _app: &App,
-        _env: &Environment,
-    ) -> Result<Option<EnvironmentVariables>> {
-        let env_vars = EnvironmentVariables::from([
+        let mut plan = BuildPlan::new(vec![setup, install, build], Some(start));
+        plan.add_variables(EnvironmentVariables::from([
             (
                 "ASPNETCORE_ENVIRONMENT".to_string(),
                 "Production".to_string(),
@@ -68,7 +53,8 @@ impl Provider for FSharpProvider {
                 "DOTNET_ROOT".to_string(),
                 "/nix/var/nix/profiles/default/".to_string(),
             ),
-        ]);
-        Ok(Some(env_vars))
+        ]));
+
+        Ok(Some(plan))
     }
 }

@@ -3,8 +3,9 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    plan::legacy_phase::{
-        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
     },
 };
 use anyhow::Result;
@@ -26,9 +27,9 @@ impl Provider for HaskellStackProvider {
         Ok(app.includes_file("package.yaml") && app.has_match("**/*.hs"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
-        let mut setup_phase = LegacySetupPhase::new(vec![Pkg::new("stack")]);
-        setup_phase.add_apt_pkgs(vec![
+    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+        let mut setup = Phase::setup(Some(vec![Pkg::new("stack")]));
+        setup.add_apt_pkgs(vec![
             "libgmp-dev".to_string(),
             "gcc".to_string(),
             "binutils".to_string(),
@@ -36,7 +37,7 @@ impl Provider for HaskellStackProvider {
             "zlib1g-dev".to_string(),
         ]);
         if ARCH == "aarch64" {
-            setup_phase.add_apt_pkgs(vec![
+            setup.add_apt_pkgs(vec![
                 "libnuma1".to_string(),
                 "libnuma-dev".to_string(),
                 "libtinfo-dev".to_string(),
@@ -50,25 +51,13 @@ impl Provider for HaskellStackProvider {
             ]);
         }
 
-        Ok(Some(setup_phase))
-    }
+        let mut install = Phase::install(Some("stack setup".to_string()));
+        install.add_cache_directory(STACK_CACHE_DIR.to_string());
 
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
-        let mut install_phase = LegacyInstallPhase::new("stack setup".to_string());
-        install_phase.add_cache_directory(STACK_CACHE_DIR.to_string());
+        let mut build = Phase::build(Some("stack install".to_string()));
+        build.add_cache_directory(STACK_CACHE_DIR.to_string());
+        build.add_cache_directory(STACK_WORK_CACHE_DIR.to_string());
 
-        Ok(Some(install_phase))
-    }
-
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
-        let mut build_phase = LegacyBuildPhase::new("stack install".to_string());
-        build_phase.add_cache_directory(STACK_CACHE_DIR.to_string());
-        build_phase.add_cache_directory(STACK_WORK_CACHE_DIR.to_string());
-
-        Ok(Some(build_phase))
-    }
-
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
         let package: HaskellStackPackageYaml = app.read_yaml("package.yaml")?;
         let exe_names: Vec<String> = package.executables.keys().cloned().collect();
 
@@ -76,10 +65,11 @@ impl Provider for HaskellStackProvider {
             .get(0)
             .ok_or_else(|| anyhow::anyhow!("Failed to get executable name"))?;
 
-        Ok(Some(LegacyStartPhase::new(format!(
-            "/root/.local/bin/{}",
-            name
-        ))))
+        let start = StartPhase::new(format!("/root/.local/bin/{}", name));
+
+        let plan = BuildPlan::new(vec![setup, install, build], Some(start));
+
+        Ok(Some(plan))
     }
 }
 

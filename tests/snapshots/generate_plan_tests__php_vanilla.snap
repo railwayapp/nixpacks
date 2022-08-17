@@ -29,9 +29,7 @@ expression: plan
         {
           "name": "phpPackages.composer"
         }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
+      ]
     },
     {
       "name": "install",

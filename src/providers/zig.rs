@@ -3,8 +3,9 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    plan::legacy_phase::{
-        LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase,
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
     },
 };
 use anyhow::Result;
@@ -24,45 +25,39 @@ impl Provider for ZigProvider {
         Ok(app.has_match("*.zig") || app.has_match("**/*.zig") || app.has_match("gyro.zzz"))
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
-        let mut pkgs = vec![Pkg::new("zig")];
-        if app.includes_file("gyro.zzz") {
-            pkgs.push(Pkg::new("wget"));
-        }
-        Ok(Some(LegacySetupPhase::new(pkgs)))
-    }
+    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+        let mut setup = Phase::setup(Some(vec![Pkg::new("zig")]));
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
-        let mut phase = LegacyInstallPhase::default();
+        if app.includes_file("gyro.zzz") {
+            setup.add_nix_pkgs(vec![Pkg::new("wget")]);
+        }
+
+        let mut install = Phase::install(None);
         if app.includes_file(".gitmodules") {
-            phase.add_cmd("git submodule update --init".to_string());
+            install.add_cmd("git submodule update --init".to_string());
         }
         if app.includes_file("gyro.zzz") {
             let gyro_exe_path = format!("/gyro/gyro-{}-linux-{}/bin/gyro", GYRO_VERSION, ARCH);
-            phase.add_cmd(format!(
+            install.add_cmd(format!(
                 "mkdir /gyro && (wget -O- {} | tar -C /gyro -xzf -)",
                 ZigProvider::get_gyro_download_url()
             ));
-            phase.add_cmd(format!("chmod +x {}", gyro_exe_path));
-            phase.add_cmd(format!("{} fetch", gyro_exe_path));
+            install.add_cmd(format!("chmod +x {}", gyro_exe_path));
+            install.add_cmd(format!("{} fetch", gyro_exe_path));
         }
-        Ok(Some(phase))
-    }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
-        Ok(Some(LegacyBuildPhase::new(
-            "zig build -Drelease-safe=true".to_string(),
-        )))
-    }
+        let build = Phase::build(Some("zig build -Drelease-safe=true".to_string()));
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
-        Ok(Some(LegacyStartPhase::new(format!(
+        let start = StartPhase::new(format!(
             "./zig-out/bin/{}",
             app.source
                 .file_name()
                 .map(OsStr::to_str)
                 .map_or("*", Option::unwrap)
-        ))))
+        ));
+
+        let plan = BuildPlan::new(vec![setup, install, build], Some(start));
+        Ok(Some(plan))
     }
 }
 
