@@ -3,8 +3,8 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "0.3.0",
-  "buildImage": "ghcr.io/railwayapp/nixpacks:debian-1660071566",
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
   "variables": {
     "CI": "true",
     "NODE_ENV": "production",
