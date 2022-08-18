@@ -43,7 +43,9 @@ expression: plan
         "libasound2",
         "libpangocairo-1.0-0",
         "libxss1",
-        "libgtk-3-0"
+        "libgtk-3-0",
+        "ibxshmfence1",
+        "libglu1"
       ]
     },
     {
