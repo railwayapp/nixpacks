@@ -1,8 +1,14 @@
 const puppeteer = require('puppeteer');
 
 (async () => {
-  const browser = await puppeteer.launch();
+  console.log("Starting Puppeteer");
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox'],
+  });
+  console.log("Creating Page");
   const page = await browser.newPage();
+  console.log("Navigating to hackernews");
   await page.goto('https://news.ycombinator.com', {
     waitUntil: 'networkidle2',
   });
