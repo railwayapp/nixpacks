@@ -250,6 +250,12 @@ fn test_deno() {
 }
 
 #[test]
+fn test_elixir() {
+    let name = simple_build("./examples/elixir_simple");
+    assert!(run_image(name, None).contains("Hello from Elixir"));
+}
+
+#[test]
 fn test_node() {
     let name = simple_build("./examples/node");
     assert!(run_image(name, None).contains("Hello from Node"));
