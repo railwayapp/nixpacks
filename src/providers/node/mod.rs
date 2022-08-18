@@ -79,7 +79,7 @@ impl Provider for NodeProvider {
                 "libpangocairo-1.0-0".to_string(),
                 "libxss1".to_string(),
                 "libgtk-3-0".to_string(),
-                "ibxshmfence1".to_string(),
+                "libxshmfence1".to_string(),
                 "libglu1".to_string(),
             ]);
         }
