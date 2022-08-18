@@ -7,6 +7,7 @@ defmodule ElixirNoEcto.Application do
 
   @impl true
   def start(_type, _args) do
+    IO.puts("Hello from Phoenix")
     children = [
       # Start the Telemetry supervisor
       ElixirNoEctoWeb.Telemetry,

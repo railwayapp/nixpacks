@@ -250,9 +250,16 @@ fn test_deno() {
 }
 
 #[test]
-fn test_elixir() {
-    let name = simple_build("./examples/elixir_simple");
-    assert!(run_image(name, None).contains("Hello from Elixir"));
+fn test_elixir_no_ecto() {
+    let name = build_with_build_time_env_vars(
+        "./examples/elixir_no_ecto",
+        vec![
+            "SECRET_KEY_BASE=DcBhB9F3WUk842cyRwJQrFw99PNqG09AfZZMnsQp3ARN7uPxJZs8IWKQ7+vgzVKV",
+            "MIX_ENV=prod",
+        ],
+    );
+
+    assert!(run_image(name, None).contains("Hello from Phoenix"));
 }
 
 #[test]
