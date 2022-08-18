@@ -6,6 +6,7 @@ pub mod crystal;
 pub mod csharp;
 pub mod dart;
 pub mod deno;
+pub mod elixir;
 pub mod fsharp;
 pub mod go;
 pub mod haskell;

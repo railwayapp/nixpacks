@@ -12,6 +12,9 @@ use std::time::Duration;
 use uuid::Uuid;
 use wait_timeout::ChildExt;
 
+use rand::thread_rng;
+use rand::{distributions::Alphanumeric, Rng};
+
 fn get_container_ids_from_image(image: String) -> String {
     let output = Command::new("docker")
         .arg("ps")
@@ -247,6 +250,22 @@ fn run_postgres() -> Container {
 fn test_deno() {
     let name = simple_build("./examples/deno");
     assert!(run_image(name, None).contains("Hello from Deno"));
+}
+
+#[test]
+fn test_elixir_no_ecto() {
+    let rand_64_str: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(64)
+        .map(char::from)
+        .collect();
+    let secret_env = format!("SECRET_KEY_BASE={}", rand_64_str);
+    let name = build_with_build_time_env_vars(
+        "./examples/elixir_no_ecto",
+        vec![&*secret_env, "MIX_ENV=prod"],
+    );
+
+    assert!(run_image(name, None).contains("Hello from Phoenix"));
 }
 
 #[test]
