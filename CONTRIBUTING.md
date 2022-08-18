@@ -19,13 +19,33 @@ You should see `Hello from Node` printed to the console.
 
 ## Debugging
 
-When debugging it can be useful to see the `environment.nix` and `Dockerfile` generated. You can do this my saving the build artifact to a specific directory instead of to a temp dir.
+When debugging it can be useful to see the intermediate files that Nixpacks generates (e.g. `Dockerfile`) You can do this my saving the build artifact to a specific directory instead of to a temp dir.
 
 ```
 cargo run -- build examples/node --out test
 ```
 
-_The `test` directory will contain everything that would be built with Docker._
+_The `test` directory will contain everything that would be built with Docker. All the files that Nixpacks generates are in `.nixpacks`. You can manually build the image with `docker build test -f test/.nixpacks/Dockerfile`_.
+
+## Snapshot Tests
+
+Nixpacks uses [insta](https://github.com/mitsuhiko/insta) for snapshot tests. We use snapshot tests to generate and compare all build plans for the test apps in `examples/`. If a snapshot test fails due to a change to a provider, that is okay. It just means the snapshot needs to be reviewed and accepted. To test and review all snapshots, you can
+
+First install insta
+
+```
+cargo install cargo-insta
+```
+
+Test and review the generate plan tests.
+
+```
+cargo insta test --review -- --test generate_plan_tests
+```
+
+The snapshots are checked into CI and are reviewed as part of the PR. They ensure that a change to one part of Nixpacks does not unexpectedly change an unrelated part.
+
+[Read the docs](https://insta.rs/docs/) for more information on cargo insta.
 
 ## Contribution Ideas
 
