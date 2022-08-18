@@ -9,17 +9,6 @@ use crate::nixpacks::{
     },
 };
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct DenoTasks {
-    pub start: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct DenoJson {
-    pub tasks: Option<DenoTasks>,
-}
 
 pub struct ElixirProvider {}
 
