@@ -392,6 +392,13 @@ fn test_pnpm_custom_version() {
 }
 
 #[test]
+fn test_puppeteer() {
+    let name = simple_build("./examples/node-puppeteer");
+    let output = run_image(name, None);
+    assert!(output.contains("Hello from puppeteer"));
+}
+
+#[test]
 fn test_csharp() {
     let name = simple_build("./examples/csharp-cli");
     let output = run_image(name, None);

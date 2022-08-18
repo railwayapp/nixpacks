@@ -64,8 +64,24 @@ impl Provider for NodeProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
-        if NodeProvider::uses_canvas(app) {
+        if NodeProvider::uses_node_dependency(app, "canvas") {
             setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
+        }
+
+        if NodeProvider::uses_node_dependency(app, "puppeteer") {
+            setup.add_apt_pkgs(vec![
+                "libnss3".to_string(),
+                "libatk1.0-0".to_string(),
+                "libatk-bridge2.0-0".to_string(),
+                "libcups2".to_string(),
+                "libgbm1".to_string(),
+                "libasound2".to_string(),
+                "libpangocairo-1.0-0".to_string(),
+                "libxss1".to_string(),
+                "libgtk-3-0".to_string(),
+                "libxshmfence1".to_string(),
+                "libglu1".to_string(),
+            ]);
         }
 
         // Install
@@ -306,15 +322,10 @@ impl NodeProvider {
         Ok(pkgs)
     }
 
-    pub fn uses_canvas(app: &App) -> bool {
-        let package_json = app.read_file("package.json").unwrap_or_default();
-        let lock_json = app.read_file("package-lock.json").unwrap_or_default();
-        let yarn_lock = app.read_file("yarn.lock").unwrap_or_default();
-        let pnpm_yaml = app.read_file("pnpm-lock.yaml").unwrap_or_default();
-        package_json.contains("\"canvas\"")
-            || lock_json.contains("/canvas/")
-            || yarn_lock.contains("/canvas/")
-            || pnpm_yaml.contains("/canvas/")
+    pub fn uses_node_dependency(app: &App, dependency: &str) -> bool {
+        NodeProvider::get_all_deps(app)
+            .unwrap_or_default()
+            .contains(dependency)
     }
 
     pub fn find_next_packages(app: &App) -> Result<Vec<String>> {
