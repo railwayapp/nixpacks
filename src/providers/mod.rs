@@ -29,32 +29,105 @@ pub mod zig;
 pub trait Provider {
     fn name(&self) -> &str;
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
+    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult>;
 
-    fn get_build_plan(&self, _app: &App, _environment: &Environment) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<BuildPlan>> {
         Ok(None)
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
+    fn setup(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacySetupPhase>> {
         Ok(None)
     }
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+    fn install(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyInstallPhase>> {
         Ok(None)
     }
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+    fn build(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyBuildPhase>> {
         Ok(None)
     }
-    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+    fn start(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyStartPhase>> {
         Ok(None)
     }
-    fn static_assets(&self, _app: &App, _env: &Environment) -> Result<Option<StaticAssets>> {
+    fn static_assets(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<StaticAssets>> {
         Ok(None)
     }
     fn environment_variables(
         &self,
         _app: &App,
         _env: &Environment,
+        _metadata: &ProviderMetadata,
     ) -> Result<Option<EnvironmentVariables>> {
         Ok(None)
+    }
+}
+
+pub struct DetectResult {
+    pub detected: bool,
+    pub metadata: Option<ProviderMetadata>,
+}
+
+#[derive(Default)]
+pub struct ProviderMetadata {
+    pub labels: Option<Vec<String>>,
+}
+
+impl ProviderMetadata {
+    pub fn from(values: Vec<(bool, &str)>) -> ProviderMetadata {
+        let labels = values
+            .into_iter()
+            .filter(|(include, _)| *include)
+            .map(|(_, value)| (*value).to_owned())
+            .collect();
+
+        ProviderMetadata {
+            labels: Some(labels),
+        }
+    }
+
+    pub fn join_as_comma_separated(&self, provider_name: String) -> String {
+        let mut arr = vec![provider_name];
+        let mut labels_arr = match &self.labels {
+            Some(v) => v.clone(),
+            _ => vec![],
+        };
+
+        arr.append(labels_arr.as_mut());
+        arr.join(",")
+    }
+
+    pub fn has_label(&self, name: &str) -> bool {
+        match &self.labels {
+            None => false,
+            Some(value) => value.contains(&name.to_string()),
+        }
     }
 }

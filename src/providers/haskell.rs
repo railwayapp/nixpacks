@@ -1,4 +1,4 @@
-use super::Provider;
+use super::{DetectResult, Provider, ProviderMetadata};
 use crate::nixpacks::{
     app::App,
     environment::Environment,
@@ -22,11 +22,20 @@ impl Provider for HaskellStackProvider {
         "haskell_stack"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("package.yaml") && app.has_match("**/*.hs"))
+    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
+        let detected = app.includes_file("package.yaml") && app.has_match("**/*.hs");
+        Ok(DetectResult {
+            detected,
+            metadata: None,
+        })
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
+    fn setup(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacySetupPhase>> {
         let mut setup_phase = LegacySetupPhase::new(vec![Pkg::new("stack")]);
         setup_phase.add_apt_pkgs(vec![
             "libgmp-dev".to_string(),
@@ -53,14 +62,24 @@ impl Provider for HaskellStackProvider {
         Ok(Some(setup_phase))
     }
 
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+    fn install(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyInstallPhase>> {
         let mut install_phase = LegacyInstallPhase::new("stack setup".to_string());
         install_phase.add_cache_directory(STACK_CACHE_DIR.to_string());
 
         Ok(Some(install_phase))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+    fn build(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyBuildPhase>> {
         let mut build_phase = LegacyBuildPhase::new("stack install".to_string());
         build_phase.add_cache_directory(STACK_CACHE_DIR.to_string());
         build_phase.add_cache_directory(STACK_WORK_CACHE_DIR.to_string());
@@ -68,7 +87,12 @@ impl Provider for HaskellStackProvider {
         Ok(Some(build_phase))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+    fn start(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyStartPhase>> {
         let package: HaskellStackPackageYaml = app.read_yaml("package.yaml")?;
         let exe_names: Vec<String> = package.executables.keys().cloned().collect();
 

@@ -1,4 +1,4 @@
-use super::Provider;
+use super::{DetectResult, Provider, ProviderMetadata};
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
@@ -18,26 +18,50 @@ impl Provider for CSharpProvider {
         "csharp"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(!app.find_files("*.csproj")?.is_empty())
+    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
+        let detected = !app.find_files("*.csproj")?.is_empty();
+        Ok(DetectResult {
+            detected,
+            metadata: None,
+        })
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
+    fn setup(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacySetupPhase>> {
         Ok(Some(LegacySetupPhase::new(vec![Pkg::new("dotnet-sdk")])))
     }
 
-    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+    fn install(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyInstallPhase>> {
         Ok(Some(LegacyInstallPhase::new("dotnet restore".to_string())))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+    fn build(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyBuildPhase>> {
         Ok(Some(LegacyBuildPhase::new(format!(
             "dotnet publish --no-restore -c Release -o {}",
             ARTIFACT_DIR
         ))))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+    fn start(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyStartPhase>> {
         let csproj = &app.find_files("*.csproj")?[0].with_extension("");
         let project_name = csproj
             .file_name()
@@ -54,6 +78,7 @@ impl Provider for CSharpProvider {
         &self,
         _app: &App,
         _env: &Environment,
+        _metadata: &ProviderMetadata,
     ) -> Result<Option<EnvironmentVariables>> {
         let env_vars = EnvironmentVariables::from([
             (

@@ -16,7 +16,7 @@ use serde::Deserialize;
 use std::result::Result::Ok as OkResult;
 use std::{collections::HashMap, fs};
 
-use super::Provider;
+use super::{DetectResult, Provider, ProviderMetadata};
 
 const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
 const POETRY_VERSION: &str = "1.1.13";
@@ -29,13 +29,26 @@ impl Provider for PythonProvider {
         "python"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("main.py")
+    fn detect(&self, app: &App, env: &Environment) -> Result<DetectResult> {
+        let detected = app.includes_file("main.py")
             || app.includes_file("requirements.txt")
-            || app.includes_file("pyproject.toml"))
+            || app.includes_file("pyproject.toml");
+
+        let metadata = if detected {
+            Some(self.create_metadata(app, env)?)
+        } else {
+            None
+        };
+
+        Ok(DetectResult { detected, metadata })
     }
 
-    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(
+        &self,
+        app: &App,
+        env: &Environment,
+        metadata: &ProviderMetadata,
+    ) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
 
         if let Some(setup) = self.setup(app, env)? {
@@ -48,7 +61,7 @@ impl Provider for PythonProvider {
             plan.set_start_phase(start);
         }
 
-        if app.includes_file("poetry.lock") {
+        if metadata.has_label("poetry") {
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),
                 POETRY_VERSION.to_string(),
@@ -60,10 +73,11 @@ impl Provider for PythonProvider {
 
     fn environment_variables(
         &self,
-        app: &App,
+        _app: &App,
         _env: &Environment,
+        metadata: &ProviderMetadata,
     ) -> Result<Option<EnvironmentVariables>> {
-        if app.includes_file("poetry.lock") {
+        if metadata.has_label("poetry.lock") {
             return Ok(Some(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),
                 POETRY_VERSION.to_string(),
@@ -351,6 +365,18 @@ impl PythonProvider {
                 .contains("numpy");
 
         Ok(requirements_numpy || project_numpy)
+    }
+
+    fn create_metadata(&self, app: &App, env: &Environment) -> Result<ProviderMetadata> {
+        let is_django = PythonProvider::is_django(app, env)?;
+        let is_using_postgres = PythonProvider::is_using_postgres(app, env)?;
+        let is_poetry = app.includes_file("poetry.lock");
+
+        Ok(ProviderMetadata::from(vec![
+            (is_django, "django"),
+            (is_using_postgres, "postgres"),
+            (is_poetry, "poetry"),
+        ]))
     }
 }
 

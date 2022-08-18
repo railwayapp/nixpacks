@@ -1,4 +1,4 @@
-use super::{node::NodeProvider, Provider};
+use super::{node::NodeProvider, DetectResult, Provider, ProviderMetadata};
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
@@ -18,11 +18,20 @@ impl Provider for RubyProvider {
         "Ruby"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("Gemfile"))
+    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
+        let detected = app.includes_file("Gemfile");
+        Ok(DetectResult {
+            detected,
+            metadata: None,
+        })
     }
 
-    fn setup(&self, app: &App, env: &Environment) -> Result<Option<LegacySetupPhase>> {
+    fn setup(
+        &self,
+        app: &App,
+        env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacySetupPhase>> {
         let mut pkgs = vec![];
         if app.includes_file("package.json") {
             pkgs = NodeProvider::get_nix_packages(app, env)?;
@@ -47,7 +56,12 @@ impl Provider for RubyProvider {
         Ok(Some(setup_phase))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+    fn install(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyInstallPhase>> {
         let mut install_phase = LegacyInstallPhase::default();
         install_phase.add_file_dependency("Gemfile*".to_string());
         install_phase.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
@@ -77,7 +91,12 @@ impl Provider for RubyProvider {
         Ok(Some(install_phase))
     }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+    fn build(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyBuildPhase>> {
         if self.is_rails_app(app) {
             Ok(Some(LegacyBuildPhase::new(
                 "bundle exec rake assets:precompile".to_string(),
@@ -87,7 +106,12 @@ impl Provider for RubyProvider {
         }
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+    fn start(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyStartPhase>> {
         if let Some(start_cmd) = self.get_start_command(app) {
             let start_phase = LegacyStartPhase::new(start_cmd);
             Ok(Some(start_phase))
@@ -100,6 +124,7 @@ impl Provider for RubyProvider {
         &self,
         app: &App,
         _env: &Environment,
+        _metadata: &ProviderMetadata,
     ) -> Result<Option<crate::nixpacks::environment::EnvironmentVariables>> {
         let ruby_version = self.get_ruby_version(app)?;
         Ok(Some(EnvironmentVariables::from([

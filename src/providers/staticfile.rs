@@ -1,4 +1,4 @@
-use super::Provider;
+use super::{DetectResult, Provider, ProviderMetadata};
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::Environment,
@@ -26,20 +26,35 @@ impl Provider for StaticfileProvider {
         "staticfile"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("Staticfile")
+    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
+        let detected = app.includes_file("Staticfile")
             || app.includes_directory("public")
             || app.includes_directory("index")
             || app.includes_directory("dist")
-            || app.includes_file("index.html"))
+            || app.includes_file("index.html");
+
+        Ok(DetectResult {
+            detected,
+            metadata: None,
+        })
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
+    fn setup(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacySetupPhase>> {
         let pkg = Pkg::new("nginx");
         Ok(Some(LegacySetupPhase::new(vec![pkg])))
     }
 
-    fn static_assets(&self, app: &App, env: &Environment) -> Result<Option<StaticAssets>> {
+    fn static_assets(
+        &self,
+        app: &App,
+        env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<StaticAssets>> {
         let mut assets = StaticAssets::new();
 
         let mut mime_types = "include /nix/store/*-user-environment/conf/mime.types;".to_string();
@@ -109,13 +124,23 @@ impl Provider for StaticfileProvider {
         Ok(Some(assets))
     }
 
-    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+    fn build(
+        &self,
+        _app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyBuildPhase>> {
         Ok(Some(LegacyBuildPhase::new(
             "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string(),
         )))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+    fn start(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyStartPhase>> {
         // shell command to edit 0.0.0.0:80 to $PORT
         let shell_cmd = "[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\"";
         Ok(Some(LegacyStartPhase::new(format!(

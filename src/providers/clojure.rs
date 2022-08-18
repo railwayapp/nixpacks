@@ -1,4 +1,4 @@
-use super::Provider;
+use super::{DetectResult, Provider, ProviderMetadata};
 use crate::nixpacks::{
     app::App,
     environment::Environment,
@@ -20,11 +20,20 @@ impl Provider for ClojureProvider {
         "clojure"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("project.clj"))
+    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
+        let detected = app.includes_file("project.clj");
+        Ok(DetectResult {
+            detected,
+            metadata: None,
+        })
     }
 
-    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(
+        &self,
+        app: &App,
+        env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<BuildPlan>> {
         let setup = Phase::setup(Some(vec![
             Pkg::new("leiningen"),
             ClojureProvider::get_nix_jdk_package(app, env)?,

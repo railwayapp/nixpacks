@@ -1,4 +1,4 @@
-use super::Provider;
+use super::{DetectResult, Provider, ProviderMetadata};
 use crate::nixpacks::{
     app::App,
     environment::Environment,
@@ -34,11 +34,20 @@ impl Provider for SwiftProvider {
         "swift"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("Package.swift"))
+    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
+        let detected = app.includes_file("Package.swift");
+        Ok(DetectResult {
+            detected,
+            metadata: None,
+        })
     }
 
-    fn setup(&self, app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
+    fn setup(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacySetupPhase>> {
         let mut setup_phase = LegacySetupPhase::new(vec![
             Pkg::new("coreutils"),
             Pkg::new("swift"),
@@ -67,7 +76,12 @@ impl Provider for SwiftProvider {
         Ok(Some(setup_phase))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
+    fn install(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyInstallPhase>> {
         let mut install_phase = LegacyInstallPhase::new("swift package resolve".to_string());
 
         install_phase.add_file_dependency("Package.swift".to_string());
@@ -79,7 +93,12 @@ impl Provider for SwiftProvider {
         Ok(Some(install_phase))
     }
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
+    fn build(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyBuildPhase>> {
         let name = SwiftProvider::get_executable_name(app)?;
         let mut build_phase = LegacyBuildPhase::new(
             "CC=clang++ swift build -c release --static-swift-stdlib".to_string(),
@@ -91,7 +110,12 @@ impl Provider for SwiftProvider {
         Ok(Some(build_phase))
     }
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+    fn start(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<LegacyStartPhase>> {
         let name = SwiftProvider::get_executable_name(app)?;
 
         Ok(Some(LegacyStartPhase::new(format!("./{}", name))))

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::Provider;
+use super::{DetectResult, Provider, ProviderMetadata};
 use crate::nixpacks::{
     app::App,
     environment::Environment,
@@ -27,11 +27,20 @@ impl Provider for CrystalProvider {
         "crystal"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("shard.yml"))
+    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
+        let detected = app.includes_file("shard.yml");
+        Ok(DetectResult {
+            detected,
+            metadata: None,
+        })
     }
 
-    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(
+        &self,
+        app: &App,
+        _env: &Environment,
+        _metadata: &ProviderMetadata,
+    ) -> Result<Option<BuildPlan>> {
         let setup = Phase::setup(Some(vec![Pkg::new("crystal"), Pkg::new("shards")]));
         let install = Phase::install(Some("shards install".to_string()));
         let build = Phase::build(Some("shards build".to_string()));
