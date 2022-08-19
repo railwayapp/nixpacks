@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use super::{DetectResult, Provider, ProviderMetadata};
+use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
@@ -31,27 +31,17 @@ impl Provider for DenoProvider {
         "deno"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
         let re = Regex::new(
             r##"import .+ from (?:"|'|`)https://deno.land/[^"`']+\.(?:ts|js|tsx|jsx)(?:"|'|`);?"##,
         )
         .unwrap();
-        let detected = app.includes_file("deno.json")
+        Ok(app.includes_file("deno.json")
             || app.includes_file("deno.jsonc")
-            || app.find_match(&re, "**/*.{tsx,ts,js,jsx}")?;
-
-        Ok(DetectResult {
-            detected,
-            metadata: None,
-        })
+            || app.find_match(&re, "**/*.{tsx,ts,js,jsx}")?)
     }
 
-    fn get_build_plan(
-        &self,
-        app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
 
         let setup_phase = Phase::setup(Some(vec![Pkg::new("deno")]));

@@ -1,7 +1,7 @@
 use std::env::consts::ARCH;
 use std::fmt::Write as _;
 
-use super::{DetectResult, Provider, ProviderMetadata};
+use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
@@ -28,19 +28,11 @@ impl Provider for RustProvider {
         "rust"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
-        Ok(DetectResult {
-            detected: app.includes_file("Cargo.toml"),
-            metadata: None,
-        })
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
+        Ok(app.includes_file("Cargo.toml"))
     }
 
-    fn get_build_plan(
-        &self,
-        app: &App,
-        env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         let setup = RustProvider::get_setup(app, env)?;
         let build = RustProvider::get_build(app, env)?;
         let start = RustProvider::get_start(app, env)?;

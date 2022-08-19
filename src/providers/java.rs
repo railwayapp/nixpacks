@@ -1,4 +1,4 @@
-use super::{DetectResult, Provider, ProviderMetadata};
+use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
@@ -13,52 +13,32 @@ impl Provider for JavaProvider {
         "Java"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
-        let detected = app.includes_file("pom.xml")
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
+        Ok(app.includes_file("pom.xml")
             || app.includes_directory("pom.atom")
             || app.includes_directory("pom.clj")
             || app.includes_directory("pom.groovy")
             || app.includes_file("pom.rb")
             || app.includes_file("pom.scala")
             || app.includes_file("pom.yaml")
-            || app.includes_file("pom.yml");
-
-        Ok(DetectResult {
-            detected,
-            metadata: None,
-        })
+            || app.includes_file("pom.yml"))
     }
 
-    fn setup(
-        &self,
-        _app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<LegacySetupPhase>> {
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
         Ok(Some(LegacySetupPhase::new(vec![
             Pkg::new("maven"),
             Pkg::new("jdk8"),
         ])))
     }
 
-    fn build(
-        &self,
-        app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<LegacyBuildPhase>> {
+    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         let mvn_exe = self.get_maven_exe(app);
         Ok(Some(LegacyBuildPhase::new(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
             mvn_exe=mvn_exe
         ))))
     }
 
-    fn start(
-        &self,
-        app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<LegacyStartPhase>> {
+    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
         let start_cmd = self.get_start_cmd(app);
         Ok(Some(LegacyStartPhase::new(start_cmd)))
     }

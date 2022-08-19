@@ -1,4 +1,4 @@
-use super::{DetectResult, Provider, ProviderMetadata};
+use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
@@ -26,20 +26,11 @@ impl Provider for DartProvider {
         "dart"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
-        let detected = app.includes_file("pubspec.yaml");
-        Ok(DetectResult {
-            detected,
-            metadata: None,
-        })
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
+        Ok(app.includes_file("pubspec.yaml"))
     }
 
-    fn get_build_plan(
-        &self,
-        app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
         let setup = Phase::setup(Some(vec![Pkg::new(DEFAULT_DART_PKG_NAME)]));
 
         let mut install = Phase::install(Some("dart pub get".to_string()));

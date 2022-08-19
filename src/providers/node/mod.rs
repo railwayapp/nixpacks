@@ -5,7 +5,7 @@ use std::{
 
 use self::nx::ProjectJson;
 
-use super::{DetectResult, Provider, ProviderMetadata};
+use super::Provider;
 use crate::{
     nixpacks::{
         app::App,
@@ -57,20 +57,11 @@ impl Provider for NodeProvider {
         "node"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
-        let detected = app.includes_file("package.json");
-        Ok(DetectResult {
-            detected,
-            metadata: None,
-        })
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
+        Ok(app.includes_file("package.json"))
     }
 
-    fn get_build_plan(
-        &self,
-        app: &App,
-        env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
         if NodeProvider::uses_canvas(app) {

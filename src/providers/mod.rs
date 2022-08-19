@@ -29,70 +29,38 @@ pub mod zig;
 pub trait Provider {
     fn name(&self) -> &str;
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult>;
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
 
-    fn get_build_plan(
-        &self,
-        _app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<BuildPlan>> {
-        Ok(None)
+    fn get_metadata(&self, _app: &App, _env: &Environment) -> Result<ProviderMetadata> {
+        Ok(ProviderMetadata::default())
     }
 
-    fn setup(
-        &self,
-        _app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<LegacySetupPhase>> {
+    fn get_build_plan(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
         Ok(None)
     }
-    fn install(
-        &self,
-        _app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<LegacyInstallPhase>> {
+
+    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
         Ok(None)
     }
-    fn build(
-        &self,
-        _app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<LegacyBuildPhase>> {
+    fn install(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyInstallPhase>> {
         Ok(None)
     }
-    fn start(
-        &self,
-        _app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<LegacyStartPhase>> {
+    fn build(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         Ok(None)
     }
-    fn static_assets(
-        &self,
-        _app: &App,
-        _env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<StaticAssets>> {
+    fn start(&self, _app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
+        Ok(None)
+    }
+    fn static_assets(&self, _app: &App, _env: &Environment) -> Result<Option<StaticAssets>> {
         Ok(None)
     }
     fn environment_variables(
         &self,
         _app: &App,
         _env: &Environment,
-        _metadata: &ProviderMetadata,
     ) -> Result<Option<EnvironmentVariables>> {
         Ok(None)
     }
-}
-
-pub struct DetectResult {
-    pub detected: bool,
-    pub metadata: Option<ProviderMetadata>,
 }
 
 #[derive(Default)]

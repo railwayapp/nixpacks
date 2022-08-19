@@ -1,4 +1,4 @@
-use super::{DetectResult, Provider, ProviderMetadata};
+use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
@@ -23,20 +23,11 @@ impl Provider for GolangProvider {
         "golang"
     }
 
-    fn detect(&self, app: &App, _env: &Environment) -> Result<DetectResult> {
-        let detected = app.includes_file("main.go") || app.includes_file("go.mod");
-        Ok(DetectResult {
-            detected,
-            metadata: None,
-        })
+    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
+        Ok(app.includes_file("main.go") || app.includes_file("go.mod"))
     }
 
-    fn get_build_plan(
-        &self,
-        app: &App,
-        env: &Environment,
-        _metadata: &ProviderMetadata,
-    ) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
 
         let go_mod = self.read_go_mod_if_exists(app)?;

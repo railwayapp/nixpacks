@@ -9,7 +9,7 @@ use crate::{
         environment::{Environment, EnvironmentVariables},
         nix::pkg::Pkg,
     },
-    providers::{Provider, ProviderMetadata},
+    providers::Provider,
 };
 use anyhow::{bail, Context, Ok, Result};
 use std::collections::HashMap;
@@ -18,6 +18,7 @@ use std::collections::HashMap;
 // Last Modified: 2022-08-15 17:08:57 UTC+0000
 // https://github.com/NixOS/nixpkgs/commit/441dc5d512153039f19ef198e662e4f3dbb9fd65
 pub const NIXPKGS_ARCHIVE: &str = "441dc5d512153039f19ef198e662e4f3dbb9fd65";
+const NIXPACKS_LABELS: &str = "NIXPACKS_LABELS";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
@@ -34,7 +35,6 @@ pub struct GeneratePlanOptions {
 pub struct NixpacksBuildPlanGenerator<'a> {
     providers: &'a [&'a dyn Provider],
     matched_provider: Option<&'a dyn Provider>,
-    matched_provider_metadata: ProviderMetadata,
     config: GeneratePlanConfig,
 }
 
@@ -58,7 +58,6 @@ impl NixpacksBuildPlanGenerator<'_> {
         NixpacksBuildPlanGenerator {
             providers,
             matched_provider: None,
-            matched_provider_metadata: ProviderMetadata::default(),
             config,
         }
     }
@@ -66,13 +65,9 @@ impl NixpacksBuildPlanGenerator<'_> {
     /// Match a single provider from the given app and environment.
     fn detect(&mut self, app: &App, environment: &Environment) -> Result<()> {
         for &provider in self.providers {
-            let matches = provider.detect(app, environment)?;
-            if matches.detected {
+            let detected = provider.detect(app, environment)?;
+            if detected {
                 self.matched_provider = Some(provider);
-                self.matched_provider_metadata = match matches.metadata {
-                    Some(v) => v,
-                    _ => ProviderMetadata::default(),
-                };
                 break;
             }
         }
@@ -90,14 +85,14 @@ impl NixpacksBuildPlanGenerator<'_> {
         );
 
         if let Some(provider) = self.matched_provider {
-            if let Some(provider_build_plan) =
-                provider.get_build_plan(app, environment, &self.matched_provider_metadata)?
-            {
+            if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
                 let mut build_plan = BuildPlan::apply_config(&provider_build_plan, &config);
 
                 if !environment.get_variable_names().is_empty() {
                     build_plan.add_variables(Environment::clone_variables(environment));
                 }
+
+                build_plan.add_variables(self.get_nixpacks_labels(provider, app, environment)?);
 
                 return Ok(build_plan);
             }
@@ -106,30 +101,44 @@ impl NixpacksBuildPlanGenerator<'_> {
         self.get_build_plan_from_legacy_phases(app, environment)
     }
 
+    fn get_nixpacks_labels(
+        &self,
+        provider: &dyn Provider,
+        app: &App,
+        env: &Environment,
+    ) -> Result<EnvironmentVariables> {
+        let metadata_string = provider
+            .get_metadata(app, env)?
+            .join_as_comma_separated(provider.name().to_owned());
+
+        Ok(EnvironmentVariables::from([(
+            NIXPACKS_LABELS.to_string(),
+            metadata_string,
+        )]))
+    }
+
     fn get_build_plan_from_legacy_phases(
         &self,
         app: &App,
         environment: &Environment,
     ) -> Result<BuildPlan> {
-        let metadata = &self.matched_provider_metadata;
-
         let setup_phase = self
-            .get_setup_phase(app, environment, metadata)
+            .get_setup_phase(app, environment)
             .context("Getting setup phase")?;
         let install_phase = self
-            .get_install_phase(app, environment, metadata)
+            .get_install_phase(app, environment)
             .context("Generating install phase")?;
         let build_phase = self
-            .get_build_phase(app, environment, metadata)
+            .get_build_phase(app, environment)
             .context("Generating build phase")?;
         let start_phase = self
-            .get_start_phase(app, environment, metadata)
+            .get_start_phase(app, environment)
             .context("Generating start phase")?;
         let variables = self
-            .get_variables(app, environment, metadata)
+            .get_variables(app, environment)
             .context("Getting plan variables")?;
         let static_assets = self
-            .get_static_assets(app, environment, metadata)
+            .get_static_assets(app, environment)
             .context("Getting provider assets")?;
 
         let legacy_plan = LegacyBuildPlan {
@@ -146,16 +155,9 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(plan)
     }
 
-    fn get_setup_phase(
-        &self,
-        app: &App,
-        environment: &Environment,
-        metadata: &ProviderMetadata,
-    ) -> Result<LegacySetupPhase> {
+    fn get_setup_phase(&self, app: &App, environment: &Environment) -> Result<LegacySetupPhase> {
         let mut setup_phase: LegacySetupPhase = match self.matched_provider {
-            Some(provider) => provider
-                .setup(app, environment, metadata)?
-                .unwrap_or_default(),
+            Some(provider) => provider.setup(app, environment)?.unwrap_or_default(),
             None => LegacySetupPhase::default(),
         };
 
@@ -207,12 +209,9 @@ impl NixpacksBuildPlanGenerator<'_> {
         &self,
         app: &App,
         environment: &Environment,
-        metadata: &ProviderMetadata,
     ) -> Result<LegacyInstallPhase> {
         let mut install_phase = match self.matched_provider {
-            Some(provider) => provider
-                .install(app, environment, metadata)?
-                .unwrap_or_default(),
+            Some(provider) => provider.install(app, environment)?.unwrap_or_default(),
             None => LegacyInstallPhase::default(),
         };
 
@@ -248,16 +247,9 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(install_phase)
     }
 
-    fn get_build_phase(
-        &self,
-        app: &App,
-        environment: &Environment,
-        metadata: &ProviderMetadata,
-    ) -> Result<LegacyBuildPhase> {
+    fn get_build_phase(&self, app: &App, environment: &Environment) -> Result<LegacyBuildPhase> {
         let mut build_phase = match self.matched_provider {
-            Some(provider) => provider
-                .build(app, environment, metadata)?
-                .unwrap_or_default(),
+            Some(provider) => provider.build(app, environment)?.unwrap_or_default(),
             None => LegacyBuildPhase::default(),
         };
 
@@ -300,18 +292,11 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(build_phase)
     }
 
-    fn get_start_phase(
-        &self,
-        app: &App,
-        environment: &Environment,
-        metadata: &ProviderMetadata,
-    ) -> Result<LegacyStartPhase> {
+    fn get_start_phase(&self, app: &App, environment: &Environment) -> Result<LegacyStartPhase> {
         let procfile_cmd = self.get_procfile_start_cmd(app)?;
 
         let mut start_phase = match self.matched_provider {
-            Some(provider) => provider
-                .start(app, environment, metadata)?
-                .unwrap_or_default(),
+            Some(provider) => provider.start(app, environment)?.unwrap_or_default(),
             None => LegacyStartPhase::default(),
         };
 
@@ -341,12 +326,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(start_phase)
     }
 
-    fn get_variables(
-        &self,
-        app: &App,
-        environment: &Environment,
-        metadata: &ProviderMetadata,
-    ) -> Result<EnvironmentVariables> {
+    fn get_variables(&self, app: &App, environment: &Environment) -> Result<EnvironmentVariables> {
         // Get a copy of the variables in the environment
         let variables = Environment::clone_variables(environment);
 
@@ -354,14 +334,10 @@ impl NixpacksBuildPlanGenerator<'_> {
             Some(provider) => {
                 // Merge provider variables
                 let provider_variables = provider
-                    .environment_variables(app, environment, metadata)?
+                    .environment_variables(app, environment)?
                     .unwrap_or_default();
 
-                let metadata_string = self
-                    .matched_provider_metadata
-                    .join_as_comma_separated(provider.name().to_string());
-                let nixpacks_labels =
-                    EnvironmentVariables::from([("NIXPACKS_LABELS".to_string(), metadata_string)]);
+                let nixpacks_labels = self.get_nixpacks_labels(provider, app, environment)?;
 
                 provider_variables
                     .into_iter()
@@ -375,15 +351,10 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(new_variables)
     }
 
-    fn get_static_assets(
-        &self,
-        app: &App,
-        environment: &Environment,
-        metadata: &ProviderMetadata,
-    ) -> Result<StaticAssets> {
+    fn get_static_assets(&self, app: &App, environment: &Environment) -> Result<StaticAssets> {
         let static_assets = match self.matched_provider {
             Some(provider) => provider
-                .static_assets(app, environment, metadata)?
+                .static_assets(app, environment)?
                 .unwrap_or_default(),
             None => StaticAssets::new(),
         };
