@@ -3,7 +3,10 @@ use crate::nixpacks::{
     app::App,
     environment::Environment,
     nix::pkg::Pkg,
-    plan::legacy_phase::{LegacyBuildPhase, LegacySetupPhase, LegacyStartPhase},
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
+    },
 };
 use anyhow::Result;
 pub struct JavaProvider {}
@@ -24,23 +27,18 @@ impl Provider for JavaProvider {
             || app.includes_file("pom.yml"))
     }
 
-    fn setup(&self, _app: &App, _env: &Environment) -> Result<Option<LegacySetupPhase>> {
-        Ok(Some(LegacySetupPhase::new(vec![
-            Pkg::new("maven"),
-            Pkg::new("jdk8"),
-        ])))
-    }
+    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+        let setup = Phase::setup(Some(vec![Pkg::new("maven"), Pkg::new("jdk8")]));
 
-    fn build(&self, app: &App, _env: &Environment) -> Result<Option<LegacyBuildPhase>> {
         let mvn_exe = self.get_maven_exe(app);
-        Ok(Some(LegacyBuildPhase::new(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
+        let build = Phase::build(Some(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
             mvn_exe=mvn_exe
-        ))))
-    }
+        )));
 
-    fn start(&self, app: &App, _env: &Environment) -> Result<Option<LegacyStartPhase>> {
-        let start_cmd = self.get_start_cmd(app);
-        Ok(Some(LegacyStartPhase::new(start_cmd)))
+        let start = StartPhase::new(self.get_start_cmd(app));
+
+        let plan = BuildPlan::new(vec![setup, build], Some(start));
+        Ok(Some(plan))
     }
 }
 

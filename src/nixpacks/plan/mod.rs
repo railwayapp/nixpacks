@@ -1,7 +1,6 @@
 use self::{
     config::GeneratePlanConfig,
     generator::NIXPKGS_ARCHIVE,
-    legacy_phase::{LegacyBuildPhase, LegacyInstallPhase, LegacySetupPhase, LegacyStartPhase},
     phase::{Phase, StartPhase},
     topological_sort::topological_sort,
 };
@@ -17,25 +16,12 @@ use serde::{Deserialize, Serialize};
 
 pub mod config;
 pub mod generator;
-pub mod legacy_phase;
 pub mod phase;
 pub mod pretty_print;
 mod topological_sort;
 
 pub trait PlanGenerator {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan>;
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LegacyBuildPlan {
-    pub version: Option<String>,
-    pub setup: Option<LegacySetupPhase>,
-    pub install: Option<LegacyInstallPhase>,
-    pub build: Option<LegacyBuildPhase>,
-    pub start: Option<LegacyStartPhase>,
-    pub variables: Option<EnvironmentVariables>,
-    pub static_assets: Option<StaticAssets>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -86,6 +72,19 @@ impl BuildPlan {
             }
             None => {
                 self.variables = Some(variables);
+            }
+        }
+    }
+
+    pub fn add_static_assets(&mut self, static_assets: StaticAssets) {
+        match self.static_assets.as_mut() {
+            Some(assets) => {
+                for (key, value) in &static_assets {
+                    assets.insert(key.to_string(), value.to_string());
+                }
+            }
+            None => {
+                self.static_assets = Some(static_assets);
             }
         }
     }
@@ -185,24 +184,6 @@ impl Default for BuildPlan {
             variables: None,
             static_assets: None,
         }
-    }
-}
-
-impl From<LegacyBuildPlan> for BuildPlan {
-    fn from(legacy_plan: LegacyBuildPlan) -> Self {
-        let phases: Vec<Phase> = vec![
-            legacy_plan.setup.unwrap_or_default().into(),
-            legacy_plan.install.unwrap_or_default().into(),
-            legacy_plan.build.unwrap_or_default().into(),
-        ];
-
-        let start: StartPhase = legacy_plan.start.unwrap_or_default().into();
-
-        let mut plan = BuildPlan::new(phases, Some(start));
-        plan.static_assets = legacy_plan.static_assets;
-        plan.variables = legacy_plan.variables;
-
-        plan
     }
 }
 

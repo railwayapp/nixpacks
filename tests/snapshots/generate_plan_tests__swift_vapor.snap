@@ -5,9 +5,20 @@ expression: plan
 {
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
-  "variables": {},
-  "staticAssets": {},
   "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "swift package resolve"
+      ],
+      "onlyIncludeFiles": [
+        "Package.swift",
+        "Package.resolved"
+      ]
+    },
     {
       "name": "setup",
       "nixPackages": [
@@ -27,22 +38,7 @@ expression: plan
           "name": "zlib.dev"
         }
       ],
-      "nixLibraries": [],
-      "nixpacksArchive": "[archive]",
-      "aptPackages": []
-    },
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
-      ],
-      "commands": [
-        "swift package resolve"
-      ],
-      "onlyIncludeFiles": [
-        "Package.swift",
-        "Package.resolved"
-      ]
+      "nixpacksArchive": "[archive]"
     },
     {
       "name": "build",

@@ -14,7 +14,6 @@ expression: plan
     "NIXPACKS_RUN_IMAGE": "alpine",
     "NIXPACKS_START_CMD": "start"
   },
-  "staticAssets": {},
   "phases": [
     {
       "name": "setup",
@@ -25,9 +24,7 @@ expression: plan
         {
           "name": "ripgrep"
         }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
+      ]
     },
     {
       "name": "install",
@@ -36,10 +33,6 @@ expression: plan
       ],
       "commands": [
         "install"
-      ],
-      "cacheDirectories": [
-        "/tmp",
-        "foobar"
       ]
     },
     {
@@ -49,15 +42,10 @@ expression: plan
       ],
       "commands": [
         "build"
-      ],
-      "cacheDirectories": [
-        "/build",
-        "barbaz"
       ]
     }
   ],
   "startPhase": {
-    "cmd": "start",
-    "runImage": "alpine"
+    "cmd": "start"
   }
 }

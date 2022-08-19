@@ -22,7 +22,6 @@ jobs:
     steps:
       - name: Get the release version from the tag and old version
         shell: bash
-        if: env.NIXPACKS_VERSION == ''
         run: |
           echo "NIXPACKS_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "version is: ${{ NIXPACKS_VERSION }}"

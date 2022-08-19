@@ -5,8 +5,6 @@ expression: plan
 {
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
-  "variables": {},
-  "staticAssets": {},
   "phases": [
     {
       "name": "setup",
@@ -14,9 +12,7 @@ expression: plan
         {
           "name": "cowsay"
         }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
+      ]
     },
     {
       "name": "install",

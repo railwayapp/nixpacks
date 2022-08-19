@@ -14,19 +14,30 @@ To create the plan, language providers are matched against the app source direct
 
 ## Build
 
-The build step takes the build plan and creates an OCI compliant image (with Docker) that can be deployed and run anywhere. This happens in the following steps
+The build step takes the build plan and creates an OCI compliant image (with Docker BuildKit) that can be deployed and run anywhere. This happens in the following steps
 
 1. Create build plan
 2. Copy app source to temp directory
-3. Use the Nix packages in the build plan and generate an `environment.nix` file
-4. Build the app in multiple phases
-   - **Setup**: Install all necessary Nix packages
-   - **Install**: Download all build dependencies
-   - **Build**: Generate everything necessary to run the app
-   - **Start**: Configure a default command to run when starting the container
+3. Run through each phase in topological order. Each phase will do one or many of the following
+   - Install Nix and/or Apt packages
+   - Run shell commands
+   - Add assets to the image
+4. Configure a default command to run when starting the container
 5. Done!
 
 Overall the process is fairly simple.
+
+### Phases
+
+There can be any number of phases that run as part of the build. Phases can also depend on other phases and the order they run in ensures that phases are run after any phases that they depend on.
+
+Most providers create a build plan with the following common phases
+
+- **Setup**: Install all necessary Nix packages
+- **Install**: Download all build dependencies
+- **Build**: Generate everything necessary to run the app
+
+However, the capabilities of each phase is identical.
 
 ## How Nix is used
 

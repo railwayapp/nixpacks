@@ -22,6 +22,9 @@ expression: plan
       "cacheDirectories": [
         "/root/.npm",
         "/root/.cache/Cypress"
+      ],
+      "paths": [
+        "/app/node_modules/.bin"
       ]
     },
     {

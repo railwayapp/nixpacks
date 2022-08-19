@@ -70,21 +70,6 @@ impl Provider for PythonProvider {
 
         Ok(Some(plan))
     }
-
-    fn environment_variables(
-        &self,
-        app: &App,
-        env: &Environment,
-    ) -> Result<Option<EnvironmentVariables>> {
-        let metadata = self.get_metadata(app, env)?;
-        if metadata.has_label("poetry.lock") {
-            return Ok(Some(EnvironmentVariables::from([(
-                "NIXPACKS_POETRY_VERSION".to_string(),
-                POETRY_VERSION.to_string(),
-            )])));
-        }
-        Ok(None)
-    }
 }
 
 #[derive(Debug, Deserialize, Clone)]

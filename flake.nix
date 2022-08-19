@@ -25,7 +25,7 @@
 
           nixpacks = rustPlatform.buildRustPackage {
             pname = "nixpacks";
-            version = "v0.0.20";
+            version = "v0.3.0";
             doCheck = true;
             src = ./.;
             checkInputs = [ rustfmt clippy ];

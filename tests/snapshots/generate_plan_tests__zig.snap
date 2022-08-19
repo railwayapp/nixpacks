@@ -5,23 +5,19 @@ expression: plan
 {
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
-  "variables": {},
-  "staticAssets": {},
   "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
     {
       "name": "setup",
       "nixPackages": [
         {
           "name": "zig"
         }
-      ],
-      "nixLibraries": [],
-      "aptPackages": []
-    },
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
       ]
     },
     {
