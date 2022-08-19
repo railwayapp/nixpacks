@@ -1,0 +1,26 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
+  "phases": [
+    {
+      "name": "setup"
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ]
+    }
+  ],
+  "startPhase": {}
+}

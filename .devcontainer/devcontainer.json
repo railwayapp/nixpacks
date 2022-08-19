@@ -26,10 +26,11 @@
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"ms-azuretools.vscode-docker",
-                		"vadimcn.vscode-lldb",
+                "vadimcn.vscode-lldb",
 				"mutantdino.resourcemonitor",
 				"rust-lang.rust-analyzer",
-				"tamasfe.even-better-toml"
+				"tamasfe.even-better-toml",
+				"mitsuhiko.insta"
 			]
 		}
 	},

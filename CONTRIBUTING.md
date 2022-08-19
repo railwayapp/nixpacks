@@ -9,11 +9,11 @@ For larger changes, please first make an [RFC issue](https://github.com/railwaya
 First, make sure you can build and run the project
 
 1. Ensure you have [Rust](https://www.rust-lang.org/tools/install) and [Docker](https://docs.docker.com/get-docker/) installed.
-1. Checkout this repo `git clone https://github.com/railwayapp/nixpacks.git`
-1. Build the source `cargo build`
-1. Run the tests `cargo test`
-1. Build an example `cargo run -- build examples/node --name node`
-1. Run the example `docker run node`
+2. Checkout this repo `git clone https://github.com/railwayapp/nixpacks.git`
+3. Build the source `cargo build`
+4. Run the tests `cargo test`
+5. Build an example `cargo run -- build examples/node --name node`
+6. Run the example `docker run node`
 
 You should see `Hello from Node` printed to the console.
 
@@ -46,6 +46,25 @@ cargo insta test --review -- --test generate_plan_tests
 The snapshots are checked into CI and are reviewed as part of the PR. They ensure that a change to one part of Nixpacks does not unexpectedly change an unrelated part.
 
 [Read the docs](https://insta.rs/docs/) for more information on cargo insta.
+
+## `test.env`
+
+This file controls on how tests are executed.
+
+### Plan Tests
+
+- `TEST_PLAN_PIN_PKGS` - If set, it will pin the nixpkgs archive during testing.
+- `TEST_PLAN_CUSTOM_START_CMD` - Sets a custom start command.
+- `TEST_PLAN_CUSTOM_PKGS` - Sets custom nix packages.
+- `TEST_PLAN_ENVS` - Sets custom environment variables.
+
+### Docker Tests
+
+- `TEST_DOCKER_ENVS` - Sets custom environment variables.
+- `TEST_DOCKER_NO_PIN_PKGS` - If set, it will **not** pin the nixpkgs archive during testing.
+- `TEST_DOCKER_CUSTOM_PKGS` - Sets custom nix packages.
+- `TEST_DOCKER_EXPECTED_OUTPUT` - The expected output of the program that is being tested.
+- `TEST_DOCKER_WITH_POSTGRES` - If set, it will mount postgres to the test.
 
 ## Contribution Ideas
 

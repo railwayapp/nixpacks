@@ -712,9 +712,11 @@ dependencies = [
 name = "test-helper"
 version = "0.1.0"
 dependencies = [
+ "dotenv-parser",
  "globset",
  "proc-macro2",
  "quote",
+ "rand 0.8.5",
  "walkdir",
 ]
 
