@@ -19,7 +19,7 @@ expression: plan
           "name": "maven"
         },
         {
-          "name": "jdk8"
+          "name": "jdk"
         }
       ]
     },

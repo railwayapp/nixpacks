@@ -28,7 +28,7 @@ impl Provider for JavaProvider {
     }
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
-        let setup = Phase::setup(Some(vec![Pkg::new("maven"), Pkg::new("jdk8")]));
+        let setup = Phase::setup(Some(vec![Pkg::new("maven"), Pkg::new("jdk")]));
 
         let mvn_exe = self.get_maven_exe(app);
         let build = Phase::build(Some(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
