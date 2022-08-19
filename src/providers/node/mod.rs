@@ -120,6 +120,9 @@ impl Provider for NodeProvider {
         // Node modules cache directory
         build.add_cache_directory((*NODE_MODULES_CACHE_DIR).to_string());
 
+        // Add .git to path
+        build.add_path(".git".to_string());
+
         // Start
         let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
 
