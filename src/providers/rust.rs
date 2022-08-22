@@ -12,6 +12,7 @@ use crate::nixpacks::{
     },
 };
 use anyhow::{Context, Result};
+use cargo_toml::Dependency::Detailed;
 use cargo_toml::{Manifest, Workspace};
 
 const RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
@@ -59,6 +60,19 @@ impl RustProvider {
             Pkg::new("gcc"),
             rust_pkg.from_overlay(RUST_OVERLAY),
         ]));
+
+        // Install connectors for mysql and or postgresql if the respective features are enabled for diesel.
+        if RustProvider::uses_dependency_with_feature(app, "diesel", "mysql") {
+            setup.add_apt_pkgs(vec!["default-libmysqlclient-dev".to_string()])
+        }
+
+        if RustProvider::uses_dependency_with_feature(app, "diesel", "postgres") {
+            // Do postgres things
+        }
+
+        if RustProvider::uses_dependency_with_feature(app, "diesel", "sqlite") {
+            // Do sqllite things
+        }
 
         // Include the rust toolchain file so we can install that rust version with Nix
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
@@ -261,6 +275,22 @@ impl RustProvider {
         }
 
         Ok(false)
+    }
+
+    fn get_dependency_features(app: &App, dependency_name: &str) -> Option<Vec<String>> {
+        if let Some(toml_file) = RustProvider::parse_cargo_toml(app).unwrap() {
+            if let Some(Detailed(dep)) = toml_file.dependencies.get(dependency_name) {
+                return Some(dep.features.clone());
+            }
+        }
+        None
+    }
+
+    fn uses_dependency_with_feature(app: &App, dep: &str, feature: &str) -> bool {
+        if let Some(dep_features) = RustProvider::get_dependency_features(app, dep) {
+            return dep_features.contains(&feature.to_string());
+        }
+        false
     }
 
     fn resolve_cargo_workspace(app: &App, env: &Environment) -> Result<Option<String>> {
