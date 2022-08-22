@@ -57,6 +57,10 @@ impl RubyProvider {
             setup.add_apt_pkgs(vec!["libpq-dev".to_string()]);
         }
 
+        if self.uses_mysql(app)? {
+            setup.add_apt_pkgs(vec!["default-libmysqlclient-dev".to_string()]);
+        }
+
         setup.add_cmd(
             "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh".to_string(),
         );
@@ -203,6 +207,13 @@ impl RubyProvider {
         if app.includes_file("Gemfile") {
             let gemfile = app.read_file("Gemfile").unwrap_or_default();
             return Ok(gemfile.contains("pg"));
+        }
+        Ok(false)
+    }
+    fn uses_mysql(&self, app: &App) -> Result<bool> {
+        if app.includes_file("Gemfile") {
+            let gemfile = app.read_file("Gemfile").unwrap_or_default();
+            return Ok(gemfile.contains("mysql"));
         }
         Ok(false)
     }
