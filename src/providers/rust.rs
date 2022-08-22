@@ -62,16 +62,12 @@ impl RustProvider {
         ]));
 
         // Install connectors for mysql and or postgresql if the respective features are enabled for diesel.
-        if RustProvider::uses_dependency_with_feature(app, "diesel", "mysql") {
-            setup.add_apt_pkgs(vec!["default-libmysqlclient-dev".to_string()])
+        if RustProvider::uses_dependency(app, "mysql")? {
+            setup.add_apt_pkgs(vec!["default-libmysqlclient-dev".to_string()]);
         }
 
-        if RustProvider::uses_dependency_with_feature(app, "diesel", "postgres") {
-            // Do postgres things
-        }
-
-        if RustProvider::uses_dependency_with_feature(app, "diesel", "sqlite") {
-            // Do sqllite things
+        if RustProvider::uses_dependency(app, "postgres")? {
+            setup.add_apt_pkgs(vec!["ibpq-dev".to_string()]);
         }
 
         // Include the rust toolchain file so we can install that rust version with Nix
@@ -80,7 +76,7 @@ impl RustProvider {
         }
 
         // Custom libs for openssl
-        if RustProvider::uses_openssl(app)? {
+        if RustProvider::uses_dependency(app, "openssl")? {
             setup.add_pkgs_libs(vec!["openssl".to_string(), "openssl.dev".to_string()]);
         }
 
@@ -258,39 +254,22 @@ impl RustProvider {
         Ok(true)
     }
 
-    fn uses_openssl(app: &App) -> Result<bool> {
-        // Check Cargo.toml
+    fn uses_dependency(app: &App, dep: &'static str) -> Result<bool> {
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
-            if toml_file.dependencies.contains_key("openssl")
-                || toml_file.dev_dependencies.contains_key("openssl")
-                || toml_file.build_dependencies.contains_key("openssl")
+            if toml_file.dependencies.contains_key(dep)
+                || toml_file.dev_dependencies.contains_key(dep)
+                || toml_file.build_dependencies.contains_key(dep)
             {
                 return Ok(true);
             }
         }
 
         // Check Cargo.lock
-        if app.includes_file("Cargo.lock") && app.read_file("Cargo.lock")?.contains("openssl") {
+        if app.includes_file("Cargo.lock") && app.read_file("Cargo.lock")?.contains(dep) {
             return Ok(true);
         }
 
         Ok(false)
-    }
-
-    fn get_dependency_features(app: &App, dependency_name: &str) -> Option<Vec<String>> {
-        if let Some(toml_file) = RustProvider::parse_cargo_toml(app).unwrap() {
-            if let Some(Detailed(dep)) = toml_file.dependencies.get(dependency_name) {
-                return Some(dep.features.clone());
-            }
-        }
-        None
-    }
-
-    fn uses_dependency_with_feature(app: &App, dep: &str, feature: &str) -> bool {
-        if let Some(dep_features) = RustProvider::get_dependency_features(app, dep) {
-            return dep_features.contains(&feature.to_string());
-        }
-        false
     }
 
     fn resolve_cargo_workspace(app: &App, env: &Environment) -> Result<Option<String>> {
