@@ -30,9 +30,10 @@ impl Provider for PythonProvider {
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("main.py")
+        let has_python = app.includes_file("main.py")
             || app.includes_file("requirements.txt")
-            || app.includes_file("pyproject.toml"))
+            || app.includes_file("pyproject.toml");
+        Ok(has_python)
     }
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
@@ -188,11 +189,14 @@ impl PythonProvider {
     }
 
     fn is_django(app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("manage.py")
-            && app
-                .read_file("requirements.txt")?
+        let has_manage = app.includes_file("manage.py");
+        let imports_django = vec!["requirements.txt", "pyproject.toml"].iter().any(|f| {
+            app.read_file(f)
+                .unwrap_or_default()
                 .to_lowercase()
-                .contains("django"))
+                .contains("django")
+        });
+        Ok(has_manage && imports_django)
     }
 
     fn is_using_postgres(app: &App, _env: &Environment) -> Result<bool> {
