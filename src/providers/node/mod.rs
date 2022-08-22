@@ -289,7 +289,16 @@ impl NodeProvider {
     /// Returns the nodejs nix package and the appropriate package manager nix image.
     pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
         let package_json: PackageJson = app.read_json("package.json")?;
-        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+        let mut node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+
+        // If node-canvas is used, we want to default to node 16
+        // https://github.com/Automattic/node-canvas/issues/2025
+        if NodeProvider::uses_node_dependency(app, "canvas")
+            && node_pkg.name == DEFAULT_NODE_PKG_NAME
+        {
+            node_pkg = Pkg::new("nodejs-16_x");
+        }
+
         let pm_pkg: Pkg;
         let mut pkgs = Vec::<Pkg>::new();
 
