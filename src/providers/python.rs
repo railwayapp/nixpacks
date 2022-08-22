@@ -95,7 +95,6 @@ impl PythonProvider {
 
         pkgs.append(&mut vec![python_base_package]);
 
-        println!("Let frat");
         if PythonProvider::is_django(app, env)? && PythonProvider::is_using_postgres(app, env)? {
             // Django with Postgres requires postgresql and gcc on top of the original python packages
             pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
