@@ -471,8 +471,9 @@ fn test_python() {
 #[test]
 fn test_python_procfile() {
     let name = simple_build("./examples/python-procfile");
-    let output = run_image(name, None);
-    assert!(output.contains("Hello from Python"));
+
+    assert!(run_image(&name, None, |line| line.contains("Hello from Python")).is_some());
+    // assert!(output.contains("Hello from Python"));
 }
 
 #[test]
