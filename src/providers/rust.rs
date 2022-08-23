@@ -12,7 +12,6 @@ use crate::nixpacks::{
     },
 };
 use anyhow::{Context, Result};
-use cargo_toml::Dependency::Detailed;
 use cargo_toml::{Manifest, Workspace};
 
 const RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
