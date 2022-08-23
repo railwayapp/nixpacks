@@ -66,7 +66,7 @@ impl RustProvider {
         }
 
         if RustProvider::uses_dependency(app, "postgres")? {
-            setup.add_apt_pkgs(vec!["ibpq-dev".to_string()]);
+            setup.add_apt_pkgs(vec!["libpq-dev".to_string()]);
         }
 
         // Include the rust toolchain file so we can install that rust version with Nix
@@ -254,13 +254,8 @@ impl RustProvider {
     }
 
     fn uses_dependency(app: &App, dep: &'static str) -> Result<bool> {
-        if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
-            if toml_file.dependencies.contains_key(dep)
-                || toml_file.dev_dependencies.contains_key(dep)
-                || toml_file.build_dependencies.contains_key(dep)
-            {
-                return Ok(true);
-            }
+        if app.read_file("Cargo.toml")?.contains(dep) {
+            return Ok(true);
         }
 
         // Check Cargo.lock

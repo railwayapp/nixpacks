@@ -30,6 +30,8 @@ expression: plan
         }
       ],
       "aptPackages": [
+        "default-libmysqlclient-dev",
+        "libpq-dev",
         "musl-tools",
         "binutils"
       ]
