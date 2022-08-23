@@ -280,7 +280,7 @@ fn run_mysql() -> Container {
         .unwrap();
 
     Container {
-        name: container_name.clone(),
+        name: container_name,
         config: Some(Config {
             environment_variables: EnvironmentVariables::from([
                 ("MYSQL_USER".to_string(), "mysql".to_string()),
@@ -307,11 +307,7 @@ fn test_rust_diesel() {
 
     // Build the rust example
     let name = simple_build("./examples/rust-diesel");
-    let mut merged_envvars = mysql_container
-        .config
-        .unwrap()
-        .environment_variables
-        .to_owned();
+    let mut merged_envvars = mysql_container.config.unwrap().environment_variables;
 
     merged_envvars.extend(postgres_container.config.unwrap().environment_variables);
 
