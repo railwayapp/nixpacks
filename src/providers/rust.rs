@@ -51,7 +51,7 @@ impl RustProvider {
     fn get_setup(app: &App, env: &Environment) -> Result<Phase> {
         let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
 
-        if let Some(target) = RustProvider::get_target(app, env)? {
+        if let Some(target) = RustProvider::get_target(app, env) {
             rust_pkg = rust_pkg.set_override("targets", &format!("[\"{}\"]", target));
         }
 
@@ -95,7 +95,7 @@ impl RustProvider {
 
         let mut build_cmd = "cargo build --release".to_string();
 
-        if let Some(target) = RustProvider::get_target(app, env)? {
+        if let Some(target) = RustProvider::get_target(app, env) {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
                 write!(build_cmd, " --package {} --target {}", workspace, target)?;
 
@@ -138,7 +138,7 @@ impl RustProvider {
     }
 
     fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
-        if (RustProvider::get_target(app, env)?).is_some() {
+        if (RustProvider::get_target(app, env)).is_some() {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
                 let mut start = StartPhase::new(format!("./{}", workspace));
                 start.run_in_slim_image();
@@ -174,11 +174,11 @@ impl RustProvider {
         Ok(None)
     }
 
-    fn get_target(app: &App, env: &Environment) -> Result<Option<String>> {
+    fn get_target(app: &App, env: &Environment) -> Option<String> {
         if RustProvider::should_use_musl(app, env) {
-            Ok(Some(format!("{}-unknown-linux-musl", ARCH)))
+            Some(format!("{}-unknown-linux-musl", ARCH))
         } else {
-            Ok(None)
+            None
         }
     }
 
