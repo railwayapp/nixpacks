@@ -14,7 +14,6 @@ use std::{
     thread,
 };
 use uuid::Uuid;
-use wait_timeout::ChildExt;
 
 use rand::thread_rng;
 use rand::{distributions::Alphanumeric, Rng};
@@ -90,7 +89,7 @@ fn run_image(
             cmd.arg("--net").arg(network);
         }
     }
-    cmd.arg(name.clone());
+    cmd.arg(name);
     cmd.stdout(Stdio::piped());
 
     let mut child = cmd.spawn().unwrap();
@@ -119,7 +118,7 @@ fn run_image(
         // let _status_code = match child.wait_timeout(secs).unwrap() {
         //     Some(status) => status.code(),
         //     None => {
-        stop_and_remove_container_by_image(&name);
+        stop_and_remove_container_by_image(name);
         // child.kill().unwrap();
 
         //     }
