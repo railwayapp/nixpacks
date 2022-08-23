@@ -66,7 +66,7 @@ impl RustProvider {
         }
 
         if RustProvider::uses_dependency(app, "postgres") {
-            setup.add_apt_pkgs(vec!["libpq-dev".to_string()]);
+            setup.add_apt_pkgs(vec!["libpq-dev".to_string(), "ibgtk2.0-dev".to_string()]);
         }
 
         // Include the rust toolchain file so we can install that rust version with Nix
