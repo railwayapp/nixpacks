@@ -20,6 +20,7 @@ use crate::{
 };
 use anyhow::bail;
 use anyhow::Result;
+use path_slash::PathExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 mod nx;
@@ -359,7 +360,7 @@ impl NodeProvider {
             let deps = NodeProvider::get_deps_from_package_json(&json);
             if deps.contains("next") {
                 let relative = app.strip_source_path(file.as_path())?;
-                cache_dirs.push(relative.parent().unwrap().to_str().unwrap().to_string());
+                cache_dirs.push(relative.parent().unwrap().to_slash().unwrap().into_owned());
             }
         }
 
@@ -687,7 +688,7 @@ mod test {
     }
 
     #[test]
-    fn test_find_next_pacakges() -> Result<()> {
+    fn test_find_next_packages() -> Result<()> {
         assert_eq!(
             NodeProvider::find_next_packages(&App::new("./examples/node-monorepo")?)?,
             vec!["packages/client".to_string()]

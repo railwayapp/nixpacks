@@ -9,6 +9,7 @@ use crate::nixpacks::{
     },
 };
 use anyhow::{bail, Result};
+use path_slash::PathExt;
 
 const DEFAULT_SWIFT_VERSION: &str = "5.4.2";
 
@@ -130,11 +131,11 @@ impl SwiftProvider {
         let raw_paths = app.find_files("Sources/**/main.swift")?;
         let paths = raw_paths
             .iter()
-            .filter(|&path| !path.to_string_lossy().contains(".build"))
+            .filter(|&path| !path.to_slash().unwrap().contains(".build"))
             .collect::<Vec<_>>();
 
         let path = match paths.first() {
-            Some(path) => path.to_string_lossy().to_string(),
+            Some(path) => path.to_slash().unwrap().to_string(),
             None => bail!("Your swift app doesn't have a main.swift file"),
         };
 

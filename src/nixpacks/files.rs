@@ -1,4 +1,4 @@
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use std::{fs, io, path::Path};
 use walkdir::WalkDir;
 
@@ -21,7 +21,11 @@ pub fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) ->
         }
         // copy files
         else if entry.file_type().is_file() {
-            fs::copy(from, to)?;
+            fs::copy(&from, &to)?;
+            // replace CRLF with LF
+            if let Ok(data) = fs::read_to_string(from) {
+                fs::write(&to, data.replace("\r\n", "\n"))?;
+            }
         }
     }
     Ok(())
