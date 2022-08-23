@@ -74,7 +74,10 @@ jobs:
 
   test-plan:
     name: Test Suite
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     outputs:
       matrix: ${{ steps.docker-prep.outputs.matrix }}
     steps:      
