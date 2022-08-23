@@ -14,6 +14,8 @@ use nixpacks::{
     },
 };
 
+// Trigger CI
+
 fn main() -> Result<()> {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
 
