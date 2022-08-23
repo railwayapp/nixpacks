@@ -1,4 +1,4 @@
-use super::{config::GeneratePlanConfig, BuildPlan, PlanGenerator};
+use super::{config::GeneratePlanConfig, phase::StartPhase, BuildPlan, PlanGenerator};
 use crate::{
     nixpacks::{app::App, environment::Environment, nix::pkg::Pkg},
     providers::Provider,
@@ -85,13 +85,12 @@ impl NixpacksBuildPlanGenerator<'_> {
 
         // The Procfile start command has precedence over the provider's start command
         if let Some(procfile_start) = self.get_procfile_start_cmd(app)? {
-            plan.start_phase.as_mut().map(|start| {
-                start.cmd = Some(procfile_start);
-                start
-            });
+            let mut start_phase = plan.start_phase.clone().unwrap_or_default();
+            start_phase.cmd = Some(procfile_start);
+            plan.set_start_phase(start_phase);
         }
 
-        // The Procfiles release command is append to the provider's build command
+        // The Procfiles release command is appended to the provider's build command
         if let Some(procfile_release) = self.get_procfile_release_cmd(app)? {
             if let Some(build) = plan.get_phase_mut("build") {
                 build.add_cmd(procfile_release);

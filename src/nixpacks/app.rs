@@ -34,7 +34,6 @@ impl App {
     }
 
     /// Check if a file exists
-
     pub fn includes_file(&self, name: &str) -> bool {
         self.source.join(name).is_file()
     }
