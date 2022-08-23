@@ -103,9 +103,11 @@ impl App {
     /// # Errors
     /// This will error if the path doesn't exist, or if the contents isn't UTF-8
     pub fn read_file(&self, name: &str) -> Result<String> {
-        Ok(fs::read_to_string(PathBuf::from_slash_lossy(
+        let data = fs::read_to_string(PathBuf::from_slash_lossy(
             self.source.join(name).as_os_str(),
-        ))?)
+        ))?;
+
+        Ok(data.replace("\r\n", "\n"))
     }
 
     pub fn find_match(&self, re: &Regex, pattern: &str) -> Result<bool> {
