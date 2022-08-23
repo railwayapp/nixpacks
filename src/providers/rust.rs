@@ -247,7 +247,7 @@ impl RustProvider {
         }
 
         // Do not build for the musl target if using openssl
-        if RustProvider::uses_openssl(app)? {
+        if RustProvider::uses_dependency(app, "openssl")? {
             return Ok(false);
         }
 
@@ -403,12 +403,14 @@ mod test {
 
     #[test]
     fn test_uses_openssl() -> Result<()> {
-        assert!(!RustProvider::uses_openssl(&App::new(
-            "./examples/rust-custom-version"
-        )?)?,);
-        assert!(RustProvider::uses_openssl(&App::new(
-            "./examples/rust-openssl"
-        )?)?,);
+        assert!(!RustProvider::uses_dependency(
+            &App::new("./examples/rust-custom-version")?,
+            "openssl"
+        )?,);
+        assert!(RustProvider::uses_dependency(
+            &App::new("./examples/rust-openssl")?,
+            "openssl"
+        )?,);
 
         Ok(())
     }
