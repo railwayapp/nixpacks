@@ -61,11 +61,11 @@ impl RustProvider {
         ]));
 
         // Install connectors for mysql and or postgresql if the respective features are enabled for diesel.
-        if RustProvider::uses_dependency(app, "mysql")? {
+        if RustProvider::uses_dependency(app, "mysql") {
             setup.add_apt_pkgs(vec!["default-libmysqlclient-dev".to_string()]);
         }
 
-        if RustProvider::uses_dependency(app, "postgres")? {
+        if RustProvider::uses_dependency(app, "postgres") {
             setup.add_apt_pkgs(vec!["libpq-dev".to_string()]);
         }
 
@@ -75,11 +75,11 @@ impl RustProvider {
         }
 
         // Custom libs for openssl
-        if RustProvider::uses_dependency(app, "openssl")? {
+        if RustProvider::uses_dependency(app, "openssl") {
             setup.add_pkgs_libs(vec!["openssl".to_string(), "openssl.dev".to_string()]);
         }
 
-        if RustProvider::should_use_musl(app, env)? {
+        if RustProvider::should_use_musl(app, env) {
             setup.add_apt_pkgs(vec!["musl-tools".to_string()]);
         }
 
@@ -175,7 +175,7 @@ impl RustProvider {
     }
 
     fn get_target(app: &App, env: &Environment) -> Result<Option<String>> {
-        if RustProvider::should_use_musl(app, env)? {
+        if RustProvider::should_use_musl(app, env) {
             Ok(Some(format!("{}-unknown-linux-musl", ARCH)))
         } else {
             Ok(None)
@@ -236,34 +236,29 @@ impl RustProvider {
         Ok(pkg)
     }
 
-    fn should_use_musl(app: &App, env: &Environment) -> Result<bool> {
+    fn should_use_musl(app: &App, env: &Environment) -> bool {
         if env.is_config_variable_truthy("NO_MUSL") {
-            return Ok(false);
+            return false;
         }
 
         if RustProvider::get_rust_toolchain_file(app).is_some() {
-            return Ok(false);
+            return false;
         }
 
         // Do not build for the musl target if using openssl
-        if RustProvider::uses_dependency(app, "openssl")? {
-            return Ok(false);
+        if RustProvider::uses_dependency(app, "openssl") {
+            return false;
         }
 
-        Ok(true)
+        true
     }
 
-    fn uses_dependency(app: &App, dep: &'static str) -> Result<bool> {
-        if app.read_file("Cargo.toml")?.contains(dep) {
-            return Ok(true);
-        }
-
-        // Check Cargo.lock
-        if app.includes_file("Cargo.lock") && app.read_file("Cargo.lock")?.contains(dep) {
-            return Ok(true);
-        }
-
-        Ok(false)
+    fn uses_dependency(app: &App, dep: &'static str) -> bool {
+        // Check if any of the files includes the dependency
+        ["Cargo.toml", "Cargo.lock"].iter().any(|file_name| {
+            app.includes_file(file_name)
+                && app.read_file(file_name).unwrap_or_default().contains(dep)
+        })
     }
 
     fn resolve_cargo_workspace(app: &App, env: &Environment) -> Result<Option<String>> {
@@ -400,11 +395,11 @@ mod test {
         assert!(!RustProvider::uses_dependency(
             &App::new("./examples/rust-custom-version")?,
             "openssl"
-        )?,);
+        ),);
         assert!(RustProvider::uses_dependency(
             &App::new("./examples/rust-openssl")?,
             "openssl"
-        )?,);
+        ),);
 
         Ok(())
     }
