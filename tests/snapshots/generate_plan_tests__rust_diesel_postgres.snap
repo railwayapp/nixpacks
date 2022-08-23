@@ -1,0 +1,63 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
+  "variables": {
+    "ROCKET_ADDRESS": "0.0.0.0"
+  },
+  "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "gcc"
+        },
+        {
+          "name": "rust-bin.stable.latest.default",
+          "overlay": "https://github.com/oxalica/rust-overlay/archive/master.tar.gz",
+          "overrides": {
+            "targets": "[\"aarch64-unknown-linux-musl\"]"
+          }
+        }
+      ],
+      "aptPackages": [
+        "libpq-dev",
+        "ibgtk2.0-dev",
+        "musl-tools",
+        "binutils"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "mkdir -p bin",
+        "cargo build --release --target aarch64-unknown-linux-musl",
+        "cp target/aarch64-unknown-linux-musl/release/rust-diesel bin"
+      ],
+      "cacheDirectories": [
+        "/root/.cargo/git",
+        "/root/.cargo/registry",
+        "target"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "./rust-diesel",
+    "runImage": "debian:bullseye-slim",
+    "onlyIncludeFiles": [
+      "./bin/rust-diesel"
+    ]
+  }
+}

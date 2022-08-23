@@ -293,35 +293,59 @@ fn run_mysql() -> Container {
 }
 
 #[test]
-fn test_rust_diesel() {
+fn test_rust_diesel_postgres() {
     // Create the network
     let n = create_network();
 
     // Create the db instances
-    let mysql_container = run_mysql();
     let postgres_container = run_postgres();
 
     // Attach the db instances to the network
-    attach_container_to_network(n.name.clone(), mysql_container.name.to_owned());
     attach_container_to_network(n.name.clone(), postgres_container.name.to_owned());
 
     // Build the rust example
     let name = simple_build("./examples/rust-diesel");
-    let mut merged_envvars = mysql_container.config.unwrap().environment_variables;
-
-    merged_envvars.extend(postgres_container.config.unwrap().environment_variables);
 
     // Run the rust example on the attached network
     let output = run_image(
         name,
         Some(Config {
-            environment_variables: merged_envvars,
+            environment_variables: postgres_container.config.unwrap().environment_variables,
             network: Some(n.name.clone()),
         }),
     );
 
     // Cleanup containers and networks
     stop_and_remove_container(postgres_container.name);
+    remove_network(n.name);
+
+    assert!(output.contains("Hello from rust"));
+}
+
+#[test]
+fn test_rust_diesel_mysql() {
+    // Create the network
+    let n = create_network();
+
+    // Create the db instances
+    let mysql_container = run_mysql();
+
+    // Attach the db instances to the network
+    attach_container_to_network(n.name.clone(), mysql_container.name.to_owned());
+
+    // Build the rust example
+    let name = simple_build("./examples/rust-diesel");
+
+    // Run the rust example on the attached network
+    let output = run_image(
+        name,
+        Some(Config {
+            environment_variables: mysql_container.config.unwrap().environment_variables,
+            network: Some(n.name.clone()),
+        }),
+    );
+
+    // Cleanup containers and networks
     stop_and_remove_container(mysql_container.name);
     remove_network(n.name);
 

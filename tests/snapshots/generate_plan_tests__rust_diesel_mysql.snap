@@ -25,13 +25,12 @@ expression: plan
           "name": "rust-bin.stable.latest.default",
           "overlay": "https://github.com/oxalica/rust-overlay/archive/master.tar.gz",
           "overrides": {
-            "targets": "[\"x86_64-unknown-linux-musl\"]"
+            "targets": "[\"aarch64-unknown-linux-musl\"]"
           }
         }
       ],
       "aptPackages": [
         "default-libmysqlclient-dev",
-        "libpq-dev",
         "musl-tools",
         "binutils"
       ]
@@ -43,8 +42,8 @@ expression: plan
       ],
       "commands": [
         "mkdir -p bin",
-        "cargo build --release --target x86_64-unknown-linux-musl",
-        "cp target/x86_64-unknown-linux-musl/release/rust-diesel bin"
+        "cargo build --release --target aarch64-unknown-linux-musl",
+        "cp target/aarch64-unknown-linux-musl/release/rust-diesel bin"
       ],
       "cacheDirectories": [
         "/root/.cargo/git",
