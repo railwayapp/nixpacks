@@ -65,7 +65,7 @@ impl ProviderMetadata {
 }
 
 #[test]
-fn test_provider_metadata_from() -> Result<()> {
+fn test_provider_metadata_from() {
     let metadata = ProviderMetadata::from(vec![
         (true, "test_tag"),
         (false, "test_other_tag"),
@@ -77,12 +77,10 @@ fn test_provider_metadata_from() -> Result<()> {
     assert_eq!(tags.unwrap().len(), 2);
     assert!(&metadata.has_label("test_tag"));
     assert!(&metadata.has_label("test_tag_3"));
-
-    Ok(())
 }
 
 #[test]
-fn test_join_as_comma_separated() -> Result<()> {
+fn test_join_as_comma_separated() {
     let metadata = ProviderMetadata::from(vec![
         (true, "test_tag"),
         (false, "test_other_tag"),
@@ -91,6 +89,4 @@ fn test_join_as_comma_separated() -> Result<()> {
 
     let tags_str = &metadata.join_as_comma_separated("my_provider".to_string());
     assert_eq!(tags_str, "my_provider,test_tag,test_tag_3");
-
-    Ok(())
 }
