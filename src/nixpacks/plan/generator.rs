@@ -3,7 +3,7 @@ use crate::{
     nixpacks::{app::App, environment::Environment, nix::pkg::Pkg},
     providers::Provider,
 };
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::{Context, Ok, Result};
 use std::collections::HashMap;
 
 // This line is automatically updated.
@@ -111,9 +111,7 @@ impl NixpacksBuildPlanGenerator<'_> {
             let mut procfile: HashMap<String, String> =
                 app.read_yaml("Procfile").context("Reading Procfile")?;
             procfile.remove("release");
-            if procfile.len() > 1 {
-                bail!("Procfile contains more than one process types. Please specify only one.");
-            } else if procfile.is_empty() {
+            if procfile.is_empty() {
                 Ok(None)
             } else {
                 let process = procfile.values().collect::<Vec<_>>()[0].to_string();

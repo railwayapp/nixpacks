@@ -17,7 +17,7 @@ expression: plan
         "setup"
       ],
       "commands": [
-        "npm i"
+        "npm ci"
       ],
       "cacheDirectories": [
         "/root/.npm"
