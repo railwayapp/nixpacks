@@ -10,6 +10,7 @@ The Node provider supports NPM, Yarn, Yarn 2, and PNPM.
 
 The Node provider sets the following environment variables:
 
+- `CI=true`
 - `NODE_ENV=production`
 - `NPM_CONFIG_PRODUCTION=false`: Ensure that dev deps are always installed
 - `NIXPACKS_NX_APP_NAME`: Provide a name of the NX app you want to build from your NX Monorepo

@@ -51,5 +51,7 @@ expression: plan
       ]
     }
   ],
-  "startPhase": {}
+  "startPhase": {
+    "cmd": "ruby app.rb"
+  }
 }

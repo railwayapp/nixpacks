@@ -7,13 +7,13 @@ use crate::{
     },
     providers::Provider,
 };
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::{Context, Ok, Result};
 use std::collections::HashMap;
 
 // This line is automatically updated.
-// Last Modified: 2022-08-15 17:08:57 UTC+0000
-// https://github.com/NixOS/nixpkgs/commit/441dc5d512153039f19ef198e662e4f3dbb9fd65
-pub const NIXPKGS_ARCHIVE: &str = "441dc5d512153039f19ef198e662e4f3dbb9fd65";
+// Last Modified: 2022-08-22 17:06:26 UTC+0000
+// https://github.com/NixOS/nixpkgs/commit/54060e816971276da05970a983487a25810c38a7
+pub const NIXPKGS_ARCHIVE: &str = "54060e816971276da05970a983487a25810c38a7";
 const NIXPACKS_LABELS: &str = "NIXPACKS_LABELS";
 
 #[derive(Clone, Default, Debug)]
@@ -91,10 +91,9 @@ impl NixpacksBuildPlanGenerator<'_> {
 
         // The Procfile start command has precedence over the provider's start command
         if let Some(procfile_start) = self.get_procfile_start_cmd(app)? {
-            plan.start_phase.as_mut().map(|start| {
-                start.cmd = Some(procfile_start);
-                start
-            });
+            let mut start_phase = plan.start_phase.clone().unwrap_or_default();
+            start_phase.cmd = Some(procfile_start);
+            plan.set_start_phase(start_phase);
         }
 
         // The Procfiles release command is append to the provider's build command
@@ -118,9 +117,7 @@ impl NixpacksBuildPlanGenerator<'_> {
             let mut procfile: HashMap<String, String> =
                 app.read_yaml("Procfile").context("Reading Procfile")?;
             procfile.remove("release");
-            if procfile.len() > 1 {
-                bail!("Procfile contains more than one process types. Please specify only one.");
-            } else if procfile.is_empty() {
+            if procfile.is_empty() {
                 Ok(None)
             } else {
                 let process = procfile.values().collect::<Vec<_>>()[0].to_string();
