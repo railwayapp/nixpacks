@@ -14,7 +14,7 @@ use std::collections::HashMap;
 // Last Modified: 2022-08-22 17:06:26 UTC+0000
 // https://github.com/NixOS/nixpkgs/commit/54060e816971276da05970a983487a25810c38a7
 pub const NIXPKGS_ARCHIVE: &str = "54060e816971276da05970a983487a25810c38a7";
-const NIXPACKS_LABELS: &str = "NIXPACKS_LABELS";
+const NIXPACKS_TAGS: &str = "NIXPACKS_TAGS";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
@@ -153,7 +153,7 @@ impl NixpacksBuildPlanGenerator<'_> {
             .join_as_comma_separated(provider.name().to_owned());
 
         Ok(EnvironmentVariables::from([(
-            NIXPACKS_LABELS.to_string(),
+            NIXPACKS_TAGS.to_string(),
             metadata_string,
         )]))
     }
