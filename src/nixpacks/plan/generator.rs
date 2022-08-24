@@ -3,7 +3,7 @@ use crate::{
     nixpacks::{app::App, environment::Environment, nix::pkg::Pkg},
     providers::Provider,
 };
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::{Context, Ok, Result};
 use std::collections::HashMap;
 
 // This line is automatically updated.
