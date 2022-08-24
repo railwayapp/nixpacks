@@ -17,10 +17,10 @@ expression: plan
         "setup"
       ],
       "commands": [
-        "npm i"
+        "pnpm i --frozen-lockfile"
       ],
       "cacheDirectories": [
-        "/root/.npm"
+        "/root/.cache/pnpm"
       ],
       "paths": [
         "/app/node_modules/.bin"
@@ -33,7 +33,7 @@ expression: plan
           "name": "nodejs-16_x"
         },
         {
-          "name": "npm-8_x",
+          "name": "pnpm-7_x",
           "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
         }
       ],
@@ -53,6 +53,6 @@ expression: plan
     }
   ],
   "startPhase": {
-    "cmd": "npm run start"
+    "cmd": "pnpm run start"
   }
 }
