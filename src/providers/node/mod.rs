@@ -332,9 +332,14 @@ impl NodeProvider {
     }
 
     pub fn uses_node_dependency(app: &App, dependency: &str) -> bool {
-        NodeProvider::get_all_deps(app)
-            .unwrap_or_default()
-            .contains(dependency)
+        [
+            "package.json",
+            "package-lock.json",
+            "yarn.lock",
+            "pnpm-lock.yaml",
+        ]
+        .iter()
+        .any(|file| app.read_file(file).unwrap_or_default().contains(dependency))
     }
 
     pub fn find_next_packages(app: &App) -> Result<Vec<String>> {
