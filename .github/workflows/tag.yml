@@ -1,0 +1,42 @@
+name: Tag
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-ecosystem/action-get-merged-pull-request@v1
+        id: get-merged-pull-request
+        with:
+          github_token: ${{ secrets.GH_PAT }}
+
+      - uses: actions-ecosystem/action-release-label@v1
+        id: release-label
+        if: ${{ steps.get-merged-pull-request.outputs.title != null }}
+        with:
+          github_token: ${{ secrets.GH_PAT }}
+          labels: ${{ steps.get-merged-pull-request.outputs.labels }}
+
+      - uses: actions-ecosystem/action-get-latest-tag@v1
+        id: get-latest-tag
+        if: ${{ steps.release-label.outputs.level != null }}
+        with:
+          semver_only: true
+      
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: cargo release patch --execute
+        if: ${{ steps.release-label.outputs.level == release/patch }}
+      
+      - run: cargo release minor --execute
+        if: ${{ steps.release-label.outputs.level == release/minor }}
+
+      - run: cargo release major --execute
+        if: ${{ steps.release-label.outputs.level == release/major }}
