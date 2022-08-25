@@ -111,7 +111,7 @@ jobs:
     name: Docker Tests
     strategy:
       matrix:
-        tests: ${{fromJson(needs.test-plan.outputs.matrix)}}
+        tests: ${{fromJson(needs.test-plan.outputs.tests)}}
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
