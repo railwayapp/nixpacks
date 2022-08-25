@@ -15,7 +15,7 @@ use wait_timeout::ChildExt;
 use rand::thread_rng;
 use rand::{distributions::Alphanumeric, Rng};
 
-fn get_container_ids_from_image(image: String) -> String {
+fn get_container_ids_from_image(image: &str) -> String {
     let output = Command::new("docker")
         .arg("ps")
         .arg("-a")
@@ -50,7 +50,7 @@ fn remove_containers(container_id: &str) {
         .unwrap();
 }
 
-fn stop_and_remove_container_by_image(image: String) {
+fn stop_and_remove_container_by_image(image: &str) {
     let container_ids = get_container_ids_from_image(image);
     let container_id = container_ids.trim().split('\n').collect::<Vec<_>>()[0].to_string();
 
@@ -68,7 +68,7 @@ struct Config {
 }
 /// Runs an image with Docker and returns the output
 /// The image is automatically stopped and removed after `TIMEOUT_SECONDS`
-fn run_image(name: String, cfg: Option<Config>) -> String {
+fn run_image(name: &str, cfg: Option<Config>) -> String {
     let mut cmd = Command::new("docker");
     cmd.arg("run");
 
@@ -82,7 +82,7 @@ fn run_image(name: String, cfg: Option<Config>) -> String {
             cmd.arg("--net").arg(network);
         }
     }
-    cmd.arg(name.clone());
+    cmd.arg(name);
     cmd.stdout(Stdio::piped());
 
     let mut child = cmd.spawn().unwrap();
@@ -92,7 +92,6 @@ fn run_image(name: String, cfg: Option<Config>) -> String {
         Some(status) => status.code(),
         None => {
             stop_and_remove_container_by_image(name);
-            child.kill().unwrap();
             child.wait().unwrap().code()
         }
     };
@@ -249,7 +248,7 @@ fn run_postgres() -> Container {
 #[test]
 fn test_deno() {
     let name = simple_build("./examples/deno");
-    assert!(run_image(name, None).contains("Hello from Deno"));
+    assert!(run_image(&name, None).contains("Hello from Deno"));
 }
 
 #[test]
@@ -265,19 +264,19 @@ fn test_elixir_no_ecto() {
         vec![&*secret_env, "MIX_ENV=prod"],
     );
 
-    assert!(run_image(name, None).contains("Hello from Phoenix"));
+    assert!(run_image(&name, None).contains("Hello from Phoenix"));
 }
 
 #[test]
 fn test_node() {
     let name = simple_build("./examples/node");
-    assert!(run_image(name, None).contains("Hello from Node"));
+    assert!(run_image(&name, None).contains("Hello from Node"));
 }
 
 #[test]
 fn test_node_nx_default_app() {
     let name = simple_build("./examples/node-nx");
-    assert!(run_image(name, None).contains("nx express app works"));
+    assert!(run_image(&name, None).contains("nx express app works"));
 }
 
 #[test]
@@ -285,7 +284,7 @@ fn test_node_nx_next() {
     let name =
         build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=next-app"]);
 
-    assert!(run_image(name, None)
+    assert!(run_image(&name, None)
         .contains("ready - started server on 0.0.0.0:3000, url: http://localhost:3000"));
 }
 
@@ -296,7 +295,7 @@ fn test_node_nx_start_command() {
         vec!["NIXPACKS_NX_APP_NAME=start-command"],
     );
 
-    assert!(run_image(name, None).contains("nx express app works"));
+    assert!(run_image(&name, None).contains("nx express app works"));
 }
 
 #[test]
@@ -306,7 +305,7 @@ fn test_node_nx_start_command_production() {
         vec!["NIXPACKS_NX_APP_NAME=start-command-production"],
     );
 
-    assert!(run_image(name, None).contains("nx express app works"));
+    assert!(run_image(&name, None).contains("nx express app works"));
 }
 
 #[test]
@@ -314,7 +313,7 @@ fn test_node_nx_node() {
     let name =
         build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=node-app"]);
 
-    assert!(run_image(name, None).contains("Hello from node-app!"));
+    assert!(run_image(&name, None).contains("Hello from node-app!"));
 }
 
 #[test]
@@ -324,34 +323,34 @@ fn test_node_nx_express() {
         vec!["NIXPACKS_NX_APP_NAME=express-app"],
     );
 
-    assert!(run_image(name, None).contains("nx express app works"));
+    assert!(run_image(&name, None).contains("nx express app works"));
 }
 
 #[test]
 fn test_node_custom_version() {
     let name = simple_build("./examples/node-custom-version");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Node version: v18"));
 }
 
 #[test]
 fn test_node_canvas() {
     let name = simple_build("./examples/node-canvas");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Node canvas"));
 }
 
 #[test]
 fn test_yarn_custom_version() {
     let name = simple_build("./examples/node-yarn-custom-node-version");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Node version: v14"));
 }
 
 #[test]
 fn test_yarn_berry() {
     let name = simple_build("./examples/node-yarn-berry");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
 
     assert!(output.contains("Hello from Yarn v2+"));
 }
@@ -359,77 +358,77 @@ fn test_yarn_berry() {
 #[test]
 fn test_yarn_prisma() {
     let name = simple_build("./examples/node-yarn-prisma");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("My post content"));
 }
 
 #[test]
 fn test_pnpm() {
     let name = simple_build("./examples/node-pnpm");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from PNPM"));
 }
 
 #[test]
 fn test_bun() {
     let name = simple_build("./examples/node-bun");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Bun"));
 }
 
 #[test]
 fn test_bun_web_server() {
     let name = simple_build("./examples/node-bun-web-server");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from a Bun web server!"));
 }
 
 #[test]
 fn test_pnpm_custom_version() {
     let name = simple_build("./examples/node-pnpm-custom-node-version");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from PNPM"));
 }
 
 #[test]
 fn test_puppeteer() {
     let name = simple_build("./examples/node-puppeteer");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from puppeteer"));
 }
 
 #[test]
 fn test_csharp() {
     let name = simple_build("./examples/csharp-cli");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello world from C#"));
 }
 
 #[test]
 fn test_fsharp() {
     let name = simple_build("./examples/fsharp-cli");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello world from F#"));
 }
 
 #[test]
 fn test_python() {
     let name = simple_build("./examples/python");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Python"));
 }
 
 #[test]
 fn test_python_procfile() {
     let name = simple_build("./examples/python-procfile");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Python"));
 }
 
 #[test]
 fn test_python_2() {
     let name = simple_build("./examples/python-2");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Python 2"));
 }
 
@@ -451,7 +450,7 @@ fn test_django() {
 
     // Run the Django example on the attached network
     let output = run_image(
-        name,
+        &name,
         Some(Config {
             environment_variables: c.config.unwrap().environment_variables,
             network: Some(network_name.clone()),
@@ -468,14 +467,14 @@ fn test_django() {
 #[test]
 fn test_python_poetry() {
     let name = simple_build("./examples/python-poetry");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Python-Poetry"));
 }
 
 #[test]
 fn test_python_numpy() {
     let name = simple_build("./examples/python-numpy");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Python numpy and pandas"));
 }
 
@@ -497,63 +496,63 @@ fn test_rust_custom_version() {
     )
     .unwrap();
 
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("cargo 1.56.0"));
 }
 
 #[test]
 fn test_rust_ring() {
     let name = simple_build("./examples/rust-ring");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from rust"));
 }
 
 #[test]
 fn test_rust_openssl() {
     let name = simple_build("./examples/rust-openssl");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Rust openssl!"));
 }
 
 #[test]
 fn test_rust_cargo_workspaces() {
     let name = simple_build("./examples/rust-cargo-workspaces");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from rust"));
 }
 
 #[test]
 fn test_rust_cargo_workspaces_glob() {
     let name = simple_build("./examples/rust-cargo-workspaces-glob");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from rust"));
 }
 
 #[test]
 fn test_go() {
     let name = simple_build("./examples/go");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Go"));
 }
 
 #[test]
 fn test_go_custom_version() {
     let name = simple_build("./examples/go-custom-version");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from go1.18"));
 }
 
 #[test]
 fn test_haskell_stack() {
     let name = simple_build("./examples/haskell-stack");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Haskell"));
 }
 
 #[test]
 fn test_crystal() {
     let name = simple_build("./examples/crystal");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Crystal"));
 }
 
@@ -576,14 +575,14 @@ fn test_cowsay() {
         },
     )
     .unwrap();
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello World"));
 }
 
 #[test]
 fn test_staticfile() {
     let name = simple_build("./examples/staticfile");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("start worker process"));
 }
 
@@ -606,35 +605,35 @@ fn test_swift() {
     )
     .unwrap();
 
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from swift"));
 }
 
 #[test]
 fn test_dart() {
     let name = simple_build("./examples/dart");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Dart"));
 }
 
 #[test]
 fn test_java_maven() {
     let name = simple_build("./examples/java-maven");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Built with Spring Boot"));
 }
 
 #[test]
 fn test_zig() {
     let name = simple_build("./examples/zig");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Zig"));
 }
 
 #[test]
 fn test_zig_gyro() {
     let name = simple_build("./examples/zig-gyro");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Zig"));
     assert!(output.contains("The URI scheme of GitHub is https."));
 }
@@ -642,7 +641,7 @@ fn test_zig_gyro() {
 #[test]
 fn test_ruby_sinatra() {
     let name = simple_build("./examples/ruby-sinatra/");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert!(output.contains("Hello from Sinatra"));
 }
 
@@ -664,7 +663,7 @@ fn test_ruby_rails() {
 
     // Run the Rails example on the attached network
     let output = run_image(
-        name,
+        &name,
         Some(Config {
             environment_variables: c.config.unwrap().environment_variables,
             network: Some(network_name.clone()),
@@ -681,13 +680,13 @@ fn test_ruby_rails() {
 #[test]
 fn test_clojure() {
     let name = simple_build("./examples/clojure");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert_eq!(output, "Hello, World From Clojure!");
 }
 
 #[test]
 fn test_clojure_ring_app() {
     let name = simple_build("./examples/clojure-ring-app");
-    let output = run_image(name, None);
+    let output = run_image(&name, None);
     assert_eq!(output, "Started server on port 3000");
 }
