@@ -74,6 +74,7 @@ jobs:
 
   test-plan:
     name: Test Suite
+    runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.docker-prep.outputs.matrix }}
     steps:
