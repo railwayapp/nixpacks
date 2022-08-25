@@ -1,12 +1,12 @@
 on:
   push:
     branches:
-    - main
+      - main
     paths-ignore:
-    - 'docs/**'
+      - "docs/**"
   pull_request:
     paths-ignore:
-    - 'docs/**'
+      - "docs/**"
 
 name: CI
 
@@ -45,7 +45,7 @@ jobs:
         uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
-          
+
       - name: Checkout sources
         uses: actions/checkout@v2
 
@@ -56,7 +56,7 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt, clippy
-          
+
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo fmt
@@ -70,19 +70,22 @@ jobs:
         with:
           command: clippy
           # Set linting rules for clippy
-          args: --all-targets --all-features -- -D warnings 
+          args: --all-targets --all-features -- -D warnings
 
   test-plan:
     name: Test Suite
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     outputs:
       matrix: ${{ steps.docker-prep.outputs.matrix }}
-    steps:      
+    steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
-        
+
       - name: Checkout sources
         uses: actions/checkout@v2
 
@@ -94,7 +97,7 @@ jobs:
           override: true
 
       - uses: Swatinem/rust-cache@v2
-      
+
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
@@ -109,15 +112,17 @@ jobs:
   test-docker:
     needs: test-plan
     name: Docker Tests
-    runs-on: ubuntu-latest
     strategy:
-      matrix: ${{fromJson(needs.test-plan.outputs.matrix)}}
-    steps:      
+      matrix:
+        out: ${{fromJson(needs.test-plan.outputs.matrix)}}
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
-        
+
       - name: Checkout sources
         uses: actions/checkout@v2
 
@@ -138,13 +143,16 @@ jobs:
 
   msrv:
     name: Test Suite (MSRV)
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
-        
+
       - name: Checkout sources
         uses: actions/checkout@v2
 
@@ -156,7 +164,7 @@ jobs:
           override: true
 
       - uses: Swatinem/rust-cache@v2
-      
+
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
