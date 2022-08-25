@@ -32,11 +32,10 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - run: cargo release patch --execute
-        if: ${{ steps.release-label.outputs.level == release/patch }}
       
-      - run: cargo release minor --execute
+      - run: echo 'Dry Run PATCH' # cargo release patch --execute
+        if: ${{ steps.release-label.outputs.level == release/patch }}
+      - run: echo 'Dry Run MINOR' # cargo release minor --execute
         if: ${{ steps.release-label.outputs.level == release/minor }}
-
-      - run: cargo release major --execute
+      - run: echo 'Dry Run MAJOR' # cargo release major --execute
         if: ${{ steps.release-label.outputs.level == release/major }}
