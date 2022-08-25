@@ -92,7 +92,6 @@ fn run_image(name: &str, cfg: Option<Config>) -> String {
         Some(status) => status.code(),
         None => {
             stop_and_remove_container_by_image(name);
-            child.kill().unwrap();
             child.wait().unwrap().code()
         }
     };

@@ -1,12 +1,12 @@
 on:
   push:
     branches:
-      - main
+    - main
     paths-ignore:
-      - "docs/**"
+    - 'docs/**'
   pull_request:
     paths-ignore:
-      - "docs/**"
+    - 'docs/**'
 
 name: CI
 
@@ -45,7 +45,7 @@ jobs:
         uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
-
+          
       - name: Checkout sources
         uses: actions/checkout@v2
 
@@ -56,7 +56,7 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt, clippy
-
+          
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo fmt
@@ -70,19 +70,19 @@ jobs:
         with:
           command: clippy
           # Set linting rules for clippy
-          args: --all-targets --all-features -- -D warnings
+          args: --all-targets --all-features -- -D warnings 
 
   test-plan:
     name: Test Suite
     runs-on: ubuntu-latest
     outputs:
-      tests: ${{ steps.docker-prep.outputs.tests }}
-    steps:
+      matrix: ${{ steps.docker-prep.outputs.matrix }}
+    steps:      
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
-
+        
       - name: Checkout sources
         uses: actions/checkout@v2
 
@@ -94,7 +94,7 @@ jobs:
           override: true
 
       - uses: Swatinem/rust-cache@v2
-
+      
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
@@ -104,22 +104,20 @@ jobs:
         id: docker-prep
         # generate list of tests in json format for test-docker
         run: |
-          echo "::set-output name=tests::[\"$(cargo test -q --package nixpacks --test docker_run_tests -- --list --format=terse | sed -z 's/: test\n/\", \"/g' | sed 's/...$//')]"
+          echo "::set-output name=matrix::{\"tests\":[\"$(cargo test -q --package nixpacks --test docker_run_tests -- --list --format=terse | sed -z 's/: test\n/\", \"/g' | sed 's/...$//')]}"
 
   test-docker:
     needs: test-plan
     name: Docker Tests
+    runs-on: ubuntu-latest
     strategy:
-      matrix:
-        tests: ${{fromJson(needs.test-plan.outputs.tests)}}
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
+      matrix: ${{fromJson(needs.test-plan.outputs.matrix)}}
+    steps:      
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
-
+        
       - name: Checkout sources
         uses: actions/checkout@v2
 
@@ -140,16 +138,13 @@ jobs:
 
   msrv:
     name: Test Suite (MSRV)
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
-
+        
       - name: Checkout sources
         uses: actions/checkout@v2
 
@@ -161,7 +156,7 @@ jobs:
           override: true
 
       - uses: Swatinem/rust-cache@v2
-
+      
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:

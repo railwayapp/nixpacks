@@ -156,7 +156,6 @@ impl DockerfileGenerator for BuildPlan {
         let base_image = plan.build_image.clone();
 
         let dockerfile = formatdoc! {"
-            # syntax=docker/dockerfile:1
             FROM {base_image}
             WORKDIR {APP_DIR}
             {assets_copy_cmd}
