@@ -22,12 +22,6 @@ jobs:
         with:
           github_token: ${{ secrets.GH_PAT }}
           labels: ${{ steps.get-merged-pull-request.outputs.labels }}
-
-      - uses: actions-ecosystem/action-get-latest-tag@v1
-        id: get-latest-tag
-        if: ${{ steps.release-label.outputs.level != null }}
-        with:
-          semver_only: true
       
       - uses: actions-rs/toolchain@v1
         with:
