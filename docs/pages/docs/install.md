@@ -20,6 +20,16 @@ Download Nixpacks from GH releases and install automatically
 curl -sSL https://nixpacks.com/install.sh | bash
 ```
 
+## Debian (and derivatives like Ubuntu)
+
+Nixpacks provides a `.deb` file provided in each [release](https://github.com/railwayapp/nixpacks/releases).
+
+```sh
+# Replace {VERSION} with the version that you want to install
+curl -LO https://github.com/railwayapp/nixpacks/releases/download/v{VERSION}/nixpacks-v{VERSION}-amd64.deb
+sudo dpkg -i nixpacks-v{VERSION}-amd64.deb
+```
+
 ## Scoop
 
 Install Nixpacks from Scoop using the [official bucket](https://github.com/ScoopInstaller/Main/blob/master/bucket/nixpacks.json) (Windows Only)
