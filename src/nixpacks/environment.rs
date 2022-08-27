@@ -17,20 +17,21 @@ impl Environment {
     pub fn from_envs(envs: Vec<&str>) -> Result<Environment> {
         let mut environment = Environment::default();
         for env in envs {
-            let matches = Regex::new(r"([^=]*)=([\s\S]*)")
+            let matches = Regex::new(r"([^=]*)(?:=?)([^=]*)([\s\S]*)")
                 .unwrap()
                 .captures(env)
                 .unwrap();
-            if matches.len() == 1 {
+            if matches.get(2).unwrap().as_str() == "" {
                 let name = matches.get(1).unwrap().as_str();
                 // Pull the variable from the current environment
                 if let Ok(value) = env::var(name) {
                     // Variable is set
                     environment.set_variable(name.to_string(), value);
                 }
-            } else if matches.len() > 2 {
-                bail!("Unable to parse variable string");
-            } else {
+            } else if let Some(m) = matches.get(3) {
+                if m.as_str().contains('=') && m.start() != m.end() {
+                    bail!("Unable to parse variable string")
+                }
                 // Use provided name, value pair
                 environment.set_variable(
                     matches.get(1).unwrap().as_str().to_string(),
