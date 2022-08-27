@@ -143,7 +143,7 @@ jobs:
 
     - name: Generate .deb package file
       if: matrix.target == 'x86_64-unknown-linux-musl'
-      run: cargo deb --target x86_64-unknown-linux-musl --output nixpacks-${{ needs.create-release.outputs.nixpacks_versopn }}-amd64.deb
+      run: cargo deb --target x86_64-unknown-linux-musl --output nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-amd64.deb
 
     - name: Upload .deb package file
       uses: svenstaro/upload-release-action@v2
