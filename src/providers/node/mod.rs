@@ -216,7 +216,7 @@ impl NodeProvider {
             .clone()
             .and_then(|engines| engines.get("node").cloned());
 
-        let node_version = pkg_node_version.or(env_node_version);
+        let node_version = env_node_version.or(pkg_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
