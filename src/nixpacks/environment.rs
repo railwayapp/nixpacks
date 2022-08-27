@@ -17,7 +17,7 @@ impl Environment {
     pub fn from_envs(envs: Vec<&str>) -> Result<Environment> {
         let mut environment = Environment::default();
         for env in envs {
-            let matches = Regex::new(r"([^=]*)(?:=?)([^=]*)([\s\S]*)")
+            let matches = Regex::new(r"([A-Za-z0-9_-]*)(?:=?)([A-Za-z0-9_-]*)([\s\S]*)")
                 .unwrap()
                 .captures(env)
                 .unwrap();
