@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use path_slash::PathBufExt;
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::{env, fs, path::PathBuf};
@@ -103,7 +103,11 @@ impl App {
     /// # Errors
     /// This will error if the path doesn't exist, or if the contents isn't UTF-8
     pub fn read_file(&self, name: &str) -> Result<String> {
-        fs::read_to_string(self.source.join(name)).map_err(|e| anyhow!(e))
+        let data = fs::read_to_string(PathBuf::from_slash_lossy(
+            self.source.join(name).as_os_str(),
+        ))?;
+
+        Ok(data.replace("\r\n", "\n"))
     }
 
     pub fn find_match(&self, re: &Regex, pattern: &str) -> Result<bool> {

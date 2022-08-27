@@ -34,6 +34,6 @@ expression: plan
     }
   ],
   "startPhase": {
-    "cmd": "java $JAVA_OPTS -jar /app/target/*standalone.jar"
+    "cmd": "bash -c \"java $JAVA_OPTS -jar /app/target/*standalone.jar\""
   }
 }
