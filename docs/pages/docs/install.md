@@ -20,6 +20,14 @@ Download Nixpacks from GH releases and install automatically
 curl -sSL https://nixpacks.com/install.sh | bash
 ```
 
+## PowerShell
+
+Download Nixpacks from GH release and install automatically (with powershell)
+
+```ps1
+irm https://nixpacks.com/install.ps1 | iex
+```
+
 ## Scoop
 
 Install Nixpacks from Scoop using the [official bucket](https://github.com/ScoopInstaller/Main/blob/master/bucket/nixpacks.json) (Windows Only)
