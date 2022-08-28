@@ -20,6 +20,7 @@ use crate::{
 };
 use anyhow::bail;
 use anyhow::Result;
+use path_slash::PathExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 mod nx;
@@ -215,7 +216,7 @@ impl NodeProvider {
             .clone()
             .and_then(|engines| engines.get("node").cloned());
 
-        let node_version = pkg_node_version.or(env_node_version);
+        let node_version = env_node_version.or(pkg_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
@@ -289,7 +290,16 @@ impl NodeProvider {
     /// Returns the nodejs nix package and the appropriate package manager nix image.
     pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
         let package_json: PackageJson = app.read_json("package.json")?;
-        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+        let mut node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+
+        // If node-canvas is used, we want to default to node 16
+        // https://github.com/Automattic/node-canvas/issues/2025
+        if NodeProvider::uses_node_dependency(app, "canvas")
+            && node_pkg.name == DEFAULT_NODE_PKG_NAME
+        {
+            node_pkg = Pkg::new("nodejs-16_x");
+        }
+
         let pm_pkg: Pkg;
         let mut pkgs = Vec::<Pkg>::new();
 
@@ -323,9 +333,14 @@ impl NodeProvider {
     }
 
     pub fn uses_node_dependency(app: &App, dependency: &str) -> bool {
-        NodeProvider::get_all_deps(app)
-            .unwrap_or_default()
-            .contains(dependency)
+        [
+            "package.json",
+            "package-lock.json",
+            "yarn.lock",
+            "pnpm-lock.yaml",
+        ]
+        .iter()
+        .any(|file| app.read_file(file).unwrap_or_default().contains(dependency))
     }
 
     pub fn find_next_packages(app: &App) -> Result<Vec<String>> {
@@ -350,7 +365,7 @@ impl NodeProvider {
             let deps = NodeProvider::get_deps_from_package_json(&json);
             if deps.contains("next") {
                 let relative = app.strip_source_path(file.as_path())?;
-                cache_dirs.push(relative.parent().unwrap().to_str().unwrap().to_string());
+                cache_dirs.push(relative.parent().unwrap().to_slash().unwrap().into_owned());
             }
         }
 
@@ -678,7 +693,7 @@ mod test {
     }
 
     #[test]
-    fn test_find_next_pacakges() -> Result<()> {
+    fn test_find_next_packages() -> Result<()> {
         assert_eq!(
             NodeProvider::find_next_packages(&App::new("./examples/node-monorepo")?)?,
             vec!["packages/client".to_string()]

@@ -45,7 +45,7 @@ impl Provider for ClojureProvider {
         let move_file_cmd = "if [ -f /app/target/uberjar/*standalone.jar ]; then  mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi";
         let build = Phase::build(Some(format!("{}; {}", build_cmd, move_file_cmd)));
 
-        let start = StartPhase::new("java $JAVA_OPTS -jar /app/target/*standalone.jar");
+        let start = StartPhase::new("bash -c \"java $JAVA_OPTS -jar /app/target/*standalone.jar\"");
 
         let plan = BuildPlan::new(vec![setup, build], Some(start));
         Ok(Some(plan))
