@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use regex::Regex;
 use std::{collections::BTreeMap, env};
 
@@ -17,21 +17,17 @@ impl Environment {
     pub fn from_envs(envs: Vec<&str>) -> Result<Environment> {
         let mut environment = Environment::default();
         for env in envs {
-            let matches = Regex::new(r"([A-Za-z0-9_-]*)(?:=?)([^=]*)([\s\S]*)")
+            let matches = Regex::new(r"([A-Za-z0-9_-]*)(?:=?)([\s\S]*)")
                 .unwrap()
                 .captures(env)
                 .unwrap();
             if matches.get(2).unwrap().as_str() == "" {
+                // No value, pull from the current environment
                 let name = matches.get(1).unwrap().as_str();
-                // Pull the variable from the current environment
                 if let Ok(value) = env::var(name) {
-                    // Variable is set
                     environment.set_variable(name.to_string(), value);
                 }
-            } else if let Some(m) = matches.get(3) {
-                if m.as_str().contains('=') && m.start() != m.end() {
-                    bail!("Unable to parse variable string")
-                }
+            } else {
                 // Use provided name, value pair
                 environment.set_variable(
                     matches.get(1).unwrap().as_str().to_string(),
@@ -92,11 +88,6 @@ mod tests {
         assert_eq!(environment.get_variable("HELLO"), Some("world"));
         assert_eq!(environment.get_variable("CARGO_PKG_NAME"), Some("nixpacks"));
         assert!(environment.get_variable("NON_EXISTANT").is_none());
-    }
-
-    #[test]
-    fn test_create_invalid_environment() {
-        assert!(Environment::from_envs(vec!["INVALID=ENV=CONFIG"]).is_err());
     }
 
     #[test]
