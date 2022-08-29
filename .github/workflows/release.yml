@@ -137,6 +137,21 @@ jobs:
         tag_name: ${{ needs.create-release.outputs.nixpacks_version }}
         files: nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}*
 
+    - name: Install cargo-deb
+      if: matrix.target == 'x86_64-unknown-linux-musl'
+      run: cargo install cargo-deb
+
+    - name: Generate .deb package file
+      if: matrix.target == 'x86_64-unknown-linux-musl'
+      run: cargo deb --target x86_64-unknown-linux-musl --output nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-amd64.deb
+
+    - name: Upload .deb package file
+      if: matrix.target == 'x86_64-unknown-linux-musl'
+      uses: svenstaro/upload-release-action@v2
+      with:
+        tag: ${{ needs.create-release.outputs.nixpacks_version }}
+        file: nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-amd64.deb
+
     - name: Set SHA
       if: matrix.config.os == 'macos-latest'
       id: shasum
