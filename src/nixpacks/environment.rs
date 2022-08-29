@@ -91,6 +91,12 @@ mod tests {
     }
 
     #[test]
+    fn test_create_equals_sign_parsing() {
+        let environment = Environment::from_envs(vec!["INVALID=ENV=CONFIG"]).unwrap();
+        assert_eq!(environment.get_variable("INVALID"), Some("ENV=CONFIG"));
+    }
+
+    #[test]
     fn test_get_config_variable() {
         let mut environment = Environment::default();
         environment.set_variable("NIXPACKS_HELLO".to_string(), "world".to_string());
