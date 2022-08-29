@@ -99,6 +99,8 @@ impl RubyProvider {
                     install.add_file_dependency(file.to_string());
                 }
             }
+
+            install.add_path("/app/node_modules/.bin".to_string());
         }
 
         Ok(Some(install))
