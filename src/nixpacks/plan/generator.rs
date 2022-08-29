@@ -1,4 +1,4 @@
-use super::{config::GeneratePlanConfig, BuildPlan, PlanGenerator};
+use super::{config::NixpacksConfig, BuildPlan, PlanGenerator};
 use crate::{
     nixpacks::{app::App, environment::Environment, nix::pkg::Pkg},
     providers::Provider,
@@ -26,7 +26,7 @@ pub struct GeneratePlanOptions {
 pub struct NixpacksBuildPlanGenerator<'a> {
     providers: &'a [&'a dyn Provider],
     matched_provider: Option<&'a dyn Provider>,
-    config: GeneratePlanConfig,
+    config: NixpacksConfig,
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
@@ -44,7 +44,7 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
 impl NixpacksBuildPlanGenerator<'_> {
     pub fn new<'a>(
         providers: &'a [&'a dyn Provider],
-        config: GeneratePlanConfig,
+        config: NixpacksConfig,
     ) -> NixpacksBuildPlanGenerator<'a> {
         NixpacksBuildPlanGenerator {
             providers,
@@ -68,12 +68,27 @@ impl NixpacksBuildPlanGenerator<'_> {
 
     /// Get a build plan from the provider and by applying the config from the environment
     fn get_build_plan(&self, app: &App, environment: &Environment) -> Result<BuildPlan> {
+        // Get a build plan from the filesystem if it exists
+        let file_config = if app.includes_file("nixpacks.json") {
+            let contents = app.read_file("nixpacks.json")?;
+            let config: NixpacksConfig =
+                serde_json::from_str(contents.as_str()).context("failed to parse config")?;
+            config
+        } else {
+            NixpacksConfig::default()
+        };
+
         // Merge the config from the CLI flags with the config from the environment variables
         // The CLI config takes precedence
-        let config = GeneratePlanConfig::merge(
-            &GeneratePlanConfig::from_environment(environment),
-            &self.config,
-        );
+        let config = vec![
+            file_config,
+            NixpacksConfig::from_environment(environment),
+            self.config.clone(),
+        ]
+        .iter()
+        .fold(NixpacksConfig::default(), |acc, c| {
+            NixpacksConfig::merge(&acc, &c)
+        });
 
         let mut plan = BuildPlan::default();
 

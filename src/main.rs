@@ -10,7 +10,7 @@ use clap::{arg, Arg, Command};
 use nixpacks::{
     create_docker_image, generate_build_plan,
     nixpacks::{
-        builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::config::GeneratePlanConfig,
+        builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::config::NixpacksConfig,
     },
 };
 
@@ -153,37 +153,41 @@ fn main() -> Result<()> {
         )
         .get_matches();
 
-    let install_cmd = matches.value_of("install_cmd").map(|s| vec![s.to_string()]);
-    let build_cmd = matches.value_of("build_cmd").map(|s| vec![s.to_string()]);
-    let start_cmd = matches.value_of("start_cmd").map(ToString::to_string);
-    let pkgs = match matches.values_of("pkgs") {
-        Some(values) => values.map(Pkg::new).collect::<Vec<_>>(),
-        None => Vec::new(),
-    };
-    let libs = match matches.values_of("libs") {
-        Some(values) => values.map(String::from).collect::<Vec<String>>(),
-        None => Vec::new(),
-    };
-    let apt_pkgs = match matches.values_of("apt") {
-        Some(values) => values.map(String::from).collect::<Vec<String>>(),
-        None => Vec::new(),
-    };
+    // let install_cmd = matches.value_of("install_cmd").map(|s| vec![s.to_string()]);
+    // let build_cmd = matches.value_of("build_cmd").map(|s| vec![s.to_string()]);
+    // let start_cmd = matches.value_of("start_cmd").map(ToString::to_string);
+    // let pkgs = match matches.values_of("pkgs") {
+    //     Some(values) => values.map(Pkg::new).collect::<Vec<_>>(),
+    //     None => Vec::new(),
+    // };
+    // let libs = match matches.values_of("libs") {
+    //     Some(values) => values.map(String::from).collect::<Vec<String>>(),
+    //     None => Vec::new(),
+    // };
+    // let apt_pkgs = match matches.values_of("apt") {
+    //     Some(values) => values.map(String::from).collect::<Vec<String>>(),
+    //     None => Vec::new(),
+    // };
 
-    let pin_pkgs = matches.is_present("pin");
+    // let pin_pkgs = matches.is_present("pin");
 
     let envs: Vec<_> = match matches.values_of("env") {
         Some(envs) => envs.collect(),
         None => Vec::new(),
     };
 
-    let plan_options = &GeneratePlanConfig {
-        custom_install_cmd: install_cmd,
-        custom_start_cmd: start_cmd,
-        custom_build_cmd: build_cmd,
-        custom_pkgs: pkgs,
-        custom_libs: libs,
-        custom_apt_pkgs: apt_pkgs,
-        pin_pkgs,
+    // let plan_options = &GeneratePlanCLIConfig {
+    //     custom_install_cmd: install_cmd,
+    //     custom_start_cmd: start_cmd,
+    //     custom_build_cmd: build_cmd,
+    //     custom_pkgs: pkgs,
+    //     custom_libs: libs,
+    //     custom_apt_pkgs: apt_pkgs,
+    //     pin_pkgs,
+    //     ..Default::default()
+    // };
+
+    let config = NixpacksConfig {
         ..Default::default()
     };
 
@@ -191,7 +195,7 @@ fn main() -> Result<()> {
         Some(("plan", matches)) => {
             let path = matches.value_of("PATH").expect("required");
 
-            let plan = generate_build_plan(path, envs, plan_options)?;
+            let plan = generate_build_plan(path, envs, &config)?;
             let json = serde_json::to_string_pretty(&plan)?;
             println!("{}", json);
         }
@@ -235,7 +239,7 @@ fn main() -> Result<()> {
                 print_dockerfile,
             };
 
-            create_docker_image(path, envs, plan_options, build_options)?;
+            create_docker_image(path, envs, &config, build_options)?;
         }
         _ => eprintln!("Invalid command"),
     }

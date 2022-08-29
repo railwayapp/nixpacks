@@ -1,5 +1,5 @@
 use self::{
-    config::GeneratePlanConfig,
+    config::NixpacksConfig,
     generator::NIXPKGS_ARCHIVE,
     phase::{Phase, StartPhase},
     topological_sort::topological_sort,
@@ -8,6 +8,7 @@ use super::{images::DEFAULT_BASE_IMAGE, NIX_PACKS_VERSION};
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
+    nix::pkg::Pkg,
 };
 
 use anyhow::Result;
@@ -156,66 +157,122 @@ impl BuildPlan {
     }
 
     /// Create a new build plan by applying the given configuration
-    pub fn apply_config(plan: &BuildPlan, config: &GeneratePlanConfig) -> BuildPlan {
+    pub fn apply_config(plan: &BuildPlan, config: &NixpacksConfig) -> BuildPlan {
         let mut new_plan = plan.clone();
 
-        // Setup config
-        let mut setup = new_plan
-            .remove_phase("setup")
-            .unwrap_or_else(|| Phase::setup(None));
+        for (name, phase_config) in config.phases.clone().unwrap_or_default() {
+            let phase = new_plan.remove_phase(name.as_str());
+            let mut phase = phase.unwrap_or_else(|| {
+                let mut phase = Phase::new(name.clone());
+                if name == "install" {
+                    phase.depends_on_phase("setup")
+                } else if name == "build" {
+                    phase.depends_on_phase("install")
+                };
 
-        // Append the packages and libraries together
-        setup.apt_pkgs = none_if_empty(
-            [
-                config.custom_apt_pkgs.clone(),
-                setup.apt_pkgs.unwrap_or_default(),
-            ]
-            .concat(),
-        );
-        setup.nix_pkgs = none_if_empty(
-            [
-                config.custom_pkgs.clone(),
-                setup.nix_pkgs.unwrap_or_default(),
-            ]
-            .concat(),
-        );
-        setup.nix_libraries = none_if_empty(
-            [
-                config.custom_libs.clone(),
-                setup.nix_libraries.unwrap_or_default(),
-            ]
-            .concat(),
-        );
-        setup.nixpacks_archive = setup.nixpacks_archive.or_else(|| {
-            if config.pin_pkgs {
-                Some(NIXPKGS_ARCHIVE.to_string())
-            } else {
-                None
+                phase
+            });
+
+            if let Some(cmds) = phase_config.cmds {
+                phase.cmds = Some(cmds);
             }
-        });
-        new_plan.add_phase(setup);
 
-        // Install config
-        let mut install = new_plan
-            .remove_phase("install")
-            .unwrap_or_else(|| Phase::install(None));
-        install.cmds = config.custom_install_cmd.clone().or(install.cmds);
-        new_plan.add_phase(install);
+            if let Some(additional_nix_pkgs) = phase_config.additional_nix_pkgs {
+                phase.add_nix_pkgs(
+                    additional_nix_pkgs
+                        .iter()
+                        .map(|n| Pkg::new(n))
+                        .collect::<Vec<_>>(),
+                );
+            }
+            if let Some(nix_pkgs) = phase_config.nix_pkgs {
+                phase.nix_pkgs = Some(nix_pkgs.iter().map(|n| Pkg::new(n)).collect::<Vec<_>>());
+            }
 
-        // Build config
-        let mut build = new_plan
-            .remove_phase("build")
-            .unwrap_or_else(|| Phase::build(None));
-        build.cmds = config.custom_build_cmd.clone().or(build.cmds);
-        new_plan.add_phase(build);
+            if let Some(additional_apt_pkgs) = phase_config.additional_apt_pkgs {
+                phase.add_apt_pkgs(additional_apt_pkgs);
+            }
 
-        // Start config
-        let mut start = new_plan.start_phase.clone().unwrap_or_default();
-        start.cmd = config.custom_start_cmd.clone().or(start.cmd);
-        new_plan.start_phase = Some(start);
+            if let Some(additional_nix_libs) = phase_config.additional_nix_libs {
+                phase.add_pkgs_libs(additional_nix_libs);
+            }
+
+            if let Some(additional_depends_on) = phase_config.additional_depends_on {
+                for dependency in additional_depends_on {
+                    phase.depends_on_phase(dependency);
+                }
+            }
+
+            new_plan.add_phase(phase);
+        }
+
+        let mut start_phase = new_plan.start_phase.clone().unwrap_or_default();
+        start_phase.cmd = config.start_cmd.clone().or(start_phase.cmd);
+        new_plan.set_start_phase(start_phase);
 
         new_plan
     }
+
+    // pub fn apply_config(plan: &BuildPlan, config: &GeneratePlanConfig) -> BuildPlan {
+    //     let mut new_plan = plan.clone();
+
+    //     // Setup config
+    //     let mut setup = new_plan
+    //         .remove_phase("setup")
+    //         .unwrap_or_else(|| Phase::setup(None));
+
+    //     // Append the packages and libraries together
+    //     setup.apt_pkgs = none_if_empty(
+    //         [
+    //             config.custom_apt_pkgs.clone(),
+    //             setup.apt_pkgs.unwrap_or_default(),
+    //         ]
+    //         .concat(),
+    //     );
+    //     setup.nix_pkgs = none_if_empty(
+    //         [
+    //             config.custom_pkgs.clone(),
+    //             setup.nix_pkgs.unwrap_or_default(),
+    //         ]
+    //         .concat(),
+    //     );
+    //     setup.nix_libraries = none_if_empty(
+    //         [
+    //             config.custom_libs.clone(),
+    //             setup.nix_libraries.unwrap_or_default(),
+    //         ]
+    //         .concat(),
+    //     );
+    //     setup.nixpacks_archive = setup.nixpacks_archive.or_else(|| {
+    //         if config.pin_pkgs {
+    //             Some(NIXPKGS_ARCHIVE.to_string())
+    //         } else {
+    //             None
+    //         }
+    //     });
+    //     new_plan.add_phase(setup);
+
+    //     // Install config
+    //     let mut install = new_plan
+    //         .remove_phase("install")
+    //         .unwrap_or_else(|| Phase::install(None));
+    //     install.cmds = config.custom_install_cmd.clone().or(install.cmds);
+    //     new_plan.add_phase(install);
+
+    //     // Build config
+    //     let mut build = new_plan
+    //         .remove_phase("build")
+    //         .unwrap_or_else(|| Phase::build(None));
+    //     build.cmds = config.custom_build_cmd.clone().or(build.cmds);
+    //     new_plan.add_phase(build);
+
+    //     // Start config
+    //     let mut start = new_plan.start_phase.clone().unwrap_or_default();
+    //     start.cmd = config.custom_start_cmd.clone().or(start.cmd);
+    //     new_plan.start_phase = Some(start);
+
+    //     new_plan
+    // }
 }
 
 impl Default for BuildPlan {
@@ -241,7 +298,9 @@ fn none_if_empty<T>(value: Vec<T>) -> Option<Vec<T>> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use std::collections::BTreeMap;
+
+    use super::{config::PhaseConfig, *};
 
     #[test]
     fn test_get_phases_with_dependencies() {
@@ -260,11 +319,63 @@ mod test {
 
         let phases = topological_sort(plan.get_phases_with_dependencies("build")).unwrap();
 
-        println!("{:?}", phases);
-
         assert_eq!(phases.len(), 3);
         assert_eq!(phases[0].name, "setup");
         assert_eq!(phases[1].name, "install");
         assert_eq!(phases[2].name, "build");
+    }
+
+    #[test]
+    fn test_apply_config_to_plan() {
+        let mut setup = Phase::new("setup");
+        setup.add_nix_pkgs(vec![Pkg::new("wget")]);
+        let mut install = Phase::new("install");
+        install.depends_on_phase("setup");
+        let mut build = Phase::new("build");
+        build.depends_on_phase("install");
+        let mut another = Phase::new("another");
+        another.depends_on_phase("setup");
+        let plan = BuildPlan::new(vec![setup, install, build, another], None);
+
+        let plan = BuildPlan::apply_config(
+            &plan,
+            &NixpacksConfig {
+                phases: Some(BTreeMap::from([
+                    (
+                        "setup".to_string(),
+                        PhaseConfig {
+                            additional_nix_pkgs: Some(vec!["cowsay".to_string()]),
+                            ..Default::default()
+                        },
+                    ),
+                    (
+                        "build".to_string(),
+                        PhaseConfig {
+                            cmds: Some(vec!["yarn run optimize-assets".to_string()]),
+                            ..Default::default()
+                        },
+                    ),
+                ])),
+                ..Default::default()
+            },
+        );
+
+        println!("{}", serde_json::to_string_pretty(&plan).unwrap());
+
+        assert_eq!(
+            vec!["wget", "cowsay"],
+            plan.get_phase("setup")
+                .unwrap()
+                .nix_pkgs
+                .clone()
+                .unwrap()
+                .iter()
+                .map(|p| p.name.clone())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            "yarn run optimize-assets",
+            plan.get_phase("build").unwrap().cmds.clone().unwrap()[0]
+        );
     }
 }

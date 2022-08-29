@@ -51,6 +51,7 @@ pub struct PackageJson {
     pub project_type: Option<String>,
 }
 
+#[derive(Default, Debug)]
 pub struct NodeProvider {}
 
 impl Provider for NodeProvider {

@@ -1,7 +1,14 @@
 use crate::nixpacks::{environment::Environment, nix::pkg::Pkg};
+use anyhow::{bail, Context, Result};
+use serde::{Deserialize, Serialize};
+use std::{
+    collections::{BTreeMap, HashSet},
+    fs,
+    path::Path,
+};
 
 #[derive(Eq, PartialEq, Clone, Default, Debug)]
-pub struct GeneratePlanConfig {
+pub struct GeneratePlanCLIConfig {
     pub custom_install_cmd: Option<Vec<String>>,
     pub custom_build_cmd: Option<Vec<String>>,
     pub custom_start_cmd: Option<String>,
@@ -13,7 +20,147 @@ pub struct GeneratePlanConfig {
     pub build_cache_dirs: Option<Vec<String>>,
 }
 
-impl GeneratePlanConfig {
+#[serde_with::skip_serializing_none]
+#[derive(Eq, PartialEq, Clone, Default, Debug, Serialize, Deserialize)]
+pub struct PhaseConfig {
+    pub cmds: Option<Vec<String>>,
+
+    #[serde(rename = "dependsOn")]
+    #[serde(alias = "$dependsOn")]
+    pub additional_depends_on: Option<Vec<String>>,
+
+    #[serde(rename = "nixPackages")]
+    pub nix_pkgs: Option<Vec<String>>,
+
+    #[serde(rename = "additionalNixPackages")]
+    #[serde(alias = "$nixPackages")]
+    pub additional_nix_pkgs: Option<Vec<String>>,
+
+    #[serde(rename = "additionalAptPackages")]
+    #[serde(alias = "$aptPackages")]
+    pub additional_apt_pkgs: Option<Vec<String>>,
+
+    #[serde(rename = "additionalNixLibraries")]
+    #[serde(alias = "$nixLibraries")]
+    pub additional_nix_libs: Option<Vec<String>>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Eq, PartialEq, Clone, Default, Debug, Serialize, Deserialize)]
+pub struct NixpacksConfig {
+    pub providers: Option<Vec<String>>,
+
+    pub phases: Option<BTreeMap<String, PhaseConfig>>,
+
+    #[serde(rename = "startCmd")]
+    pub start_cmd: Option<String>,
+}
+
+impl PhaseConfig {
+    pub fn merge(c1: &Self, c2: &Self) -> Self {
+        Self {
+            cmds: c2.cmds.clone().or(c1.cmds.clone()),
+            nix_pkgs: c2.nix_pkgs.clone().or_else(|| c1.nix_pkgs.clone()),
+            additional_depends_on: combine_option_vec(
+                c1.additional_depends_on.clone(),
+                c2.additional_depends_on.clone(),
+            ),
+            additional_nix_pkgs: combine_option_vec(
+                c1.additional_nix_pkgs.clone(),
+                c2.additional_nix_pkgs.clone(),
+            ),
+            additional_apt_pkgs: combine_option_vec(
+                c1.additional_apt_pkgs.clone(),
+                c2.additional_apt_pkgs.clone(),
+            ),
+            additional_nix_libs: combine_option_vec(
+                c1.additional_nix_libs.clone(),
+                c2.additional_nix_libs.clone(),
+            ),
+        }
+    }
+}
+
+impl NixpacksConfig {
+    pub fn from_environment(env: &Environment) -> Self {
+        let mut phase_configs = BTreeMap::new();
+
+        // Setup
+        let mut setup_config = PhaseConfig::default();
+
+        if let Some(pkg_string) = env.get_config_variable("PKGS") {
+            setup_config.additional_nix_pkgs = Some(
+                pkg_string
+                    .split(' ')
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>(),
+            );
+        }
+        if let Some(apt_string) = env.get_config_variable("APT_PKGS") {
+            setup_config.additional_apt_pkgs = Some(
+                apt_string
+                    .split(' ')
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>(),
+            );
+        }
+        if let Some(nix_lib_string) = env.get_config_variable("NIX_LIBS") {
+            setup_config.additional_nix_libs = Some(
+                nix_lib_string
+                    .split(' ')
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>(),
+            );
+        }
+
+        phase_configs.insert("setup".to_string(), setup_config);
+
+        // Install
+        let mut install_config = PhaseConfig::default();
+        if let Some(cmd_string) = env.get_config_variable("INSTALL_CMD") {
+            install_config.cmds = Some(vec![cmd_string]);
+        }
+        phase_configs.insert("install".to_string(), install_config);
+
+        // Build
+        let mut build_config = PhaseConfig::default();
+        if let Some(cmd_string) = env.get_config_variable("BUILD_CMD") {
+            build_config.cmds = Some(vec![cmd_string]);
+        }
+        phase_configs.insert("build".to_string(), build_config);
+
+        // Start
+        let start_cmd = env.get_config_variable("START_CMD");
+
+        Self {
+            providers: None,
+            phases: Some(phase_configs),
+            start_cmd,
+        }
+    }
+
+    pub fn merge(c1: &Self, c2: &Self) -> Self {
+        let mut phase_configs = c1.phases.clone().unwrap_or_default();
+        for (name, c2_phase_config) in c2.clone().phases.unwrap_or_default() {
+            let (_, c1_phase_config) = phase_configs
+                .remove_entry(&name)
+                .clone()
+                .unwrap_or_default();
+
+            let merged_phase_config = PhaseConfig::merge(&c1_phase_config, &c2_phase_config);
+            phase_configs.insert(name, merged_phase_config);
+        }
+
+        Self {
+            providers: c2.providers.clone().or_else(|| c1.providers.clone()),
+            start_cmd: c2.start_cmd.clone().or_else(|| c1.start_cmd.clone()),
+            phases: Some(phase_configs),
+            ..Default::default()
+        }
+    }
+}
+
+impl GeneratePlanCLIConfig {
     pub fn new() -> Self {
         Self {
             ..Default::default()

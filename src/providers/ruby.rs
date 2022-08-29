@@ -37,14 +37,14 @@ impl Provider for RubyProvider {
             start,
         );
 
-        let node = NodeProvider {};
+        let node = NodeProvider::default();
         if node.detect(app, env)? {
             let node_build_plan = node.get_build_plan(app, env)?;
             if let Some(node_build_plan) = node_build_plan {
                 // Include the install phase from the node provider
-                let phase_name =
+                let root_phase_name =
                     plan.add_phases_from_another_plan(&node_build_plan, node.name(), "install");
-                plan.add_dependency_between_phases("build", phase_name.as_str());
+                plan.add_dependency_between_phases("build", root_phase_name.as_str());
             }
         }
 
