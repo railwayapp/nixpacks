@@ -122,9 +122,7 @@ impl PythonProvider {
                 create_env, activate_env
             )));
 
-            install_phase.add_file_dependency("requirements.txt".to_string());
             install_phase.add_path(format!("{}/bin", env_loc));
-
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
             return Ok(Some(install_phase));
@@ -136,8 +134,6 @@ impl PythonProvider {
                     create_env, activate_env, install_poetry
                 )));
 
-                install_phase.add_file_dependency("poetry.lock".to_string());
-                install_phase.add_file_dependency("pyproject.toml".to_string());
                 install_phase.add_path(format!("{}/bin", env_loc));
 
                 install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
