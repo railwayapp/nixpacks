@@ -139,12 +139,14 @@ impl BuildPlan {
         plan: &BuildPlan,
         prefix: &str,
         phase_name: &str,
-    ) {
+    ) -> String {
         let phases = plan.get_phases_with_dependencies(phase_name);
         for mut phase in phases {
             phase.prefix_name(prefix);
             self.add_phase(phase.clone());
         }
+
+        format!("{}:{}", prefix, phase_name)
     }
 
     pub fn add_dependency_between_phases(&mut self, dependant: &str, dependency: &str) {
