@@ -10,7 +10,7 @@ on:
     paths:
       - 'base/debian/*'
   schedule:
-    - cron:  '0 0 * * *'
+    - cron:  '0 0 * * 2'
   workflow_dispatch:
 
 name: Publish Docker Images
