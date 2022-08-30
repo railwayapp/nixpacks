@@ -6,7 +6,7 @@ use crate::nixpacks::{
 use anyhow::{bail, Context, Ok, Result};
 
 use std::{
-    fs::{self, File},
+    fs::{self, remove_dir_all, File},
     process::Command,
 };
 use tempdir::TempDir;
@@ -29,7 +29,7 @@ impl ImageBuilder for DockerImageBuilder {
             }
         };
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
-        let output = OutputDir::new(dir)?;
+        let output = OutputDir::new(dir.clone())?;
         output.ensure_output_exists()?;
 
         let dockerfile = plan
@@ -63,6 +63,8 @@ impl ImageBuilder for DockerImageBuilder {
             self.logger.log_section("Successfully Built!");
             println!("\nRun:");
             println!("  docker run -it {}", name);
+
+            remove_dir_all(dir)?;
         } else {
             println!("\nSaved output to:");
             println!("  {}", output.root.to_str().unwrap());
