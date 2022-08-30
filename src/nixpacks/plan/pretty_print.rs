@@ -5,7 +5,7 @@ use colored::Colorize;
 use indoc::formatdoc;
 use std::fmt::Write;
 
-const FIRST_COLUMN_WIDTH: usize = 10;
+const FIRST_COLUMN_MIN_WIDTH: usize = 10;
 const MIN_BOX_WIDTH: usize = 20;
 const MAX_BOX_WIDTH: usize = 80;
 
@@ -42,6 +42,15 @@ impl BuildPlan {
             console::measure_text_width(start_contents.as_str()),
         );
 
+        let first_column_width = std::cmp::max(
+            FIRST_COLUMN_MIN_WIDTH,
+            phase_contents
+                .iter()
+                .map(|(name, _)| console::measure_text_width(name))
+                .max()
+                .unwrap_or(0),
+        );
+
         let edge = format!("{} ", box_drawing::double::VERTICAL);
         let edge_width = console::measure_text_width(edge.as_str());
 
@@ -53,12 +62,12 @@ impl BuildPlan {
             MAX_BOX_WIDTH,
             std::cmp::max(
                 MIN_BOX_WIDTH,
-                (edge_width * 2) + FIRST_COLUMN_WIDTH + middle_padding_width + max_right_content,
+                (edge_width * 2) + first_column_width + middle_padding_width + max_right_content,
             ),
         );
 
         let second_column_width =
-            box_width - (edge_width * 2) - FIRST_COLUMN_WIDTH - middle_padding_width;
+            box_width - (edge_width * 2) - first_column_width - middle_padding_width;
 
         let title_side_padding = ((box_width as f64) - (title_width as f64) - 2.0) / 2.0;
 
@@ -107,6 +116,7 @@ impl BuildPlan {
                     content.as_str(),
                     edge.as_str(),
                     middle_padding.as_str(),
+                    first_column_width,
                     second_column_width,
                     false,
                 )
@@ -119,6 +129,7 @@ impl BuildPlan {
             start_contents.as_str(),
             edge.as_str(),
             middle_padding.as_str(),
+            first_column_width,
             second_column_width,
             false,
         );
@@ -187,6 +198,7 @@ fn print_row(
     content: &str,
     left_edge: &str,
     middle: &str,
+    first_column_width: usize,
     second_column_width: usize,
     indent_second_line: bool,
 ) -> String {
@@ -202,7 +214,7 @@ fn print_row(
     let mut output = format!(
         "{}{}{}{}{}",
         left_edge.cyan().dimmed(),
-        console::pad_str(title, FIRST_COLUMN_WIDTH, console::Alignment::Left, None),
+        console::pad_str(title, first_column_width, console::Alignment::Left, None),
         middle,
         console::pad_str(
             &list_lines[0],
@@ -218,7 +230,7 @@ fn print_row(
             "{}\n{}{}{}{}{}",
             output,
             left_edge.cyan().dimmed(),
-            console::pad_str("", FIRST_COLUMN_WIDTH, console::Alignment::Left, None),
+            console::pad_str("", first_column_width, console::Alignment::Left, None),
             middle,
             console::pad_str(line, second_column_width, console::Alignment::Left, None),
             right_edge.cyan().dimmed()
