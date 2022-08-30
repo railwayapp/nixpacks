@@ -32,9 +32,6 @@ expression: plan
       "commands": [
         "bundle install"
       ],
-      "onlyIncludeFiles": [
-        "Gemfile*"
-      ],
       "cacheDirectories": [
         "/root/.bundle/cache"
       ],

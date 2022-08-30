@@ -81,7 +81,6 @@ impl RubyProvider {
 
     fn get_install(&self, app: &App) -> Result<Option<Phase>> {
         let mut install = Phase::install(None);
-        install.add_file_dependency("Gemfile*".to_string());
         install.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
         install.add_cmd("bundle install".to_string());
