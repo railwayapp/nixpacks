@@ -26,6 +26,16 @@ Download Nixpacks from GH release and install automatically (with powershell)
 
 ```ps1
 irm https://nixpacks.com/install.ps1 | iex
+## Debian (and derivatives like Ubuntu)
+
+## Debian (via `.deb`)
+
+Nixpacks provides a `.deb` file provided in each [release](https://github.com/railwayapp/nixpacks/releases).
+
+```sh
+# Replace {VERSION} with the version that you want to install
+curl -LO https://github.com/railwayapp/nixpacks/releases/download/v{VERSION}/nixpacks-v{VERSION}-amd64.deb
+sudo dpkg -i nixpacks-v{VERSION}-amd64.deb
 ```
 
 ## Scoop
