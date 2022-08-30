@@ -323,6 +323,7 @@ impl PythonProvider {
         ))
     }
 
+    #[allow(dead_code)]
     fn uses_dep(app: &App, dep: &str) -> Result<bool> {
         let requirements_usage = app.includes_file("requirements.txt")
             && app

@@ -18,6 +18,10 @@ expression: plan
         {
           "name": "gcc"
         }
+      ],
+      "nixLibraries": [
+        "zlib",
+        "stdenv.cc.cc.lib"
       ]
     },
     {

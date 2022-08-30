@@ -11,6 +11,9 @@ expression: plan
       "nixPackages": [
         {
           "name": "python38"
+        },
+        {
+          "name": "gcc"
         }
       ],
       "nixLibraries": [
