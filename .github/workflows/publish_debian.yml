@@ -64,7 +64,7 @@ jobs:
         uses: peter-evans/create-pull-request@v4
         with:
           base: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.COMMITTER_TOKEN }}
           commit-message: Bump base image
           branch: debian-${{ steps.date.outputs.date }}
           delete-branch: true
