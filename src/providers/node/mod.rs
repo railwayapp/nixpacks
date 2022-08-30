@@ -1,10 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    path::PathBuf,
-};
-
 use self::nx::ProjectJson;
-
 use super::Provider;
 use crate::{
     nixpacks::{
@@ -23,6 +17,10 @@ use anyhow::Result;
 use path_slash::PathExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 mod nx;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
@@ -69,7 +67,9 @@ impl Provider for NodeProvider {
             setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
 
-        if NodeProvider::uses_node_dependency(app, "puppeteer") {
+        if !env.is_config_variable_truthy("NO_PUPPETEER")
+            && NodeProvider::uses_node_dependency(app, "puppeteer")
+        {
             setup.add_apt_pkgs(vec![
                 "libnss3".to_string(),
                 "libatk1.0-0".to_string(),
