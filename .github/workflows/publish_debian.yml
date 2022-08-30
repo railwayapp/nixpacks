@@ -11,6 +11,7 @@ on:
       - 'base/debian/*'
   schedule:
     - cron:  '0 0 * * *'
+  workflow_dispatch:
 
 name: Publish Docker Images
 
@@ -54,12 +55,12 @@ jobs:
           tags: ghcr.io/railwayapp/nixpacks:debian, ghcr.io/railwayapp/nixpacks:latest, ghcr.io/railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
       
       - name: Bump base image
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         run: |
           sed -i 's/nixpacks:debian-.*/nixpacks:debian-${{ steps.date.outputs.date }}";/g' src/nixpacks/images.rs
       
       - name: Create Pull Request
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         uses: peter-evans/create-pull-request@v4
         with:
           base: main
