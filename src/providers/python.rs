@@ -97,16 +97,16 @@ impl PythonProvider {
 
         if PythonProvider::is_django(app, env)? && PythonProvider::is_using_postgres(app, env)? {
             // Django with Postgres requires postgresql and gcc on top of the original python packages
-            pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
+            pkgs.append(&mut vec![Pkg::new("postgresql")]);
         }
 
         let mut setup_phase = Phase::setup(Some(pkgs));
 
-        // Numpy needs some C headers to be available
+        // Many Python packages need some C headers to be available
         // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
-        if PythonProvider::uses_dep(app, "numpy")? || PythonProvider::uses_dep(app, "pandas")? {
-            setup_phase.add_pkgs_libs(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
-        }
+        println!("Numpy or Pandas detected, adding gcc and libstdc++");
+        setup_phase.add_pkgs_libs(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
+        setup_phase.add_nix_pkgs(vec![Pkg::new("gcc")]);
 
         Ok(Some(setup_phase))
     }
