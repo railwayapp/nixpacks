@@ -104,7 +104,7 @@ impl PythonProvider {
 
         // Numpy needs some C headers to be available
         // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
-        if PythonProvider::uses_numpy(app)? {
+        if PythonProvider::uses_dep(app, "numpy")? || PythonProvider::uses_dep(app, "pandas")? {
             setup_phase.add_pkgs_libs(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
         }
 
@@ -122,9 +122,7 @@ impl PythonProvider {
                 create_env, activate_env
             )));
 
-            install_phase.add_file_dependency("requirements.txt".to_string());
             install_phase.add_path(format!("{}/bin", env_loc));
-
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
             return Ok(Some(install_phase));
@@ -136,8 +134,6 @@ impl PythonProvider {
                     create_env, activate_env, install_poetry
                 )));
 
-                install_phase.add_file_dependency("poetry.lock".to_string());
-                install_phase.add_file_dependency("pyproject.toml".to_string());
                 install_phase.add_path(format!("{}/bin", env_loc));
 
                 install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
@@ -327,20 +323,20 @@ impl PythonProvider {
         ))
     }
 
-    fn uses_numpy(app: &App) -> Result<bool> {
-        let requirements_numpy = app.includes_file("requirements.txt")
+    fn uses_dep(app: &App, dep: &str) -> Result<bool> {
+        let requirements_usage = app.includes_file("requirements.txt")
             && app
                 .read_file("requirements.txt")?
                 .to_lowercase()
-                .contains("numpy");
+                .contains(dep);
 
-        let project_numpy = app.includes_file("pyproject.toml")
+        let pyproject_usage = app.includes_file("pyproject.toml")
             && app
                 .read_file("pyproject.toml")?
                 .to_lowercase()
-                .contains("numpy");
+                .contains(dep);
 
-        Ok(requirements_numpy || project_numpy)
+        Ok(requirements_usage || pyproject_usage)
     }
 }
 
@@ -407,12 +403,14 @@ mod test {
 
     #[test]
     fn test_numpy_detection() -> Result<()> {
-        assert!(!PythonProvider::uses_numpy(&App::new(
-            "./examples/python"
-        )?)?,);
-        assert!(PythonProvider::uses_numpy(&App::new(
-            "./examples/python-numpy"
-        )?)?,);
+        assert!(!PythonProvider::uses_dep(
+            &App::new("./examples/python",)?,
+            "numpy"
+        )?,);
+        assert!(PythonProvider::uses_dep(
+            &App::new("./examples/python-numpy",)?,
+            "numpy"
+        )?,);
         Ok(())
     }
 }
