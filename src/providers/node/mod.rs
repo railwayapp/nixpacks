@@ -70,11 +70,16 @@ impl Provider for NodeProvider {
             // https://gist.github.com/winuxue/cfef08e2f5fe9dfc16a1d67a4ad38a01
             setup.add_apt_pkgs(vec![
                 "libnss3".to_string(),
-                "libxss1".to_string(),
-                "libasound2".to_string(),
+                "libatk1.0-0".to_string(),
                 "libatk-bridge2.0-0".to_string(),
+                "libcups2".to_string(),
+                "libgbm1".to_string(),
+                "libasound2".to_string(),
+                "libpangocairo-1.0-0".to_string(),
+                "libxss1".to_string(),
                 "libgtk-3-0".to_string(),
-                "libgbm-dev".to_string(),
+                "libxshmfence1".to_string(),
+                "libglu1".to_string(),
             ]);
         } else if NodeProvider::uses_node_dependency(app, "canvas") {
             setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
