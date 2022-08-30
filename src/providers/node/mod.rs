@@ -65,11 +65,9 @@ impl Provider for NodeProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
-        if NodeProvider::uses_node_dependency(app, "canvas") {
-            setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
-        }
 
         if NodeProvider::uses_node_dependency(app, "puppeteer") {
+            // https://gist.github.com/winuxue/cfef08e2f5fe9dfc16a1d67a4ad38a01
             setup.add_apt_pkgs(vec![
                 "libnss3".to_string(),
                 "libatk1.0-0".to_string(),
@@ -83,6 +81,8 @@ impl Provider for NodeProvider {
                 "libxshmfence1".to_string(),
                 "libglu1".to_string(),
             ]);
+        } else if NodeProvider::uses_node_dependency(app, "canvas") {
+            setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
 
         // Install
