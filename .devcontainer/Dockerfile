@@ -33,6 +33,26 @@ RUN apt-get update \
 ENTRYPOINT [ "/usr/local/share/docker-init.sh" ]
 CMD [ "sleep", "infinity" ]
 
-# [Optional] Uncomment this section to install additional OS packages.
-# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
+# Install rustfmt and clippy
+RUN rustup component add clippy \
+    && rustup component add rustfmt
+
+# Install cargo-release, cargo-insta, and cargo-deb
+RUN cargo install cargo-release \
+    && cargo install cargo-insta \
+    && cargo install cargo-deb
+
+# Install the GitHub CLI (https://cli.github.com)
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends gh
+
+# Verify that packages were installed
+RUN cargo clippy --version \
+    && cargo fmt --version \
+    && cargo release --version \
+    && cargo insta --version \
+    && cargo deb --version \
+    && gh --version
