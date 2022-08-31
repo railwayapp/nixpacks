@@ -26,23 +26,16 @@ pub struct PhaseConfig {
     pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "dependsOn")]
-    #[serde(alias = "$dependsOn")]
-    pub additional_depends_on: Option<Vec<String>>,
+    pub depends_on: Option<Vec<String>>,
 
     #[serde(rename = "nixPackages")]
     pub nix_pkgs: Option<Vec<String>>,
 
-    #[serde(rename = "additionalNixPackages")]
-    #[serde(alias = "$nixPackages")]
-    pub additional_nix_pkgs: Option<Vec<String>>,
+    #[serde(rename = "aptPackages")]
+    pub apt_pkgs: Option<Vec<String>>,
 
-    #[serde(rename = "additionalAptPackages")]
-    #[serde(alias = "$aptPackages")]
-    pub additional_apt_pkgs: Option<Vec<String>>,
-
-    #[serde(rename = "additionalNixLibraries")]
-    #[serde(alias = "$nixLibraries")]
-    pub additional_nix_libs: Option<Vec<String>>,
+    #[serde(rename = "nixLibraries")]
+    pub nix_libs: Option<Vec<String>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -61,22 +54,9 @@ impl PhaseConfig {
         Self {
             cmds: c2.cmds.clone().or(c1.cmds.clone()),
             nix_pkgs: c2.nix_pkgs.clone().or_else(|| c1.nix_pkgs.clone()),
-            additional_depends_on: combine_option_vec(
-                c1.additional_depends_on.clone(),
-                c2.additional_depends_on.clone(),
-            ),
-            additional_nix_pkgs: combine_option_vec(
-                c1.additional_nix_pkgs.clone(),
-                c2.additional_nix_pkgs.clone(),
-            ),
-            additional_apt_pkgs: combine_option_vec(
-                c1.additional_apt_pkgs.clone(),
-                c2.additional_apt_pkgs.clone(),
-            ),
-            additional_nix_libs: combine_option_vec(
-                c1.additional_nix_libs.clone(),
-                c2.additional_nix_libs.clone(),
-            ),
+            apt_pkgs: c2.apt_pkgs.clone().or_else(|| c1.apt_pkgs.clone()),
+            nix_libs: c2.nix_libs.clone().or_else(|| c1.nix_libs.clone()),
+            depends_on: c2.depends_on.clone().or_else(|| c1.depends_on.clone()),
         }
     }
 }
@@ -89,7 +69,7 @@ impl NixpacksConfig {
         let mut setup_config = PhaseConfig::default();
 
         if let Some(pkg_string) = env.get_config_variable("PKGS") {
-            setup_config.additional_nix_pkgs = Some(
+            setup_config.nix_libs = Some(
                 pkg_string
                     .split(' ')
                     .map(|s| s.to_string())
@@ -97,7 +77,7 @@ impl NixpacksConfig {
             );
         }
         if let Some(apt_string) = env.get_config_variable("APT_PKGS") {
-            setup_config.additional_apt_pkgs = Some(
+            setup_config.apt_pkgs = Some(
                 apt_string
                     .split(' ')
                     .map(|s| s.to_string())
@@ -105,7 +85,7 @@ impl NixpacksConfig {
             );
         }
         if let Some(nix_lib_string) = env.get_config_variable("NIX_LIBS") {
-            setup_config.additional_nix_libs = Some(
+            setup_config.nix_libs = Some(
                 nix_lib_string
                     .split(' ')
                     .map(|s| s.to_string())

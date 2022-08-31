@@ -1,3 +1,6 @@
+use core::fmt;
+use std::convert::identity;
+
 use self::{
     config::NixpacksConfig,
     generator::NIXPKGS_ARCHIVE,
@@ -174,33 +177,43 @@ impl BuildPlan {
             });
 
             if let Some(cmds) = phase_config.cmds {
-                phase.cmds = Some(cmds);
+                phase.cmds = Some(replace_auto_vec(
+                    cmds,
+                    phase.cmds.clone().unwrap_or_default(),
+                    identity,
+                ));
             }
 
-            if let Some(additional_nix_pkgs) = phase_config.additional_nix_pkgs {
-                phase.add_nix_pkgs(
-                    additional_nix_pkgs
-                        .iter()
-                        .map(|n| Pkg::new(n))
-                        .collect::<Vec<_>>(),
-                );
-            }
             if let Some(nix_pkgs) = phase_config.nix_pkgs {
-                phase.nix_pkgs = Some(nix_pkgs.iter().map(|n| Pkg::new(n)).collect::<Vec<_>>());
+                phase.nix_pkgs = Some(replace_auto_vec(
+                    nix_pkgs.iter().map(|p| Pkg::new(p)).collect(),
+                    phase.nix_pkgs.clone().unwrap_or_default(),
+                    |p| p.name,
+                ))
             }
 
-            if let Some(additional_apt_pkgs) = phase_config.additional_apt_pkgs {
-                phase.add_apt_pkgs(additional_apt_pkgs);
+            if let Some(apt_pkgs) = phase_config.apt_pkgs {
+                phase.apt_pkgs = Some(replace_auto_vec(
+                    apt_pkgs,
+                    phase.apt_pkgs.clone().unwrap_or_default(),
+                    identity,
+                ));
             }
 
-            if let Some(additional_nix_libs) = phase_config.additional_nix_libs {
-                phase.add_pkgs_libs(additional_nix_libs);
+            if let Some(nix_libs) = phase_config.nix_libs {
+                phase.nix_libraries = Some(replace_auto_vec(
+                    nix_libs,
+                    phase.nix_libraries.clone().unwrap_or_default(),
+                    identity,
+                ));
             }
 
-            if let Some(additional_depends_on) = phase_config.additional_depends_on {
-                for dependency in additional_depends_on {
-                    phase.depends_on_phase(dependency);
-                }
+            if let Some(depends_on) = phase_config.depends_on {
+                phase.nix_libraries = Some(replace_auto_vec(
+                    depends_on,
+                    phase.depends_on.clone().unwrap_or_default(),
+                    identity,
+                ));
             }
 
             new_plan.add_phase(phase);
@@ -273,6 +286,29 @@ impl BuildPlan {
 
     //     new_plan
     // }
+}
+
+fn replace_auto_vec<T>(arr: Vec<T>, auto: Vec<T>, selector: fn(T) -> String) -> Vec<T>
+where
+    T: Clone + fmt::Debug,
+{
+    println!("CALLING ARR: {:?}", arr);
+    let arr = arr
+        .into_iter()
+        .map(|x| vec![x])
+        .map(|pkgs| {
+            println!("FUCK");
+            if selector(pkgs[0].clone()) == "@auto" {
+                println!("IT IS AUTO");
+                auto.clone()
+            } else {
+                pkgs
+            }
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    arr
 }
 
 impl Default for BuildPlan {
