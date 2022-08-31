@@ -20,7 +20,7 @@ if System.get_env("PHX_SERVER") do
   config :elixir_no_ecto, ElixirNoEctoWeb.Endpoint, server: true
 end
 
-if config_env() == :prod do
+if Application.fetch_env!(:rockelivery, :env) == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
   # want to use a different value for prod and you most likely don't want
