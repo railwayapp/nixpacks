@@ -61,8 +61,7 @@ impl Provider for PythonProvider {
             plan.set_start_phase(start);
         }
 
-        let metadata = self.get_metadata(app, env)?;
-        if metadata.has_label("poetry") {
+        if app.includes_file("poetry.lock") {
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),
                 POETRY_VERSION.to_string(),

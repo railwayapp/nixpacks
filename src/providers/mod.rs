@@ -55,28 +55,6 @@ impl ProviderMetadata {
         arr.append(labels_arr.as_mut());
         arr.join(",")
     }
-
-    pub fn has_label(&self, name: &str) -> bool {
-        match &self.tags {
-            None => false,
-            Some(value) => value.contains(&name.to_string()),
-        }
-    }
-}
-
-#[test]
-fn test_provider_metadata_from() {
-    let metadata = ProviderMetadata::from(vec![
-        (true, "test_tag"),
-        (false, "test_other_tag"),
-        (true, "test_tag_3"),
-    ]);
-
-    let tags = &metadata.tags.as_ref();
-    assert!(tags.is_some());
-    assert_eq!(tags.unwrap().len(), 2);
-    assert!(&metadata.has_label("test_tag"));
-    assert!(&metadata.has_label("test_tag_3"));
 }
 
 #[test]
