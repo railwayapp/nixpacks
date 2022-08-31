@@ -35,7 +35,8 @@ expression: plan
       ],
       "commands": [
         "mix compile",
-        "mix assets.deploy"
+        "mix ecto.migrate",
+        "mix run priv/repo/seeds.exs"
       ]
     }
   ],
