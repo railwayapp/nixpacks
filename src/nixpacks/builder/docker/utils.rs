@@ -47,7 +47,7 @@ pub fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> Str
 }
 
 pub fn get_exec_command(command: &str) -> String {
-    let params = command.replace("\"", "\\\"");
+    let params = command.replace('\"', "\\\"");
 
     format!("CMD [\"{}\"]", params)
 }
