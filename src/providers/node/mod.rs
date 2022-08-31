@@ -27,7 +27,7 @@ mod nx;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const DEFAULT_NODE_PKG_NAME: &str = "nodejs";
+const DEFAULT_NODE_PKG_NAME: &str = "nodejs-16_x";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 
 const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
@@ -678,7 +678,7 @@ mod test {
                 &Environment::default()
             )?
             .name,
-            "nodejs"
+            DEFAULT_NODE_PKG_NAME
         );
 
         Ok(())
