@@ -20,8 +20,8 @@ The Node provider sets the following environment variables:
 The following major versions are available
 
 - `14`
-- `16`
-- `18` (Default)
+- `16` (Default)
+- `18`
 
 The version can be overriden by
 
