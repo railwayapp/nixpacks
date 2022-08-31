@@ -24,30 +24,32 @@ pub trait Provider {
     fn name(&self) -> &str;
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool>;
     fn get_build_plan(&self, _app: &App, _environment: &Environment) -> Result<Option<BuildPlan>>;
-    fn get_metadata(&self, _app: &App, _env: &Environment) -> Result<ProviderMetadata> {
+    fn metadata(&self, _app: &App, _env: &Environment) -> Result<ProviderMetadata> {
         Ok(ProviderMetadata::default())
     }
 }
 
 #[derive(Default)]
 pub struct ProviderMetadata {
-    pub tags: Option<Vec<String>>,
+    pub values: Option<Vec<String>>,
 }
 
 impl ProviderMetadata {
-    pub fn from(values: Vec<(bool, &str)>) -> ProviderMetadata {
-        let labels = values
+    pub fn from(value_pairs: Vec<(bool, &str)>) -> ProviderMetadata {
+        let values = value_pairs
             .into_iter()
             .filter(|(include, _)| *include)
             .map(|(_, value)| (*value).to_owned())
             .collect();
 
-        ProviderMetadata { tags: Some(labels) }
+        ProviderMetadata {
+            values: Some(values),
+        }
     }
 
     pub fn join_as_comma_separated(&self, provider_name: String) -> String {
         let mut arr = vec![provider_name];
-        let mut labels_arr = match &self.tags {
+        let mut labels_arr = match &self.values {
             Some(v) => v.clone(),
             _ => Vec::new(),
         };

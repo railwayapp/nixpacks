@@ -36,7 +36,7 @@ impl Provider for PythonProvider {
         Ok(has_python)
     }
 
-    fn get_metadata(&self, app: &App, env: &Environment) -> Result<ProviderMetadata> {
+    fn metadata(&self, app: &App, env: &Environment) -> Result<ProviderMetadata> {
         let is_django = PythonProvider::is_django(app, env)?;
         let is_using_postgres = PythonProvider::is_using_postgres(app, env)?;
         let is_poetry = app.includes_file("poetry.lock");

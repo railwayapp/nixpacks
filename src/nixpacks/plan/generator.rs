@@ -14,7 +14,7 @@ use std::collections::HashMap;
 // Last Modified: 2022-08-22 17:06:26 UTC+0000
 // https://github.com/NixOS/nixpkgs/commit/54060e816971276da05970a983487a25810c38a7
 pub const NIXPKGS_ARCHIVE: &str = "54060e816971276da05970a983487a25810c38a7";
-const NIXPACKS_TAGS: &str = "NIXPACKS_TAGS";
+const NIXPACKS_METADATA: &str = "NIXPACKS_METADATA";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
@@ -85,7 +85,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         if let Some(provider) = self.matched_provider {
             if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
                 plan = provider_build_plan;
-                plan.add_variables(self.get_nixpacks_labels(provider, app, environment)?);
+                plan.add_variables(self.get_nixpacks_env_vars(provider, app, environment)?);
             }
         }
 
@@ -142,18 +142,18 @@ impl NixpacksBuildPlanGenerator<'_> {
         }
     }
 
-    fn get_nixpacks_labels(
+    fn get_nixpacks_env_vars(
         &self,
         provider: &dyn Provider,
         app: &App,
         env: &Environment,
     ) -> Result<EnvironmentVariables> {
         let metadata_string = provider
-            .get_metadata(app, env)?
+            .metadata(app, env)?
             .join_as_comma_separated(provider.name().to_owned());
 
         Ok(EnvironmentVariables::from([(
-            NIXPACKS_TAGS.to_string(),
+            NIXPACKS_METADATA.to_string(),
             metadata_string,
         )]))
     }
