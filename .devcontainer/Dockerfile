@@ -22,6 +22,7 @@ ARG USER_GID=$USER_UID
 COPY library-scripts/*.sh /tmp/library-scripts/
 RUN apt-get update \
     && /bin/bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
+    && /bin/bash /tmp/library-scripts/rust-debian.sh "${CARGO_HOME}" "${RUSTUP_HOME}" "${USERNAME}" "true" "true" \
     # Use Docker script from script library to set things up
     && /bin/bash /tmp/library-scripts/docker-debian.sh "${ENABLE_NONROOT_DOCKER}" "/var/run/docker-host.sock" "/var/run/docker.sock" "${USERNAME}" "${USE_MOBY}" "${CLI_VERSION}" \
     # Clean up
@@ -32,15 +33,6 @@ RUN apt-get update \
 # The script will also execute CMD if you need to alter startup behaviors.
 ENTRYPOINT [ "/usr/local/share/docker-init.sh" ]
 CMD [ "sleep", "infinity" ]
-
-# Install rustfmt and clippy
-RUN rustup component add clippy \
-    && rustup component add rustfmt
-
-# Install cargo-release, cargo-insta, and cargo-deb
-RUN cargo install cargo-release \
-    && cargo install cargo-insta \
-    && cargo install cargo-deb
 
 # Install the GitHub CLI (https://cli.github.com)
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
