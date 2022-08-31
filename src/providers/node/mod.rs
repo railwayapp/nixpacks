@@ -20,13 +20,14 @@ use crate::{
 };
 use anyhow::bail;
 use anyhow::Result;
+use path_slash::PathExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 mod nx;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const DEFAULT_NODE_PKG_NAME: &str = "nodejs";
+const DEFAULT_NODE_PKG_NAME: &str = "nodejs-16_x";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 
 const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
@@ -64,11 +65,9 @@ impl Provider for NodeProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
-        if NodeProvider::uses_node_dependency(app, "canvas") {
-            setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
-        }
 
         if NodeProvider::uses_node_dependency(app, "puppeteer") {
+            // https://gist.github.com/winuxue/cfef08e2f5fe9dfc16a1d67a4ad38a01
             setup.add_apt_pkgs(vec![
                 "libnss3".to_string(),
                 "libatk1.0-0".to_string(),
@@ -82,6 +81,8 @@ impl Provider for NodeProvider {
                 "libxshmfence1".to_string(),
                 "libglu1".to_string(),
             ]);
+        } else if NodeProvider::uses_node_dependency(app, "canvas") {
+            setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
 
         // Install
@@ -215,7 +216,7 @@ impl NodeProvider {
             .clone()
             .and_then(|engines| engines.get("node").cloned());
 
-        let node_version = pkg_node_version.or(env_node_version);
+        let node_version = env_node_version.or(pkg_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
@@ -289,15 +290,7 @@ impl NodeProvider {
     /// Returns the nodejs nix package and the appropriate package manager nix image.
     pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
         let package_json: PackageJson = app.read_json("package.json")?;
-        let mut node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
-
-        // If node-canvas is used, we want to default to node 16
-        // https://github.com/Automattic/node-canvas/issues/2025
-        if NodeProvider::uses_node_dependency(app, "canvas")
-            && node_pkg.name == DEFAULT_NODE_PKG_NAME
-        {
-            node_pkg = Pkg::new("nodejs-16_x");
-        }
+        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
 
         let pm_pkg: Pkg;
         let mut pkgs = Vec::<Pkg>::new();
@@ -332,9 +325,14 @@ impl NodeProvider {
     }
 
     pub fn uses_node_dependency(app: &App, dependency: &str) -> bool {
-        NodeProvider::get_all_deps(app)
-            .unwrap_or_default()
-            .contains(dependency)
+        [
+            "package.json",
+            "package-lock.json",
+            "yarn.lock",
+            "pnpm-lock.yaml",
+        ]
+        .iter()
+        .any(|file| app.read_file(file).unwrap_or_default().contains(dependency))
     }
 
     pub fn find_next_packages(app: &App) -> Result<Vec<String>> {
@@ -359,7 +357,7 @@ impl NodeProvider {
             let deps = NodeProvider::get_deps_from_package_json(&json);
             if deps.contains("next") {
                 let relative = app.strip_source_path(file.as_path())?;
-                cache_dirs.push(relative.parent().unwrap().to_str().unwrap().to_string());
+                cache_dirs.push(relative.parent().unwrap().to_slash().unwrap().into_owned());
             }
         }
 
@@ -680,14 +678,14 @@ mod test {
                 &Environment::default()
             )?
             .name,
-            "nodejs"
+            DEFAULT_NODE_PKG_NAME
         );
 
         Ok(())
     }
 
     #[test]
-    fn test_find_next_pacakges() -> Result<()> {
+    fn test_find_next_packages() -> Result<()> {
         assert_eq!(
             NodeProvider::find_next_packages(&App::new("./examples/node-monorepo")?)?,
             vec!["packages/client".to_string()]

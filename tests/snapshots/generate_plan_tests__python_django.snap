@@ -21,6 +21,10 @@ expression: plan
         {
           "name": "gcc"
         }
+      ],
+      "nixLibraries": [
+        "zlib",
+        "stdenv.cc.cc.lib"
       ]
     },
     {
@@ -30,9 +34,6 @@ expression: plan
       ],
       "commands": [
         "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"
-      ],
-      "onlyIncludeFiles": [
-        "requirements.txt"
       ],
       "cacheDirectories": [
         "/root/.cache/pip"

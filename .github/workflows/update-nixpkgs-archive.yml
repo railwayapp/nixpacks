@@ -42,6 +42,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
+          token: ${{ secrets.COMMITTER_TOKEN }}
           title: Update nixpkgs archive
           commit-message: Update nixpkgs archive to `${{ steps.update-archive.outputs.sha }}`
           body: "[`${{ steps.update-archive.outputs.sha }}`](${{ steps.update-archive.outputs.url }})"

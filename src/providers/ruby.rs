@@ -37,6 +37,17 @@ impl Provider for RubyProvider {
             start,
         );
 
+        let node = NodeProvider {};
+        if node.detect(app, env)? {
+            let node_build_plan = node.get_build_plan(app, env)?;
+            if let Some(node_build_plan) = node_build_plan {
+                // Include the install phase from the node provider
+                let phase_name =
+                    plan.add_phases_from_another_plan(&node_build_plan, node.name(), "install");
+                plan.add_dependency_between_phases("build", phase_name.as_str());
+            }
+        }
+
         plan.add_variables(self.get_environment_variables(app)?);
 
         Ok(Some(plan))
@@ -44,13 +55,8 @@ impl Provider for RubyProvider {
 }
 
 impl RubyProvider {
-    fn get_setup(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
-        let mut pkgs = vec![];
-        if app.includes_file("package.json") {
-            pkgs = NodeProvider::get_nix_packages(app, env)?;
-        }
-
-        let mut setup = Phase::setup(Some(pkgs));
+    fn get_setup(&self, app: &App, _env: &Environment) -> Result<Option<Phase>> {
+        let mut setup = Phase::setup(None);
         setup.add_apt_pkgs(vec!["procps".to_string()]);
 
         if self.uses_postgres(app)? {
@@ -75,7 +81,6 @@ impl RubyProvider {
 
     fn get_install(&self, app: &App) -> Result<Option<Phase>> {
         let mut install = Phase::install(None);
-        install.add_file_dependency("Gemfile*".to_string());
         install.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
         install.add_cmd("bundle install".to_string());
@@ -85,21 +90,6 @@ impl RubyProvider {
         install.add_path(format!("/usr/local/rvm/rubies/{}/bin", ruby_version));
         install.add_path(format!("/usr/local/rvm/gems/{}/bin", ruby_version));
         install.add_path(format!("/usr/local/rvm/gems/{}@global/bin", ruby_version));
-
-        if app.includes_file("package.json") {
-            install.add_file_dependency("package.json".to_string());
-            install
-                .cmds
-                .clone()
-                .unwrap_or_default()
-                .insert(0, NodeProvider::get_install_command(app));
-
-            for file in ["package.json", "package-lock.json"] {
-                if app.includes_file(file) {
-                    install.add_file_dependency(file.to_string());
-                }
-            }
-        }
 
         Ok(Some(install))
     }

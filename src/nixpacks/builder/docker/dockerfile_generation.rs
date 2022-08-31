@@ -10,6 +10,7 @@ use crate::nixpacks::{
 };
 use anyhow::{Context, Ok, Result};
 use indoc::formatdoc;
+use path_slash::PathBufExt;
 use std::{
     fs::{self, File},
     io::Write,
@@ -119,11 +120,11 @@ impl DockerfileGenerator for BuildPlan {
         let assets_copy_cmd = if static_assets.is_empty() {
             "".to_string()
         } else {
-            format!(
-                "COPY {} {}",
-                output.get_relative_path("assets").display(),
-                app::ASSETS_DIR
-            )
+            let rel_assets_path = output.get_relative_path("assets");
+            let rel_assets_slash_path = rel_assets_path
+                .to_slash()
+                .context("Failed to convert nix file path to slash path.")?;
+            format!("COPY {} {}", rel_assets_slash_path, app::ASSETS_DIR)
         };
 
         let dockerfile_phases = plan
@@ -296,7 +297,10 @@ impl DockerfileGenerator for Phase {
         // Install nix packages and libraries
         let install_nix_pkgs_str = if self.uses_nix() {
             let nix_file = output.get_relative_path(format!("{}.nix", phase.name));
-            let nix_file_path = nix_file.to_str().unwrap();
+
+            let nix_file_path = nix_file
+                .to_slash()
+                .context("Failed to convert nix file path to slash path.")?;
             format!(
                 "COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path}",
                 nix_file_path = nix_file_path

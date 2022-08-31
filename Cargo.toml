@@ -1,6 +1,6 @@
 [package]
 name = "nixpacks"
-version = "0.3.7"
+version = "0.3.12"
 edition = "2021"
 license = "MIT"
 authors = ["Railway <contact@railway.app>"]
@@ -46,8 +46,14 @@ box_drawing = "0.1.2"
 textwrap = { default-features = false, version = "0.15.0" }
 cargo_toml = "0.11.5"
 rand = "0.8.5"
+path-slash = "0.2.1"
 
 [dev-dependencies]
 dotenv-parser = "0.1.3"
 insta = { version = "1.18.2", features = ["redactions", "json"] }
 test-helper = { path = "./test-helper" }
+
+[package.metadata.deb]
+# https://packages.debian.org/stretch
+section = "devel"
+

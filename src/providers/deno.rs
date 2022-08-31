@@ -11,6 +11,7 @@ use crate::nixpacks::{
     },
 };
 use anyhow::{Context, Result};
+use path_slash::PathBufExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -67,8 +68,8 @@ impl DenoProvider {
             Ok(Some(format!(
                 "deno cache {}",
                 start_file
-                    .to_str()
-                    .context("Failed to convert start_file to string")?
+                    .to_slash()
+                    .context("Failed to convert start_file to slash_path")?
             )))
         } else {
             Ok(None)
@@ -92,8 +93,8 @@ impl DenoProvider {
             Some(start_file) => Ok(Some(format!(
                 "deno run --allow-all {}",
                 start_file
-                    .to_str()
-                    .context("Failed to convert start_file to string")?
+                    .to_slash()
+                    .context("Failed to convert start_file to slash_path")?
             ))),
             None => Ok(None),
         }

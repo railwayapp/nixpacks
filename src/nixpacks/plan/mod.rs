@@ -111,6 +111,50 @@ impl BuildPlan {
         topological_sort(self.phases.clone())
     }
 
+    pub fn get_phases_with_dependencies(&self, phase_name: &str) -> Vec<Phase> {
+        let p = self.get_phase(phase_name);
+
+        let mut phases = Vec::new();
+        let mut deps: Vec<String> = Vec::new();
+
+        if let Some(p) = p {
+            phases.push(p.clone());
+            deps.append(&mut p.clone().depends_on.unwrap_or_default());
+
+            while !deps.is_empty() {
+                let dep = deps.pop().unwrap();
+                let p = self.get_phase(&dep);
+                if let Some(p) = p {
+                    phases.push(p.clone());
+                    deps.append(&mut p.clone().depends_on.unwrap_or_default());
+                }
+            }
+        }
+
+        phases
+    }
+
+    pub fn add_phases_from_another_plan(
+        &mut self,
+        plan: &BuildPlan,
+        prefix: &str,
+        phase_name: &str,
+    ) -> String {
+        let phases = plan.get_phases_with_dependencies(phase_name);
+        for mut phase in phases {
+            phase.prefix_name(prefix);
+            self.add_phase(phase.clone());
+        }
+
+        format!("{}:{}", prefix, phase_name)
+    }
+
+    pub fn add_dependency_between_phases(&mut self, dependant: &str, dependency: &str) {
+        if let Some(p) = self.get_phase_mut(dependant) {
+            p.depends_on_phase(dependency);
+        }
+    }
+
     /// Create a new build plan by applying the given configuration
     pub fn apply_config(plan: &BuildPlan, config: &GeneratePlanConfig) -> BuildPlan {
         let mut new_plan = plan.clone();
@@ -192,5 +236,35 @@ fn none_if_empty<T>(value: Vec<T>) -> Option<Vec<T>> {
         None
     } else {
         Some(value)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_get_phases_with_dependencies() {
+        let setup = Phase::new("setup");
+
+        let mut install = Phase::new("install");
+        install.depends_on_phase("setup");
+
+        let mut build = Phase::new("build");
+        build.depends_on_phase("install");
+
+        let mut another = Phase::new("another");
+        another.depends_on_phase("setup");
+
+        let plan = BuildPlan::new(vec![setup, install, build, another], None);
+
+        let phases = topological_sort(plan.get_phases_with_dependencies("build")).unwrap();
+
+        println!("{:?}", phases);
+
+        assert_eq!(phases.len(), 3);
+        assert_eq!(phases[0].name, "setup");
+        assert_eq!(phases[1].name, "install");
+        assert_eq!(phases[2].name, "build");
     }
 }

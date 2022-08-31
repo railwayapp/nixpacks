@@ -72,6 +72,10 @@ impl Phase {
         }
     }
 
+    pub fn prefix_name(&mut self, prefix: &str) {
+        self.name = format!("{}:{}", prefix, self.name);
+    }
+
     /// Shortcut for creating a setup phase from a list of nix packages.
     pub fn setup(pkgs: Option<Vec<Pkg>>) -> Self {
         Self {
