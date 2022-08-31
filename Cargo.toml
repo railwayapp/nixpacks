@@ -1,6 +1,6 @@
 [package]
 name = "nixpacks"
-version = "0.3.8"
+version = "0.3.12"
 edition = "2021"
 license = "MIT"
 authors = ["Railway <contact@railway.app>"]
@@ -52,3 +52,8 @@ path-slash = "0.2.1"
 dotenv-parser = "0.1.3"
 insta = { version = "1.18.2", features = ["redactions", "json"] }
 test-helper = { path = "./test-helper" }
+
+[package.metadata.deb]
+# https://packages.debian.org/stretch
+section = "devel"
+

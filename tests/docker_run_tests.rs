@@ -646,6 +646,20 @@ fn test_ruby_sinatra() {
 }
 
 #[test]
+fn test_ruby_node() {
+    let name = simple_build("./examples/ruby-with-node/");
+    let output = run_image(&name, None);
+    assert!(output.contains("Hello from Ruby with Node"));
+}
+
+#[test]
+fn test_ruby_local_deps() {
+    let name = simple_build("./examples/ruby-local-deps/");
+    let output = run_image(&name, None);
+    assert!(output.contains("Hello world from Local lib"));
+}
+
+#[test]
 fn test_ruby_rails() {
     // Create the network
     let n = create_network();

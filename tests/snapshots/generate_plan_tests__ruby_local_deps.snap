@@ -49,6 +49,6 @@ expression: plan
     }
   ],
   "startPhase": {
-    "cmd": "ruby app.rb"
+    "cmd": "bundle exec ruby app.rb"
   }
 }

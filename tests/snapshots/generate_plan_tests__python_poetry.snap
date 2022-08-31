@@ -14,7 +14,14 @@ expression: plan
       "nixPackages": [
         {
           "name": "python38"
+        },
+        {
+          "name": "gcc"
         }
+      ],
+      "nixLibraries": [
+        "zlib",
+        "stdenv.cc.cc.lib"
       ]
     },
     {
@@ -24,10 +31,6 @@ expression: plan
       ],
       "commands": [
         "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install poetry==$NIXPACKS_POETRY_VERSION && poetry install --no-dev --no-interaction --no-ansi"
-      ],
-      "onlyIncludeFiles": [
-        "poetry.lock",
-        "pyproject.toml"
       ],
       "cacheDirectories": [
         "/root/.cache/pip"

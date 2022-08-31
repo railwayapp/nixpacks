@@ -15,7 +15,7 @@ expression: plan
         "setup"
       ],
       "commands": [
-        "go get"
+        "go mod download"
       ],
       "cacheDirectories": [
         "/root/.cache/go-build"

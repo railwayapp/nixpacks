@@ -30,7 +30,7 @@ expression: plan
       "name": "setup",
       "nixPackages": [
         {
-          "name": "nodejs"
+          "name": "nodejs-16_x"
         },
         {
           "name": "npm-8_x",
