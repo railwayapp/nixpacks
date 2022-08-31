@@ -85,8 +85,7 @@ fn main() -> Result<()> {
                     Arg::new("current-dir")
                         .long("current-dir")
                         .help("Output Nixpacks related files to the current directory ")
-                        .takes_value(false)
-                        .global(true),
+                        .takes_value(false),
                 )
                 .arg(
                     Arg::new("no-cache")
