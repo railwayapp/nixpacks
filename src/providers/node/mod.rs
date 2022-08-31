@@ -678,7 +678,7 @@ mod test {
                 &Environment::default()
             )?
             .name,
-            "nodejs"
+            DEFAULT_NODE_PKG_NAME
         );
 
         Ok(())
