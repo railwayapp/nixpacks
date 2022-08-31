@@ -32,12 +32,12 @@ impl ImageBuilder for DockerImageBuilder {
     fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
-        let output_dir = get_output_dir(&self.options)?;
+        let output = get_output_dir(&self.options)?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
-        output_dir.ensure_output_exists()?;
+        output.ensure_output_exists()?;
 
         let dockerfile = plan
-            .generate_dockerfile(&self.options, env, &output_dir)
+            .generate_dockerfile(&self.options, env, &output)
             .context("Generating Dockerfile for plan")?;
 
         // If printing the Dockerfile, don't write anything to disk
@@ -48,17 +48,15 @@ impl ImageBuilder for DockerImageBuilder {
 
         println!("{}", plan.get_build_string()?);
 
-        self.write_app(app_src, &output_dir)
-            .context("Writing app")?;
-        self.write_dockerfile(dockerfile, &output_dir)
+        self.write_app(app_src, &output).context("Writing app")?;
+        self.write_dockerfile(dockerfile, &output)
             .context("Writing Dockerfile")?;
-        plan.write_supporting_files(&self.options, env, &output_dir)
+        plan.write_supporting_files(&self.options, env, &output)
             .context("Writing supporting files")?;
 
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
-            let mut docker_build_cmd =
-                self.get_docker_build_cmd(plan, name.as_str(), &output_dir)?;
+            let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), &output)?;
 
             // Execute docker build
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
@@ -70,12 +68,12 @@ impl ImageBuilder for DockerImageBuilder {
             println!("\nRun:");
             println!("  docker run -it {}", name);
 
-            if output_dir.is_temp {
-                remove_dir_all(output_dir.root)?;
+            if output.is_temp {
+                remove_dir_all(output.root)?;
             }
         } else {
             println!("\nSaved output to:");
-            println!("  {}", output_dir.root.to_str().unwrap());
+            println!("  {}", output.root.to_str().unwrap());
         }
 
         Ok(())
