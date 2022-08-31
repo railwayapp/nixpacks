@@ -140,7 +140,11 @@ impl DockerImageBuilder {
     }
 
     fn write_app(&self, app_src: &str, output: &OutputDir) -> Result<()> {
-        files::recursive_copy_dir(app_src, &output.root)
+        if output.is_temp {
+            files::recursive_copy_dir(app_src, &output.root)
+        } else {
+            Ok(())
+        }
     }
 
     fn write_dockerfile(&self, dockerfile: String, output: &OutputDir) -> Result<()> {
