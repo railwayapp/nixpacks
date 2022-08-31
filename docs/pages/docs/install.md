@@ -20,7 +20,15 @@ Download Nixpacks from GH releases and install automatically
 curl -sSL https://nixpacks.com/install.sh | bash
 ```
 
+## PowerShell
+
+Download Nixpacks from GH release and install automatically (with powershell)
+
+```ps1
+irm https://nixpacks.com/install.ps1 | iex
 ## Debian (and derivatives like Ubuntu)
+
+## Debian (via `.deb`)
 
 Nixpacks provides a `.deb` file provided in each [release](https://github.com/railwayapp/nixpacks/releases).
 

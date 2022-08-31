@@ -10,7 +10,8 @@ on:
     paths:
       - 'base/debian/*'
   schedule:
-    - cron:  '0 0 * * *'
+    - cron:  '0 0 * * 2'
+  workflow_dispatch:
 
 name: Publish Docker Images
 
@@ -50,20 +51,20 @@ jobs:
         with:
           context: base/debian
           platforms: linux/arm64, linux/amd64, linux/386
-          push: ${{ github.event_name == 'push' }}
+          push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           tags: ghcr.io/railwayapp/nixpacks:debian, ghcr.io/railwayapp/nixpacks:latest, ghcr.io/railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
       
       - name: Bump base image
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         run: |
           sed -i 's/nixpacks:debian-.*/nixpacks:debian-${{ steps.date.outputs.date }}";/g' src/nixpacks/images.rs
       
       - name: Create Pull Request
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         uses: peter-evans/create-pull-request@v4
         with:
           base: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.COMMITTER_TOKEN }}
           commit-message: Bump base image
           branch: debian-${{ steps.date.outputs.date }}
           delete-branch: true

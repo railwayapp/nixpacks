@@ -12,6 +12,18 @@ expression: plan
   },
   "phases": [
     {
+      "name": "node:setup",
+      "nixPackages": [
+        {
+          "name": "nodejs"
+        },
+        {
+          "name": "npm-8_x",
+          "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+        }
+      ]
+    },
+    {
       "name": "setup",
       "aptPackages": [
         "procps"
@@ -22,6 +34,21 @@ expression: plan
         "rvm --default use ruby-3.1.2",
         "gem install bundler:2.3.7",
         "echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile"
+      ]
+    },
+    {
+      "name": "node:install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "npm ci"
+      ],
+      "cacheDirectories": [
+        "/root/.npm"
+      ],
+      "paths": [
+        "/app/node_modules/.bin"
       ]
     },
     {

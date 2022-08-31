@@ -7,5 +7,8 @@
   },
   "dependencies": {
     "canvas": "^2.9.1"
+  },
+  "engines": {
+    "node": "16.x"
   }
 }
