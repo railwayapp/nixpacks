@@ -29,6 +29,7 @@ export const sidebarItems: ISidebarSection[] = [
       { href: "/docs/providers/php", text: "PHP" },
       { href: "/docs/providers/python", text: "Python" },
       { href: "/docs/providers/ruby", text: "Ruby" },
+      { href: "/docs/providers/elixir", text: "Elixir" },
       { href: "/docs/providers/rust", text: "Rust" },
       { href: "/docs/providers/staticfile", text: "Staticfile" },
       { href: "/docs/providers/swift", text: "Swift" },
