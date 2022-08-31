@@ -17,23 +17,27 @@ pub struct DockerImageBuilder {
     options: DockerBuilderOptions,
 }
 
+fn get_output_dir(options: &DockerBuilderOptions) -> Result<OutputDir> {
+    if let Some(value) = &options.out_dir {
+        OutputDir::new(value.into(), false)
+    } else if options.current_dir {
+        Ok(OutputDir::default())
+    } else {
+        let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
+        OutputDir::new(tmp.into_path(), true)
+    }
+}
+
 impl ImageBuilder for DockerImageBuilder {
     fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
-        let dir = match &self.options.out_dir {
-            Some(dir) => dir.into(),
-            None => {
-                let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
-                tmp.into_path()
-            }
-        };
+        let output_dir = get_output_dir(&self.options)?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
-        let output = OutputDir::new(dir.clone())?;
-        output.ensure_output_exists()?;
+        output_dir.ensure_output_exists()?;
 
         let dockerfile = plan
-            .generate_dockerfile(&self.options, env, &output)
+            .generate_dockerfile(&self.options, env, &output_dir)
             .context("Generating Dockerfile for plan")?;
 
         // If printing the Dockerfile, don't write anything to disk
@@ -44,15 +48,17 @@ impl ImageBuilder for DockerImageBuilder {
 
         println!("{}", plan.get_build_string()?);
 
-        self.write_app(app_src, &output).context("Writing app")?;
-        self.write_dockerfile(dockerfile, &output)
+        self.write_app(app_src, &output_dir)
+            .context("Writing app")?;
+        self.write_dockerfile(dockerfile, &output_dir)
             .context("Writing Dockerfile")?;
-        plan.write_supporting_files(&self.options, env, &output)
+        plan.write_supporting_files(&self.options, env, &output_dir)
             .context("Writing supporting files")?;
 
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
-            let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), &output)?;
+            let mut docker_build_cmd =
+                self.get_docker_build_cmd(plan, name.as_str(), &output_dir)?;
 
             // Execute docker build
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
@@ -64,10 +70,12 @@ impl ImageBuilder for DockerImageBuilder {
             println!("\nRun:");
             println!("  docker run -it {}", name);
 
-            remove_dir_all(dir)?;
+            if output_dir.is_temp {
+                remove_dir_all(output_dir.root)?;
+            }
         } else {
             println!("\nSaved output to:");
-            println!("  {}", output.root.to_str().unwrap());
+            println!("  {}", output_dir.root.to_str().unwrap());
         }
 
         Ok(())
