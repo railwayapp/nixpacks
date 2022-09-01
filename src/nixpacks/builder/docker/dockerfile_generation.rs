@@ -162,7 +162,10 @@ impl DockerfileGenerator for BuildPlan {
 
         let dockerfile = formatdoc! {"
             FROM {base_image}
+
+            ENTRYPOINT [\"/bin/bash\", \"-l\", \"-c\"]
             WORKDIR {APP_DIR}
+
             {assets_copy_cmd}
 
             {dockerfile_phases_str}
@@ -228,9 +231,7 @@ impl DockerfileGenerator for StartPhase {
         _output: &OutputDir,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
-            Some(cmd) => {
-                format!("CMD {}", cmd)
-            }
+            Some(cmd) => utils::get_exec_command(cmd),
             None => "".to_string(),
         };
 

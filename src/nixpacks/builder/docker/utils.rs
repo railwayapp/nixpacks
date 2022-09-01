@@ -46,6 +46,12 @@ pub fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> Str
     }
 }
 
+pub fn get_exec_command(command: &str) -> String {
+    let params = command.replace('\"', "\\\"");
+
+    format!("CMD [\"{}\"]", params)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -97,6 +103,24 @@ mod tests {
         assert_eq!(
             format!("COPY --from={} {} {}", from, files.join(" "), app_dir),
             get_copy_from_command(from, &files, app_dir)
+        );
+    }
+
+    #[test]
+    fn test_get_exec_cmd() {
+        assert_eq!(
+            "CMD [\"command1\"]".to_string(),
+            get_exec_command("command1")
+        );
+
+        assert_eq!(
+            "CMD [\"command1 command2\"]".to_string(),
+            get_exec_command("command1 command2")
+        );
+
+        assert_eq!(
+            "CMD [\"command1 command2 -l \\\"asdf\\\"\"]".to_string(),
+            get_exec_command("command1 command2 -l \"asdf\"")
         );
     }
 }
