@@ -26,9 +26,9 @@ Download Nixpacks from GH release and install automatically (with powershell)
 
 ```ps1
 irm https://nixpacks.com/install.ps1 | iex
-## Debian (and derivatives like Ubuntu)
+```
 
-## Debian (via `.deb`)
+## Debian (and derivatives like Ubuntu)
 
 Nixpacks provides a `.deb` file provided in each [release](https://github.com/railwayapp/nixpacks/releases).
 

@@ -24,7 +24,7 @@ expression: plan
       "name": "setup",
       "nixPackages": [
         {
-          "name": "elixir"
+          "name": "elixir_1_12"
         }
       ]
     },

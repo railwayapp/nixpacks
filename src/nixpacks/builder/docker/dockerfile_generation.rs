@@ -24,18 +24,23 @@ pub const APP_DIR: &str = "/app/";
 pub struct OutputDir {
     pub root: PathBuf,
     pub asset_root: PathBuf,
+    pub is_temp: bool,
 }
 
 impl OutputDir {
-    pub fn new(root: PathBuf) -> Result<Self> {
+    pub fn new(root: PathBuf, is_temp: bool) -> Result<Self> {
         let root = root;
         let asset_root = PathBuf::from(NIXPACKS_OUTPUT_DIR);
 
-        Ok(Self { root, asset_root })
+        Ok(Self {
+            root,
+            asset_root,
+            is_temp,
+        })
     }
 
-    pub fn from(root: &str) -> Result<Self> {
-        Self::new(PathBuf::from(root))
+    pub fn from(root: &str, is_temp: bool) -> Result<Self> {
+        Self::new(PathBuf::from(root), is_temp)
     }
 
     /// Ensure that the output directory and all necessary subdirectories exist.
@@ -65,7 +70,7 @@ impl OutputDir {
 
 impl Default for OutputDir {
     fn default() -> Self {
-        Self::from(".").unwrap()
+        Self::from(".", false).unwrap()
     }
 }
 

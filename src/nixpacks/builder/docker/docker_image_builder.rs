@@ -17,19 +17,23 @@ pub struct DockerImageBuilder {
     options: DockerBuilderOptions,
 }
 
+fn get_output_dir(options: &DockerBuilderOptions) -> Result<OutputDir> {
+    if let Some(value) = &options.out_dir {
+        OutputDir::new(value.into(), false)
+    } else if options.current_dir {
+        Ok(OutputDir::default())
+    } else {
+        let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
+        OutputDir::new(tmp.into_path(), true)
+    }
+}
+
 impl ImageBuilder for DockerImageBuilder {
     fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
-        let dir = match &self.options.out_dir {
-            Some(dir) => dir.into(),
-            None => {
-                let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
-                tmp.into_path()
-            }
-        };
+        let output = get_output_dir(&self.options)?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
-        let output = OutputDir::new(dir.clone())?;
         output.ensure_output_exists()?;
 
         let dockerfile = plan
@@ -64,7 +68,9 @@ impl ImageBuilder for DockerImageBuilder {
             println!("\nRun:");
             println!("  docker run -it {}", name);
 
-            remove_dir_all(dir)?;
+            if output.is_temp {
+                remove_dir_all(output.root)?;
+            }
         } else {
             println!("\nSaved output to:");
             println!("  {}", output.root.to_str().unwrap());
@@ -132,7 +138,11 @@ impl DockerImageBuilder {
     }
 
     fn write_app(&self, app_src: &str, output: &OutputDir) -> Result<()> {
-        files::recursive_copy_dir(app_src, &output.root)
+        if output.is_temp {
+            files::recursive_copy_dir(app_src, &output.root)
+        } else {
+            Ok(())
+        }
     }
 
     fn write_dockerfile(&self, dockerfile: String, output: &OutputDir) -> Result<()> {

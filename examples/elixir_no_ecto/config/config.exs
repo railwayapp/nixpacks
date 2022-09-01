@@ -46,8 +46,4 @@ config :phoenix, :json_library, Jason
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-# import_config "#{config_env()}.exs"
-
-for config <- "#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
-  import_config config
-end
+import_config "#{config_env()}.exs"
