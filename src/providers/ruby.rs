@@ -127,6 +127,7 @@ impl RubyProvider {
                 "GEM_HOME".to_string(),
                 format!("/usr/local/rvm/gems/{}", ruby_version),
             ),
+            ("RAILS_ENV".to_string(), "production".to_string()),
         ]))
     }
 
