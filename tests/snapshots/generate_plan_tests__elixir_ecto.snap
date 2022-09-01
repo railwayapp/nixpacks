@@ -1,0 +1,46 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
+  "variables": {
+    "MIX_ENV": "prod"
+  },
+  "phases": [
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "mix local.hex --force",
+        "mix local.rebar --force",
+        "mix deps.get --only prod"
+      ]
+    },
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "elixir"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "commands": [
+        "mix compile",
+        "mix ecto.migrate",
+        "mix run priv/repo/seeds.exs"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "mix phx.server"
+  }
+}
