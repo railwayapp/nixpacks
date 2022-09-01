@@ -17,11 +17,11 @@ pub struct DockerImageBuilder {
     options: DockerBuilderOptions,
 }
 
-fn get_output_dir(options: &DockerBuilderOptions) -> Result<OutputDir> {
+fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<OutputDir> {
     if let Some(value) = &options.out_dir {
         OutputDir::new(value.into(), false)
     } else if options.current_dir {
-        Ok(OutputDir::default())
+        OutputDir::new(app_src.into(), false)
     } else {
         let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
         OutputDir::new(tmp.into_path(), true)
@@ -32,7 +32,7 @@ impl ImageBuilder for DockerImageBuilder {
     fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
-        let output = get_output_dir(&self.options)?;
+        let output = get_output_dir(app_src, &self.options)?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
         output.ensure_output_exists()?;
 
