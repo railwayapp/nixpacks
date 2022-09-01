@@ -5,6 +5,9 @@ expression: plan
 {
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
+  "variables": {
+    "MIX_ENV": "prod"
+  },
   "phases": [
     {
       "name": "install",
@@ -21,7 +24,7 @@ expression: plan
       "name": "setup",
       "nixPackages": [
         {
-          "name": "elixir"
+          "name": "elixir_1_12"
         }
       ]
     },
