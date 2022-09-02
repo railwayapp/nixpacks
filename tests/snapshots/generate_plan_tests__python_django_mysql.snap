@@ -1,0 +1,55 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "nixpacksVersion": "[version]",
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "python,django"
+  },
+  "phases": [
+    {
+      "name": "setup",
+      "nixPackages": [
+        {
+          "name": "python38"
+        },
+        {
+          "name": "libmysqlclient.dev"
+        },
+        {
+          "name": "gcc"
+        }
+      ],
+      "nixLibraries": [
+        "zlib",
+        "stdenv.cc.cc.lib"
+      ]
+    },
+    {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "commands": [
+        "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/pip"
+      ],
+      "paths": [
+        "/opt/venv/bin"
+      ]
+    },
+    {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ]
+    }
+  ],
+  "startPhase": {
+    "cmd": "python manage.py migrate && gunicorn mysite.wsgi"
+  }
+}
