@@ -112,6 +112,11 @@ impl PythonProvider {
             pkgs.append(&mut vec![Pkg::new("postgresql")]);
         }
 
+        if PythonProvider::is_django(app, env)? && PythonProvider::is_using_mysql(app, env)? {
+            // We need the MySQL client library and its headers to build the mysqlclient python module needed by Django
+            pkgs.append(&mut vec![Pkg::new("libmysqlclient.dev")]);
+        }
+
         let mut setup_phase = Phase::setup(Some(pkgs));
 
         // Many Python packages need some C headers to be available
@@ -210,6 +215,12 @@ impl PythonProvider {
         // Check for the engine database type in settings.py
         let re = Regex::new(r"django.db.backends.postgresql").unwrap();
 
+        app.find_match(&re, "/**/*.py")
+    }
+
+    fn is_using_mysql(app: &App, _env: &Environment) -> Result<bool> {
+        // django_psdb_engine is a PlanetScale specific variant of django.db.backends.mysql
+        let re = Regex::new(r"django\.db\.backends\.mysql|django_psdb_engine").unwrap();
         app.find_match(&re, "/**/*.py")
     }
 
