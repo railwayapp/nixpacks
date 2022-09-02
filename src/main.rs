@@ -10,7 +10,7 @@ use clap::{arg, Arg, Command};
 use nixpacks::{
     create_docker_image, generate_build_plan,
     nixpacks::{
-        builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::config::NixpacksConfig,
+        builder::docker::DockerBuilderOptions, plan::config::NixpacksConfig,
     },
 };
 

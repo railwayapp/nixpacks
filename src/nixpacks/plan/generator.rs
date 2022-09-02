@@ -85,7 +85,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         ]
         .iter()
         .fold(NixpacksConfig::default(), |acc, c| {
-            NixpacksConfig::merge(&acc, &c)
+            NixpacksConfig::merge(&acc, c)
         });
 
         let mut plan = BuildPlan::default();

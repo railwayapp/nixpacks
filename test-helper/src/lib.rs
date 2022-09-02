@@ -55,29 +55,39 @@ pub fn generate_plan_tests(_tokens: TokenStream) -> TokenStream {
         fn simple_gen_plan(path: &str) -> ::nixpacks::nixpacks::plan::BuildPlan {
             if let Ok(raw_env) = ::std::fs::read_to_string(format!("{}/test.env", path)) {
                 let env = ::dotenv_parser::parse_dotenv(&raw_env).unwrap();
-                let opts = ::nixpacks::nixpacks::plan::config::GeneratePlanConfig {
-                    pin_pkgs: env.get("PIN_PKGS").is_some(),
-                    custom_start_cmd: env.get("CUSTOM_START_CMD").map(|cmd| cmd.to_string()),
-                    custom_pkgs: env
-                        .get("CUSTOM_PKGS")
-                        .map(|pkgs| pkgs.split(',')
-                        .map(|pkg| ::nixpacks::nixpacks::nix::pkg::Pkg::new(pkg)).collect())
-                        .unwrap_or_default(),
-                    ..::nixpacks::nixpacks::plan::config::GeneratePlanConfig::default()
+                let opts = ::nixpacks::nixpacks::plan::config::NixpacksConfig {
+                    pin_pkgs: Some(env.get("PIN_PKGS").is_some()),
+                    start_cmd: env.get("CUSTOM_START_CMD").map(|cmd| cmd.to_string()),
+                    phases: Some(::std::collections::BTreeMap::from([(
+                        "setup".to_string(),
+                        ::nixpacks::nixpacks::plan::config::PhaseConfig {
+                            nix_pkgs: env.get("CUSTOM_PKGS").map(|pkgs| {
+                                pkgs.split(',')
+                                    .map(|pkg| pkg.to_string())
+                                    .collect::<Vec<_>>()
+                            }),
+                            ..Default::default()
+                        },
+                    )])),
+                    ..::nixpacks::nixpacks::plan::config::NixpacksConfig::default()
                 };
 
                 return ::nixpacks::generate_build_plan(
                     path,
-                    env.get("ENVS").map(|envs| envs.split(", ").collect()).unwrap_or_default(),
-                    &opts
-                ).unwrap();
+                    env.get("ENVS")
+                        .map(|envs| envs.split(", ").collect())
+                        .unwrap_or_default(),
+                    &opts,
+                )
+                .unwrap();
             }
 
             ::nixpacks::generate_build_plan(
                 path,
                 ::std::vec::Vec::new(),
-                &::nixpacks::nixpacks::plan::config::GeneratePlanConfig::default()
-            ).unwrap()
+                &::nixpacks::nixpacks::plan::config::NixpacksConfig::default(),
+            )
+            .unwrap()
         }
     });
 

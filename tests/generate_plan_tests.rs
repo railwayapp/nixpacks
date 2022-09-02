@@ -1,5 +1,5 @@
-use nixpacks::{generate_build_plan, nixpacks::plan::config::GeneratePlanConfig};
-use std::env::consts::ARCH;
+use nixpacks::{generate_build_plan, nixpacks::plan::config::NixpacksConfig};
+use std::{env::consts::ARCH};
 
 test_helper::generate_plan_tests!();
 
@@ -55,7 +55,7 @@ fn test_rust_rocket_no_musl() {
     let plan = generate_build_plan(
         "./examples/rust-rocket",
         vec!["NIXPACKS_NO_MUSL=1"],
-        &GeneratePlanConfig::default(),
+        &NixpacksConfig::default(),
     )
     .unwrap();
     assert_plan_snapshot!(plan);

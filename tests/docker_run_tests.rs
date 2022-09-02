@@ -2,13 +2,17 @@ use anyhow::Context;
 use nixpacks::{
     create_docker_image,
     nixpacks::{
-        builder::docker::DockerBuilderOptions, environment::EnvironmentVariables, nix::pkg::Pkg,
-        plan::config::GeneratePlanConfig,
+        builder::docker::DockerBuilderOptions,
+        environment::EnvironmentVariables,
+        plan::config::{NixpacksConfig, PhaseConfig},
     },
 };
-use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 use std::time::Duration;
+use std::{
+    collections::BTreeMap,
+    io::{BufRead, BufReader},
+};
 use uuid::Uuid;
 use wait_timeout::ChildExt;
 
@@ -111,8 +115,8 @@ fn simple_build(path: &str) -> String {
     create_docker_image(
         path,
         Vec::new(),
-        &GeneratePlanConfig {
-            pin_pkgs: true,
+        &NixpacksConfig {
+            pin_pkgs: Some(true),
             ..Default::default()
         },
         &DockerBuilderOptions {
@@ -131,8 +135,8 @@ fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
     create_docker_image(
         path,
         env_vars,
-        &GeneratePlanConfig {
-            pin_pkgs: true,
+        &NixpacksConfig {
+            pin_pkgs: Some(true),
             ..Default::default()
         },
         &DockerBuilderOptions {
@@ -484,8 +488,8 @@ fn test_rust_custom_version() {
     create_docker_image(
         "./examples/rust-custom-version",
         vec!["NIXPACKS_NO_MUSL=1"],
-        &GeneratePlanConfig {
-            pin_pkgs: true,
+        &NixpacksConfig {
+            pin_pkgs: Some(true),
             ..Default::default()
         },
         &DockerBuilderOptions {
@@ -562,10 +566,16 @@ fn test_cowsay() {
     create_docker_image(
         "./examples/shell-hello",
         Vec::new(),
-        &GeneratePlanConfig {
-            pin_pkgs: true,
-            custom_start_cmd: Some("./start.sh".to_string()),
-            custom_pkgs: vec![Pkg::new("cowsay")],
+        &NixpacksConfig {
+            pin_pkgs: Some(true),
+            phases: Some(BTreeMap::from([(
+                "setup".to_string(),
+                PhaseConfig {
+                    nix_pkgs: Some(vec!["cowsay".to_string()]),
+                    ..Default::default()
+                },
+            )])),
+            start_cmd: Some("./start.sh".to_string()),
             ..Default::default()
         },
         &DockerBuilderOptions {
@@ -593,8 +603,8 @@ fn test_swift() {
     create_docker_image(
         "./examples/swift",
         Vec::new(),
-        &GeneratePlanConfig {
-            pin_pkgs: false,
+        &NixpacksConfig {
+            pin_pkgs: Some(false),
             ..Default::default()
         },
         &DockerBuilderOptions {

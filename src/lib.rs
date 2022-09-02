@@ -31,7 +31,7 @@ use crate::nixpacks::{
         config::NixpacksConfig, generator::NixpacksBuildPlanGenerator, BuildPlan, PlanGenerator,
     },
 };
-use anyhow::{Context, Result};
+use anyhow::{Result};
 use providers::{
     clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
     deno::DenoProvider, elixir::ElixirProvider, fsharp::FSharpProvider, go::GolangProvider,

@@ -3,7 +3,6 @@ use std::convert::identity;
 
 use self::{
     config::NixpacksConfig,
-    generator::NIXPKGS_ARCHIVE,
     phase::{Phase, StartPhase},
     topological_sort::topological_sort,
 };
@@ -168,9 +167,9 @@ impl BuildPlan {
             let mut phase = phase.unwrap_or_else(|| {
                 let mut phase = Phase::new(name.clone());
                 if name == "install" {
-                    phase.depends_on_phase("setup")
+                    phase.depends_on_phase("setup");
                 } else if name == "build" {
-                    phase.depends_on_phase("install")
+                    phase.depends_on_phase("install");
                 };
 
                 phase
@@ -179,7 +178,7 @@ impl BuildPlan {
             if let Some(cmds) = phase_config.cmds {
                 phase.cmds = Some(replace_auto_vec(
                     cmds,
-                    phase.cmds.clone().unwrap_or_default(),
+                    &phase.cmds.clone().unwrap_or_default(),
                     identity,
                 ));
             }
@@ -187,15 +186,15 @@ impl BuildPlan {
             if let Some(nix_pkgs) = phase_config.nix_pkgs {
                 phase.nix_pkgs = Some(replace_auto_vec(
                     nix_pkgs.iter().map(|p| Pkg::new(p)).collect(),
-                    phase.nix_pkgs.clone().unwrap_or_default(),
+                    &phase.nix_pkgs.clone().unwrap_or_default(),
                     |p| p.name,
-                ))
+                ));
             }
 
             if let Some(apt_pkgs) = phase_config.apt_pkgs {
                 phase.apt_pkgs = Some(replace_auto_vec(
                     apt_pkgs,
-                    phase.apt_pkgs.clone().unwrap_or_default(),
+                    &phase.apt_pkgs.clone().unwrap_or_default(),
                     identity,
                 ));
             }
@@ -203,7 +202,7 @@ impl BuildPlan {
             if let Some(nix_libs) = phase_config.nix_libs {
                 phase.nix_libraries = Some(replace_auto_vec(
                     nix_libs,
-                    phase.nix_libraries.clone().unwrap_or_default(),
+                    &phase.nix_libraries.clone().unwrap_or_default(),
                     identity,
                 ));
             }
@@ -211,7 +210,7 @@ impl BuildPlan {
             if let Some(depends_on) = phase_config.depends_on {
                 phase.depends_on = Some(replace_auto_vec(
                     depends_on,
-                    phase.depends_on.clone().unwrap_or_default(),
+                    &phase.depends_on.clone().unwrap_or_default(),
                     identity,
                 ));
             }
@@ -288,25 +287,21 @@ impl BuildPlan {
     // }
 }
 
-fn replace_auto_vec<T>(arr: Vec<T>, auto: Vec<T>, selector: fn(T) -> String) -> Vec<T>
+fn replace_auto_vec<T>(arr: Vec<T>, auto: &[T], selector: fn(T) -> String) -> Vec<T>
 where
     T: Clone + fmt::Debug,
 {
-    let arr = arr
-        .into_iter()
+    arr.into_iter()
         .map(|x| vec![x])
-        .map(|pkgs| {
+        .flat_map(|pkgs| {
             let v = selector(pkgs[0].clone());
             if v == "@auto" || v == "..." {
-                auto.clone()
+                auto.clone().into()
             } else {
                 pkgs
             }
         })
-        .flatten()
-        .collect::<Vec<_>>();
-
-    arr
+        .collect::<Vec<_>>()
 }
 
 impl Default for BuildPlan {
@@ -319,14 +314,6 @@ impl Default for BuildPlan {
             variables: None,
             static_assets: None,
         }
-    }
-}
-
-fn none_if_empty<T>(value: Vec<T>) -> Option<Vec<T>> {
-    if value.is_empty() {
-        None
-    } else {
-        Some(value)
     }
 }
 
@@ -378,7 +365,7 @@ mod test {
                     (
                         "setup".to_string(),
                         PhaseConfig {
-                            additional_nix_pkgs: Some(vec!["cowsay".to_string()]),
+                            nix_pkgs: Some(vec!["cowsay".to_string()]),
                             ..Default::default()
                         },
                     ),
