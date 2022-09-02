@@ -209,7 +209,7 @@ impl BuildPlan {
             }
 
             if let Some(depends_on) = phase_config.depends_on {
-                phase.nix_libraries = Some(replace_auto_vec(
+                phase.depends_on = Some(replace_auto_vec(
                     depends_on,
                     phase.depends_on.clone().unwrap_or_default(),
                     identity,
@@ -292,14 +292,12 @@ fn replace_auto_vec<T>(arr: Vec<T>, auto: Vec<T>, selector: fn(T) -> String) -> 
 where
     T: Clone + fmt::Debug,
 {
-    println!("CALLING ARR: {:?}", arr);
     let arr = arr
         .into_iter()
         .map(|x| vec![x])
         .map(|pkgs| {
-            println!("FUCK");
-            if selector(pkgs[0].clone()) == "@auto" {
-                println!("IT IS AUTO");
+            let v = selector(pkgs[0].clone());
+            if v == "@auto" || v == "..." {
                 auto.clone()
             } else {
                 pkgs

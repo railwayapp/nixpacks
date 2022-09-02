@@ -74,14 +74,7 @@ impl NixpacksBuildPlanGenerator<'_> {
     /// Get a build plan from the provider and by applying the config from the environment
     fn get_build_plan(&self, app: &App, environment: &Environment) -> Result<BuildPlan> {
         // Get a build plan from the filesystem if it exists
-        let file_config = if app.includes_file("nixpacks.json") {
-            let contents = app.read_file("nixpacks.json")?;
-            let config: NixpacksConfig =
-                serde_json::from_str(contents.as_str()).context("failed to parse config")?;
-            config
-        } else {
-            NixpacksConfig::default()
-        };
+        let file_config = self.read_file_config(app)?;
 
         // Merge the config from the CLI flags with the config from the environment variables
         // The CLI config takes precedence
@@ -125,6 +118,22 @@ impl NixpacksBuildPlanGenerator<'_> {
         }
 
         Ok(plan)
+    }
+
+    fn read_file_config(&self, app: &App) -> Result<NixpacksConfig> {
+        if app.includes_file("nixpacks.json") {
+            let contents = app.read_file("nixpacks.json")?;
+            let config: NixpacksConfig = serde_json::from_str(contents.as_str())
+                .context("failed to parse config from nixpacks.json")?;
+            Ok(config)
+        } else if app.includes_file("nixpacks.toml") {
+            let contents = app.read_file("nixpacks.toml")?;
+            let config: NixpacksConfig = toml::from_str(contents.as_str())
+                .context("failed to parse config from nixpacks.toml")?;
+            Ok(config)
+        } else {
+            Ok(NixpacksConfig::default())
+        }
     }
 
     fn get_procfile_start_cmd(&self, app: &App) -> Result<Option<String>> {

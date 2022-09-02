@@ -22,30 +22,36 @@ pub struct GeneratePlanCLIConfig {
 
 #[serde_with::skip_serializing_none]
 #[derive(Eq, PartialEq, Clone, Default, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PhaseConfig {
+    #[serde(alias = "commands")]
     pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "dependsOn")]
     pub depends_on: Option<Vec<String>>,
 
     #[serde(rename = "nixPackages")]
+    #[serde(alias = "nixPkgs")]
     pub nix_pkgs: Option<Vec<String>>,
 
     #[serde(rename = "aptPackages")]
+    #[serde(alias = "aptPkgs")]
     pub apt_pkgs: Option<Vec<String>>,
 
     #[serde(rename = "nixLibraries")]
+    #[serde(alias = "nixLibs")]
     pub nix_libs: Option<Vec<String>>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Eq, PartialEq, Clone, Default, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NixpacksConfig {
     pub providers: Option<Vec<String>>,
 
     pub phases: Option<BTreeMap<String, PhaseConfig>>,
 
-    #[serde(rename = "startCmd")]
+    #[serde(alias = "startCommand")]
     pub start_cmd: Option<String>,
 }
 
