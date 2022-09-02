@@ -74,30 +74,30 @@ impl NixpacksConfig {
         let mut uses_setup = false;
 
         if let Some(pkg_string) = env.get_config_variable("PKGS") {
-            setup_config.nix_libs = Some(
-                pkg_string
-                    .split(' ')
-                    .map(std::string::ToString::to_string)
-                    .collect::<Vec<_>>(),
-            );
+            let mut pkgs = pkg_string
+                .split(' ')
+                .map(std::string::ToString::to_string)
+                .collect::<Vec<_>>();
+            pkgs.push("...".to_string());
+            setup_config.nix_pkgs = Some(pkgs);
             uses_setup = true;
         }
         if let Some(apt_string) = env.get_config_variable("APT_PKGS") {
-            setup_config.apt_pkgs = Some(
-                apt_string
-                    .split(' ')
-                    .map(std::string::ToString::to_string)
-                    .collect::<Vec<_>>(),
-            );
+            let mut apts = apt_string
+                .split(' ')
+                .map(std::string::ToString::to_string)
+                .collect::<Vec<_>>();
+            apts.push("...".to_string());
+            setup_config.apt_pkgs = Some(apts);
             uses_setup = true;
         }
-        if let Some(nix_lib_string) = env.get_config_variable("NIX_LIBS") {
-            setup_config.nix_libs = Some(
-                nix_lib_string
-                    .split(' ')
-                    .map(std::string::ToString::to_string)
-                    .collect::<Vec<_>>(),
-            );
+        if let Some(nix_lib_string) = env.get_config_variable("LIBS") {
+            let mut libs = nix_lib_string
+                .split(' ')
+                .map(std::string::ToString::to_string)
+                .collect::<Vec<_>>();
+            libs.push("...".to_string());
+            setup_config.nix_libs = Some(libs);
             uses_setup = true;
         }
 
@@ -265,49 +265,50 @@ mod tests {
             NixpacksConfig::default(),
             NixpacksConfig::from_environment(&Environment::from_envs(Vec::new()).unwrap())
         );
-        // assert_eq!(
-        //     NixpacksConfig {
-        //         phases: Some(BTreeMap::from([
-        //             (
-        //                 "setup".to_string(),
-        //                 PhaseConfig {
-        //                     nix_pkgs: Some(vec!["cowsay".to_string()]),
-        //                     apt_pkgs: Some(vec!["wget".to_string()]),
-        //                     nix_libs: Some(vec!["openssl".to_string()]),
-        //                     ..Default::default()
-        //                 },
-        //             ),
-        //             (
-        //                 "install".to_string(),
-        //                 PhaseConfig {
-        //                     nix_pkgs: Some(vec!["install".to_string()]),
-        //                     ..Default::default()
-        //                 },
-        //             ),
-        //             (
-        //                 "build".to_string(),
-        //                 PhaseConfig {
-        //                     cmds: Some(vec!["yarn run optimize-assets".to_string()]),
-        //                     ..Default::default()
-        //                 },
-        //             ),
-        //         ])),
-        //         ..Default::default()
-        //     },
-        //     NixpacksConfig::from_environment(
-        //         &Environment::from_envs(vec![
-        //             "NIXPACKS_INSTALL_CMD=install",
-        //             "NIXPACKS_BUILD_CMD=build",
-        //             "NIXPACKS_START_CMD=start",
-        //             "NIXPACKS_PKGS=cowsay",
-        //             "NIXPACKS_APT_PKGS=wget",
-        //             "NIXPACKS_LIBS=openssl",
-        //             "NIXPACKS_INSTALL_CACHE_DIRS=install/cache",
-        //             "NIXPACKS_BUILD_CACHE_DIRS=build/cache",
-        //         ])
-        //         .unwrap()
-        //     )
-        // );
+        assert_eq!(
+            NixpacksConfig {
+                phases: Some(BTreeMap::from([
+                    (
+                        "setup".to_string(),
+                        PhaseConfig {
+                            nix_pkgs: Some(vec!["cowsay".to_string(), "...".to_string()]),
+                            apt_pkgs: Some(vec!["wget".to_string(), "...".to_string()]),
+                            nix_libs: Some(vec!["openssl".to_string(), "...".to_string()]),
+                            ..Default::default()
+                        },
+                    ),
+                    (
+                        "install".to_string(),
+                        PhaseConfig {
+                            cmds: Some(vec!["install".to_string()]),
+                            ..Default::default()
+                        },
+                    ),
+                    (
+                        "build".to_string(),
+                        PhaseConfig {
+                            cmds: Some(vec!["build".to_string()]),
+                            ..Default::default()
+                        },
+                    ),
+                ])),
+                start_cmd: Some("start".to_string()),
+                ..Default::default()
+            },
+            NixpacksConfig::from_environment(
+                &Environment::from_envs(vec![
+                    "NIXPACKS_INSTALL_CMD=install",
+                    "NIXPACKS_BUILD_CMD=build",
+                    "NIXPACKS_START_CMD=start",
+                    "NIXPACKS_PKGS=cowsay",
+                    "NIXPACKS_APT_PKGS=wget",
+                    "NIXPACKS_LIBS=openssl",
+                    "NIXPACKS_INSTALL_CACHE_DIRS=install/cache",
+                    "NIXPACKS_BUILD_CACHE_DIRS=build/cache",
+                ])
+                .unwrap()
+            )
+        );
     }
 
     // #[test]
