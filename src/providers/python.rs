@@ -16,7 +16,7 @@ use serde::Deserialize;
 use std::result::Result::Ok as OkResult;
 use std::{collections::HashMap, fs};
 
-use super::Provider;
+use super::{Provider, ProviderMetadata};
 
 const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
 const POETRY_VERSION: &str = "1.1.13";
@@ -34,6 +34,18 @@ impl Provider for PythonProvider {
             || app.includes_file("requirements.txt")
             || app.includes_file("pyproject.toml");
         Ok(has_python)
+    }
+
+    fn metadata(&self, app: &App, env: &Environment) -> Result<ProviderMetadata> {
+        let is_django = PythonProvider::is_django(app, env)?;
+        let is_using_postgres = PythonProvider::is_using_postgres(app, env)?;
+        let is_poetry = app.includes_file("poetry.lock");
+
+        Ok(ProviderMetadata::from(vec![
+            (is_django, "django"),
+            (is_using_postgres, "postgres"),
+            (is_poetry, "poetry"),
+        ]))
     }
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {

@@ -5,6 +5,9 @@ expression: plan
 {
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "python"
+  },
   "phases": [
     {
       "name": "setup",

@@ -6,6 +6,7 @@ expression: plan
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
   "variables": {
+    "NIXPACKS_METADATA": "rust",
     "NIXPACKS_NO_MUSL": "1",
     "ROCKET_ADDRESS": "0.0.0.0"
   },

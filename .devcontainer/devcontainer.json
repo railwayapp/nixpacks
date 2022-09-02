@@ -1,20 +1,22 @@
 {
 	"name": "Nixpacks",
 	"dockerFile": "Dockerfile",
-	"runArgs": ["--init"],
-	"mounts": ["source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"],
+	"runArgs": [
+		"--init"
+	],
+	"mounts": [
+		"source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"
+	],
 	"overrideCommand": false,
-	
 	// Use this environment variable if you need to bind mount your local source code into a new container.
 	"remoteEnv": {
 		"LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
 	},
-
 	// Configure tool-specific properties.
 	"customizations": {
 		// Configure properties specific to VS Code.
-		"vscode": {	
-            		"settings": { 
+		"vscode": {
+			"settings": {
 				"lldb.executable": "/usr/bin/lldb",
 				// VS Code don't watch files under ./target
 				"files.watcherExclude": {
@@ -22,24 +24,21 @@
 				},
 				"rust-analyzer.checkOnSave.command": "clippy"
 			},
-
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"ms-azuretools.vscode-docker",
-                		"vadimcn.vscode-lldb",
+				"vadimcn.vscode-lldb",
 				"mutantdino.resourcemonitor",
 				"rust-lang.rust-analyzer",
-				"tamasfe.even-better-toml"
+				"tamasfe.even-better-toml",
+				"mitsuhiko.insta"
 			]
 		}
 	},
-	
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
-
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "docker --version",
-
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode"
 }
