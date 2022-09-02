@@ -6,7 +6,8 @@ expression: plan
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
   "variables": {
-    "MIX_ENV": "prod"
+    "MIX_ENV": "prod",
+    "NIXPACKS_METADATA": "elixir"
   },
   "phases": [
     {

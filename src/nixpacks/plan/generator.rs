@@ -1,6 +1,10 @@
 use super::{config::GeneratePlanConfig, BuildPlan, PlanGenerator};
 use crate::{
-    nixpacks::{app::App, environment::Environment, nix::pkg::Pkg},
+    nixpacks::{
+        app::App,
+        environment::{Environment, EnvironmentVariables},
+        nix::pkg::Pkg,
+    },
     providers::Provider,
 };
 use anyhow::{Context, Ok, Result};
@@ -10,6 +14,7 @@ use std::collections::HashMap;
 // Last Modified: 2022-08-29 17:07:50 UTC+0000
 // https://github.com/NixOS/nixpkgs/commit/0e304ff0d9db453a4b230e9386418fd974d5804a
 pub const NIXPKGS_ARCHIVE: &str = "0e304ff0d9db453a4b230e9386418fd974d5804a";
+const NIXPACKS_METADATA: &str = "NIXPACKS_METADATA";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
@@ -80,6 +85,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         if let Some(provider) = self.matched_provider {
             if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
                 plan = provider_build_plan;
+                plan.add_variables(self.get_nixpacks_env_vars(provider, app, environment)?);
             }
         }
 
@@ -134,5 +140,21 @@ impl NixpacksBuildPlanGenerator<'_> {
         } else {
             Ok(None)
         }
+    }
+
+    fn get_nixpacks_env_vars(
+        &self,
+        provider: &dyn Provider,
+        app: &App,
+        env: &Environment,
+    ) -> Result<EnvironmentVariables> {
+        let metadata_string = provider
+            .metadata(app, env)?
+            .join_as_comma_separated(provider.name().to_owned());
+
+        Ok(EnvironmentVariables::from([(
+            NIXPACKS_METADATA.to_string(),
+            metadata_string,
+        )]))
     }
 }

@@ -6,7 +6,8 @@ expression: plan
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
   "variables": {
-    "CGO_ENABLED": "0"
+    "CGO_ENABLED": "0",
+    "NIXPACKS_METADATA": "golang"
   },
   "phases": [
     {
