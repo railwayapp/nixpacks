@@ -24,18 +24,23 @@ pub const APP_DIR: &str = "/app/";
 pub struct OutputDir {
     pub root: PathBuf,
     pub asset_root: PathBuf,
+    pub is_temp: bool,
 }
 
 impl OutputDir {
-    pub fn new(root: PathBuf) -> Result<Self> {
+    pub fn new(root: PathBuf, is_temp: bool) -> Result<Self> {
         let root = root;
         let asset_root = PathBuf::from(NIXPACKS_OUTPUT_DIR);
 
-        Ok(Self { root, asset_root })
+        Ok(Self {
+            root,
+            asset_root,
+            is_temp,
+        })
     }
 
-    pub fn from(root: &str) -> Result<Self> {
-        Self::new(PathBuf::from(root))
+    pub fn from(root: &str, is_temp: bool) -> Result<Self> {
+        Self::new(PathBuf::from(root), is_temp)
     }
 
     /// Ensure that the output directory and all necessary subdirectories exist.
@@ -65,7 +70,7 @@ impl OutputDir {
 
 impl Default for OutputDir {
     fn default() -> Self {
-        Self::from(".").unwrap()
+        Self::from(".", false).unwrap()
     }
 }
 
@@ -157,7 +162,10 @@ impl DockerfileGenerator for BuildPlan {
 
         let dockerfile = formatdoc! {"
             FROM {base_image}
+
+            ENTRYPOINT [\"/bin/bash\", \"-l\", \"-c\"]
             WORKDIR {APP_DIR}
+
             {assets_copy_cmd}
 
             {dockerfile_phases_str}
@@ -223,9 +231,7 @@ impl DockerfileGenerator for StartPhase {
         _output: &OutputDir,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
-            Some(cmd) => {
-                format!("CMD {}", cmd)
-            }
+            Some(cmd) => utils::get_exec_command(cmd),
             None => "".to_string(),
         };
 

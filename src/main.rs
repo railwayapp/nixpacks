@@ -82,6 +82,12 @@ fn main() -> Result<()> {
                         .takes_value(true),
                 )
                 .arg(
+                    Arg::new("current-dir")
+                        .long("current-dir")
+                        .help("Output Nixpacks related files to the current directory ")
+                        .takes_value(false),
+                )
+                .arg(
                     Arg::new("no-cache")
                         .long("no-cache")
                         .help("Disable building with the cache"),
@@ -199,6 +205,7 @@ fn main() -> Result<()> {
             let path = matches.value_of("PATH").expect("required");
             let name = matches.value_of("name").map(ToString::to_string);
             let out_dir = matches.value_of("out").map(ToString::to_string);
+            let current_dir = matches.is_present("current-dir");
             let mut cache_key = matches.value_of("cache-key").map(ToString::to_string);
             let no_cache = matches.is_present("no-cache");
 
@@ -233,6 +240,7 @@ fn main() -> Result<()> {
                 no_cache,
                 platform,
                 print_dockerfile,
+                current_dir,
             };
 
             create_docker_image(path, envs, plan_options, build_options)?;

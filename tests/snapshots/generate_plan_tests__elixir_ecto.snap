@@ -25,7 +25,7 @@ expression: plan
       "name": "setup",
       "nixPackages": [
         {
-          "name": "elixir_1_12"
+          "name": "elixir"
         }
       ]
     },
@@ -36,7 +36,8 @@ expression: plan
       ],
       "commands": [
         "mix compile",
-        "mix assets.deploy"
+        "mix ecto.migrate",
+        "mix run priv/repo/seeds.exs"
       ]
     }
   ],
