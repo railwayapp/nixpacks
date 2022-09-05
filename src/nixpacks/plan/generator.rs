@@ -13,7 +13,7 @@ use std::collections::HashMap;
 // This line is automatically updated.
 // Last Modified: 2022-09-05 17:08:13 UTC+0000
 // https://github.com/NixOS/nixpkgs/commit/21de2b973f9fee595a7a1ac4693efff791245c34
-const NIXPKGS_ARCHIVE: &str = "21de2b973f9fee595a7a1ac4693efff791245c34";
+pub const NIXPKGS_ARCHIVE: &str = "21de2b973f9fee595a7a1ac4693efff791245c34";
 const NIXPACKS_METADATA: &str = "NIXPACKS_METADATA";
 
 #[derive(Clone, Default, Debug)]
