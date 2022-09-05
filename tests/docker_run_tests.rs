@@ -8,7 +8,6 @@ use nixpacks::{
 };
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
-use std::thread;
 use std::time::Duration;
 use uuid::Uuid;
 use wait_timeout::ChildExt;
@@ -285,9 +284,27 @@ fn run_mysql() -> Container {
         .unwrap();
 
     // MySQL starts listening for connections after it has initialised its default database
-    // give it enough time to start before we continue with starting the application
-    // TODO: swap this for a healthceck + retry-loop because the arbitrary delay can lead to flakey tests
-    thread::sleep(Duration::new(10, 0));
+    // so wait until mysqladmin ping via TCP succeeds (or we timeout)
+    let test_loop = format!("while ! mysqladmin ping --password={} -h localhost --port=3306 --protocol=TCP 2> /dev/null ; do echo 'waiting for mysql'; sleep 1; done", &password);
+    let mut docker_exec_cmd = Command::new("docker");
+    docker_exec_cmd
+        .arg("exec")
+        .arg(container_name.clone())
+        .arg("/bin/sh")
+        .arg("-c")
+        .arg(test_loop);
+
+    let mut child = docker_exec_cmd.spawn().unwrap();
+
+    match child.wait_timeout(Duration::new(30, 0)).unwrap() {
+        Some(_) => (),
+        None => {
+            // timed out waiting for mysql to start - cleanup the test process and the mysql container
+            child.kill().unwrap();
+            stop_and_remove_container(container_name);
+            panic!("mysql failed to start");
+        }
+    };
 
     Container {
         name: container_name.clone(),
