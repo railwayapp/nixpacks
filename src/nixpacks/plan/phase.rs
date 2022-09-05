@@ -1,11 +1,10 @@
-use std::collections::BTreeMap;
-
 use super::topological_sort::TopItem;
 use crate::nixpacks::{
     images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
     nix::pkg::Pkg,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 pub type Phases = BTreeMap<String, Phase>;
 
@@ -81,7 +80,6 @@ impl Phase {
                 .clone()
                 .map(|pkgs| pkgs.iter().map(|pkg| pkg.to_nix_string()).collect()),
             nix_overlays: pkgs
-                .clone()
                 .map(|pkgs| pkgs.iter().filter_map(|pkg| pkg.overlay.clone()).collect()),
             name: Some("setup".to_string()),
             ..Default::default()

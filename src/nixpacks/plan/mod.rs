@@ -228,13 +228,9 @@ impl BuildPlan {
         }
 
         // Start
-        let start = match env.get_config_variable("START_CMD") {
-            Some(cmd) => Some(StartPhase::new(cmd)),
-            None => None,
-        };
+        let start = env.get_config_variable("START_CMD").map(StartPhase::new);
 
-        let plan = BuildPlan::new(phases, start);
-        plan
+        BuildPlan::new(phases, start)
     }
 
     // Create a new build plan by applying the given configuration
@@ -367,7 +363,9 @@ impl Mergeable for Phase {
     fn merge(c1: &Phase, c2: &Phase) -> Phase {
         let mut phase = c1.clone();
         let c2 = c2.clone();
-        phase.nixpacks_archive = c2.nixpacks_archive.or(phase.nixpacks_archive.clone());
+        phase.nixpacks_archive = c2
+            .nixpacks_archive
+            .or_else(|| phase.nixpacks_archive.clone());
 
         phase.cmds = extract_auto_from_vec(phase.cmds.clone(), c2.cmds);
         phase.depends_on = extract_auto_from_vec(phase.depends_on.clone(), c2.depends_on);
@@ -389,8 +387,8 @@ impl Mergeable for StartPhase {
     fn merge(c1: &StartPhase, c2: &StartPhase) -> StartPhase {
         let mut start_phase = c1.clone();
         let c2 = c2.clone();
-        start_phase.cmd = c2.cmd.or(start_phase.cmd.clone());
-        start_phase.run_image = c2.run_image.or(start_phase.run_image.clone());
+        start_phase.cmd = c2.cmd.or_else(|| start_phase.cmd.clone());
+        start_phase.run_image = c2.run_image.or_else(|| start_phase.run_image.clone());
         start_phase.only_include_files = extract_auto_from_vec(
             start_phase.only_include_files.clone(),
             c2.only_include_files,

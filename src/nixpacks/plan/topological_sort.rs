@@ -46,8 +46,7 @@ where
                 item.get_dependencies()
                     .iter()
                     .filter(|dep| lookup.contains_key(dep.clone()))
-                    .collect::<Vec<_>>()
-                    .len(),
+                    .count(),
             )
         })
         .collect::<HashMap<String, usize>>();
