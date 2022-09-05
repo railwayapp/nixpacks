@@ -1,5 +1,5 @@
-use nixpacks::{generate_build_plan, nixpacks::plan::config::NixpacksConfig};
-use std::{env::consts::ARCH};
+use nixpacks::{generate_build_plan, nixpacks::plan::BuildPlan};
+use std::env::consts::ARCH;
 
 test_helper::generate_plan_tests!();
 
@@ -25,11 +25,52 @@ fn test_custom_rust_version() {
             .nix_pkgs
             .unwrap()
             .iter()
-            .filter(|p| p.name.contains("1.56.0"))
+            .filter(|p| p.contains("1.56.0"))
             .count(),
         1
     );
 }
+
+// fn simple_gen_plan1(path: &str) -> ::nixpacks::nixpacks::plan::BuildPlan {
+//     if let Ok(raw_env) = ::std::fs::read_to_string(format!("{}/test.env", path)) {
+//         let env = ::dotenv_parser::parse_dotenv(&raw_env).unwrap();
+//         let opts = ::nixpacks::nixpacks::plan::BuildPlan {
+//             // pin_pkgs: Some(env.get("PIN_PKGS").is_some()),
+//             phases: Some(::std::collections::BTreeMap::from([(
+//                 "setup".to_string(),
+//                 ::nixpacks::nixpacks::plan::phase::Phase {
+//                     nix_pkgs: env.get("CUSTOM_PKGS").map(|pkgs| {
+//                         pkgs.split(',')
+//                             .map(|pkg| pkg.to_string())
+//                             .collect::<Vec<_>>()
+//                     }),
+//                     ..Default::default()
+//                 },
+//             )])),
+//             start_phase: Some(::nixpacks::nixpacks::plan::phase::StartPhase {
+//                 cmd: env.get("CUSTOM_START_CMD").map(|cmd| cmd.to_string()),
+//                 ..Default::default()
+//             }),
+//             ..::nixpacks::nixpacks::plan::BuildPlan::default()
+//         };
+
+//         return ::nixpacks::generate_build_plan(
+//             path,
+//             env.get("ENVS")
+//                 .map(|envs| envs.split(", ").collect())
+//                 .unwrap_or_default(),
+//             &opts,
+//         )
+//         .unwrap();
+//     }
+
+//     ::nixpacks::generate_build_plan(
+//         path,
+//         ::std::vec::Vec::new(),
+//         &::nixpacks::nixpacks::plan::BuildPlan::default(),
+//     )
+//     .unwrap()
+// }
 
 #[test]
 fn test_rust_rocket() {
@@ -55,7 +96,7 @@ fn test_rust_rocket_no_musl() {
     let plan = generate_build_plan(
         "./examples/rust-rocket",
         vec!["NIXPACKS_NO_MUSL=1"],
-        &NixpacksConfig::default(),
+        &BuildPlan::default(),
     )
     .unwrap();
     assert_plan_snapshot!(plan);

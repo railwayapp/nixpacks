@@ -1,9 +1,9 @@
-use super::{config::NixpacksConfig, BuildPlan, PlanGenerator};
 use crate::{
     nixpacks::{
         app::App,
         environment::{Environment, EnvironmentVariables},
         nix::pkg::Pkg,
+        plan::{BuildPlan, Mergeable, PlanGenerator},
     },
     providers::Provider,
 };
@@ -31,7 +31,7 @@ pub struct GeneratePlanOptions {
 pub struct NixpacksBuildPlanGenerator<'a> {
     providers: &'a [&'a dyn Provider],
     matched_provider: Option<&'a dyn Provider>,
-    config: NixpacksConfig,
+    config: BuildPlan,
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
@@ -49,7 +49,7 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
 impl NixpacksBuildPlanGenerator<'_> {
     pub fn new<'a>(
         providers: &'a [&'a dyn Provider],
-        config: NixpacksConfig,
+        config: BuildPlan,
     ) -> NixpacksBuildPlanGenerator<'a> {
         NixpacksBuildPlanGenerator {
             providers,
@@ -74,44 +74,55 @@ impl NixpacksBuildPlanGenerator<'_> {
     /// Get a build plan from the provider and by applying the config from the environment
     fn get_build_plan(&self, app: &App, environment: &Environment) -> Result<BuildPlan> {
         // Get a build plan from the filesystem if it exists
-        let file_config = self.read_file_config(app)?;
+        let file_plan = self.read_file_plan(app)?;
 
         // Merge the config from the CLI flags with the config from the environment variables
         // The CLI config takes precedence
-        let config = vec![
-            file_config,
-            NixpacksConfig::from_environment(environment),
-            self.config.clone(),
-        ]
-        .iter()
-        .fold(NixpacksConfig::default(), |acc, c| {
-            NixpacksConfig::merge(&acc, c)
-        });
+        // let config = vec![
+        //     file_config,
+        //     BuildPlan::from_environment(environment),
+        //     self.config.clone(),
+        // ]
+        // .iter()
+        // .fold(BuildPlan::default(), |acc, c| BuildPlan::merge(&acc, c));
 
-        let mut plan = BuildPlan::default();
+        let env_plan = BuildPlan::from_environment(environment);
 
+        let mut provider_plan = BuildPlan::default();
         if let Some(provider) = self.matched_provider {
             if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
-                plan = provider_build_plan;
-                plan.add_variables(self.get_nixpacks_env_vars(provider, app, environment)?);
+                provider_plan = provider_build_plan;
+                provider_plan.add_variables(self.get_nixpacks_env_vars(
+                    provider,
+                    app,
+                    environment,
+                )?);
             }
         }
+
+        let mut plan = vec![provider_plan, file_plan, env_plan, self.config.clone()]
+            .iter()
+            .fold(BuildPlan::default(), |acc, plan| {
+                BuildPlan::merge(&acc, plan)
+            });
 
         // The Procfile start command has precedence over the provider's start command
-        if let Some(procfile_start) = self.get_procfile_start_cmd(app)? {
-            let mut start_phase = plan.start_phase.clone().unwrap_or_default();
-            start_phase.cmd = Some(procfile_start);
-            plan.set_start_phase(start_phase);
-        }
+        // TODO: Make Procfile a provider
+        // if let Some(procfile_start) = self.get_procfile_start_cmd(app)? {
+        //     let mut start_phase = plan.start_phase.clone().unwrap_or_default();
+        //     start_phase.cmd = Some(procfile_start);
+        //     plan.set_start_phase(start_phase);
+        // }
 
         // The Procfiles release command is append to the provider's build command
-        if let Some(procfile_release) = self.get_procfile_release_cmd(app)? {
-            if let Some(build) = plan.get_phase_mut("build") {
-                build.add_cmd(procfile_release);
-            }
-        }
+        // if let Some(procfile_release) = self.get_procfile_release_cmd(app)? {
+        //     if let Some(build) = plan.get_phase_mut("build") {
+        //         build.add_cmd(procfile_release);
+        //     }
+        // }
 
-        plan = BuildPlan::apply_config(&plan, &config);
+        // Merge this config with the build plan config
+        // plan = BuildPlan::apply_config(&plan, &config);
 
         if !environment.get_variable_names().is_empty() {
             plan.add_variables(Environment::clone_variables(environment));
@@ -120,19 +131,21 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(plan)
     }
 
-    fn read_file_config(&self, app: &App) -> Result<NixpacksConfig> {
+    fn read_file_plan(&self, app: &App) -> Result<BuildPlan> {
         if app.includes_file("nixpacks.json") {
             let contents = app.read_file("nixpacks.json")?;
-            let config: NixpacksConfig = serde_json::from_str(contents.as_str())
+            let mut config: BuildPlan = serde_json::from_str(contents.as_str())
                 .context("failed to parse config from nixpacks.json")?;
+            config.resolve_phase_names();
             Ok(config)
         } else if app.includes_file("nixpacks.toml") {
             let contents = app.read_file("nixpacks.toml")?;
-            let config: NixpacksConfig = toml::from_str(contents.as_str())
+            let mut config: BuildPlan = toml::from_str(contents.as_str())
                 .context("failed to parse config from nixpacks.toml")?;
+            config.resolve_phase_names();
             Ok(config)
         } else {
-            Ok(NixpacksConfig::default())
+            Ok(BuildPlan::default())
         }
     }
 

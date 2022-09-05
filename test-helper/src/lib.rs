@@ -55,12 +55,11 @@ pub fn generate_plan_tests(_tokens: TokenStream) -> TokenStream {
         fn simple_gen_plan(path: &str) -> ::nixpacks::nixpacks::plan::BuildPlan {
             if let Ok(raw_env) = ::std::fs::read_to_string(format!("{}/test.env", path)) {
                 let env = ::dotenv_parser::parse_dotenv(&raw_env).unwrap();
-                let opts = ::nixpacks::nixpacks::plan::config::NixpacksConfig {
-                    pin_pkgs: Some(env.get("PIN_PKGS").is_some()),
-                    start_cmd: env.get("CUSTOM_START_CMD").map(|cmd| cmd.to_string()),
+                let opts = ::nixpacks::nixpacks::plan::BuildPlan {
+                    // pin_pkgs: Some(env.get("PIN_PKGS").is_some()),
                     phases: Some(::std::collections::BTreeMap::from([(
                         "setup".to_string(),
-                        ::nixpacks::nixpacks::plan::config::PhaseConfig {
+                        ::nixpacks::nixpacks::plan::phase::Phase {
                             nix_pkgs: env.get("CUSTOM_PKGS").map(|pkgs| {
                                 pkgs.split(',')
                                     .map(|pkg| pkg.to_string())
@@ -69,7 +68,11 @@ pub fn generate_plan_tests(_tokens: TokenStream) -> TokenStream {
                             ..Default::default()
                         },
                     )])),
-                    ..::nixpacks::nixpacks::plan::config::NixpacksConfig::default()
+                    start_phase: Some(::nixpacks::nixpacks::plan::phase::StartPhase {
+                        cmd: env.get("CUSTOM_START_CMD").map(|cmd| cmd.to_string()),
+                        ..Default::default()
+                    }),
+                    ..::nixpacks::nixpacks::plan::BuildPlan::default()
                 };
 
                 return ::nixpacks::generate_build_plan(
@@ -85,7 +88,7 @@ pub fn generate_plan_tests(_tokens: TokenStream) -> TokenStream {
             ::nixpacks::generate_build_plan(
                 path,
                 ::std::vec::Vec::new(),
-                &::nixpacks::nixpacks::plan::config::NixpacksConfig::default(),
+                &::nixpacks::nixpacks::plan::BuildPlan::default(),
             )
             .unwrap()
         }

@@ -4,7 +4,10 @@ use nixpacks::{
     nixpacks::{
         builder::docker::DockerBuilderOptions,
         environment::EnvironmentVariables,
-        plan::config::{NixpacksConfig, PhaseConfig},
+        plan::{
+            phase::{Phase, StartPhase},
+            BuildPlan,
+        },
     },
 };
 use std::process::{Command, Stdio};
@@ -115,8 +118,8 @@ fn simple_build(path: &str) -> String {
     create_docker_image(
         path,
         Vec::new(),
-        &NixpacksConfig {
-            pin_pkgs: Some(true),
+        &BuildPlan {
+            // pin_pkgs: Some(true),
             ..Default::default()
         },
         &DockerBuilderOptions {
@@ -135,8 +138,8 @@ fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
     create_docker_image(
         path,
         env_vars,
-        &NixpacksConfig {
-            pin_pkgs: Some(true),
+        &BuildPlan {
+            // pin_pkgs: Some(true),
             ..Default::default()
         },
         &DockerBuilderOptions {
@@ -488,8 +491,8 @@ fn test_rust_custom_version() {
     create_docker_image(
         "./examples/rust-custom-version",
         vec!["NIXPACKS_NO_MUSL=1"],
-        &NixpacksConfig {
-            pin_pkgs: Some(true),
+        &BuildPlan {
+            // pin_pkgs: Some(true),
             ..Default::default()
         },
         &DockerBuilderOptions {
@@ -566,16 +569,19 @@ fn test_cowsay() {
     create_docker_image(
         "./examples/shell-hello",
         Vec::new(),
-        &NixpacksConfig {
-            pin_pkgs: Some(true),
+        &BuildPlan {
+            // pin_pkgs: Some(true),
             phases: Some(BTreeMap::from([(
                 "setup".to_string(),
-                PhaseConfig {
+                Phase {
                     nix_pkgs: Some(vec!["cowsay".to_string()]),
                     ..Default::default()
                 },
             )])),
-            start_cmd: Some("./start.sh".to_string()),
+            start_phase: Some(StartPhase {
+                cmd: Some("./start.sh".to_string()),
+                ..Default::default()
+            }),
             ..Default::default()
         },
         &DockerBuilderOptions {
@@ -603,8 +609,8 @@ fn test_swift() {
     create_docker_image(
         "./examples/swift",
         Vec::new(),
-        &NixpacksConfig {
-            pin_pkgs: Some(false),
+        &BuildPlan {
+            // pin_pkgs: Some(false),
             ..Default::default()
         },
         &DockerBuilderOptions {

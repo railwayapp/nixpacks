@@ -47,10 +47,7 @@ pub struct NixpacksConfig {
     pub phases: Option<BTreeMap<String, PhaseConfig>>,
 
     #[serde(alias = "startCommand")]
-    pub start_cmd: Option<String>,
-
-    #[serde(alias = "pinPackages")]
-    pub pin_pkgs: Option<bool>,
+    pub start: Option<StartPhase>,
 }
 
 impl PhaseConfig {

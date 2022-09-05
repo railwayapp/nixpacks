@@ -1,17 +1,14 @@
+use anyhow::Result;
+use clap::{arg, Arg, Command};
+use nixpacks::{
+    create_docker_image, generate_build_plan,
+    nixpacks::{builder::docker::DockerBuilderOptions, plan::BuildPlan},
+};
 use std::{
     collections::hash_map::DefaultHasher,
     env,
     hash::{Hash, Hasher},
     string::ToString,
-};
-
-use anyhow::Result;
-use clap::{arg, Arg, Command};
-use nixpacks::{
-    create_docker_image, generate_build_plan,
-    nixpacks::{
-        builder::docker::DockerBuilderOptions, plan::config::NixpacksConfig,
-    },
 };
 
 fn main() -> Result<()> {
@@ -193,7 +190,7 @@ fn main() -> Result<()> {
     //     ..Default::default()
     // };
 
-    let config = NixpacksConfig {
+    let config = BuildPlan {
         ..Default::default()
     };
 

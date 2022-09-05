@@ -17,7 +17,12 @@ impl BuildPlan {
         let phase_contents = self
             .get_sorted_phases()?
             .iter()
-            .map(|phase| (phase.name.clone(), self.get_phase_content(phase).unwrap()))
+            .map(|phase| {
+                (
+                    phase.get_name().clone(),
+                    self.get_phase_content(phase).unwrap(),
+                )
+            })
             .collect::<Vec<_>>();
 
         let start_contents = self

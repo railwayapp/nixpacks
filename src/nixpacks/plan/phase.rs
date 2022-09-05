@@ -1,17 +1,19 @@
-use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
+use super::topological_sort::TopItem;
 use crate::nixpacks::{
     images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
     nix::pkg::Pkg,
 };
+use serde::{Deserialize, Serialize};
 
-use super::topological_sort::TopItem;
+pub type Phases = BTreeMap<String, Phase>;
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(PartialEq, Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Phase {
-    pub name: String,
+    pub name: Option<String>,
 
     #[serde(rename = "dependsOn")]
     pub depends_on: Option<Vec<String>>,
@@ -44,7 +46,7 @@ pub struct Phase {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(PartialEq, Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StartPhase {
     pub cmd: Option<String>,
@@ -52,29 +54,24 @@ pub struct StartPhase {
     pub only_include_files: Option<Vec<String>>,
 }
 
-impl TopItem for Phase {
-    fn get_name(&self) -> String {
-        self.name.clone()
-    }
-
-    fn get_dependencies(&self) -> &[String] {
-        match &self.depends_on {
-            Some(depends_on) => depends_on.as_slice(),
-            None => &[],
-        }
-    }
-}
-
 impl Phase {
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
-            name: name.into(),
+            name: Some(name.into()),
             ..Default::default()
         }
     }
 
+    pub fn get_name(&self) -> String {
+        self.name.clone().unwrap()
+    }
+
     pub fn prefix_name(&mut self, prefix: &str) {
-        self.name = format!("{}:{}", prefix, self.name);
+        self.name = Some(format!("{}:{}", prefix, self.get_name()));
+    }
+
+    pub fn set_name<S: Into<String>>(&mut self, name: S) {
+        self.name = Some(name.into());
     }
 
     /// Shortcut for creating a setup phase from a list of nix packages.
@@ -86,7 +83,7 @@ impl Phase {
             nix_overlays: pkgs
                 .clone()
                 .map(|pkgs| pkgs.iter().filter_map(|pkg| pkg.overlay.clone()).collect()),
-            name: "setup".to_string(),
+            name: Some("setup".to_string()),
             ..Default::default()
         }
     }
@@ -94,7 +91,7 @@ impl Phase {
     /// Shortcut for creating an install phase from a command
     pub fn install(cmd: Option<String>) -> Self {
         Self {
-            name: "install".to_string(),
+            name: Some("install".to_string()),
             cmds: cmd.map(|cmd| vec![cmd]),
             depends_on: Some(vec!["setup".to_string()]),
             ..Default::default()
@@ -104,7 +101,7 @@ impl Phase {
     /// Shortcut for creating a build phase from a command
     pub fn build(cmd: Option<String>) -> Self {
         Self {
-            name: "build".to_string(),
+            name: Some("build".to_string()),
             cmds: cmd.map(|cmd| vec![cmd]),
             depends_on: Some(vec!["install".to_string()]),
             ..Default::default()

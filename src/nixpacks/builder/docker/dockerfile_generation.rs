@@ -2,6 +2,7 @@ use super::{utils, DockerBuilderOptions};
 use crate::nixpacks::{
     app,
     environment::Environment,
+    images::DEFAULT_BASE_IMAGE,
     nix,
     plan::{
         phase::{Phase, StartPhase},
@@ -132,24 +133,27 @@ impl DockerfileGenerator for BuildPlan {
             format!("COPY {} {}", rel_assets_slash_path, app::ASSETS_DIR)
         };
 
-        let dockerfile_phases = plan
-            .get_sorted_phases()?
-            .into_iter()
-            .map(|phase| {
-                let phase_dockerfile = phase
-                    .generate_dockerfile(options, env, output)
-                    .context(format!("Generating Dockerfile for phase {}", phase.name))?;
+        let dockerfile_phases =
+            plan.get_sorted_phases()?
+                .into_iter()
+                .map(|phase| {
+                    let phase_dockerfile = phase
+                        .generate_dockerfile(options, env, output)
+                        .context(format!(
+                            "Generating Dockerfile for phase {}",
+                            phase.get_name()
+                        ))?;
 
-                match phase.name.as_str() {
-                    // We want to load the variables immediately after the setup phase
-                    "setup" => Ok(format!(
-                        "{}\n# load variables\n{}\n",
-                        phase_dockerfile, args_string
-                    )),
-                    _ => Ok(phase_dockerfile),
-                }
-            })
-            .collect::<Result<Vec<_>>>();
+                    match phase.get_name().as_str() {
+                        // We want to load the variables immediately after the setup phase
+                        "setup" => Ok(format!(
+                            "{}\n# load variables\n{}\n",
+                            phase_dockerfile, args_string
+                        )),
+                        _ => Ok(phase_dockerfile),
+                    }
+                })
+                .collect::<Result<Vec<_>>>();
         let dockerfile_phases_str = dockerfile_phases?.join("\n");
 
         let start_phase_str = plan
@@ -158,7 +162,10 @@ impl DockerfileGenerator for BuildPlan {
             .unwrap_or_default()
             .generate_dockerfile(options, env, output)?;
 
-        let base_image = plan.build_image.clone();
+        let base_image = plan
+            .build_image
+            .clone()
+            .unwrap_or(DEFAULT_BASE_IMAGE.to_string());
 
         let dockerfile = formatdoc! {"
             FROM {base_image}
@@ -192,7 +199,7 @@ impl DockerfileGenerator for BuildPlan {
         for phase in self.get_sorted_phases()? {
             phase
                 .write_supporting_files(options, env, output)
-                .context(format!("Writing files for phase {}", phase.name))?;
+                .context(format!("Writing files for phase {}", phase.get_name()))?;
         }
 
         Ok(())
@@ -302,7 +309,7 @@ impl DockerfileGenerator for Phase {
 
         // Install nix packages and libraries
         let install_nix_pkgs_str = if self.uses_nix() {
-            let nix_file = output.get_relative_path(format!("{}.nix", phase.name));
+            let nix_file = output.get_relative_path(format!("{}.nix", phase.get_name()));
 
             let nix_file_path = nix_file
                 .to_slash()
@@ -327,7 +334,7 @@ impl DockerfileGenerator for Phase {
         };
 
         // Copy over app files
-        let phase_files = match (phase.name.as_str(), &phase.only_include_files) {
+        let phase_files = match (phase.get_name().as_str(), &phase.only_include_files) {
             (_, Some(files)) => files.clone(),
             // Special case for the setup phase, which has no files
             ("setup", None) => vec![],
@@ -362,7 +369,7 @@ impl DockerfileGenerator for Phase {
             # {name} phase
             {dockerfile_stmts}
         ", 
-          name=phase.name,
+          name=phase.get_name(),
           dockerfile_stmts=dockerfile_stmts
         };
 
@@ -377,7 +384,7 @@ impl DockerfileGenerator for Phase {
     ) -> Result<()> {
         if self.uses_nix() {
             // Write the Nix expressions to the output directory
-            let nix_file_name = format!("{}.nix", self.name);
+            let nix_file_name = format!("{}.nix", self.get_name());
             let nix_path = output.get_absolute_path(nix_file_name);
             let nix_expression = nix::create_nix_expression(self);
 

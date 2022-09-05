@@ -37,7 +37,7 @@ pub fn create_nix_expression(phase: &Phase) -> String {
         String::new()
     };
 
-    let name = format!("{}-env", phase.name);
+    let name = format!("{}-env", phase.get_name());
     let nix_expression = formatdoc! {"
             {{ }}:
 
