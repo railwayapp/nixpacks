@@ -38,6 +38,9 @@ export const sidebarItems: ISidebarSection[] = [
   },
   {
     text: "Deploying",
-    links: [{ text: "Railway", href: "/docs/deploying/railway" }],
+    links: [
+      { text: "Railway", href: "/docs/deploying/railway" },
+      { text: "Easypanel", href: "/docs/deploying/easypanel" }
+     ],
   },
 ];
