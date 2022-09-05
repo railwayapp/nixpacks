@@ -200,9 +200,9 @@ impl BuildPlan {
             }
 
             if let Some(nix_libs) = phase_config.nix_libs {
-                phase.nix_libraries = Some(replace_auto_vec(
+                phase.nix_libs = Some(replace_auto_vec(
                     nix_libs,
-                    &phase.nix_libraries.clone().unwrap_or_default(),
+                    &phase.nix_libs.clone().unwrap_or_default(),
                     identity,
                 ));
             }
@@ -224,67 +224,6 @@ impl BuildPlan {
 
         new_plan
     }
-
-    // pub fn apply_config(plan: &BuildPlan, config: &GeneratePlanConfig) -> BuildPlan {
-    //     let mut new_plan = plan.clone();
-
-    //     // Setup config
-    //     let mut setup = new_plan
-    //         .remove_phase("setup")
-    //         .unwrap_or_else(|| Phase::setup(None));
-
-    //     // Append the packages and libraries together
-    //     setup.apt_pkgs = none_if_empty(
-    //         [
-    //             config.custom_apt_pkgs.clone(),
-    //             setup.apt_pkgs.unwrap_or_default(),
-    //         ]
-    //         .concat(),
-    //     );
-    //     setup.nix_pkgs = none_if_empty(
-    //         [
-    //             config.custom_pkgs.clone(),
-    //             setup.nix_pkgs.unwrap_or_default(),
-    //         ]
-    //         .concat(),
-    //     );
-    //     setup.nix_libraries = none_if_empty(
-    //         [
-    //             config.custom_libs.clone(),
-    //             setup.nix_libraries.unwrap_or_default(),
-    //         ]
-    //         .concat(),
-    //     );
-    //     setup.nixpacks_archive = setup.nixpacks_archive.or_else(|| {
-    //         if config.pin_pkgs {
-    //             Some(NIXPKGS_ARCHIVE.to_string())
-    //         } else {
-    //             None
-    //         }
-    //     });
-    //     new_plan.add_phase(setup);
-
-    //     // Install config
-    //     let mut install = new_plan
-    //         .remove_phase("install")
-    //         .unwrap_or_else(|| Phase::install(None));
-    //     install.cmds = config.custom_install_cmd.clone().or(install.cmds);
-    //     new_plan.add_phase(install);
-
-    //     // Build config
-    //     let mut build = new_plan
-    //         .remove_phase("build")
-    //         .unwrap_or_else(|| Phase::build(None));
-    //     build.cmds = config.custom_build_cmd.clone().or(build.cmds);
-    //     new_plan.add_phase(build);
-
-    //     // Start config
-    //     let mut start = new_plan.start_phase.clone().unwrap_or_default();
-    //     start.cmd = config.custom_start_cmd.clone().or(start.cmd);
-    //     new_plan.start_phase = Some(start);
-
-    //     new_plan
-    // }
 }
 
 fn replace_auto_vec<T>(arr: Vec<T>, auto: &[T], selector: fn(T) -> String) -> Vec<T>

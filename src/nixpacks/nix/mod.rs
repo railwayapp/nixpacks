@@ -7,7 +7,7 @@ pub mod pkg;
 pub fn create_nix_expression(phase: &Phase) -> String {
     let nixpkgs = phase.nix_pkgs.clone().unwrap_or_default().join(" ");
 
-    let libraries = phase.nix_libraries.clone().unwrap_or_default().join(" ");
+    let libraries = phase.nix_libs.clone().unwrap_or_default().join(" ");
 
     let nix_archive = phase.nixpacks_archive.clone();
     let pkg_import = match nix_archive {

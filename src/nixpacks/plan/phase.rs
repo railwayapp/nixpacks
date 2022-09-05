@@ -16,16 +16,18 @@ pub struct Phase {
     #[serde(rename = "dependsOn")]
     pub depends_on: Option<Vec<String>>,
 
+    #[serde(alias = "nixPackages")]
     pub nix_pkgs: Option<Vec<String>>,
 
-    pub nix_libraries: Option<Vec<String>>,
+    #[serde(alias = "nixLibraries")]
+    pub nix_libs: Option<Vec<String>>,
 
     pub nix_overlays: Option<Vec<String>>,
 
     #[serde(rename = "nixpacksArchive")]
     pub nixpacks_archive: Option<String>,
 
-    #[serde(rename = "aptPackages")]
+    #[serde(alias = "aptPackages")]
     pub apt_pkgs: Option<Vec<String>>,
 
     #[serde(alias = "commands")]
@@ -43,13 +45,10 @@ pub struct Phase {
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct StartPhase {
     pub cmd: Option<String>,
-
-    #[serde(rename = "runImage")]
     pub run_image: Option<String>,
-
-    #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
 }
 
@@ -114,7 +113,7 @@ impl Phase {
 
     pub fn uses_nix(&self) -> bool {
         !self.nix_pkgs.clone().unwrap_or_default().is_empty()
-            || !self.nix_libraries.clone().unwrap_or_default().is_empty()
+            || !self.nix_libs.clone().unwrap_or_default().is_empty()
     }
 
     pub fn depends_on_phase<S: Into<String>>(&mut self, name: S) {
@@ -139,8 +138,8 @@ impl Phase {
     }
 
     pub fn add_pkgs_libs(&mut self, new_libraries: Vec<String>) {
-        self.nix_libraries = Some(add_multiple_to_option_vec(
-            self.nix_libraries.clone(),
+        self.nix_libs = Some(add_multiple_to_option_vec(
+            self.nix_libs.clone(),
             new_libraries,
         ));
     }
