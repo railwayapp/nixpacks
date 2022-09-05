@@ -9,17 +9,18 @@ use super::topological_sort::TopItem;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Phase {
     pub name: String,
 
     #[serde(rename = "dependsOn")]
     pub depends_on: Option<Vec<String>>,
 
-    #[serde(rename = "nixPackages")]
-    pub nix_pkgs: Option<Vec<Pkg>>,
+    pub nix_pkgs: Option<Vec<String>>,
 
-    #[serde(rename = "nixLibraries")]
     pub nix_libraries: Option<Vec<String>>,
+
+    pub nix_overlays: Option<Vec<String>>,
 
     #[serde(rename = "nixpacksArchive")]
     pub nixpacks_archive: Option<String>,
@@ -27,7 +28,7 @@ pub struct Phase {
     #[serde(rename = "aptPackages")]
     pub apt_pkgs: Option<Vec<String>>,
 
-    #[serde(rename = "commands")]
+    #[serde(alias = "commands")]
     pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
@@ -36,6 +37,7 @@ pub struct Phase {
     #[serde(rename = "cacheDirectories")]
     pub cache_directories: Option<Vec<String>>,
 
+    #[serde(alias = "envPaths")]
     pub paths: Option<Vec<String>>,
 }
 
@@ -79,7 +81,12 @@ impl Phase {
     /// Shortcut for creating a setup phase from a list of nix packages.
     pub fn setup(pkgs: Option<Vec<Pkg>>) -> Self {
         Self {
-            nix_pkgs: pkgs,
+            nix_pkgs: pkgs
+                .clone()
+                .map(|pkgs| pkgs.iter().map(|pkg| pkg.to_nix_string()).collect()),
+            nix_overlays: pkgs
+                .clone()
+                .map(|pkgs| pkgs.iter().filter_map(|pkg| pkg.overlay.clone()).collect()),
             name: "setup".to_string(),
             ..Default::default()
         }
@@ -115,7 +122,20 @@ impl Phase {
     }
 
     pub fn add_nix_pkgs(&mut self, new_pkgs: Vec<Pkg>) {
-        self.nix_pkgs = Some(add_multiple_to_option_vec(self.nix_pkgs.clone(), new_pkgs));
+        // nix_pkgs: pkgs.map(|pkgs| pkgs.iter().map(|pkg| pkg.to_nix_string()).collect()),
+        // nix_overlays: pkgs.map(|pkgs| pkgs.iter().filter_map(|pkg| pkg.overlay).collect()),
+
+        self.nix_overlays = Some(add_to_option_vec(
+            self.nix_overlays.clone(),
+            new_pkgs
+                .iter()
+                .filter_map(|pkg| pkg.overlay.clone())
+                .collect(),
+        ));
+        self.nix_pkgs = Some(add_multiple_to_option_vec(
+            self.nix_pkgs.clone(),
+            new_pkgs.iter().map(|pkg| pkg.to_nix_string()).collect(),
+        ));
     }
 
     pub fn add_pkgs_libs(&mut self, new_libraries: Vec<String>) {

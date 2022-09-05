@@ -5,13 +5,7 @@ use super::plan::phase::Phase;
 pub mod pkg;
 
 pub fn create_nix_expression(phase: &Phase) -> String {
-    let pkgs = phase.nix_pkgs.clone().unwrap_or_default();
-
-    let nixpkgs = pkgs
-        .iter()
-        .map(pkg::Pkg::to_nix_string)
-        .collect::<Vec<String>>()
-        .join(" ");
+    let nixpkgs = phase.nix_pkgs.clone().unwrap_or_default().join(" ");
 
     let libraries = phase.nix_libraries.clone().unwrap_or_default().join(" ");
 
@@ -24,12 +18,7 @@ pub fn create_nix_expression(phase: &Phase) -> String {
         None => "import <nixpkgs>".to_string(),
     };
 
-    let mut overlays: Vec<String> = Vec::new();
-    for pkg in &pkgs {
-        if let Some(overlay) = &pkg.overlay {
-            overlays.push(overlay.to_string());
-        }
-    }
+    let overlays = phase.nix_overlays.clone().unwrap_or_default();
 
     let overlays_string = overlays
         .iter()

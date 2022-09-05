@@ -185,9 +185,9 @@ impl BuildPlan {
 
             if let Some(nix_pkgs) = phase_config.nix_pkgs {
                 phase.nix_pkgs = Some(replace_auto_vec(
-                    nix_pkgs.iter().map(|p| Pkg::new(p)).collect(),
+                    nix_pkgs,
                     &phase.nix_pkgs.clone().unwrap_or_default(),
-                    |p| p.name,
+                    identity,
                 ));
             }
 
@@ -384,15 +384,8 @@ mod test {
         println!("{}", serde_json::to_string_pretty(&plan).unwrap());
 
         assert_eq!(
-            vec!["wget", "cowsay"],
-            plan.get_phase("setup")
-                .unwrap()
-                .nix_pkgs
-                .clone()
-                .unwrap()
-                .iter()
-                .map(|p| p.name.clone())
-                .collect::<Vec<_>>()
+            vec!["wget".to_string(), "cowsay".to_string()],
+            plan.get_phase("setup").unwrap().nix_pkgs.clone().unwrap()
         );
         assert_eq!(
             "yarn run optimize-assets",

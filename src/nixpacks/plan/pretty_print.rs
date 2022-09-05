@@ -156,14 +156,7 @@ impl BuildPlan {
         let nix_pkgs = phase.nix_pkgs.clone().unwrap_or_default();
         let apt_pkgs = phase.apt_pkgs.clone().unwrap_or_default();
         let cmds = phase.cmds.clone().unwrap_or_default();
-        let pkgs = [
-            nix_pkgs
-                .iter()
-                .map(Pkg::to_pretty_string)
-                .collect::<Vec<_>>(),
-            apt_pkgs,
-        ]
-        .concat();
+        let pkgs = [nix_pkgs, apt_pkgs].concat();
 
         let show_label = !pkgs.is_empty() && !cmds.is_empty();
 
