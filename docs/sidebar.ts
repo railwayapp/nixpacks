@@ -39,5 +39,6 @@ export const sidebarItems: ISidebarSection[] = [
   {
     text: "Deploying",
     links: [{ text: "Railway", href: "/docs/deploying/railway" }],
+    links: [{ text: "Easypanel", href: "/docs/deploying/easypanel" }],
   },
 ];
