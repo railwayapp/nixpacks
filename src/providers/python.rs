@@ -436,4 +436,34 @@ mod test {
         )?,);
         Ok(())
     }
+
+    #[test]
+    fn test_django_postgres_detection() -> Result<()> {
+        assert!(PythonProvider::is_using_postgres(
+            &App::new("./examples/python-django",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
+        assert!(!PythonProvider::is_using_postgres(
+            &App::new("./examples/python-django-mysql",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
+        Ok(())
+    }
+
+    #[test]
+    fn test_django_mysql_detection() -> Result<()> {
+        assert!(!PythonProvider::is_using_mysql(
+            &App::new("./examples/python-django",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
+        assert!(PythonProvider::is_using_mysql(
+            &App::new("./examples/python-django-mysql",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
+        Ok(())
+    }
 }
