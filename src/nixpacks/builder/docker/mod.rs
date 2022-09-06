@@ -11,6 +11,7 @@ pub struct DockerBuilderOptions {
     pub quiet: bool,
     pub cache_key: Option<String>,
     pub no_cache: bool,
+    pub inline_cache: bool,
     pub platform: Vec<String>,
     pub current_dir: bool,
 }
