@@ -147,6 +147,7 @@ fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
 }
 
 const POSTGRES_IMAGE: &str = "postgres";
+const MYSQL_IMAGE: &str = "mysql";
 
 struct Network {
     name: String,
@@ -239,6 +240,81 @@ fn run_postgres() -> Container {
                 ("PGDATABASE".to_string(), "postgres".to_string()),
                 ("PGPASSWORD".to_string(), password),
                 ("PGHOST".to_string(), container_name),
+            ]),
+            network: None,
+        }),
+    }
+}
+
+fn run_mysql() -> Container {
+    let mut docker_cmd = Command::new("docker");
+
+    let hash = Uuid::new_v4().to_string();
+    let container_name = format!("mysql-{}", hash);
+    let password = hash;
+    // run
+    docker_cmd.arg("run");
+
+    // Set Needed Envvars
+    docker_cmd
+        .arg("-e")
+        .arg(format!("MYSQL_ROOT_PASSWORD={}", &password))
+        .arg("-e")
+        .arg(format!("MYSQL_PASSWORD={}", &password))
+        .arg("-e")
+        .arg("MYSQL_USER=mysql")
+        .arg("-e")
+        .arg("MYSQL_DATABASE=mysql");
+
+    // Run detached
+    docker_cmd.arg("-d");
+
+    // attach name
+    docker_cmd.arg("--name").arg(container_name.clone());
+
+    // Assign image
+    docker_cmd.arg(MYSQL_IMAGE);
+
+    // Run the command
+    docker_cmd
+        .spawn()
+        .unwrap()
+        .wait()
+        .context("starting mysql")
+        .unwrap();
+
+    // MySQL starts listening for connections after it has initialised its default database
+    // so wait until mysqladmin ping via TCP succeeds (or we timeout)
+    let test_loop = format!("while ! mysqladmin ping --password={} -h localhost --port=3306 --protocol=TCP 2> /dev/null ; do echo 'waiting for mysql'; sleep 1; done", &password);
+    let mut docker_exec_cmd = Command::new("docker");
+    docker_exec_cmd
+        .arg("exec")
+        .arg(container_name.clone())
+        .arg("/bin/sh")
+        .arg("-c")
+        .arg(test_loop);
+
+    let mut child = docker_exec_cmd.spawn().unwrap();
+
+    match child.wait_timeout(Duration::new(30, 0)).unwrap() {
+        Some(_) => (),
+        None => {
+            // timed out waiting for mysql to start - cleanup the test process and the mysql container
+            child.kill().unwrap();
+            stop_and_remove_container(container_name);
+            panic!("mysql failed to start");
+        }
+    };
+
+    Container {
+        name: container_name.clone(),
+        config: Some(Config {
+            environment_variables: EnvironmentVariables::from([
+                ("DB_PORT".to_string(), "3306".to_string()),
+                ("DB_USER".to_string(), "mysql".to_string()),
+                ("DB_NAME".to_string(), "mysql".to_string()),
+                ("DB_PASSWORD".to_string(), password),
+                ("DB_HOST".to_string(), container_name),
             ]),
             network: None,
         }),
@@ -458,6 +534,32 @@ fn test_django() {
     );
 
     // Cleanup containers and networks
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
+
+    assert!(output.contains("Running migrations"));
+}
+
+#[test]
+fn test_django_mysql() {
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    let c = run_mysql();
+    let container_name = c.name.clone();
+
+    attach_container_to_network(n.name, container_name.clone());
+
+    let name = simple_build("./examples/python-django-mysql");
+
+    let output = run_image(
+        &name,
+        Some(Config {
+            environment_variables: c.config.unwrap().environment_variables,
+            network: Some(network_name.clone()),
+        }),
+    );
+
     stop_and_remove_container(container_name);
     remove_network(network_name);
 
