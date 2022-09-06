@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use clap::{arg, Arg, Command};
 use nixpacks::{
     create_docker_image, generate_build_plan,
@@ -11,6 +11,21 @@ use std::{
     string::ToString,
 };
 
+enum PlanFormat {
+    Json,
+    Toml,
+}
+
+impl PlanFormat {
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "json" => Ok(PlanFormat::Json),
+            "toml" => Ok(PlanFormat::Toml),
+            _ => bail!("Invalid plan format"),
+        }
+    }
+}
+
 fn main() -> Result<()> {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -21,7 +36,13 @@ fn main() -> Result<()> {
         .subcommand(
             Command::new("plan")
                 .about("Generate a build plan for an app")
-                .arg(arg!(<PATH> "App source")),
+                .arg(arg!(<PATH> "App source"))
+                .arg(
+                    Arg::new("format")
+                        .short('f')
+                        .takes_value(true)
+                        .help("json|toml. Specify the output format of the plan"),
+                ),
         )
         .subcommand(
             Command::new("build")
@@ -197,10 +218,16 @@ fn main() -> Result<()> {
     match &matches.subcommand() {
         Some(("plan", matches)) => {
             let path = matches.value_of("PATH").expect("required");
+            let format = PlanFormat::from_str(matches.value_of("format").unwrap_or("json"))?;
 
             let plan = generate_build_plan(path, envs, &config)?;
-            let json = serde_json::to_string_pretty(&plan)?;
-            println!("{}", json);
+
+            let plan_s = match format {
+                PlanFormat::Json => serde_json::to_string_pretty(&plan)?,
+                PlanFormat::Toml => toml::to_string_pretty(&plan)?,
+            };
+
+            println!("{}", plan_s);
         }
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").expect("required");

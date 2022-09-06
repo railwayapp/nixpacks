@@ -32,15 +32,11 @@ pub struct GeneratePlanOptions {
 
 pub struct NixpacksBuildPlanGenerator<'a> {
     providers: &'a [&'a dyn Provider],
-    matched_provider: Option<&'a dyn Provider>,
     config: BuildPlan,
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan> {
-        // Match a specific provider
-        self.detect(app, environment)?;
-
         // If the provider defines a build plan in the new format, use that
         let plan = self.get_build_plan(app, environment)?;
 
@@ -53,24 +49,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         providers: &'a [&'a dyn Provider],
         config: BuildPlan,
     ) -> NixpacksBuildPlanGenerator<'a> {
-        NixpacksBuildPlanGenerator {
-            providers,
-            matched_provider: None,
-            config,
-        }
-    }
-
-    /// Match a single provider from the given app and environment.
-    fn detect(&mut self, app: &App, environment: &Environment) -> Result<()> {
-        for &provider in self.providers {
-            let matches = provider.detect(app, environment)?;
-            if matches {
-                self.matched_provider = Some(provider);
-                break;
-            }
-        }
-
-        Ok(())
+        NixpacksBuildPlanGenerator { providers, config }
     }
 
     /// Get a build plan from the provider and by applying the config from the environment
