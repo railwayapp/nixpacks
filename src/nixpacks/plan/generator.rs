@@ -82,16 +82,6 @@ impl NixpacksBuildPlanGenerator<'_> {
         let plan_before_providers =
             BuildPlan::merge_plans(vec![file_plan, env_plan, self.config.clone()]);
 
-        // Merge the config from the CLI flags with the config from the environment variables
-        // The CLI config takes precedence
-        // let config = vec![
-        //     file_config,
-        //     BuildPlan::from_environment(environment),
-        //     self.config.clone(),
-        // ]
-        // .iter()
-        // .fold(BuildPlan::default(), |acc, c| BuildPlan::merge(&acc, c));
-
         let provider_plan =
             self.get_plan_from_providers(plan_before_providers.providers.clone(), app, env)?;
 
@@ -111,9 +101,6 @@ impl NixpacksBuildPlanGenerator<'_> {
         //         build.add_cmd(procfile_release);
         //     }
         // }
-
-        // Merge this config with the build plan config
-        // plan = BuildPlan::apply_config(&plan, &config);
 
         if !env.get_variable_names().is_empty() {
             plan.add_variables(Environment::clone_variables(env));
@@ -233,21 +220,5 @@ impl NixpacksBuildPlanGenerator<'_> {
         } else {
             Ok(None)
         }
-    }
-
-    fn get_nixpacks_env_vars(
-        &self,
-        provider: &dyn Provider,
-        app: &App,
-        env: &Environment,
-    ) -> Result<EnvironmentVariables> {
-        let metadata_string = provider
-            .metadata(app, env)?
-            .join_as_comma_separated(provider.name().to_owned());
-
-        Ok(EnvironmentVariables::from([(
-            NIXPACKS_METADATA.to_string(),
-            metadata_string,
-        )]))
     }
 }
