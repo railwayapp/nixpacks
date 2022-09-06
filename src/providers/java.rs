@@ -25,7 +25,7 @@ impl Provider for JavaProvider {
             || app.includes_file("pom.scala")
             || app.includes_file("pom.yaml")
             || app.includes_file("pom.yml")
-        || app.includes_file("gradlew"))
+            || app.includes_file("gradlew"))
     }
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
@@ -45,7 +45,6 @@ impl Provider for JavaProvider {
             )));
             build.add_cache_directory(".m2/repository");
             build
-    
         };
         let start = StartPhase::new(self.get_start_cmd(app));
 
@@ -65,7 +64,9 @@ impl JavaProvider {
     }
 
     fn get_gradle_exe(&self, app: &App) -> String {
-        if app.includes_file("gradlew") && app.includes_file("gradle/wrapper/gradle-wrapper.properties") {
+        if app.includes_file("gradlew")
+            && app.includes_file("gradle/wrapper/gradle-wrapper.properties")
+        {
             "./gradlew".to_string()
         } else {
             "gradle".to_string()
