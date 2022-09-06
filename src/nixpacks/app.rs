@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::{env, fs, path::PathBuf};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use globset::Glob;
 use regex::Regex;
 use serde::de::DeserializeOwned;
@@ -171,10 +171,7 @@ impl App {
 
     /// Convert an absolute path to a path relative to the app source directory
     pub fn strip_source_path(&self, abs_path: &Path) -> Result<PathBuf> {
-        let source_str = match self.source.to_str() {
-            Some(s) => s,
-            None => bail!("Failed to parse source path"),
-        };
+        let source_str = self.source.to_str().unwrap_or("");
 
         // Strip source path from absolute path
         let stripped = match abs_path.strip_prefix(source_str) {

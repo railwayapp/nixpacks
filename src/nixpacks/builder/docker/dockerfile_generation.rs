@@ -226,13 +226,19 @@ impl BuildPlan {
 impl DockerfileGenerator for StartPhase {
     fn generate_dockerfile(
         &self,
-        _options: &DockerBuilderOptions,
+        options: &DockerBuilderOptions,
         _env: &Environment,
         _output: &OutputDir,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
             Some(cmd) => utils::get_exec_command(cmd),
-            None => bail!("No start command cound be found"),
+            None => {
+                if options.no_error_without_start {
+                    "".to_string()
+                } else {
+                    bail!("No start command could be found")
+                }
+            }
         };
 
         let dockerfile: String = match &self.run_image {

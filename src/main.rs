@@ -91,6 +91,11 @@ fn main() -> Result<()> {
                     Arg::new("no-cache")
                         .long("no-cache")
                         .help("Disable building with the cache"),
+                )
+                .arg(
+                    Arg::new("no-error-without-start")
+                        .long("no-error-without-start")
+                        .help("Do not error when no start command can be found"),
                 ),
         )
         .arg(
@@ -208,6 +213,7 @@ fn main() -> Result<()> {
             let current_dir = matches.is_present("current-dir");
             let mut cache_key = matches.value_of("cache-key").map(ToString::to_string);
             let no_cache = matches.is_present("no-cache");
+            let no_error_without_start = matches.is_present("no-error-without-start");
 
             // Default to absolute `path` of the source that is being built as the cache-key if not disabled
             if !no_cache && cache_key.is_none() {
@@ -241,6 +247,7 @@ fn main() -> Result<()> {
                 platform,
                 print_dockerfile,
                 current_dir,
+                no_error_without_start,
             };
 
             create_docker_image(path, envs, plan_options, build_options)?;
