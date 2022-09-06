@@ -1,4 +1,4 @@
-use super::topological_sort::TopItem;
+use super::{generator::NIXPKGS_ARCHIVE, topological_sort::TopItem};
 use crate::nixpacks::{
     images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
     nix::pkg::Pkg,
@@ -119,12 +119,12 @@ impl Phase {
         // nix_pkgs: pkgs.map(|pkgs| pkgs.iter().map(|pkg| pkg.to_nix_string()).collect()),
         // nix_overlays: pkgs.map(|pkgs| pkgs.iter().filter_map(|pkg| pkg.overlay).collect()),
 
-        self.nix_overlays = Some(add_to_option_vec(
+        self.nix_overlays = Some(add_multiple_to_option_vec(
             self.nix_overlays.clone(),
             new_pkgs
                 .iter()
                 .filter_map(|pkg| pkg.overlay.clone())
-                .collect(),
+                .collect::<Vec<_>>(),
         ));
         self.nix_pkgs = Some(add_multiple_to_option_vec(
             self.nix_pkgs.clone(),
@@ -167,6 +167,12 @@ impl Phase {
 
     pub fn set_nix_archive(&mut self, archive: String) {
         self.nixpacks_archive = Some(archive);
+    }
+
+    pub fn pin(&mut self) {
+        if self.uses_nix() && self.nixpacks_archive.is_none() {
+            self.nixpacks_archive = Some(NIXPKGS_ARCHIVE.to_string());
+        }
     }
 }
 

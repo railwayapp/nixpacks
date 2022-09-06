@@ -2,6 +2,7 @@ use core::fmt;
 use std::{collections::BTreeMap, convert::identity};
 
 use self::{
+    merge::Mergeable,
     phase::{Phase, Phases, StartPhase},
     topological_sort::topological_sort,
 };
@@ -18,6 +19,7 @@ use serde::{Deserialize, Serialize};
 
 // pub mod config;
 pub mod generator;
+pub mod merge;
 pub mod phase;
 pub mod pretty_print;
 mod topological_sort;
@@ -30,6 +32,8 @@ pub trait PlanGenerator {
 #[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct BuildPlan {
+    pub providers: Option<Vec<String>>,
+
     #[serde(rename = "buildImage")]
     pub build_image: Option<String>,
 
@@ -44,10 +48,6 @@ pub struct BuildPlan {
     pub start_phase: Option<StartPhase>,
 }
 
-pub trait Mergeable {
-    fn merge(c1: &Self, c2: &Self) -> Self;
-}
-
 impl BuildPlan {
     pub fn new(phases: Vec<Phase>, start_phase: Option<StartPhase>) -> Self {
         Self {
@@ -56,6 +56,12 @@ impl BuildPlan {
             build_image: Some(DEFAULT_BASE_IMAGE.to_string()),
             ..Default::default()
         }
+    }
+
+    pub fn from_toml<S: Into<String>>(toml: S) -> Result<Self> {
+        let mut plan: BuildPlan = toml::from_str(&toml.into())?;
+        plan.resolve_phase_names();
+        Ok(plan)
     }
 
     pub fn add_phase(&mut self, phase: Phase) {
@@ -233,6 +239,20 @@ impl BuildPlan {
         BuildPlan::new(phases, start)
     }
 
+    pub fn pin(&mut self) {
+        self.resolve_phase_names();
+        let phases = self.phases.get_or_insert(Phases::default());
+        for (_, phase) in phases.iter_mut() {
+            phase.pin();
+        }
+    }
+
+    pub fn merge_plans(plans: Vec<BuildPlan>) -> BuildPlan {
+        plans.iter().fold(BuildPlan::default(), |acc, plan| {
+            BuildPlan::merge(&acc, plan)
+        })
+    }
+
     // Create a new build plan by applying the given configuration
     // pub fn apply_config(plan: &BuildPlan, config: &NixpacksConfig) -> BuildPlan {
     //     let mut new_plan = plan.clone();
@@ -301,102 +321,6 @@ impl BuildPlan {
     // }
 }
 
-impl Mergeable for BuildPlan {
-    fn merge(c1: &BuildPlan, c2: &BuildPlan) -> BuildPlan {
-        // println!("\n\n=== MERGING ===\n");
-        // println!("[c1]:\n{}\n\n", c1.get_build_string().unwrap());
-
-        // println!(
-        //     "[c2]:\n{}\n\n",
-        //     serde_json::to_string_pretty(&c2.clone()).unwrap()
-        // );
-        // println!("[c2]:\n{}\n\n", c2.get_build_string().unwrap());
-
-        let mut new_plan = c1.clone();
-        new_plan.resolve_phase_names();
-        let mut c2 = c2.clone();
-        c2.resolve_phase_names();
-
-        new_plan.build_image = c2.build_image;
-        let static_assets = new_plan
-            .static_assets
-            .get_or_insert(StaticAssets::default());
-        static_assets.extend(c2.static_assets.unwrap_or_default());
-
-        let variables = new_plan
-            .variables
-            .get_or_insert(EnvironmentVariables::default());
-        variables.extend(c2.variables.unwrap_or_default());
-
-        for (name, c2_phase) in c2.phases.clone().unwrap_or_default() {
-            let phase = new_plan.remove_phase(&name);
-            let phase = phase.unwrap_or_else(|| {
-                let mut phase = Phase::new(name.clone());
-                if name == "install" {
-                    phase.depends_on_phase("setup");
-                } else if name == "build" {
-                    phase.depends_on_phase("install");
-                };
-
-                phase
-            });
-
-            let merged_phase = Phase::merge(&phase, &c2_phase);
-            new_plan.add_phase(merged_phase);
-        }
-
-        let new_start_phase = StartPhase::merge(
-            &new_plan.start_phase.clone().unwrap_or_default(),
-            &c2.start_phase.clone().unwrap_or_default(),
-        );
-        new_plan.set_start_phase(new_start_phase);
-
-        // println!("[c3]:\n{}\n\n", new_plan.get_build_string().unwrap());
-        // println!("\n\n=== DONE ===\n");
-
-        new_plan.resolve_phase_names();
-        new_plan
-    }
-}
-
-impl Mergeable for Phase {
-    fn merge(c1: &Phase, c2: &Phase) -> Phase {
-        let mut phase = c1.clone();
-        let c2 = c2.clone();
-        phase.nixpacks_archive = c2
-            .nixpacks_archive
-            .or_else(|| phase.nixpacks_archive.clone());
-
-        phase.cmds = extract_auto_from_vec(phase.cmds.clone(), c2.cmds);
-        phase.depends_on = extract_auto_from_vec(phase.depends_on.clone(), c2.depends_on);
-        phase.nix_pkgs = extract_auto_from_vec(phase.nix_pkgs.clone(), c2.nix_pkgs);
-        phase.nix_libs = extract_auto_from_vec(phase.nix_libs.clone(), c2.nix_libs);
-        phase.apt_pkgs = extract_auto_from_vec(phase.apt_pkgs.clone(), c2.apt_pkgs);
-        phase.nix_overlays = extract_auto_from_vec(phase.nix_overlays.clone(), c2.nix_overlays);
-        phase.only_include_files =
-            extract_auto_from_vec(phase.only_include_files.clone(), c2.only_include_files);
-        phase.cache_directories =
-            extract_auto_from_vec(phase.cache_directories.clone(), c2.cache_directories);
-        phase.paths = extract_auto_from_vec(phase.paths.clone(), c2.paths);
-
-        phase
-    }
-}
-
-impl Mergeable for StartPhase {
-    fn merge(c1: &StartPhase, c2: &StartPhase) -> StartPhase {
-        let mut start_phase = c1.clone();
-        let c2 = c2.clone();
-        start_phase.cmd = c2.cmd.or_else(|| start_phase.cmd.clone());
-        start_phase.run_image = c2.run_image.or_else(|| start_phase.run_image.clone());
-        start_phase.only_include_files = extract_auto_from_vec(
-            start_phase.only_include_files.clone(),
-            c2.only_include_files,
-        );
-        start_phase
-    }
-}
-
 impl topological_sort::TopItem for (String, Phase) {
     fn get_name(&self) -> String {
         self.0.clone()
@@ -410,39 +334,10 @@ impl topological_sort::TopItem for (String, Phase) {
     }
 }
 
-/// Replaces the "..." or "@auto" in the `replacer` with the values from the `original`
-///
-/// ```
-/// let arr = extract_auto_from_vec(Some(vec!["a", "b", "c"]), Some(vec!["x", "...", "z"]))
-/// assert_eq!(Some(vec!["x", "a", "b", "c", "z"]), arr);
-/// ```
-fn extract_auto_from_vec(
-    original: Option<Vec<String>>,
-    replacer: Option<Vec<String>>,
-) -> Option<Vec<String>> {
-    if let Some(replacer) = replacer {
-        let modified = replacer
-            .into_iter()
-            .map(|x| vec![x])
-            .flat_map(|pkgs| {
-                let v = pkgs[0].clone();
-                if v == "@auto" || v == "..." {
-                    original.clone().unwrap_or_default()
-                } else {
-                    pkgs
-                }
-            })
-            .collect::<Vec<_>>();
-
-        Some(modified)
-    } else {
-        original
-    }
-}
-
 impl Default for BuildPlan {
     fn default() -> Self {
         Self {
+            providers: None,
             build_image: Some(DEFAULT_BASE_IMAGE.to_string()),
             phases: Some(Phases::default()),
             start_phase: None,
@@ -479,110 +374,6 @@ mod test {
         assert_eq!(phases[0].get_name(), "setup");
         assert_eq!(phases[1].get_name(), "install");
         assert_eq!(phases[2].get_name(), "build");
-    }
-
-    #[test]
-    fn test_merge_plans() {
-        let plan1 = BuildPlan {
-            phases: Some(Phases::from([
-                (
-                    "setup".to_string(),
-                    Phase {
-                        nix_pkgs: Some(vec!["nodejs".to_string()]),
-                        apt_pkgs: Some(vec!["wget".to_string()]),
-                        ..Default::default()
-                    },
-                ),
-                (
-                    "build".to_string(),
-                    Phase {
-                        cmds: Some(vec!["yarn run build".to_string()]),
-                        ..Default::default()
-                    },
-                ),
-            ])),
-            start_phase: Some(StartPhase {
-                cmd: Some("yarn start1".to_string()),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-
-        let plan2 = BuildPlan {
-            phases: Some(Phases::from([
-                (
-                    "setup".to_string(),
-                    Phase {
-                        nix_pkgs: Some(vec!["...".to_string(), "cowsay".to_string()]),
-                        apt_pkgs: Some(vec!["sl".to_string()]),
-                        ..Default::default()
-                    },
-                ),
-                (
-                    "install".to_string(),
-                    Phase {
-                        cmds: Some(vec!["yarn install".to_string()]),
-                        ..Default::default()
-                    },
-                ),
-                (
-                    "build".to_string(),
-                    Phase {
-                        cmds: Some(vec![
-                            "...".to_string(),
-                            "yarn run optimize-assets".to_string(),
-                        ]),
-                        ..Default::default()
-                    },
-                ),
-            ])),
-            start_phase: Some(StartPhase {
-                cmd: Some("yarn start2".to_string()),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-
-        let mut expected = BuildPlan {
-            phases: Some(Phases::from([
-                (
-                    "setup".to_string(),
-                    Phase {
-                        nix_pkgs: Some(vec!["nodejs".to_string(), "cowsay".to_string()]),
-                        apt_pkgs: Some(vec!["sl".to_string()]),
-                        ..Default::default()
-                    },
-                ),
-                (
-                    "install".to_string(),
-                    Phase {
-                        depends_on: Some(vec!["setup".to_string()]),
-                        cmds: Some(vec!["yarn install".to_string()]),
-                        ..Default::default()
-                    },
-                ),
-                (
-                    "build".to_string(),
-                    Phase {
-                        cmds: Some(vec![
-                            "yarn run build".to_string(),
-                            "yarn run optimize-assets".to_string(),
-                        ]),
-                        ..Default::default()
-                    },
-                ),
-            ])),
-            start_phase: Some(StartPhase {
-                cmd: Some("yarn start2".to_string()),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-        expected.resolve_phase_names();
-
-        let merged = BuildPlan::merge(&plan1, &plan2);
-
-        assert_eq!(expected, merged);
     }
 
     // #[test]

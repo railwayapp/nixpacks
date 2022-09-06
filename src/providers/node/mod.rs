@@ -1,10 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    path::PathBuf,
-};
-
 use self::nx::ProjectJson;
-
 use super::Provider;
 use crate::{
     nixpacks::{
@@ -23,6 +17,10 @@ use anyhow::Result;
 use path_slash::PathExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 mod nx;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
@@ -142,7 +140,7 @@ impl NodeProvider {
     }
 
     pub fn has_script(app: &App, script: &str) -> Result<bool> {
-        let package_json: PackageJson = app.read_json("package.json")?;
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         if let Some(scripts) = package_json.scripts {
             if scripts.get(script).is_some() {
                 return Ok(true);
@@ -186,7 +184,7 @@ impl NodeProvider {
             return Ok(Some(format!("{} run start", package_manager)));
         }
 
-        let package_json: PackageJson = app.read_json("package.json")?;
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         if let Some(main) = package_json.main {
             if app.includes_file(&main) {
                 if package_manager == "bun" {
@@ -290,7 +288,11 @@ impl NodeProvider {
 
     /// Returns the nodejs nix package and the appropriate package manager nix image.
     pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
-        let package_json: PackageJson = app.read_json("package.json")?;
+        let package_json: PackageJson = if app.includes_file("pacakge.json") {
+            app.read_json("package.json")?
+        } else {
+            PackageJson::default()
+        };
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
 
         let pm_pkg: Pkg;

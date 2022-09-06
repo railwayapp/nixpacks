@@ -3,12 +3,12 @@ use crate::{
         app::App,
         environment::{Environment, EnvironmentVariables},
         nix::pkg::Pkg,
-        plan::{BuildPlan, Mergeable, PlanGenerator},
+        plan::{merge::Mergeable, BuildPlan, PlanGenerator},
     },
     providers::Provider,
 };
 use anyhow::{Context, Ok, Result};
-use std::collections::HashMap;
+use std::{collections::HashMap, convert::identity};
 
 // This line is automatically updated.
 // Last Modified: 2022-08-29 17:07:50 UTC+0000
@@ -87,24 +87,55 @@ impl NixpacksBuildPlanGenerator<'_> {
         // .fold(BuildPlan::default(), |acc, c| BuildPlan::merge(&acc, c));
 
         let env_plan = BuildPlan::from_environment(environment);
+        let plan_before_providers =
+            BuildPlan::merge_plans(vec![file_plan, env_plan, self.config.clone()]);
 
-        let mut provider_plan = BuildPlan::default();
-        if let Some(provider) = self.matched_provider {
-            if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
-                provider_plan = provider_build_plan;
-                provider_plan.add_variables(self.get_nixpacks_env_vars(
-                    provider,
-                    app,
-                    environment,
-                )?);
+        println!(
+            "plan_before_providers:\n {}",
+            serde_json::to_string_pretty(&plan_before_providers).unwrap()
+        );
+
+        let provider_plan = match (
+            plan_before_providers.providers.clone(),
+            self.matched_provider,
+        ) {
+            (Some(provider_names), _) => {
+                // Get all the plans from the providers and merge them together
+                let providers_to_run = self
+                    .providers
+                    .iter()
+                    .filter(|p| provider_names.contains(&p.name().to_string()))
+                    .collect::<Vec<_>>();
+
+                let provider_plans = providers_to_run
+                    .iter()
+                    .map(|provider| {
+                        println!("RUNNING PROVIDER: {}", provider.name());
+                        provider.get_build_plan(app, environment)
+                    })
+                    .collect::<Result<Vec<_>>>()?
+                    .iter()
+                    .filter_map(|plan| plan.clone())
+                    .collect::<Vec<_>>();
+
+                // TODO: Should not merge here. Should prefix all phases from non-first items
+
+                BuildPlan::merge_plans(provider_plans)
             }
-        }
+            (None, Some(provider)) => {
+                if let Some(mut plan) = provider.get_build_plan(app, environment)? {
+                    plan.add_variables(self.get_nixpacks_env_vars(provider, app, environment)?);
+                    plan
+                } else {
+                    BuildPlan::default()
+                }
+            }
+            (None, None) => BuildPlan::default(),
+        };
 
-        let mut plan = vec![provider_plan, file_plan, env_plan, self.config.clone()]
-            .iter()
-            .fold(BuildPlan::default(), |acc, plan| {
-                BuildPlan::merge(&acc, plan)
-            });
+        let mut plan = BuildPlan::merge_plans(vec![provider_plan, plan_before_providers]);
+
+        println!("{}", serde_json::to_string_pretty(&plan).unwrap());
 
         // The Procfile start command has precedence over the provider's start command
         // TODO: Make Procfile a provider
