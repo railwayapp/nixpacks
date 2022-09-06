@@ -96,6 +96,11 @@ fn main() -> Result<()> {
                     Arg::new("inline-cache")
                         .long("inline-cache")
                         .help("Enable writing cache metadata into the output image"),
+                )
+                .arg(
+                    Arg::new("cache-from")
+                        .long("cache-from")
+                        .help("Image to consider as cache sources"),
                 ),
         )
         .arg(
@@ -214,6 +219,7 @@ fn main() -> Result<()> {
             let mut cache_key = matches.value_of("cache-key").map(ToString::to_string);
             let no_cache = matches.is_present("no-cache");
             let inline_cache = matches.is_present("inline-cache");
+            let cache_from = matches.value_of("cache-from").map(ToString::to_string);
 
             // Default to absolute `path` of the source that is being built as the cache-key if not disabled
             if !no_cache && cache_key.is_none() {
@@ -248,6 +254,7 @@ fn main() -> Result<()> {
                 print_dockerfile,
                 current_dir,
                 inline_cache,
+                cache_from,
             };
 
             create_docker_image(path, envs, plan_options, build_options)?;

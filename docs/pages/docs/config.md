@@ -37,3 +37,5 @@ The default cache identifier is a hash of the absolute path to the directory bei
 Caching can be disabled entirely by passing `--no-cache`.
 
 Passing`--inline-cache` will write cache metadata into the output image.
+
+Using previous image -created with inline cache enabled- as a cache source, Can be achieved by passing `--cache-from`
