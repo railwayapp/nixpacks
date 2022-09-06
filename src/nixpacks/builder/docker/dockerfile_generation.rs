@@ -8,7 +8,7 @@ use crate::nixpacks::{
         BuildPlan,
     },
 };
-use anyhow::{Context, Ok, Result, bail};
+use anyhow::{bail, Context, Ok, Result};
 use indoc::formatdoc;
 use path_slash::PathBufExt;
 use std::{
