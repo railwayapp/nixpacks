@@ -91,11 +91,6 @@ fn main() -> Result<()> {
                     Arg::new("no-cache")
                         .long("no-cache")
                         .help("Disable building with the cache"),
-                )
-                .arg(
-                    Arg::new("no-error-without-start")
-                        .long("no-error-without-start")
-                        .help("Do not error when no start command can be found"),
                 ),
         )
         .arg(
@@ -162,6 +157,12 @@ fn main() -> Result<()> {
                 .multiple_values(true)
                 .global(true),
         )
+        .arg(
+            Arg::new("no-error-without-start")
+                .long("no-error-without-start")
+                .help("Do not error when no start command can be found")
+                .global(true),
+        )
         .get_matches();
 
     let install_cmd = matches.value_of("install_cmd").map(|s| vec![s.to_string()]);
@@ -186,6 +187,7 @@ fn main() -> Result<()> {
         Some(envs) => envs.collect(),
         None => Vec::new(),
     };
+    let no_error_without_start = matches.is_present("no-error-without-start");
 
     let plan_options = &GeneratePlanConfig {
         custom_install_cmd: install_cmd,
@@ -195,6 +197,7 @@ fn main() -> Result<()> {
         custom_libs: libs,
         custom_apt_pkgs: apt_pkgs,
         pin_pkgs,
+        no_error_without_start,
         ..Default::default()
     };
 
@@ -213,7 +216,6 @@ fn main() -> Result<()> {
             let current_dir = matches.is_present("current-dir");
             let mut cache_key = matches.value_of("cache-key").map(ToString::to_string);
             let no_cache = matches.is_present("no-cache");
-            let no_error_without_start = matches.is_present("no-error-without-start");
 
             // Default to absolute `path` of the source that is being built as the cache-key if not disabled
             if !no_cache && cache_key.is_none() {
@@ -247,7 +249,6 @@ fn main() -> Result<()> {
                 platform,
                 print_dockerfile,
                 current_dir,
-                no_error_without_start,
             };
 
             create_docker_image(path, envs, plan_options, build_options)?;

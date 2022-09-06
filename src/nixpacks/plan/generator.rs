@@ -7,7 +7,7 @@ use crate::{
     },
     providers::Provider,
 };
-use anyhow::{Context, Ok, Result};
+use anyhow::{bail, Context, Ok, Result};
 use std::collections::HashMap;
 
 // This line is automatically updated.
@@ -107,6 +107,12 @@ impl NixpacksBuildPlanGenerator<'_> {
 
         if !environment.get_variable_names().is_empty() {
             plan.add_variables(Environment::clone_variables(environment));
+        }
+
+        if let Some(ref phase) = plan.start_phase {
+            if phase.cmd.is_none() && !self.config.no_error_without_start {
+                bail!("No start command could be found")
+            }
         }
 
         Ok(plan)

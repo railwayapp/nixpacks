@@ -8,7 +8,7 @@ use crate::nixpacks::{
         BuildPlan,
     },
 };
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::{Context, Ok, Result};
 use indoc::formatdoc;
 use path_slash::PathBufExt;
 use std::{
@@ -226,19 +226,13 @@ impl BuildPlan {
 impl DockerfileGenerator for StartPhase {
     fn generate_dockerfile(
         &self,
-        options: &DockerBuilderOptions,
+        _options: &DockerBuilderOptions,
         _env: &Environment,
         _output: &OutputDir,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
             Some(cmd) => utils::get_exec_command(cmd),
-            None => {
-                if options.no_error_without_start {
-                    "".to_string()
-                } else {
-                    bail!("No start command could be found")
-                }
-            }
+            None => "".to_string(),
         };
 
         let dockerfile: String = match &self.run_image {
