@@ -2,7 +2,6 @@ use super::{
     phase::{Phase, StartPhase},
     BuildPlan,
 };
-use crate::nixpacks::{app::StaticAssets, environment::EnvironmentVariables};
 
 pub trait Mergeable {
     fn merge(c1: &Self, c2: &Self) -> Self;
@@ -10,15 +9,6 @@ pub trait Mergeable {
 
 impl Mergeable for BuildPlan {
     fn merge(c1: &BuildPlan, c2: &BuildPlan) -> BuildPlan {
-        // println!("\n\n=== MERGING ===\n");
-        // println!("[c1]:\n{}\n\n", c1.get_build_string().unwrap());
-
-        // println!(
-        //     "[c2]:\n{}\n\n",
-        //     serde_json::to_string_pretty(&c2.clone()).unwrap()
-        // );
-        // println!("[c2]:\n{}\n\n", c2.get_build_string().unwrap());
-
         let mut new_plan = c1.clone();
         let plan2 = c2.clone();
 
@@ -70,9 +60,6 @@ impl Mergeable for BuildPlan {
             (s, None) => s,
             (Some(s1), Some(s2)) => Some(StartPhase::merge(&s1, &s2)),
         };
-
-        // println!("[c3]:\n{}\n\n", new_plan.get_build_string().unwrap());
-        // println!("\n\n=== DONE ===\n");
 
         new_plan.resolve_phase_names();
         new_plan
@@ -152,26 +139,12 @@ fn fill_auto_in_vec(
     }
 }
 
-/// Removes all the `"..."`'s or `"@auto"`'s from the `original`
-fn remove_autos_from_vec(original: Vec<String>) -> Vec<String> {
-    original
-        .into_iter()
-        .filter(|x| x != "@auto" && x != "...")
-        .collect::<Vec<_>>()
-}
-
 #[cfg(test)]
 mod test {
-    use crate::nixpacks::plan::phase::Phases;
-
     use super::*;
 
     fn vso(v: Vec<&str>) -> Option<Vec<String>> {
         Some(v.into_iter().map(|x| x.to_string()).collect())
-    }
-
-    fn vs(v: Vec<&str>) -> Vec<String> {
-        v.into_iter().map(|x| x.to_string()).collect()
     }
 
     #[test]
@@ -289,124 +262,4 @@ mod test {
             fill_auto_in_vec(vso(vec!["a", "b", "c"]), vso(vec!["x", "...", "z"])).unwrap()
         );
     }
-
-    #[test]
-    fn test_remove_autos_from_vec() {
-        assert_eq!(
-            vs(vec!["a", "b", "c"]),
-            remove_autos_from_vec(vs(vec!["a", "b", "c"]))
-        );
-        assert_eq!(
-            vs(vec!["a", "c"]),
-            remove_autos_from_vec(vs(vec!["a", "...", "c"]))
-        );
-        assert_eq!(
-            vs(vec!["a", "c"]),
-            remove_autos_from_vec(vs(vec!["@auto", "a", "...", "c", "@auto"]))
-        );
-    }
-
-    // #[test]
-    // fn test_merge_plans() {
-    //     let plan1 = BuildPlan {
-    //         phases: Some(Phases::from([
-    //             (
-    //                 "setup".to_string(),
-    //                 Phase {
-    //                     nix_pkgs: Some(vec!["nodejs".to_string()]),
-    //                     apt_pkgs: Some(vec!["wget".to_string()]),
-    //                     ..Default::default()
-    //                 },
-    //             ),
-    //             (
-    //                 "build".to_string(),
-    //                 Phase {
-    //                     cmds: Some(vec!["yarn run build".to_string()]),
-    //                     ..Default::default()
-    //                 },
-    //             ),
-    //         ])),
-    //         start_phase: Some(StartPhase {
-    //             cmd: Some("yarn start1".to_string()),
-    //             ..Default::default()
-    //         }),
-    //         ..Default::default()
-    //     };
-
-    //     let plan2 = BuildPlan {
-    //         phases: Some(Phases::from([
-    //             (
-    //                 "setup".to_string(),
-    //                 Phase {
-    //                     nix_pkgs: Some(vec!["...".to_string(), "cowsay".to_string()]),
-    //                     apt_pkgs: Some(vec!["sl".to_string()]),
-    //                     ..Default::default()
-    //                 },
-    //             ),
-    //             (
-    //                 "install".to_string(),
-    //                 Phase {
-    //                     cmds: Some(vec!["yarn install".to_string()]),
-    //                     ..Default::default()
-    //                 },
-    //             ),
-    //             (
-    //                 "build".to_string(),
-    //                 Phase {
-    //                     cmds: Some(vec![
-    //                         "...".to_string(),
-    //                         "yarn run optimize-assets".to_string(),
-    //                     ]),
-    //                     ..Default::default()
-    //                 },
-    //             ),
-    //         ])),
-    //         start_phase: Some(StartPhase {
-    //             cmd: Some("yarn start2".to_string()),
-    //             ..Default::default()
-    //         }),
-    //         ..Default::default()
-    //     };
-
-    //     let mut expected = BuildPlan {
-    //         phases: Some(Phases::from([
-    //             (
-    //                 "setup".to_string(),
-    //                 Phase {
-    //                     nix_pkgs: Some(vec!["nodejs".to_string(), "cowsay".to_string()]),
-    //                     apt_pkgs: Some(vec!["sl".to_string()]),
-    //                     ..Default::default()
-    //                 },
-    //             ),
-    //             (
-    //                 "install".to_string(),
-    //                 Phase {
-    //                     depends_on: Some(vec!["setup".to_string()]),
-    //                     cmds: Some(vec!["yarn install".to_string()]),
-    //                     ..Default::default()
-    //                 },
-    //             ),
-    //             (
-    //                 "build".to_string(),
-    //                 Phase {
-    //                     cmds: Some(vec![
-    //                         "yarn run build".to_string(),
-    //                         "yarn run optimize-assets".to_string(),
-    //                     ]),
-    //                     ..Default::default()
-    //                 },
-    //             ),
-    //         ])),
-    //         start_phase: Some(StartPhase {
-    //             cmd: Some("yarn start2".to_string()),
-    //             ..Default::default()
-    //         }),
-    //         ..Default::default()
-    //     };
-    //     expected.resolve_phase_names();
-
-    //     let merged = BuildPlan::merge(&plan1, &plan2);
-
-    //     assert_eq!(expected, merged);
-    // }
 }

@@ -3,12 +3,14 @@ use crate::{
         app::App,
         environment::{Environment, EnvironmentVariables},
         nix::pkg::Pkg,
-        plan::{merge::Mergeable, BuildPlan, PlanGenerator},
+        plan::{BuildPlan, PlanGenerator},
     },
     providers::Provider,
 };
-use anyhow::{Context, Ok, Result};
-use std::{collections::HashMap, convert::identity};
+use anyhow::{bail, Context, Ok, Result};
+use std::collections::HashMap;
+
+use super::merge::Mergeable;
 
 // This line is automatically updated.
 // Last Modified: 2022-08-29 17:07:50 UTC+0000
@@ -72,9 +74,13 @@ impl NixpacksBuildPlanGenerator<'_> {
     }
 
     /// Get a build plan from the provider and by applying the config from the environment
-    fn get_build_plan(&self, app: &App, environment: &Environment) -> Result<BuildPlan> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
         // Get a build plan from the filesystem if it exists
         let file_plan = self.read_file_plan(app)?;
+
+        let env_plan = BuildPlan::from_environment(env);
+        let plan_before_providers =
+            BuildPlan::merge_plans(vec![file_plan, env_plan, self.config.clone()]);
 
         // Merge the config from the CLI flags with the config from the environment variables
         // The CLI config takes precedence
@@ -86,56 +92,10 @@ impl NixpacksBuildPlanGenerator<'_> {
         // .iter()
         // .fold(BuildPlan::default(), |acc, c| BuildPlan::merge(&acc, c));
 
-        let env_plan = BuildPlan::from_environment(environment);
-        let plan_before_providers =
-            BuildPlan::merge_plans(vec![file_plan, env_plan, self.config.clone()]);
-
-        println!(
-            "plan_before_providers:\n {}",
-            serde_json::to_string_pretty(&plan_before_providers).unwrap()
-        );
-
-        let provider_plan = match (
-            plan_before_providers.providers.clone(),
-            self.matched_provider,
-        ) {
-            (Some(provider_names), _) => {
-                // Get all the plans from the providers and merge them together
-                let providers_to_run = self
-                    .providers
-                    .iter()
-                    .filter(|p| provider_names.contains(&p.name().to_string()))
-                    .collect::<Vec<_>>();
-
-                let provider_plans = providers_to_run
-                    .iter()
-                    .map(|provider| {
-                        println!("RUNNING PROVIDER: {}", provider.name());
-                        provider.get_build_plan(app, environment)
-                    })
-                    .collect::<Result<Vec<_>>>()?
-                    .iter()
-                    .filter_map(|plan| plan.clone())
-                    .collect::<Vec<_>>();
-
-                // TODO: Should not merge here. Should prefix all phases from non-first items
-
-                BuildPlan::merge_plans(provider_plans)
-            }
-            (None, Some(provider)) => {
-                if let Some(mut plan) = provider.get_build_plan(app, environment)? {
-                    plan.add_variables(self.get_nixpacks_env_vars(provider, app, environment)?);
-                    plan
-                } else {
-                    BuildPlan::default()
-                }
-            }
-            (None, None) => BuildPlan::default(),
-        };
+        let provider_plan =
+            self.get_plan_from_providers(plan_before_providers.providers.clone(), app, env)?;
 
         let mut plan = BuildPlan::merge_plans(vec![provider_plan, plan_before_providers]);
-
-        println!("{}", serde_json::to_string_pretty(&plan).unwrap());
 
         // The Procfile start command has precedence over the provider's start command
         // TODO: Make Procfile a provider
@@ -155,9 +115,74 @@ impl NixpacksBuildPlanGenerator<'_> {
         // Merge this config with the build plan config
         // plan = BuildPlan::apply_config(&plan, &config);
 
-        if !environment.get_variable_names().is_empty() {
-            plan.add_variables(Environment::clone_variables(environment));
+        if !env.get_variable_names().is_empty() {
+            plan.add_variables(Environment::clone_variables(env));
         }
+
+        plan.pin();
+
+        Ok(plan)
+    }
+
+    fn get_auto_providers(&self, app: &App, env: &Environment) -> Result<Vec<String>> {
+        let mut providers = Vec::new();
+
+        for provider in self.providers {
+            if provider.detect(app, env)? {
+                providers.push(provider.name().to_string());
+
+                // Only match a single provider... for now
+                break;
+            }
+        }
+
+        Ok(providers)
+    }
+
+    fn get_plan_from_providers(
+        &self,
+        provider_names: Option<Vec<String>>,
+        app: &App,
+        env: &Environment,
+    ) -> Result<BuildPlan> {
+        let provider_names = if let Some(provider_names) = provider_names {
+            provider_names
+        } else {
+            self.get_auto_providers(app, env)?
+        };
+
+        let mut plan = BuildPlan::default();
+        let mut count = 0;
+
+        let mut metadata = Vec::new();
+
+        for name in provider_names {
+            let provider = self.providers.iter().find(|p| p.name() == name);
+            if let Some(provider) = provider {
+                if let Some(mut provider_plan) = provider.get_build_plan(app, env)? {
+                    // All but the first provider have their phases prefixed with their name
+                    if count > 0 {
+                        provider_plan.prefix_phases(provider.name());
+                    }
+
+                    let metadata_string = provider
+                        .metadata(app, env)?
+                        .join_as_comma_separated(provider.name().to_owned());
+                    metadata.push(metadata_string);
+
+                    plan = BuildPlan::merge(&plan, &provider_plan);
+                }
+            } else {
+                bail!("Provider {} not found", name);
+            }
+
+            count += 1;
+        }
+
+        plan.add_variables(EnvironmentVariables::from([(
+            NIXPACKS_METADATA.to_string(),
+            metadata.join(","),
+        )]));
 
         Ok(plan)
     }

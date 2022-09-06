@@ -1,5 +1,5 @@
 use super::{phase::Phase, BuildPlan};
-use crate::nixpacks::{nix::pkg::Pkg, NIX_PACKS_VERSION};
+use crate::nixpacks::NIX_PACKS_VERSION;
 use anyhow::Result;
 use colored::Colorize;
 use indoc::formatdoc;
@@ -112,7 +112,7 @@ impl BuildPlan {
             .into_iter()
             .map(|(name, content)| {
                 print_row(
-                    uppercase_first_letter(name.as_str()).as_str(),
+                    name.as_str(),
                     content.as_str(),
                     edge.as_str(),
                     middle_padding.as_str(),
