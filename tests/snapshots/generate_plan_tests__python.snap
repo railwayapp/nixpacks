@@ -6,7 +6,8 @@ expression: plan
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
   "variables": {
-    "NIXPACKS_METADATA": "python"
+    "NIXPACKS_METADATA": "python",
+    "PYTHONUNBUFFERED": "1"
   },
   "phases": [
     {
