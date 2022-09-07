@@ -116,6 +116,16 @@ impl DockerImageBuilder {
             docker_build_cmd.arg("--no-cache");
         }
 
+        if let Some(value) = &self.options.cache_from {
+            docker_build_cmd.arg("--cache-from").arg(value);
+        }
+
+        if self.options.inline_cache {
+            docker_build_cmd
+                .arg("--build-arg")
+                .arg("BUILDKIT_INLINE_CACHE=1");
+        }
+
         // Add build environment variables
         for (name, value) in &plan.variables.clone().unwrap_or_default() {
             docker_build_cmd
