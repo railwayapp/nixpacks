@@ -19,10 +19,10 @@ expression: plan
       "name": "setup",
       "nixPackages": [
         {
-          "name": "maven"
+          "name": "jdk"
         },
         {
-          "name": "jdk"
+          "name": "maven"
         }
       ]
     },
@@ -33,6 +33,9 @@ expression: plan
       ],
       "commands": [
         "mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install"
+      ],
+      "cacheDirectories": [
+        ".m2/repository"
       ]
     }
   ],

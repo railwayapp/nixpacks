@@ -24,17 +24,28 @@ impl Provider for JavaProvider {
             || app.includes_file("pom.rb")
             || app.includes_file("pom.scala")
             || app.includes_file("pom.yaml")
-            || app.includes_file("pom.yml"))
+            || app.includes_file("pom.yml")
+            || app.includes_file("gradlew"))
     }
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
-        let setup = Phase::setup(Some(vec![Pkg::new("maven"), Pkg::new("jdk")]));
+        let mut setup = Phase::setup(Some(vec![Pkg::new("jdk")]));
 
-        let mvn_exe = self.get_maven_exe(app);
-        let build = Phase::build(Some(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
-            mvn_exe=mvn_exe
-        )));
-
+        let build = if self.is_using_gradle(app) {
+            setup.add_nix_pkgs(vec![Pkg::new("gradle")]);
+            let gradle_exe = self.get_gradle_exe(app);
+            let mut build = Phase::build(Some(format!("{} build", gradle_exe)));
+            build.add_cache_directory(".gradle");
+            build
+        } else {
+            setup.add_nix_pkgs(vec![Pkg::new("maven")]);
+            let mvn_exe = self.get_maven_exe(app);
+            let mut build = Phase::build(Some(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
+                mvn_exe=mvn_exe
+            )));
+            build.add_cache_directory(".m2/repository");
+            build
+        };
         let start = StartPhase::new(self.get_start_cmd(app));
 
         let plan = BuildPlan::new(vec![setup, build], Some(start));
@@ -52,8 +63,20 @@ impl JavaProvider {
         }
     }
 
+    fn get_gradle_exe(&self, app: &App) -> String {
+        if app.includes_file("gradlew")
+            && app.includes_file("gradle/wrapper/gradle-wrapper.properties")
+        {
+            "./gradlew".to_string()
+        } else {
+            "gradle".to_string()
+        }
+    }
+
     fn get_start_cmd(&self, app: &App) -> String {
-        if app.includes_file("pom.xml") {
+        if self.is_using_gradle(app) {
+            "java -jar build/libs/*.jar".to_string()
+        } else if app.includes_file("pom.xml") {
             format!(
                 "java {} $JAVA_OPTS -jar target/*jar",
                 self.get_port_config(app)
@@ -62,6 +85,11 @@ impl JavaProvider {
             "java $JAVA_OPTS -jar target/*jar".to_string()
         }
     }
+
+    fn is_using_gradle(&self, app: &App) -> bool {
+        app.includes_file("gradlew")
+    }
+
     fn get_port_config(&self, app: &App) -> String {
         let pom_file = app.read_file("pom.xml").unwrap_or_default();
         if pom_file.contains("<groupId>org.wildfly.swarm") {

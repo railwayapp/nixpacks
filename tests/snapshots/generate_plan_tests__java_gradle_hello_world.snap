@@ -22,7 +22,7 @@ expression: plan
           "name": "jdk"
         },
         {
-          "name": "maven"
+          "name": "gradle"
         }
       ]
     },
@@ -32,14 +32,14 @@ expression: plan
         "install"
       ],
       "commands": [
-        "./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install"
+        "./gradlew build"
       ],
       "cacheDirectories": [
-        ".m2/repository"
+        ".gradle"
       ]
     }
   ],
   "startPhase": {
-    "cmd": "java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar"
+    "cmd": "java -jar build/libs/*.jar"
   }
 }
