@@ -5,6 +5,9 @@ expression: plan
 {
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_START_CMD": "./start.sh"
+  },
   "phases": [
     {
       "name": "setup"
@@ -22,5 +25,7 @@ expression: plan
       ]
     }
   ],
-  "startPhase": {}
+  "startPhase": {
+    "cmd": "./start.sh"
+  }
 }
