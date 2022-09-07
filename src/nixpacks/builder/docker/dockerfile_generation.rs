@@ -308,7 +308,7 @@ impl DockerfileGenerator for Phase {
                 .to_slash()
                 .context("Failed to convert nix file path to slash path.")?;
             format!(
-                "COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path}",
+                "COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path} && nix-collect-garbage -d",
                 nix_file_path = nix_file_path
             )
         } else {
