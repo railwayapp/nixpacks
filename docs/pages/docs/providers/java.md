@@ -14,18 +14,43 @@ Skipped
 
 ## Build
 
-If maven is found: 
+If Maven is found: 
 ```
 /bin/maven -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install
 ```
 
-If gradle is found:
+If Gradle is found:
 ```
 ./gradlew build
 ```
 
 ## Start
 
+If Maven is found: 
 ```
-{start_command_from_pom.*}
+java $JAVA_OPTS -jar target/*jar
+```
+
+
+If Maven and Wildfly Swarm is found: 
+```
+java -Dswarm.http.port=$PORT $JAVA_OPTS -jar target/*jar
+```
+
+
+If Maven and Spring Boot is found: 
+```
+java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar
+```
+
+
+If Gradle is found:
+```
+java $JAVA_OPTS -jar build/libs/*.jar
+```
+
+
+If Gradle and Spring Boot is found:
+```
+java $JAVA_OPTS -jar -Dserver.port=$PORT" build/libs/*.jar
 ```
