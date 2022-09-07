@@ -145,10 +145,12 @@ impl NixpacksBuildPlanGenerator<'_> {
             count += 1;
         }
 
-        plan.add_variables(EnvironmentVariables::from([(
-            NIXPACKS_METADATA.to_string(),
-            metadata.join(","),
-        )]));
+        if count > 0 {
+            plan.add_variables(EnvironmentVariables::from([(
+                NIXPACKS_METADATA.to_string(),
+                metadata.join(","),
+            )]));
+        }
 
         Ok(plan)
     }

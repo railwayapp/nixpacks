@@ -181,17 +181,17 @@ impl Phase {
     pub fn pin(&mut self) {
         if self.uses_nix() && self.nixpacks_archive.is_none() {
             self.nixpacks_archive = Some(NIXPKGS_ARCHIVE.to_string());
-
-            self.cmds = pin_option_vec(&self.cmds);
-            self.depends_on = pin_option_vec(&self.depends_on);
-            self.nix_pkgs = pin_option_vec(&self.nix_pkgs);
-            self.nix_libs = pin_option_vec(&self.nix_libs);
-            self.apt_pkgs = pin_option_vec(&self.apt_pkgs);
-            self.nix_overlays = pin_option_vec(&self.nix_overlays);
-            self.only_include_files = pin_option_vec(&self.only_include_files);
-            self.cache_directories = pin_option_vec(&self.cache_directories);
-            self.paths = pin_option_vec(&self.paths);
         }
+
+        self.cmds = pin_option_vec(&self.cmds);
+        self.depends_on = pin_option_vec(&self.depends_on);
+        self.nix_pkgs = pin_option_vec(&self.nix_pkgs);
+        self.nix_libs = pin_option_vec(&self.nix_libs);
+        self.apt_pkgs = pin_option_vec(&self.apt_pkgs);
+        self.nix_overlays = pin_option_vec(&self.nix_overlays);
+        self.only_include_files = pin_option_vec(&self.only_include_files);
+        self.cache_directories = pin_option_vec(&self.cache_directories);
+        self.paths = pin_option_vec(&self.paths);
     }
 }
 
