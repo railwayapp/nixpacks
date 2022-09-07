@@ -19,10 +19,10 @@ expression: plan
       "name": "setup",
       "nixPackages": [
         {
-          "name": "jdk"
+          "name": "jdk11"
         },
         {
-          "name": "gradle"
+          "name": "gradle_6"
         }
       ]
     },
@@ -40,6 +40,6 @@ expression: plan
     }
   ],
   "startPhase": {
-    "cmd": "java $JAVA_OPTS -jar  build/libs/*.jar"
+    "cmd": "java $JAVA_OPTS -jar -Dserver.port=$PORT build/libs/*.jar"
   }
 }
