@@ -61,6 +61,11 @@ impl Provider for PythonProvider {
             plan.set_start_phase(start);
         }
 
+        plan.add_variables(EnvironmentVariables::from([(
+            "PYTHONUNBUFFERED".to_owned(),
+            "1".to_owned(),
+        )]));
+
         if app.includes_file("poetry.lock") {
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),

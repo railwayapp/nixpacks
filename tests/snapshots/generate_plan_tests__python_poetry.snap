@@ -7,7 +7,8 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "python,poetry",
-    "NIXPACKS_POETRY_VERSION": "1.1.13"
+    "NIXPACKS_POETRY_VERSION": "1.1.13",
+    "PYTHONUNBUFFERED": "1"
   },
   "phases": [
     {

@@ -6,7 +6,8 @@ expression: plan
   "nixpacksVersion": "[version]",
   "buildImage": "[build_image]",
   "variables": {
-    "NIXPACKS_METADATA": "python,django,postgres"
+    "NIXPACKS_METADATA": "python,django,postgres",
+    "PYTHONUNBUFFERED": "1"
   },
   "phases": [
     {
