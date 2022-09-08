@@ -67,7 +67,7 @@ impl NixpacksBuildPlanGenerator<'_> {
             .unwrap_or_default();
 
         let mut plan =
-            BuildPlan::merge_plans(&vec![provider_plan, plan_before_providers, procfile_plan]);
+            BuildPlan::merge_plans(&vec![provider_plan, procfile_plan, plan_before_providers]);
 
         if !env.get_variable_names().is_empty() {
             plan.add_variables(Environment::clone_variables(env));
