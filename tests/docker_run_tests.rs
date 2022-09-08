@@ -2,18 +2,13 @@ use anyhow::Context;
 use nixpacks::{
     create_docker_image,
     nixpacks::{
-        builder::docker::DockerBuilderOptions,
-        environment::EnvironmentVariables,
-        plan::{
-            generator::GeneratePlanOptions,
-        },
+        builder::docker::DockerBuilderOptions, environment::EnvironmentVariables,
+        plan::generator::GeneratePlanOptions,
     },
 };
+use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 use std::time::Duration;
-use std::{
-    io::{BufRead, BufReader},
-};
 use uuid::Uuid;
 use wait_timeout::ChildExt;
 
