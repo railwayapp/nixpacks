@@ -18,7 +18,7 @@ expression: plan
         "install"
       ],
       "cmds": [
-        "echo building"
+        "yarn run build"
       ],
       "cacheDirectories": [
         "node_modules/.cache"
