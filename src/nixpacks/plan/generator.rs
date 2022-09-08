@@ -105,6 +105,10 @@ impl NixpacksBuildPlanGenerator<'_> {
             self.get_auto_providers(app, env)?
         };
 
+        if provider_names.len() > 1 {
+            bail!("Only a single provider is supported at this time");
+        }
+
         let mut plan = BuildPlan::default();
         let mut count = 0;
 
