@@ -83,6 +83,7 @@ impl RustProvider {
         let mut build = Phase::build(None);
 
         build.add_cmd("mkdir -p bin");
+        build.depends_on = Some(vec!["setup".to_string()]);
 
         let mut build_cmd = "cargo build --release".to_string();
 
