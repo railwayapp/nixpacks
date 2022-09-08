@@ -1,0 +1,11 @@
+{
+  "phases": {
+    "setup": {
+      "name": "setup",
+      "nixPkgs": ["cowsay"]
+    }
+  },
+  "start": {
+    "cmd": "not the start command"
+  }
+}

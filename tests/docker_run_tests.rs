@@ -5,15 +5,13 @@ use nixpacks::{
         builder::docker::DockerBuilderOptions,
         environment::EnvironmentVariables,
         plan::{
-            phase::{Phase, StartPhase},
-            BuildPlan,
+            generator::GeneratePlanOptions,
         },
     },
 };
 use std::process::{Command, Stdio};
 use std::time::Duration;
 use std::{
-    collections::BTreeMap,
     io::{BufRead, BufReader},
 };
 use uuid::Uuid;
@@ -118,10 +116,7 @@ fn simple_build(path: &str) -> String {
     create_docker_image(
         path,
         Vec::new(),
-        &BuildPlan {
-            // pin_pkgs: Some(true),
-            ..Default::default()
-        },
+        &GeneratePlanOptions::default(),
         &DockerBuilderOptions {
             name: Some(name.clone()),
             quiet: true,
@@ -138,10 +133,7 @@ fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
     create_docker_image(
         path,
         env_vars,
-        &BuildPlan {
-            // pin_pkgs: Some(true),
-            ..Default::default()
-        },
+        &GeneratePlanOptions::default(),
         &DockerBuilderOptions {
             name: Some(name.clone()),
             quiet: true,
@@ -593,10 +585,7 @@ fn test_rust_custom_version() {
     create_docker_image(
         "./examples/rust-custom-version",
         vec!["NIXPACKS_NO_MUSL=1"],
-        &BuildPlan {
-            // pin_pkgs: Some(true),
-            ..Default::default()
-        },
+        &GeneratePlanOptions::default(),
         &DockerBuilderOptions {
             name: Some(name.clone()),
             quiet: true,
@@ -671,21 +660,7 @@ fn test_cowsay() {
     create_docker_image(
         "./examples/shell-hello",
         Vec::new(),
-        &BuildPlan {
-            // pin_pkgs: Some(true),
-            phases: Some(BTreeMap::from([(
-                "setup".to_string(),
-                Phase {
-                    nix_pkgs: Some(vec!["cowsay".to_string()]),
-                    ..Default::default()
-                },
-            )])),
-            start_phase: Some(StartPhase {
-                cmd: Some("./start.sh".to_string()),
-                ..Default::default()
-            }),
-            ..Default::default()
-        },
+        &GeneratePlanOptions::default(),
         &DockerBuilderOptions {
             name: Some(name.clone()),
             quiet: true,
@@ -711,10 +686,7 @@ fn test_swift() {
     create_docker_image(
         "./examples/swift",
         Vec::new(),
-        &BuildPlan {
-            // pin_pkgs: Some(false),
-            ..Default::default()
-        },
+        &GeneratePlanOptions::default(),
         &DockerBuilderOptions {
             name: Some(name.clone()),
             quiet: true,

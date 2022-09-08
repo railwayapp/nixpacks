@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::{
     nixpacks::{
         app::App,
@@ -151,20 +153,28 @@ impl NixpacksBuildPlanGenerator<'_> {
             None
         };
 
-        let plan = if let Some(file_path) = file_path {
-            let contents = app.read_file(file_path.as_str())?;
-            let plan = if file_path.ends_with(".toml") {
-                BuildPlan::from_toml(&contents)
-            } else if file_path.ends_with(".json") {
-                BuildPlan::from_json(&contents)
-            } else {
-                bail!("Unknown file type: {}", file_path)
-            };
+        let plan =
+            if let Some(file_path) = file_path {
+                let filename = Path::new(&file_path);
+                let ext = filename.extension().unwrap_or_default();
 
-            Some(plan.with_context(|| format!("Failed to read Nixpacks config in {}", file_path))?)
-        } else {
-            None
-        };
+                let contents = app.read_file(file_path.as_str()).with_context(|| {
+                    format!("Failed to read Nixpacks config file `{}`", file_path)
+                })?;
+                let plan = if ext == "toml" {
+                    BuildPlan::from_toml(&contents)
+                } else if ext == "json" {
+                    BuildPlan::from_json(&contents)
+                } else {
+                    bail!("Unknown file type: {}", file_path)
+                };
+
+                Some(plan.with_context(|| {
+                    format!("Failed to parse Nixpacks config file `{}`", file_path)
+                })?)
+            } else {
+                None
+            };
 
         if plan.is_some() {
             println!(
