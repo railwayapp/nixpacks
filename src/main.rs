@@ -2,7 +2,14 @@ use anyhow::{bail, Result};
 use clap::{arg, Arg, Command};
 use nixpacks::{
     create_docker_image, generate_build_plan,
-    nixpacks::{builder::docker::DockerBuilderOptions, plan::BuildPlan},
+    nixpacks::{
+        builder::docker::DockerBuilderOptions,
+        nix::pkg::Pkg,
+        plan::{
+            phase::{Phase, StartPhase},
+            BuildPlan,
+        },
+    },
 };
 use std::{
     collections::hash_map::DefaultHasher,
@@ -161,13 +168,6 @@ fn main() -> Result<()> {
                 .global(true),
         )
         .arg(
-            Arg::new("pin")
-                .long("pin")
-                .help("Pin the nixpkgs")
-                .takes_value(false)
-                .global(true),
-        )
-        .arg(
             Arg::new("env")
                 .long("env")
                 .help("Provide environment variables to your build")
@@ -177,43 +177,49 @@ fn main() -> Result<()> {
         )
         .get_matches();
 
-    // let install_cmd = matches.value_of("install_cmd").map(|s| vec![s.to_string()]);
-    // let build_cmd = matches.value_of("build_cmd").map(|s| vec![s.to_string()]);
-    // let start_cmd = matches.value_of("start_cmd").map(ToString::to_string);
-    // let pkgs = match matches.values_of("pkgs") {
-    //     Some(values) => values.map(Pkg::new).collect::<Vec<_>>(),
-    //     None => Vec::new(),
-    // };
-    // let libs = match matches.values_of("libs") {
-    //     Some(values) => values.map(String::from).collect::<Vec<String>>(),
-    //     None => Vec::new(),
-    // };
-    // let apt_pkgs = match matches.values_of("apt") {
-    //     Some(values) => values.map(String::from).collect::<Vec<String>>(),
-    //     None => Vec::new(),
-    // };
-
-    // let pin_pkgs = matches.is_present("pin");
+    let install_cmd = matches.value_of("install_cmd").map(|s| vec![s.to_string()]);
+    let build_cmd = matches.value_of("build_cmd").map(|s| vec![s.to_string()]);
+    let start_cmd = matches.value_of("start_cmd").map(ToString::to_string);
+    let pkgs = match matches.values_of("pkgs") {
+        Some(values) => values.map(Pkg::new).collect::<Vec<_>>(),
+        None => Vec::new(),
+    };
+    let libs = match matches.values_of("libs") {
+        Some(values) => values.map(String::from).collect::<Vec<String>>(),
+        None => Vec::new(),
+    };
+    let apt_pkgs = match matches.values_of("apt") {
+        Some(values) => values.map(String::from).collect::<Vec<String>>(),
+        None => Vec::new(),
+    };
 
     let envs: Vec<_> = match matches.values_of("env") {
         Some(envs) => envs.collect(),
         None => Vec::new(),
     };
 
-    // let plan_options = &GeneratePlanCLIConfig {
-    //     custom_install_cmd: install_cmd,
-    //     custom_start_cmd: start_cmd,
-    //     custom_build_cmd: build_cmd,
-    //     custom_pkgs: pkgs,
-    //     custom_libs: libs,
-    //     custom_apt_pkgs: apt_pkgs,
-    //     pin_pkgs,
-    //     ..Default::default()
-    // };
-
-    let config = BuildPlan {
-        ..Default::default()
-    };
+    // CLI build plan
+    let mut config = BuildPlan::default();
+    if !pkgs.is_empty() || !libs.is_empty() || !apt_pkgs.is_empty() {
+        let mut setup = Phase::setup(Some(vec![pkgs, vec![Pkg::new("...")]].concat()));
+        setup.apt_pkgs = Some(vec![apt_pkgs, vec!["...".to_string()]].concat());
+        setup.nix_libs = Some(vec![libs, vec!["...".to_string()]].concat());
+        config.add_phase(setup);
+    }
+    if let Some(install_cmds) = install_cmd {
+        let mut install = Phase::install(None);
+        install.cmds = Some(install_cmds);
+        config.add_phase(install);
+    }
+    if let Some(build_cmds) = build_cmd {
+        let mut build = Phase::build(None);
+        build.cmds = Some(build_cmds);
+        config.add_phase(build);
+    }
+    if let Some(start_cmd) = start_cmd {
+        let start = StartPhase::new(start_cmd);
+        config.set_start_phase(start);
+    }
 
     match &matches.subcommand() {
         Some(("plan", matches)) => {
