@@ -8,6 +8,7 @@ use crate::{
     providers::{procfile::ProcfileProvider, Provider},
 };
 use anyhow::{bail, Context, Ok, Result};
+use colored::Colorize;
 use std::collections::HashMap;
 
 use super::merge::Mergeable;
@@ -148,20 +149,30 @@ impl NixpacksBuildPlanGenerator<'_> {
     }
 
     fn read_file_plan(&self, app: &App) -> Result<BuildPlan> {
-        if app.includes_file("nixpacks.json") {
+        let build_plan = if app.includes_file("nixpacks.json") {
             let contents = app.read_file("nixpacks.json")?;
             let mut config: BuildPlan = serde_json::from_str(contents.as_str())
                 .context("failed to parse config from nixpacks.json")?;
             config.resolve_phase_names();
-            Ok(config)
+            Some(config)
         } else if app.includes_file("nixpacks.toml") {
             let contents = app.read_file("nixpacks.toml")?;
             let mut config: BuildPlan = toml::from_str(contents.as_str())
                 .context("failed to parse config from nixpacks.toml")?;
             config.resolve_phase_names();
-            Ok(config)
+            Some(config)
         } else {
-            Ok(BuildPlan::default())
+            None
+        };
+
+        if build_plan.is_some() {
+            println!(
+                "{}",
+                "\nNixpacks file based configuration is experimental and may change\n"
+                    .bright_yellow()
+            );
         }
+
+        Ok(build_plan.unwrap_or_default())
     }
 }
