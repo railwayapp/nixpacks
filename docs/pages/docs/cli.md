@@ -38,6 +38,8 @@ nixpacks build --help
 | `--label <labels...>`, `-l` | Additional labels to add to the output image                   |
 | `--cache-key <key>`         | Unique identifier to use for the build cache                   |
 | `--no-cache`                | Disable caching for the build                                  |
+| `--cache-from`              | Image to consider as cache sources                             |
+| `--inline-cache`            | Enable writing cache metadata into the output image            |
 | `--out <dir>`, `-o`         | Save output directory instead of building it with Docker       |
 | `--platform <platforms...>` | Choosing the target platform for the target environment        |
 

@@ -1,0 +1,37 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "Java"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cmds": [
+        "./gradlew build"
+      ],
+      "cacheDirectories": [
+        ".gradle"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "jdk",
+        "gradle"
+      ],
+      "nixOverlays": [],
+      "nixpacksArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "java $JAVA_OPTS -jar  build/libs/*.jar"
+  }
+}

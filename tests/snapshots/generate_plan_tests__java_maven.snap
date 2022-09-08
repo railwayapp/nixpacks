@@ -16,13 +16,16 @@ expression: plan
       ],
       "cmds": [
         "mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install"
+      ],
+      "cacheDirectories": [
+        ".m2/repository"
       ]
     },
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "maven",
-        "jdk"
+        "jdk",
+        "maven"
       ],
       "nixOverlays": [],
       "nixpacksArchive": "[archive]"
