@@ -59,6 +59,12 @@ impl BuildPlan {
         Ok(plan)
     }
 
+    pub fn from_json<S: Into<String>>(json: S) -> Result<Self> {
+        let mut plan: BuildPlan = serde_json::from_str(&json.into())?;
+        plan.resolve_phase_names();
+        Ok(plan)
+    }
+
     pub fn add_phase(&mut self, phase: Phase) {
         let phases = self.phases.get_or_insert(BTreeMap::default());
         phases.insert(phase.get_name(), phase);

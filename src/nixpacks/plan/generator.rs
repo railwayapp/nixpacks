@@ -2,7 +2,6 @@ use crate::{
     nixpacks::{
         app::App,
         environment::{Environment, EnvironmentVariables},
-        nix::pkg::Pkg,
         plan::{BuildPlan, PlanGenerator},
     },
     providers::{procfile::ProcfileProvider, Provider},
@@ -20,19 +19,13 @@ const NIXPACKS_METADATA: &str = "NIXPACKS_METADATA";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
-    pub custom_install_cmd: Option<Vec<String>>,
-    pub custom_build_cmd: Option<Vec<String>>,
-    pub custom_start_cmd: Option<String>,
-    pub custom_pkgs: Vec<Pkg>,
-    pub custom_libs: Vec<String>,
-    pub custom_apt_pkgs: Vec<String>,
-    pub pin_pkgs: bool,
-    pub plan_path: Option<String>,
+    pub plan: Option<BuildPlan>,
+    pub config_file: Option<String>,
 }
 
 pub struct NixpacksBuildPlanGenerator<'a> {
     providers: &'a [&'a dyn Provider],
-    config: BuildPlan,
+    config: GeneratePlanOptions,
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
@@ -47,7 +40,7 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
 impl NixpacksBuildPlanGenerator<'_> {
     pub fn new<'a>(
         providers: &'a [&'a dyn Provider],
-        config: BuildPlan,
+        config: GeneratePlanOptions,
     ) -> NixpacksBuildPlanGenerator<'a> {
         NixpacksBuildPlanGenerator { providers, config }
     }
@@ -56,7 +49,7 @@ impl NixpacksBuildPlanGenerator<'_> {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
         let file_plan = self.read_file_plan(app)?;
         let env_plan = BuildPlan::from_environment(env);
-        let cli_plan = self.config.clone();
+        let cli_plan = self.config.plan.clone().unwrap_or_default();
         let plan_before_providers = BuildPlan::merge_plans(&vec![file_plan, env_plan, cli_plan]);
 
         let provider_plan =
@@ -148,30 +141,39 @@ impl NixpacksBuildPlanGenerator<'_> {
     }
 
     fn read_file_plan(&self, app: &App) -> Result<BuildPlan> {
-        let build_plan = if app.includes_file("nixpacks.json") {
-            let contents = app.read_file("nixpacks.json")?;
-            let mut config: BuildPlan = serde_json::from_str(contents.as_str())
-                .context("failed to parse config from nixpacks.json")?;
-            config.resolve_phase_names();
-            Some(config)
+        let file_path = if let Some(file_path) = &self.config.config_file {
+            Some(file_path.clone())
         } else if app.includes_file("nixpacks.toml") {
-            let contents = app.read_file("nixpacks.toml")?;
-            let mut config: BuildPlan = toml::from_str(contents.as_str())
-                .context("failed to parse config from nixpacks.toml")?;
-            config.resolve_phase_names();
-            Some(config)
+            Some("nixpacks.toml".to_owned())
+        } else if app.includes_file("nixpacks.json") {
+            Some("nixpacks.json".to_owned())
         } else {
             None
         };
 
-        if build_plan.is_some() {
+        let plan = if let Some(file_path) = file_path {
+            let contents = app.read_file(file_path.as_str())?;
+            let plan = if file_path.ends_with(".toml") {
+                BuildPlan::from_toml(&contents)
+            } else if file_path.ends_with(".json") {
+                BuildPlan::from_json(&contents)
+            } else {
+                bail!("Unknown file type: {}", file_path)
+            };
+
+            Some(plan.with_context(|| format!("Failed to read Nixpacks config in {}", file_path))?)
+        } else {
+            None
+        };
+
+        if plan.is_some() {
             println!(
                 "{}",
-                "\nNixpacks file based configuration is experimental and may change\n"
+                "\n Nixpacks file based configuration is experimental and may change\n"
                     .bright_yellow()
             );
         }
 
-        Ok(build_plan.unwrap_or_default())
+        Ok(plan.unwrap_or_default())
     }
 }

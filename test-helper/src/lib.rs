@@ -3,6 +3,7 @@ use quote::{format_ident, quote};
 use walkdir::{DirEntry, WalkDir};
 
 const IGNORE: &[&str] = &[
+    "custom-plan-path",
     "rust-custom-version",
     "rust-rocket",
     "haskell-stack",
@@ -55,8 +56,7 @@ pub fn generate_plan_tests(_tokens: TokenStream) -> TokenStream {
         fn simple_gen_plan(path: &str) -> ::nixpacks::nixpacks::plan::BuildPlan {
             if let Ok(raw_env) = ::std::fs::read_to_string(format!("{}/test.env", path)) {
                 let env = ::dotenv_parser::parse_dotenv(&raw_env).unwrap();
-                let opts = ::nixpacks::nixpacks::plan::BuildPlan {
-                    // pin_pkgs: Some(env.get("PIN_PKGS").is_some()),
+                let plan = ::nixpacks::nixpacks::plan::BuildPlan {
                     phases: Some(::std::collections::BTreeMap::from([(
                         "setup".to_string(),
                         ::nixpacks::nixpacks::plan::phase::Phase {
@@ -74,6 +74,10 @@ pub fn generate_plan_tests(_tokens: TokenStream) -> TokenStream {
                     }),
                     ..::nixpacks::nixpacks::plan::BuildPlan::default()
                 };
+                let opts = ::nixpacks::nixpacks::plan::generator::GeneratePlanOptions {
+                    plan: Some(plan),
+                    ..Default::default()
+                };
 
                 return ::nixpacks::generate_build_plan(
                     path,
@@ -88,7 +92,7 @@ pub fn generate_plan_tests(_tokens: TokenStream) -> TokenStream {
             ::nixpacks::generate_build_plan(
                 path,
                 ::std::vec::Vec::new(),
-                &::nixpacks::nixpacks::plan::BuildPlan::default(),
+                &::nixpacks::nixpacks::plan::generator::GeneratePlanOptions::default(),
             )
             .unwrap()
         }

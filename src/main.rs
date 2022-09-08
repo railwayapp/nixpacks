@@ -6,6 +6,7 @@ use nixpacks::{
         builder::docker::DockerBuilderOptions,
         nix::pkg::Pkg,
         plan::{
+            generator::GeneratePlanOptions,
             phase::{Phase, StartPhase},
             BuildPlan,
         },
@@ -185,6 +186,13 @@ fn main() -> Result<()> {
                 .multiple_values(true)
                 .global(true),
         )
+        .arg(
+            Arg::new("config")
+                .short('c')
+                .help("Path to config file")
+                .takes_value(true)
+                .global(true),
+        )
         .get_matches();
 
     let install_cmd = matches.value_of("install_cmd").map(|s| vec![s.to_string()]);
@@ -209,34 +217,40 @@ fn main() -> Result<()> {
     };
 
     // CLI build plan
-    let mut config = BuildPlan::default();
+    let mut cli_plan = BuildPlan::default();
     if !pkgs.is_empty() || !libs.is_empty() || !apt_pkgs.is_empty() {
         let mut setup = Phase::setup(Some(vec![pkgs, vec![Pkg::new("...")]].concat()));
         setup.apt_pkgs = Some(vec![apt_pkgs, vec!["...".to_string()]].concat());
         setup.nix_libs = Some(vec![libs, vec!["...".to_string()]].concat());
-        config.add_phase(setup);
+        cli_plan.add_phase(setup);
     }
     if let Some(install_cmds) = install_cmd {
         let mut install = Phase::install(None);
         install.cmds = Some(install_cmds);
-        config.add_phase(install);
+        cli_plan.add_phase(install);
     }
     if let Some(build_cmds) = build_cmd {
         let mut build = Phase::build(None);
         build.cmds = Some(build_cmds);
-        config.add_phase(build);
+        cli_plan.add_phase(build);
     }
     if let Some(start_cmd) = start_cmd {
         let start = StartPhase::new(start_cmd);
-        config.set_start_phase(start);
+        cli_plan.set_start_phase(start);
     }
+
+    let config_file = matches.value_of("config").map(ToString::to_string);
+    let options = GeneratePlanOptions {
+        plan: Some(cli_plan),
+        config_file,
+    };
 
     match &matches.subcommand() {
         Some(("plan", matches)) => {
             let path = matches.value_of("PATH").expect("required");
             let format = PlanFormat::from_str(matches.value_of("format").unwrap_or("json"))?;
 
-            let plan = generate_build_plan(path, envs, &config)?;
+            let plan = generate_build_plan(path, envs, &options)?;
 
             let plan_s = match format {
                 PlanFormat::Json => serde_json::to_string_pretty(&plan)?,
@@ -291,7 +305,7 @@ fn main() -> Result<()> {
                 cache_from,
             };
 
-            create_docker_image(path, envs, &config, build_options)?;
+            create_docker_image(path, envs, &options, build_options)?;
         }
         _ => eprintln!("Invalid command"),
     }
