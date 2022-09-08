@@ -171,7 +171,7 @@ impl App {
 
     /// Convert an absolute path to a path relative to the app source directory
     pub fn strip_source_path(&self, abs_path: &Path) -> Result<PathBuf> {
-        let source_str = self.source.to_str().unwrap_or("");
+        let source_str = self.source.to_str().unwrap();
 
         // Strip source path from absolute path
         let stripped = match abs_path.strip_prefix(source_str) {
