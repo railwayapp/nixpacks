@@ -47,7 +47,7 @@ impl Provider for ClojureProvider {
 
         let start = StartPhase::new("bash -c \"java $JAVA_OPTS -jar /app/target/*standalone.jar\"");
 
-        let plan = BuildPlan::new(vec![setup, build], Some(start));
+        let plan = BuildPlan::new(&vec![setup, build], Some(start));
         Ok(Some(plan))
     }
 }

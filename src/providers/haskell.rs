@@ -67,7 +67,7 @@ impl Provider for HaskellStackProvider {
 
         let start = StartPhase::new(format!("/root/.local/bin/{}", name));
 
-        let plan = BuildPlan::new(vec![setup, install, build], Some(start));
+        let plan = BuildPlan::new(&vec![setup, install, build], Some(start));
 
         Ok(Some(plan))
     }

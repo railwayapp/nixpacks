@@ -9,7 +9,7 @@ use crate::nixpacks::{
         BuildPlan,
     },
 };
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::{Context, Ok, Result};
 
 pub struct ProcfileProvider {}
 

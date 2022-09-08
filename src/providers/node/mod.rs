@@ -123,7 +123,7 @@ impl Provider for NodeProvider {
         // Start
         let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
 
-        let mut plan = BuildPlan::new(vec![setup, install, build], start);
+        let mut plan = BuildPlan::new(&vec![setup, install, build], start);
         plan.add_variables(NodeProvider::get_node_environment_variables());
 
         Ok(Some(plan))

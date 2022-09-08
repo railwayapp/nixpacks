@@ -9,7 +9,6 @@ use crate::{
 };
 use anyhow::{bail, Context, Ok, Result};
 use colored::Colorize;
-use std::collections::HashMap;
 
 use super::merge::Mergeable;
 
@@ -58,7 +57,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         let file_plan = self.read_file_plan(app)?;
         let env_plan = BuildPlan::from_environment(env);
         let cli_plan = self.config.clone();
-        let plan_before_providers = BuildPlan::merge_plans(vec![file_plan, env_plan, cli_plan]);
+        let plan_before_providers = BuildPlan::merge_plans(&vec![file_plan, env_plan, cli_plan]);
 
         let provider_plan =
             self.get_plan_from_providers(plan_before_providers.providers.clone(), app, env)?;
@@ -68,7 +67,7 @@ impl NixpacksBuildPlanGenerator<'_> {
             .unwrap_or_default();
 
         let mut plan =
-            BuildPlan::merge_plans(vec![provider_plan, plan_before_providers, procfile_plan]);
+            BuildPlan::merge_plans(&vec![provider_plan, plan_before_providers, procfile_plan]);
 
         if !env.get_variable_names().is_empty() {
             plan.add_variables(Environment::clone_variables(env));

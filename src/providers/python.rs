@@ -117,7 +117,7 @@ impl PythonProvider {
         // Many Python packages need some C headers to be available
         // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
         setup_phase.add_pkgs_libs(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
-        setup_phase.add_nix_pkgs(vec![Pkg::new("gcc")]);
+        setup_phase.add_nix_pkgs(&[Pkg::new("gcc")]);
 
         Ok(Some(setup_phase))
     }

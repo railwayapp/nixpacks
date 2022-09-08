@@ -37,7 +37,7 @@ impl Provider for JavaProvider {
 
         let start = StartPhase::new(self.get_start_cmd(app));
 
-        let plan = BuildPlan::new(vec![setup, build], Some(start));
+        let plan = BuildPlan::new(&vec![setup, build], Some(start));
         Ok(Some(plan))
     }
 }

@@ -23,7 +23,7 @@ pub mod zig;
 
 pub trait Provider {
     fn name(&self) -> &str;
-    fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
+    fn detect(&self, _app: &App, _env: &Environment) -> Result<bool> {
         Ok(false)
     }
     fn get_build_plan(&self, _app: &App, _environment: &Environment) -> Result<Option<BuildPlan>>;

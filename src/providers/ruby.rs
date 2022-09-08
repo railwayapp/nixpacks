@@ -30,7 +30,7 @@ impl Provider for RubyProvider {
         let start = self.get_start(app)?;
 
         let mut plan = BuildPlan::new(
-            vec![setup, install, build]
+            &vec![setup, install, build]
                 .into_iter()
                 .flatten()
                 .collect::<Vec<_>>(),

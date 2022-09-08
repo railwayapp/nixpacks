@@ -24,7 +24,7 @@ pub trait PlanGenerator {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(PartialEq, Eq, Default, Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct BuildPlan {
     pub providers: Option<Vec<String>>,
@@ -44,7 +44,7 @@ pub struct BuildPlan {
 }
 
 impl BuildPlan {
-    pub fn new(phases: Vec<Phase>, start_phase: Option<StartPhase>) -> Self {
+    pub fn new(phases: &[Phase], start_phase: Option<StartPhase>) -> Self {
         Self {
             phases: Some(phases.iter().map(|p| (p.get_name(), p.clone())).collect()),
             start_phase,
@@ -231,7 +231,7 @@ impl BuildPlan {
         // Start
         let start = env.get_config_variable("START_CMD").map(StartPhase::new);
 
-        BuildPlan::new(phases, start)
+        BuildPlan::new(&phases, start)
     }
 
     pub fn pin(&mut self) {
@@ -267,7 +267,7 @@ impl BuildPlan {
         }
     }
 
-    pub fn merge_plans(plans: Vec<BuildPlan>) -> BuildPlan {
+    pub fn merge_plans(plans: &[BuildPlan]) -> BuildPlan {
         plans.iter().fold(BuildPlan::default(), |acc, plan| {
             BuildPlan::merge(&acc, plan)
         })
@@ -283,19 +283,6 @@ impl topological_sort::TopItem for (String, Phase) {
         match &self.1.depends_on {
             Some(depends_on) => depends_on.as_slice(),
             None => &[],
-        }
-    }
-}
-
-impl Default for BuildPlan {
-    fn default() -> Self {
-        Self {
-            providers: None,
-            build_image: None,
-            phases: None,
-            start_phase: None,
-            variables: None,
-            static_assets: None,
         }
     }
 }
@@ -317,11 +304,11 @@ mod test {
         let mut another = Phase::new("another");
         another.depends_on_phase("setup");
 
-        let plan = BuildPlan::new(vec![setup, install, build, another], None);
+        let plan = BuildPlan::new(&vec![setup, install, build, another], None);
 
         // let phases = topological_sort(plan.get_phases_with_dependencies("build")).unwrap();
         let build_phase = plan.get_phases_with_dependencies("build");
-        let phases = build_phase.values().collect::<Vec<_>>();
+        let phases = build_phase.values();
 
         assert_eq!(phases.len(), 3);
     }

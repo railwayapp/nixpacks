@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 pub type Phases = BTreeMap<String, Phase>;
 
 #[serde_with::skip_serializing_none]
-#[derive(PartialEq, Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(PartialEq, Eq, Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Phase {
     pub name: Option<String>,
@@ -45,7 +45,7 @@ pub struct Phase {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(PartialEq, Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(PartialEq, Eq, Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StartPhase {
     pub cmd: Option<String>,
@@ -127,7 +127,7 @@ impl Phase {
         self.depends_on = Some(add_to_option_vec(self.depends_on.clone(), name.into()));
     }
 
-    pub fn add_nix_pkgs(&mut self, new_pkgs: Vec<Pkg>) {
+    pub fn add_nix_pkgs(&mut self, new_pkgs: &[Pkg]) {
         self.nix_overlays = Some(add_multiple_to_option_vec(
             self.nix_overlays.clone(),
             new_pkgs
@@ -265,7 +265,9 @@ mod test {
     use super::*;
 
     fn vs(v: Vec<&str>) -> Vec<String> {
-        v.into_iter().map(|x| x.to_string()).collect()
+        v.into_iter()
+            .map(std::string::ToString::to_string)
+            .collect()
     }
 
     #[test]

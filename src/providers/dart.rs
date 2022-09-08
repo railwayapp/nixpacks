@@ -42,7 +42,7 @@ impl Provider for DartProvider {
         let pubspec = DartProvider::get_pubspec(app)?;
         let start = StartPhase::new(format!("./bin/{}.exe", pubspec.name));
 
-        let plan = BuildPlan::new(vec![setup, install, build], Some(start));
+        let plan = BuildPlan::new(&vec![setup, install, build], Some(start));
         Ok(Some(plan))
     }
 }

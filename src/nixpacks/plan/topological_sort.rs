@@ -45,7 +45,7 @@ where
                 item.get_name(),
                 item.get_dependencies()
                     .iter()
-                    .filter(|dep| lookup.contains_key(dep.clone()))
+                    .filter(|dep| lookup.contains_key(&(*dep).clone()))
                     .count(),
             )
         })

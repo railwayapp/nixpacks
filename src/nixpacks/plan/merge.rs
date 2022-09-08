@@ -16,21 +16,19 @@ impl Mergeable for BuildPlan {
         new_plan.build_image = new_plan.build_image.or(plan2.build_image);
 
         new_plan.static_assets = match (new_plan.static_assets, plan2.static_assets) {
-            (None, assets) => assets,
-            (assets, None) => assets,
+            (None, assets) | (assets, None) => assets,
             (Some(assets1), Some(assets2)) => {
-                let mut assets = assets1.clone();
-                assets.extend(assets2.clone());
+                let mut assets = assets1;
+                assets.extend(assets2);
                 Some(assets)
             }
         };
 
         new_plan.variables = match (new_plan.variables, plan2.variables) {
-            (None, vars) => vars,
-            (vars, None) => vars,
+            (None, vars) | (vars, None) => vars,
             (Some(vars1), Some(vars2)) => {
-                let mut vars = vars1.clone();
-                vars.extend(vars2.clone());
+                let mut vars = vars1;
+                vars.extend(vars2);
                 Some(vars)
             }
         };
@@ -57,8 +55,7 @@ impl Mergeable for BuildPlan {
         };
 
         new_plan.start_phase = match (new_plan.start_phase, plan2.start_phase) {
-            (None, s) => s,
-            (s, None) => s,
+            (None, s) | (s, None) => s,
             (Some(s1), Some(s2)) => Some(StartPhase::merge(&s1, &s2)),
         };
 
@@ -124,8 +121,8 @@ fn fill_auto_in_vec(
             .into_iter()
             .flat_map(|x| {
                 let v = x.clone();
-                if v == "@auto".to_string() || v == "...".to_string() {
-                    let mut fill = vec![v.clone()];
+                if v == *"@auto" || v == *"..." {
+                    let mut fill = vec![v];
                     fill.append(&mut original.clone());
                     fill
                 } else {
@@ -144,8 +141,10 @@ fn fill_auto_in_vec(
 mod test {
     use super::*;
 
-    fn vso(v: Vec<&str>) -> Option<Vec<String>> {
-        Some(v.into_iter().map(|x| x.to_string()).collect())
+    fn vs(v: Vec<&str>) -> Vec<String> {
+        v.into_iter()
+            .map(std::string::ToString::to_string)
+            .collect()
     }
 
     #[test]
@@ -252,15 +251,19 @@ mod test {
     fn test_fill_auto_in_vec() {
         assert_eq!(
             vec!["x", "...", "z"],
-            fill_auto_in_vec(None, vso(vec!["x", "...", "z"])).unwrap()
+            fill_auto_in_vec(None, Some(vs(vec!["x", "...", "z"]))).unwrap()
         );
         assert_eq!(
             vec!["a", "b", "c"],
-            fill_auto_in_vec(vso(vec!["a", "b", "c"]), None).unwrap()
+            fill_auto_in_vec(Some(vs(vec!["a", "b", "c"])), None).unwrap()
         );
         assert_eq!(
             vec!["x", "...", "a", "b", "c", "z"],
-            fill_auto_in_vec(vso(vec!["a", "b", "c"]), vso(vec!["x", "...", "z"])).unwrap()
+            fill_auto_in_vec(
+                Some(vs(vec!["a", "b", "c"])),
+                Some(vs(vec!["x", "...", "z"]))
+            )
+            .unwrap()
         );
     }
 }
