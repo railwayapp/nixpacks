@@ -42,7 +42,7 @@ impl Provider for JavaProvider {
             build
         } else {
             setup = Phase::setup(Some(vec![Pkg::new("jdk")]));
-            setup.add_nix_pkgs(&vec![Pkg::new("maven")]);
+            setup.add_nix_pkgs(&[Pkg::new("maven")]);
             let mvn_exe = self.get_maven_exe(app);
             let mut build = Phase::build(Some(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
                 mvn_exe=mvn_exe
