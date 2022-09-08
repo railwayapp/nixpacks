@@ -5,7 +5,7 @@ use crate::{
         nix::pkg::Pkg,
         plan::{BuildPlan, PlanGenerator},
     },
-    providers::Provider,
+    providers::{procfile::ProcfileProvider, Provider},
 };
 use anyhow::{bail, Context, Ok, Result};
 use std::collections::HashMap;
@@ -54,32 +54,20 @@ impl NixpacksBuildPlanGenerator<'_> {
 
     /// Get a build plan from the provider and by applying the config from the environment
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
-        // Get a build plan from the filesystem if it exists
         let file_plan = self.read_file_plan(app)?;
-
         let env_plan = BuildPlan::from_environment(env);
-        let plan_before_providers =
-            BuildPlan::merge_plans(vec![file_plan, env_plan, self.config.clone()]);
+        let cli_plan = self.config.clone();
+        let plan_before_providers = BuildPlan::merge_plans(vec![file_plan, env_plan, cli_plan]);
 
         let provider_plan =
             self.get_plan_from_providers(plan_before_providers.providers.clone(), app, env)?;
 
-        let mut plan = BuildPlan::merge_plans(vec![provider_plan, plan_before_providers]);
+        let procfile_plan = (ProcfileProvider {})
+            .get_build_plan(app, env)?
+            .unwrap_or_default();
 
-        // The Procfile start command has precedence over the provider's start command
-        // TODO: Make Procfile a provider
-        // if let Some(procfile_start) = self.get_procfile_start_cmd(app)? {
-        //     let mut start_phase = plan.start_phase.clone().unwrap_or_default();
-        //     start_phase.cmd = Some(procfile_start);
-        //     plan.set_start_phase(start_phase);
-        // }
-
-        // The Procfiles release command is append to the provider's build command
-        // if let Some(procfile_release) = self.get_procfile_release_cmd(app)? {
-        //     if let Some(build) = plan.get_phase_mut("build") {
-        //         build.add_cmd(procfile_release);
-        //     }
-        // }
+        let mut plan =
+            BuildPlan::merge_plans(vec![provider_plan, plan_before_providers, procfile_plan]);
 
         if !env.get_variable_names().is_empty() {
             plan.add_variables(Environment::clone_variables(env));
@@ -170,36 +158,6 @@ impl NixpacksBuildPlanGenerator<'_> {
             Ok(config)
         } else {
             Ok(BuildPlan::default())
-        }
-    }
-
-    fn get_procfile_start_cmd(&self, app: &App) -> Result<Option<String>> {
-        if app.includes_file("Procfile") {
-            let mut procfile: HashMap<String, String> =
-                app.read_yaml("Procfile").context("Reading Procfile")?;
-            procfile.remove("release");
-            if procfile.is_empty() {
-                Ok(None)
-            } else {
-                let process = procfile.values().collect::<Vec<_>>()[0].to_string();
-                Ok(Some(process))
-            }
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn get_procfile_release_cmd(&self, app: &App) -> Result<Option<String>> {
-        if app.includes_file("Procfile") {
-            let procfile: HashMap<String, String> =
-                app.read_yaml("Procfile").context("Reading Procfile")?;
-            if let Some(release) = procfile.get("release") {
-                Ok(Some(release.to_string()))
-            } else {
-                Ok(None)
-            }
-        } else {
-            Ok(None)
         }
     }
 }
