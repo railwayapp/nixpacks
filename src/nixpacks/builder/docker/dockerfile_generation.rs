@@ -133,28 +133,44 @@ impl DockerfileGenerator for BuildPlan {
             format!("COPY {} {}", rel_assets_slash_path, app::ASSETS_DIR)
         };
 
-        let dockerfile_phases =
-            plan.get_sorted_phases()?
-                .into_iter()
-                .map(|phase| {
-                    let phase_dockerfile = phase
+        let phases = plan.get_sorted_phases()?;
+
+        let dockerfile_phases = phases
+            .clone()
+            .into_iter()
+            .map(|phase| {
+                let phase_dockerfile =
+                    phase
                         .generate_dockerfile(options, env, output)
                         .context(format!(
                             "Generating Dockerfile for phase {}",
                             phase.get_name()
                         ))?;
 
-                    match phase.get_name().as_str() {
-                        // We want to load the variables immediately after the setup phase
-                        "setup" => Ok(format!(
-                            "{}\n# load variables\n{}\n",
-                            phase_dockerfile, args_string
-                        )),
-                        _ => Ok(phase_dockerfile),
-                    }
-                })
-                .collect::<Result<Vec<_>>>();
+                match phase.get_name().as_str() {
+                    // We want to load the variables immediately after the setup phase
+                    "setup" => Ok(format!(
+                        "{}\n# load variables\n{}\n",
+                        phase_dockerfile, args_string
+                    )),
+                    _ => Ok(phase_dockerfile),
+                }
+            })
+            .collect::<Result<Vec<_>>>();
         let dockerfile_phases_str = dockerfile_phases?.join("\n");
+
+        // Handle the case where there is only a setup phase and all the app files have not been copied into
+        // the image yet
+        let setup_copy_command = match (phases.first(), phases.len()) {
+            (Some(first_phase), 1) => {
+                if first_phase.get_name() == "setup" {
+                    utils::get_copy_command(&vec![".".to_string()], APP_DIR)
+                } else {
+                    "".to_string()
+                }
+            }
+            _ => "".to_string(),
+        };
 
         let start_phase_str = plan
             .start_phase
@@ -177,6 +193,7 @@ impl DockerfileGenerator for BuildPlan {
 
             {dockerfile_phases_str}
 
+            {setup_copy_command}
             {start_phase_str}
         ", 
         base_image=base_image,
