@@ -125,7 +125,7 @@ impl BuildPlan {
             .join(format!("\n{}\n", hor_sep).as_str());
 
         let start_row = print_row(
-            "Start",
+            "start",
             start_contents.as_str(),
             edge.as_str(),
             middle_padding.as_str(),

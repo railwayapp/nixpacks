@@ -62,7 +62,7 @@ impl Phase {
     }
 
     pub fn get_name(&self) -> String {
-        self.name.clone().unwrap()
+        self.name.clone().unwrap_or_default()
     }
 
     pub fn prefix_name(&mut self, prefix: &str) {
