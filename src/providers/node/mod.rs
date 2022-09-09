@@ -288,7 +288,7 @@ impl NodeProvider {
 
     /// Returns the nodejs nix package and the appropriate package manager nix image.
     pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
-        let package_json: PackageJson = if app.includes_file("pacakge.json") {
+        let package_json: PackageJson = if app.includes_file("package.json") {
             app.read_json("package.json")?
         } else {
             PackageJson::default()
