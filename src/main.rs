@@ -309,9 +309,10 @@ fn main() -> Result<()> {
                 current_dir,
                 inline_cache,
                 cache_from,
+                no_error_without_start,
             };
 
-            create_docker_image(path, envs, &options, build_options, no_error_without_start)?;
+            create_docker_image(path, envs, &options, build_options)?;
         }
         _ => eprintln!("Invalid command"),
     }

@@ -86,7 +86,6 @@ pub fn create_docker_image(
     envs: Vec<&str>,
     plan_options: &GeneratePlanOptions,
     build_options: &DockerBuilderOptions,
-    no_error_without_start: bool,
 ) -> Result<()> {
     let app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
@@ -95,7 +94,7 @@ pub fn create_docker_image(
     let plan = generator.generate_plan(&app, &environment)?;
 
     if let Some(ref phase) = plan.start_phase {
-        if phase.cmd.is_none() && !no_error_without_start {
+        if phase.cmd.is_none() && !build_options.no_error_without_start {
             bail!("No start command could be found")
         }
     }
