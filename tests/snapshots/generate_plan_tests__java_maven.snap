@@ -12,7 +12,7 @@ expression: plan
     "build": {
       "name": "build",
       "dependsOn": [
-        "install"
+        "setup"
       ],
       "cmds": [
         "mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install"
