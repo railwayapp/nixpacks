@@ -220,7 +220,6 @@ fn main() -> Result<()> {
         Some(envs) => envs.collect(),
         None => Vec::new(),
     };
-    let no_error_without_start = matches.is_present("no-error-without-start");
 
     // CLI build plan
     let mut cli_plan = BuildPlan::default();
@@ -295,6 +294,8 @@ fn main() -> Result<()> {
                 .values_of("platform")
                 .map(|values| values.map(ToString::to_string).collect::<Vec<_>>())
                 .unwrap_or_default();
+
+            let no_error_without_start = matches.is_present("no-error-without-start");
 
             let build_options = &DockerBuilderOptions {
                 name,
