@@ -1,12 +1,10 @@
 ---
-title: Configuration
+title: Environment
 ---
 
 # {% $markdoc.frontmatter.title %}
 
-## Environment Variables
-
-Nixpacks can be configured via environment variables. Most of these variables are prefixed with `NIXPACKS_`.
+Nixpacks can be configured via environment variables. All of these variables are prefixed with `NIXPACKS_`.
 
 | Variable                      | Description                                                                                  |
 | :---------------------------- | :------------------------------------------------------------------------------------------- |
@@ -19,23 +17,3 @@ Nixpacks can be configured via environment variables. Most of these variables ar
 | `NIXPACKS_INSTALL_CACHE_DIRS` | Add additional directories to cache during the install phase                                 |
 | `NIXPACKS_BUILD_CACHE_DIRS`   | Add additional directories to cache during the build phase                                   |
 | `NIXPACKS_NO_CACHE`           | Disable caching for the build                                                                |
-
-## Procfiles
-
-The standard Procfile format is supported by Nixpacks. However, only a single process is supported. The command specified in the Procfile will override the provider start command.
-
-```
-web: npm run start
-```
-
-## Caching
-
-By default Nixpacks providers will cache directories during the install and build phases. The specific directories are provider specific but are typically used to speed up installs (e.g. `~/.npm`) and builds (e.g. `~/.cache/go-build`). The contents of these directories are restored before the install/build phases are run and cleared afterwards. This means that the contents of the cached directories **do not appear in the final image**.
-
-The default cache identifier is a hash of the absolute path to the directory being built. This means that subsequent builds of the same directory will be faster out of the box. You can override the cache identifier by passing a `--cache-key` value to the `build` command.
-
-Caching can be disabled entirely by passing `--no-cache`.
-
-Passing`--inline-cache` will write cache metadata into the output image.
-
-Using previous image -created with inline cache enabled- as a cache source, Can be achieved by passing `--cache-from`

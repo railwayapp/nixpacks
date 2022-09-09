@@ -11,7 +11,15 @@ export const sidebarItems: ISidebarSection[] = [
   { href: "/docs/getting-started", text: "Getting Started" },
   { href: "/docs/install", text: "Installation" },
   { href: "/docs/how-it-works", text: "How it Works" },
-  { text: "Configuration", href: "/docs/config" },
+  {
+    text: "Configuration",
+    links: [
+      { text: "Configuration File", href: "/docs/configuration/file" },
+      { text: "Environment", href: "/docs/configuration/environment" },
+      { text: "Procfile", href: "/docs/configuration/procfile" },
+      { text: "Caching", href: "/docs/configuration/caching" },
+    ],
+  },
   { text: "CLI Reference", href: "/docs/cli" },
   {
     text: "Language Support",
@@ -40,7 +48,7 @@ export const sidebarItems: ISidebarSection[] = [
     text: "Deploying",
     links: [
       { text: "Railway", href: "/docs/deploying/railway" },
-      { text: "Easypanel", href: "/docs/deploying/easypanel" }
-     ],
+      { text: "Easypanel", href: "/docs/deploying/easypanel" },
+    ],
   },
 ];
