@@ -127,6 +127,11 @@ fn main() -> Result<()> {
                     Arg::new("cache-from")
                         .long("cache-from")
                         .help("Image to consider as cache sources"),
+                )
+                .arg(
+                    Arg::new("no-error-without-start")
+                        .long("no-error-without-start")
+                        .help("Do not error when no start command can be found"),
                 ),
         )
         .arg(
@@ -215,6 +220,7 @@ fn main() -> Result<()> {
         Some(envs) => envs.collect(),
         None => Vec::new(),
     };
+    let no_error_without_start = matches.is_present("no-error-without-start");
 
     // CLI build plan
     let mut cli_plan = BuildPlan::default();
@@ -305,7 +311,7 @@ fn main() -> Result<()> {
                 cache_from,
             };
 
-            create_docker_image(path, envs, &options, build_options)?;
+            create_docker_image(path, envs, &options, build_options, no_error_without_start)?;
         }
         _ => eprintln!("Invalid command"),
     }

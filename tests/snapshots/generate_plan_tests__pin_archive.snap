@@ -5,10 +5,15 @@ expression: plan
 {
   "providers": [],
   "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_START_CMD": "./start.sh"
+  },
   "phases": {
     "setup": {
       "name": "setup"
     }
   },
-  "start": {}
+  "start": {
+    "cmd": "./start.sh"
+  }
 }
