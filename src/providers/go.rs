@@ -42,10 +42,13 @@ impl Provider for GolangProvider {
 
         let mut build = if app.includes_file("go.mod") {
             Phase::build(Some(format!("go build -o {}", BINARY_NAME)))
-        } else {
+        } else if app.includes_file("main.go") {
             Phase::build(Some(format!("go build -o {} main.go", BINARY_NAME)))
+        } else {
+            Phase::build(None)
         };
         build.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
+        build.depends_on_phase("setup");
         plan.add_phase(build);
 
         let mut start = StartPhase::new(format!("./{}", BINARY_NAME));

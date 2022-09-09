@@ -3,7 +3,7 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "ASPNETCORE_ENVIRONMENT": "Production",
@@ -11,35 +11,35 @@ expression: plan
     "DOTNET_ROOT": "/nix/var/nix/profiles/default/",
     "NIXPACKS_METADATA": "csharp"
   },
-  "phases": [
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
-      ],
-      "commands": [
-        "dotnet restore"
-      ]
-    },
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "dotnet-sdk"
-        }
-      ]
-    },
-    {
+  "phases": {
+    "build": {
       "name": "build",
       "dependsOn": [
         "install"
       ],
-      "commands": [
+      "cmds": [
         "dotnet publish --no-restore -c Release -o out"
       ]
+    },
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "dotnet restore"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "dotnet-sdk"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "./out/csharp-cli"
   }
 }

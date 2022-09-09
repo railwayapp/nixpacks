@@ -32,7 +32,7 @@ impl Provider for JavaProvider {
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
         let mut setup: Phase;
-        let build = if self.is_using_gradle(app) {
+        let mut build = if self.is_using_gradle(app) {
             let pkgs = self.get_jdk_and_gradle_pkgs(app)?;
             setup = Phase::setup(Some(pkgs));
 
@@ -42,7 +42,7 @@ impl Provider for JavaProvider {
             build
         } else {
             setup = Phase::setup(Some(vec![Pkg::new("jdk")]));
-            setup.add_nix_pkgs(vec![Pkg::new("maven")]);
+            setup.add_nix_pkgs(&[Pkg::new("maven")]);
             let mvn_exe = self.get_maven_exe(app);
             let mut build = Phase::build(Some(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
                 mvn_exe=mvn_exe
@@ -51,8 +51,9 @@ impl Provider for JavaProvider {
             build
         };
         let start = StartPhase::new(self.get_start_cmd(app)?);
+        build.depends_on = Some(vec!["setup".to_string()]);
 
-        let plan = BuildPlan::new(vec![setup, build], Some(start));
+        let plan = BuildPlan::new(&vec![setup, build], Some(start));
         Ok(Some(plan))
     }
 }

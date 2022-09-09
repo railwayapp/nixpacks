@@ -3,43 +3,35 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "Java"
   },
-  "phases": [
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
-      ]
-    },
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "jdk11"
-        },
-        {
-          "name": "gradle_6"
-        }
-      ]
-    },
-    {
+  "phases": {
+    "build": {
       "name": "build",
       "dependsOn": [
-        "install"
+        "setup"
       ],
-      "commands": [
+      "cmds": [
         "./gradlew build"
       ],
       "cacheDirectories": [
         ".gradle"
       ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "jdk11",
+        "gradle_6"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "java $JAVA_OPTS -jar -Dserver.port=$PORT build/libs/*.jar"
   }
 }

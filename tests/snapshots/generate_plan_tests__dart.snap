@@ -3,43 +3,43 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "dart"
   },
-  "phases": [
-    {
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cmds": [
+        "dart compile exe bin/console_simple.dart"
+      ]
+    },
+    "install": {
       "name": "install",
       "dependsOn": [
         "setup"
       ],
-      "commands": [
+      "cmds": [
         "dart pub get"
       ],
       "onlyIncludeFiles": [
         "pubspec.yaml"
       ]
     },
-    {
+    "setup": {
       "name": "setup",
-      "nixPackages": [
-        {
-          "name": "dart"
-        }
-      ]
-    },
-    {
-      "name": "build",
-      "dependsOn": [
-        "install"
+      "nixPkgs": [
+        "dart"
       ],
-      "commands": [
-        "dart compile exe bin/console_simple.dart"
-      ]
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "./bin/console_simple.exe"
   }
 }

@@ -1,0 +1,12 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "phases": {},
+  "start": {
+    "cmd": "correct start command"
+  }
+}

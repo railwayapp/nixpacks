@@ -3,34 +3,19 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "python",
     "PYTHONUNBUFFERED": "1"
   },
-  "phases": [
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "python38"
-        },
-        {
-          "name": "gcc"
-        }
-      ],
-      "nixLibraries": [
-        "zlib",
-        "stdenv.cc.cc.lib"
-      ]
-    },
-    {
+  "phases": {
+    "install": {
       "name": "install",
       "dependsOn": [
         "setup"
       ],
-      "commands": [
+      "cmds": [
         "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"
       ],
       "cacheDirectories": [
@@ -40,14 +25,21 @@ expression: plan
         "/opt/venv/bin"
       ]
     },
-    {
-      "name": "build",
-      "dependsOn": [
-        "install"
-      ]
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "python38",
+        "gcc"
+      ],
+      "nixLibs": [
+        "zlib",
+        "stdenv.cc.cc.lib"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "python src/main.py"
   }
 }

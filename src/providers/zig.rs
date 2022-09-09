@@ -29,7 +29,7 @@ impl Provider for ZigProvider {
         let mut setup = Phase::setup(Some(vec![Pkg::new("zig")]));
 
         if app.includes_file("gyro.zzz") {
-            setup.add_nix_pkgs(vec![Pkg::new("wget")]);
+            setup.add_nix_pkgs(&[Pkg::new("wget")]);
         }
 
         let mut install = Phase::install(None);
@@ -56,7 +56,7 @@ impl Provider for ZigProvider {
                 .map_or("*", Option::unwrap)
         ));
 
-        let plan = BuildPlan::new(vec![setup, install, build], Some(start));
+        let plan = BuildPlan::new(&vec![setup, install, build], Some(start));
         Ok(Some(plan))
     }
 }

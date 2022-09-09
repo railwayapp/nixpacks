@@ -3,57 +3,48 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "swift"
   },
-  "phases": [
-    {
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cmds": [
+        "CC=clang++ swift build -c release --static-swift-stdlib",
+        "cp ./.build/release/swift ./swift && rm -rf ./.build"
+      ]
+    },
+    "install": {
       "name": "install",
       "dependsOn": [
         "setup"
       ],
-      "commands": [
+      "cmds": [
         "swift package resolve"
       ],
       "onlyIncludeFiles": [
         "Package.swift"
       ]
     },
-    {
+    "setup": {
       "name": "setup",
-      "nixPackages": [
-        {
-          "name": "coreutils"
-        },
-        {
-          "name": "swift"
-        },
-        {
-          "name": "clang"
-        },
-        {
-          "name": "zlib"
-        },
-        {
-          "name": "zlib.dev"
-        }
+      "nixPkgs": [
+        "coreutils",
+        "swift",
+        "clang",
+        "zlib",
+        "zlib.dev"
       ],
-      "nixpacksArchive": "[archive]"
-    },
-    {
-      "name": "build",
-      "dependsOn": [
-        "install"
-      ],
-      "commands": [
-        "CC=clang++ swift build -c release --static-swift-stdlib",
-        "cp ./.build/release/swift ./swift && rm -rf ./.build"
-      ]
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "./swift"
   }
 }

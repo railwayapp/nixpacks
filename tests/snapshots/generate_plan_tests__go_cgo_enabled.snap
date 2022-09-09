@@ -3,41 +3,36 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "CGO_ENABLED": "1",
     "NIXPACKS_METADATA": "golang"
   },
-  "phases": [
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
-      ]
-    },
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "go"
-        }
-      ]
-    },
-    {
+  "phases": {
+    "build": {
       "name": "build",
       "dependsOn": [
-        "install"
+        "install",
+        "setup"
       ],
-      "commands": [
+      "cmds": [
         "go build -o out main.go"
       ],
       "cacheDirectories": [
         "/root/.cache/go-build"
       ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "go"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "./out"
   }
 }

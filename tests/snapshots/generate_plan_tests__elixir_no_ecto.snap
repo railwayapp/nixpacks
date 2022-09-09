@@ -3,44 +3,44 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "MIX_ENV": "prod",
     "NIXPACKS_METADATA": "elixir"
   },
-  "phases": [
-    {
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cmds": [
+        "mix compile",
+        "mix assets.deploy"
+      ]
+    },
+    "install": {
       "name": "install",
       "dependsOn": [
         "setup"
       ],
-      "commands": [
+      "cmds": [
         "mix local.hex --force",
         "mix local.rebar --force",
         "mix deps.get --only prod"
       ]
     },
-    {
+    "setup": {
       "name": "setup",
-      "nixPackages": [
-        {
-          "name": "elixir_1_12"
-        }
-      ]
-    },
-    {
-      "name": "build",
-      "dependsOn": [
-        "install"
+      "nixPkgs": [
+        "elixir_1_12"
       ],
-      "commands": [
-        "mix compile",
-        "mix assets.deploy"
-      ]
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "mix phx.server"
   }
 }

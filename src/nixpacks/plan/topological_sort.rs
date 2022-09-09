@@ -40,7 +40,15 @@ where
     // The number of dependencies for each item
     let mut indegree = items
         .into_iter()
-        .map(|item| (item.get_name(), item.get_dependencies().len()))
+        .map(|item| {
+            (
+                item.get_name(),
+                item.get_dependencies()
+                    .iter()
+                    .filter(|dep| lookup.contains_key(&(*dep).clone()))
+                    .count(),
+            )
+        })
         .collect::<HashMap<String, usize>>();
 
     let mut result: Vec<T> = Vec::new();

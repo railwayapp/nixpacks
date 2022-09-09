@@ -1,21 +1,20 @@
 use self::{
-    config::GeneratePlanConfig,
-    generator::NIXPKGS_ARCHIVE,
-    phase::{Phase, StartPhase},
+    merge::Mergeable,
+    phase::{Phase, Phases, StartPhase},
     topological_sort::topological_sort,
 };
-use super::{images::DEFAULT_BASE_IMAGE, NIX_PACKS_VERSION};
+use super::images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE};
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
 };
-
 use anyhow::Result;
-
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
-pub mod config;
+// pub mod config;
 pub mod generator;
+pub mod merge;
 pub mod phase;
 pub mod pretty_print;
 mod topological_sort;
@@ -25,38 +24,50 @@ pub trait PlanGenerator {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(PartialEq, Eq, Default, Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct BuildPlan {
-    #[serde(rename = "nixpacksVersion")]
-    nixpacks_version: Option<String>,
+    pub providers: Option<Vec<String>>,
 
     #[serde(rename = "buildImage")]
-    pub build_image: String,
+    pub build_image: Option<String>,
 
     pub variables: Option<EnvironmentVariables>,
 
     #[serde(rename = "staticAssets")]
     pub static_assets: Option<StaticAssets>,
 
-    pub phases: Vec<Phase>,
+    pub phases: Option<Phases>,
 
-    #[serde(rename = "startPhase")]
+    #[serde(rename = "start")]
     pub start_phase: Option<StartPhase>,
 }
 
 impl BuildPlan {
-    pub fn new(phases: Vec<Phase>, start_phase: Option<StartPhase>) -> Self {
+    pub fn new(phases: &[Phase], start_phase: Option<StartPhase>) -> Self {
         Self {
-            nixpacks_version: Some(NIX_PACKS_VERSION.to_string()),
-            phases,
+            phases: Some(phases.iter().map(|p| (p.get_name(), p.clone())).collect()),
             start_phase,
-            build_image: DEFAULT_BASE_IMAGE.to_string(),
+            build_image: Some(DEFAULT_BASE_IMAGE.to_string()),
             ..Default::default()
         }
     }
 
+    pub fn from_toml<S: Into<String>>(toml: S) -> Result<Self> {
+        let mut plan: BuildPlan = toml::from_str(&toml.into())?;
+        plan.resolve_phase_names();
+        Ok(plan)
+    }
+
+    pub fn from_json<S: Into<String>>(json: S) -> Result<Self> {
+        let mut plan: BuildPlan = serde_json::from_str(&json.into())?;
+        plan.resolve_phase_names();
+        Ok(plan)
+    }
+
     pub fn add_phase(&mut self, phase: Phase) {
-        self.phases.push(phase);
+        let phases = self.phases.get_or_insert(BTreeMap::default());
+        phases.insert(phase.get_name(), phase);
     }
 
     pub fn set_start_phase(&mut self, start_phase: StartPhase) {
@@ -90,42 +101,52 @@ impl BuildPlan {
     }
 
     pub fn get_phase(&self, name: &str) -> Option<&Phase> {
-        self.phases.iter().find(|phase| phase.name == name)
-    }
-
-    pub fn get_phase_mut(&mut self, name: &str) -> Option<&mut Phase> {
-        self.phases.iter_mut().find(|phase| phase.name == name)
-    }
-
-    pub fn remove_phase(&mut self, name: &str) -> Option<Phase> {
-        let index = self.phases.iter().position(|phase| phase.name == name);
-        if let Some(index) = index {
-            let phase = self.phases.swap_remove(index);
-            Some(phase)
-        } else {
-            None
+        match self.phases {
+            Some(ref phases) => phases.get(name),
+            None => None,
         }
     }
 
-    pub fn get_sorted_phases(&self) -> Result<Vec<Phase>> {
-        topological_sort(self.phases.clone())
+    pub fn get_phase_mut(&mut self, name: &str) -> Option<&mut Phase> {
+        self.phases.get_or_insert(BTreeMap::default()).get_mut(name)
     }
 
-    pub fn get_phases_with_dependencies(&self, phase_name: &str) -> Vec<Phase> {
+    pub fn remove_phase(&mut self, name: &str) -> Option<Phase> {
+        self.phases.get_or_insert(BTreeMap::default()).remove(name)
+    }
+
+    pub fn get_sorted_phases(&self) -> Result<Vec<Phase>> {
+        let phases_with_names = self
+            .phases
+            .clone()
+            .unwrap_or_default()
+            .iter()
+            .map(|(name, phase)| (name.clone(), phase.clone()))
+            .collect();
+
+        let res = topological_sort::<(String, Phase)>(phases_with_names)?
+            .iter()
+            .map(|(_, phase)| phase.clone())
+            .collect();
+
+        Ok(res)
+    }
+
+    pub fn get_phases_with_dependencies(&self, phase_name: &str) -> Phases {
         let p = self.get_phase(phase_name);
 
-        let mut phases = Vec::new();
+        let mut phases = Phases::new();
         let mut deps: Vec<String> = Vec::new();
 
         if let Some(p) = p {
-            phases.push(p.clone());
+            phases.insert(phase_name.to_string(), p.clone());
             deps.append(&mut p.clone().depends_on.unwrap_or_default());
 
             while !deps.is_empty() {
                 let dep = deps.pop().unwrap();
                 let p = self.get_phase(&dep);
                 if let Some(p) = p {
-                    phases.push(p.clone());
+                    phases.insert(dep, p.clone());
                     deps.append(&mut p.clone().depends_on.unwrap_or_default());
                 }
             }
@@ -141,9 +162,9 @@ impl BuildPlan {
         phase_name: &str,
     ) -> String {
         let phases = plan.get_phases_with_dependencies(phase_name);
-        for mut phase in phases {
+        for (_, mut phase) in phases {
             phase.prefix_name(prefix);
-            self.add_phase(phase.clone());
+            self.add_phase(phase);
         }
 
         format!("{}:{}", prefix, phase_name)
@@ -155,87 +176,120 @@ impl BuildPlan {
         }
     }
 
-    /// Create a new build plan by applying the given configuration
-    pub fn apply_config(plan: &BuildPlan, config: &GeneratePlanConfig) -> BuildPlan {
-        let mut new_plan = plan.clone();
-
-        // Setup config
-        let mut setup = new_plan
-            .remove_phase("setup")
-            .unwrap_or_else(|| Phase::setup(None));
-
-        // Append the packages and libraries together
-        setup.apt_pkgs = none_if_empty(
-            [
-                config.custom_apt_pkgs.clone(),
-                setup.apt_pkgs.unwrap_or_default(),
-            ]
-            .concat(),
-        );
-        setup.nix_pkgs = none_if_empty(
-            [
-                config.custom_pkgs.clone(),
-                setup.nix_pkgs.unwrap_or_default(),
-            ]
-            .concat(),
-        );
-        setup.nix_libraries = none_if_empty(
-            [
-                config.custom_libs.clone(),
-                setup.nix_libraries.unwrap_or_default(),
-            ]
-            .concat(),
-        );
-        setup.nixpacks_archive = setup.nixpacks_archive.or_else(|| {
-            if config.pin_pkgs {
-                Some(NIXPKGS_ARCHIVE.to_string())
-            } else {
-                None
-            }
-        });
-        new_plan.add_phase(setup);
-
-        // Install config
-        let mut install = new_plan
-            .remove_phase("install")
-            .unwrap_or_else(|| Phase::install(None));
-        install.cmds = config.custom_install_cmd.clone().or(install.cmds);
-        new_plan.add_phase(install);
-
-        // Build config
-        let mut build = new_plan
-            .remove_phase("build")
-            .unwrap_or_else(|| Phase::build(None));
-        build.cmds = config.custom_build_cmd.clone().or(build.cmds);
-        new_plan.add_phase(build);
-
-        // Start config
-        let mut start = new_plan.start_phase.clone().unwrap_or_default();
-        start.cmd = config.custom_start_cmd.clone().or(start.cmd);
-        new_plan.start_phase = Some(start);
-
-        new_plan
-    }
-}
-
-impl Default for BuildPlan {
-    fn default() -> Self {
-        Self {
-            nixpacks_version: Some(NIX_PACKS_VERSION.to_string()),
-            build_image: DEFAULT_BASE_IMAGE.to_string(),
-            phases: vec![],
-            start_phase: None,
-            variables: None,
-            static_assets: None,
+    pub fn resolve_phase_names(&mut self) {
+        let phases = self.phases.get_or_insert(BTreeMap::default());
+        for (name, phase) in phases.iter_mut() {
+            phase.set_name(name);
         }
     }
+
+    pub fn from_environment(env: &Environment) -> Self {
+        let mut phases: Vec<Phase> = Vec::new();
+
+        // Setup
+        let mut setup = Phase::setup(None);
+        let mut uses_setup = false;
+
+        if let Some(pkg_string) = env.get_config_variable("PKGS") {
+            let mut pkgs = pkg_string
+                .split(' ')
+                .map(std::string::ToString::to_string)
+                .collect::<Vec<_>>();
+            pkgs.push("...".to_string());
+            setup.nix_pkgs = Some(pkgs);
+            uses_setup = true;
+        }
+        if let Some(apt_string) = env.get_config_variable("APT_PKGS") {
+            let mut apts = apt_string
+                .split(' ')
+                .map(std::string::ToString::to_string)
+                .collect::<Vec<_>>();
+            apts.push("...".to_string());
+            setup.apt_pkgs = Some(apts);
+            uses_setup = true;
+        }
+        if let Some(nix_lib_string) = env.get_config_variable("LIBS") {
+            let mut libs = nix_lib_string
+                .split(' ')
+                .map(std::string::ToString::to_string)
+                .collect::<Vec<_>>();
+            libs.push("...".to_string());
+            setup.nix_libs = Some(libs);
+            uses_setup = true;
+        }
+
+        if uses_setup {
+            phases.push(setup);
+        }
+
+        // Install
+        if let Some(cmd_string) = env.get_config_variable("INSTALL_CMD") {
+            let install = Phase::install(Some(cmd_string));
+            phases.push(install);
+        }
+
+        // Build
+        if let Some(cmd_string) = env.get_config_variable("BUILD_CMD") {
+            let build = Phase::build(Some(cmd_string));
+            phases.push(build);
+        }
+
+        // Start
+        let start = env.get_config_variable("START_CMD").map(StartPhase::new);
+
+        BuildPlan::new(&phases, start)
+    }
+
+    pub fn pin(&mut self) {
+        self.providers = Some(Vec::new());
+        if self.build_image.is_none() {
+            self.build_image = Some(DEBIAN_SLIM_IMAGE.to_string());
+        }
+
+        self.resolve_phase_names();
+        let phases = self.phases.get_or_insert(Phases::default());
+        for (_, phase) in phases.iter_mut() {
+            phase.pin();
+        }
+
+        if let Some(start) = &mut self.start_phase {
+            start.pin();
+        }
+    }
+
+    pub fn prefix_phases(&mut self, prefix: &str) {
+        if let Some(phases) = self.phases.clone() {
+            self.resolve_phase_names();
+            let mut new_phases = Phases::default();
+
+            for (_, phase) in phases {
+                let mut new_phase = phase.clone();
+                new_phase.prefix_name(prefix);
+                new_phase.prefix_dependencies(prefix);
+                new_phases.insert(new_phase.get_name(), new_phase);
+            }
+
+            self.phases = Some(new_phases);
+        }
+    }
+
+    pub fn merge_plans(plans: &[BuildPlan]) -> BuildPlan {
+        plans.iter().fold(BuildPlan::default(), |acc, plan| {
+            BuildPlan::merge(&acc, plan)
+        })
+    }
 }
 
-fn none_if_empty<T>(value: Vec<T>) -> Option<Vec<T>> {
-    if value.is_empty() {
-        None
-    } else {
-        Some(value)
+impl topological_sort::TopItem for (String, Phase) {
+    fn get_name(&self) -> String {
+        self.0.clone()
+    }
+
+    fn get_dependencies(&self) -> &[String] {
+        match &self.1.depends_on {
+            Some(depends_on) => depends_on.as_slice(),
+            None => &[],
+        }
     }
 }
 
@@ -256,15 +310,36 @@ mod test {
         let mut another = Phase::new("another");
         another.depends_on_phase("setup");
 
-        let plan = BuildPlan::new(vec![setup, install, build, another], None);
+        let plan = BuildPlan::new(&vec![setup, install, build, another], None);
 
-        let phases = topological_sort(plan.get_phases_with_dependencies("build")).unwrap();
-
-        println!("{:?}", phases);
+        // let phases = topological_sort(plan.get_phases_with_dependencies("build")).unwrap();
+        let build_phase = plan.get_phases_with_dependencies("build");
+        let phases = build_phase.values();
 
         assert_eq!(phases.len(), 3);
-        assert_eq!(phases[0].name, "setup");
-        assert_eq!(phases[1].name, "install");
-        assert_eq!(phases[2].name, "build");
+    }
+
+    #[test]
+    fn test_pin_build_plan() {
+        let mut plan = BuildPlan::from_toml(
+            r#"
+            [phases.setup]
+            nixPkgs = ["nodejs", "@auto", "yarn"]
+
+            [phases.build]
+            cmds = ["yarn run build", "...", "yarn run optimize-assets"]
+
+            [start]
+            cmd = "yarn run start"
+            "#,
+        )
+        .unwrap();
+
+        plan.pin();
+        assert_eq!(
+            plan.get_phase("setup").unwrap().nix_pkgs,
+            Some(vec!["nodejs".to_string(), "yarn".to_string()])
+        );
+        assert!(plan.get_phase("setup").unwrap().nixpkgs_archive.is_some());
     }
 }
