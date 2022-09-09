@@ -29,5 +29,5 @@ jobs:
       
       - uses: actions-rs/cargo@v1
         with:
-          command: release  ${{ steps.release-label.outputs.level }}
+          command: release ${{ steps.release-label.outputs.level }}
           args: --execute
