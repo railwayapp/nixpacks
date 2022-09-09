@@ -48,6 +48,8 @@ nixPkgs = ['nodejs', 'yarn', 'cowsay']
 
 The `"..."` represents a hole that will be populated by the values from plan that is merged into.
 
+---
+
 ## Build image
 
 The image to use as the base when building the application.
