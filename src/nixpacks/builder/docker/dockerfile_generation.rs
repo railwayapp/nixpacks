@@ -164,7 +164,7 @@ impl DockerfileGenerator for BuildPlan {
         let setup_copy_command = match (phases.first(), phases.len()) {
             (Some(first_phase), 1) => {
                 if first_phase.get_name() == "setup" {
-                    utils::get_copy_command(&vec![".".to_string()], APP_DIR)
+                    utils::get_copy_command(&[".".to_string()], APP_DIR)
                 } else {
                     "".to_string()
                 }
