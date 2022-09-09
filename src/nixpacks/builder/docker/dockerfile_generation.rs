@@ -200,6 +200,7 @@ impl DockerfileGenerator for BuildPlan {
         APP_DIR=APP_DIR,
         assets_copy_cmd=assets_copy_cmd,
         dockerfile_phases_str=dockerfile_phases_str,
+        setup_copy_command=setup_copy_command,
         start_phase_str=start_phase_str};
 
         Ok(dockerfile)
