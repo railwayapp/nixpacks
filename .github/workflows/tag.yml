@@ -14,7 +14,7 @@ jobs:
       - uses: actions-ecosystem/action-get-merged-pull-request@v1
         id: get-merged-pull-request
         with:
-          github_token: ${{ secrets.GH_PAT }}
+          github_token: ${{ secrets.COMMITTER_TOKEN }}
 
       - uses: actions-ecosystem/action-release-label@v1
         id: release-label
