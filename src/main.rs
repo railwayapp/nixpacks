@@ -167,6 +167,12 @@ fn main() -> Result<()> {
                 .multiple_values(true)
                 .global(true),
         )
+        .arg(
+            Arg::new("no-error-without-start")
+                .long("no-error-without-start")
+                .help("Do not error when no start command can be found")
+                .global(true),
+        )
         .get_matches();
 
     let install_cmd = matches.value_of("install_cmd").map(|s| vec![s.to_string()]);
@@ -191,6 +197,7 @@ fn main() -> Result<()> {
         Some(envs) => envs.collect(),
         None => Vec::new(),
     };
+    let no_error_without_start = matches.is_present("no-error-without-start");
 
     let plan_options = &GeneratePlanConfig {
         custom_install_cmd: install_cmd,
@@ -200,6 +207,7 @@ fn main() -> Result<()> {
         custom_libs: libs,
         custom_apt_pkgs: apt_pkgs,
         pin_pkgs,
+        no_error_without_start,
         ..Default::default()
     };
 

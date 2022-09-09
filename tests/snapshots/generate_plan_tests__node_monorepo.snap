@@ -8,6 +8,7 @@ expression: plan
   "variables": {
     "CI": "true",
     "NIXPACKS_METADATA": "node",
+    "NIXPACKS_START_CMD": "echo hello world",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
   },
@@ -50,5 +51,7 @@ expression: plan
       ]
     }
   ],
-  "startPhase": {}
+  "startPhase": {
+    "cmd": "echo hello world"
+  }
 }

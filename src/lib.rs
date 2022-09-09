@@ -31,7 +31,7 @@ use crate::nixpacks::{
         config::GeneratePlanConfig, generator::NixpacksBuildPlanGenerator, BuildPlan, PlanGenerator,
     },
 };
-use anyhow::Result;
+use anyhow::{bail, Result};
 use providers::{
     clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
     deno::DenoProvider, elixir::ElixirProvider, fsharp::FSharpProvider, go::GolangProvider,
@@ -78,6 +78,12 @@ pub fn generate_build_plan(
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
     let plan = generator.generate_plan(&app, &environment)?;
+
+    if let Some(ref phase) = plan.start_phase {
+        if phase.cmd.is_none() && !plan_options.no_error_without_start {
+            bail!("No start command could be found")
+        }
+    }
 
     Ok(plan)
 }

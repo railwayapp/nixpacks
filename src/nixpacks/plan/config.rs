@@ -11,6 +11,7 @@ pub struct GeneratePlanConfig {
     pub pin_pkgs: bool,
     pub install_cache_dirs: Option<Vec<String>>,
     pub build_cache_dirs: Option<Vec<String>>,
+    pub no_error_without_start: bool,
 }
 
 impl GeneratePlanConfig {
@@ -90,6 +91,7 @@ impl GeneratePlanConfig {
                 c1.build_cache_dirs.clone(),
                 c2.build_cache_dirs.clone(),
             ),
+            no_error_without_start: c1.no_error_without_start || c2.no_error_without_start,
         }
     }
 }
@@ -133,7 +135,8 @@ mod tests {
                 custom_libs: vec!["openssl".to_string()],
                 install_cache_dirs: Some(vec!["install/cache".to_string()]),
                 build_cache_dirs: Some(vec!["build/cache".to_string()]),
-                pin_pkgs: false
+                pin_pkgs: false,
+                no_error_without_start: false
             },
             GeneratePlanConfig::from_environment(
                 &Environment::from_envs(vec![
@@ -163,7 +166,8 @@ mod tests {
                 custom_libs: vec!["openssl".to_string()],
                 install_cache_dirs: Some(vec!["install/cache".to_string(), "install2".to_string()]),
                 build_cache_dirs: Some(vec!["build/cache".to_string()]),
-                pin_pkgs: false
+                pin_pkgs: false,
+                no_error_without_start: false
             },
             GeneratePlanConfig::merge(
                 &GeneratePlanConfig::from_environment(
