@@ -37,7 +37,7 @@ impl Provider for JavaProvider {
             setup = Phase::setup(Some(pkgs));
 
             let gradle_exe = self.get_gradle_exe(app);
-            let mut build = Phase::build(Some(format!("{} build", gradle_exe)));
+            let mut build = Phase::build(Some(format!("{} build -x check", gradle_exe)));
             build.add_cache_directory(".gradle");
             build
         } else {
