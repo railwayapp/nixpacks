@@ -36,7 +36,7 @@ expression: plan
         "stdenv.cc.cc.lib"
       ],
       "nixOverlays": [],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

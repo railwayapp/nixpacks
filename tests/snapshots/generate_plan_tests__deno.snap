@@ -25,7 +25,7 @@ expression: plan
         "deno"
       ],
       "nixOverlays": [],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

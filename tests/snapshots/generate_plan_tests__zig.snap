@@ -30,7 +30,7 @@ expression: plan
         "zig"
       ],
       "nixOverlays": [],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

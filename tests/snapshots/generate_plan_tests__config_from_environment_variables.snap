@@ -39,7 +39,7 @@ expression: plan
         "cowsay",
         "ripgrep"
       ],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

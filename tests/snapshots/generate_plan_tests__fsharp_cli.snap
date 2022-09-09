@@ -36,7 +36,7 @@ expression: plan
         "dotnet-sdk"
       ],
       "nixOverlays": [],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

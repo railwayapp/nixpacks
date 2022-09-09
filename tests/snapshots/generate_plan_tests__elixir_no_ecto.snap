@@ -37,7 +37,7 @@ expression: plan
         "elixir_1_12"
       ],
       "nixOverlays": [],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

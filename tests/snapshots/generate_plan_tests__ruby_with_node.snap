@@ -53,7 +53,7 @@ expression: plan
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
       ],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     },
     "setup": {
       "name": "setup",

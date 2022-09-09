@@ -42,7 +42,7 @@ expression: plan
         "zlib.dev"
       ],
       "nixOverlays": [],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

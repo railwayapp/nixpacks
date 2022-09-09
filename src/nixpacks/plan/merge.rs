@@ -68,9 +68,7 @@ impl Mergeable for Phase {
     fn merge(c1: &Phase, c2: &Phase) -> Phase {
         let mut phase = c1.clone();
         let c2 = c2.clone();
-        phase.nixpacks_archive = c2
-            .nixpacks_archive
-            .or_else(|| phase.nixpacks_archive.clone());
+        phase.nixpkgs_archive = c2.nixpkgs_archive.or_else(|| phase.nixpkgs_archive.clone());
 
         phase.cmds = fill_auto_in_vec(phase.cmds.clone(), c2.cmds);
         phase.depends_on = fill_auto_in_vec(phase.depends_on.clone(), c2.depends_on);

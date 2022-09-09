@@ -36,7 +36,7 @@ expression: plan
       "nixOverlays": [
         "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
       ],
-      "nixpacksArchive": "[archive]",
+      "nixpkgsArchive": "[archive]",
       "aptPkgs": [
         "binutils"
       ]

@@ -46,9 +46,8 @@ pub fn generate_plan_tests(_tokens: TokenStream) -> TokenStream {
         macro_rules! assert_plan_snapshot {
             ($plan:expr) => {
                 ::insta::assert_json_snapshot!($plan, {
-                    ".nixpacksVersion" => "[version]",
                     ".buildImage" => "[build_image]",
-                    ".phases.*.nixpacksArchive" => "[archive]",
+                    ".phases.*.nixpkgsArchive" => "[archive]",
                 });
             }
         }

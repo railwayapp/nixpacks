@@ -340,6 +340,6 @@ mod test {
             plan.get_phase("setup").unwrap().nix_pkgs,
             Some(vec!["nodejs".to_string(), "yarn".to_string()])
         );
-        assert!(plan.get_phase("setup").unwrap().nixpacks_archive.is_some());
+        assert!(plan.get_phase("setup").unwrap().nixpkgs_archive.is_some());
     }
 }

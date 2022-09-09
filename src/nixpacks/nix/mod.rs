@@ -9,7 +9,7 @@ pub fn create_nix_expression(phase: &Phase) -> String {
 
     let libraries = phase.nix_libs.clone().unwrap_or_default().join(" ");
 
-    let nix_archive = phase.nixpacks_archive.clone();
+    let nix_archive = phase.nixpkgs_archive.clone();
     let pkg_import = match nix_archive {
         Some(archive) => format!(
             "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",

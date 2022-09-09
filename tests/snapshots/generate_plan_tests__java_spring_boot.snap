@@ -28,7 +28,7 @@ expression: plan
         "gradle_6"
       ],
       "nixOverlays": [],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

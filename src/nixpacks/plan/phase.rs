@@ -25,8 +25,7 @@ pub struct Phase {
 
     pub nix_overlays: Option<Vec<String>>,
 
-    #[serde(rename = "nixpacksArchive")]
-    pub nixpacks_archive: Option<String>,
+    pub nixpkgs_archive: Option<String>,
 
     #[serde(alias = "aptPackages")]
     pub apt_pkgs: Option<Vec<String>>,
@@ -175,12 +174,12 @@ impl Phase {
     }
 
     pub fn set_nix_archive(&mut self, archive: String) {
-        self.nixpacks_archive = Some(archive);
+        self.nixpkgs_archive = Some(archive);
     }
 
     pub fn pin(&mut self) {
-        if self.uses_nix() && self.nixpacks_archive.is_none() {
-            self.nixpacks_archive = Some(NIXPKGS_ARCHIVE.to_string());
+        if self.uses_nix() && self.nixpkgs_archive.is_none() {
+            self.nixpkgs_archive = Some(NIXPKGS_ARCHIVE.to_string());
         }
 
         self.cmds = pin_option_vec(&self.cmds);

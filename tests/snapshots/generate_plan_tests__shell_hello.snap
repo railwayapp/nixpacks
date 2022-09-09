@@ -14,7 +14,7 @@ expression: plan
       "nixPkgs": [
         "cowsay"
       ],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

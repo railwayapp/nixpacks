@@ -41,7 +41,7 @@ expression: plan
         "go_1_18"
       ],
       "nixOverlays": [],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

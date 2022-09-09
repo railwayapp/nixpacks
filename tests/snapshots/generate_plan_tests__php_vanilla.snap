@@ -33,7 +33,7 @@ expression: plan
         "phpPackages.composer"
       ],
       "nixOverlays": [],
-      "nixpacksArchive": "[archive]"
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {
