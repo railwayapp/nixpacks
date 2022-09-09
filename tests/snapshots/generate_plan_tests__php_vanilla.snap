@@ -3,7 +3,7 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "php",
@@ -14,41 +14,29 @@ expression: plan
     "php-fpm.conf": "[www]\nlisten = 127.0.0.1:9000\nuser = nobody\npm = dynamic\npm.max_children = 50\npm.min_spare_servers = 4\npm.max_spare_servers = 32\npm.start_servers = 18\nclear_env = no\n",
     "transform-config.pl": "#!/usr/bin/env perl\n\nundef $/;\n\nsub if_stmt {\n    my $condition = $_[0];\n    my $value = $_[1];\n    my $else = $_[2];\n\n    if($ENV{$condition} eq \"yes\") {\n        return $value;\n    } else {\n        return $else;\n    }\n}\n\nsub get_nix_path {\n    my $exe = $_[0];\n    my $path = `which $exe`;\n    $path =~ s/\\n//;\n    my $storePath = `nix-store -q $path`;\n    $storePath =~ s/\\n//;\n    return $storePath;\n}\n\nif ($#ARGV != 1) {\n    print STDERR \"Usage: $0 <config-file> <output-file>\\n\";\n    exit 1;\n}\nmy $infile = $ARGV[0];\nmy $outfile = $ARGV[1];\nopen(FH, '<', $infile) or die \"Could not open configuration file '$infile' $!\";\nmy $out = '';\nwhile (<FH>) {\n\n    # If statements\n    s{\n        \\$if\\s*\\((\\w+)\\)\\s*\\(\n            ([\\s\\S]*?)\n        \\)\\s*else\\s*\\(\n            ([\\s\\S]*?)\n        \\)\n    }{if_stmt($1, $2, $3)}egx;\n\n    # Variables\n    s/\\$\\{(\\w+)\\}/$ENV{$1}/eg;\n    \n    # Nix paths\n    s/\\$\\!\\{(\\w+)\\}/get_nix_path($1)/eg;\n\n    $out .= $_;\n}\nclose(FH);\nopen(FH, '>', $outfile) or die \"Could not write configuration file '$outfile' $!\";\nprint FH $out;\nclose(FH);"
   },
-  "phases": [
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "php"
-        },
-        {
-          "name": "perl"
-        },
-        {
-          "name": "nginx"
-        },
-        {
-          "name": "phpPackages.composer"
-        }
-      ]
-    },
-    {
+  "phases": {
+    "install": {
       "name": "install",
       "dependsOn": [
         "setup"
       ],
-      "commands": [
+      "cmds": [
         "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx"
       ]
     },
-    {
-      "name": "build",
-      "dependsOn": [
-        "install"
-      ]
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "php",
+        "perl",
+        "nginx",
+        "phpPackages.composer"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "([ -e /app/storage ] && chmod -R ugo+w /app/storage); perl /assets/transform-config.pl /assets/nginx.template.conf /nginx.conf && echo \"Server starting on port $PORT\" && (php-fpm -y /assets/php-fpm.conf & nginx -c /nginx.conf)"
   }
 }

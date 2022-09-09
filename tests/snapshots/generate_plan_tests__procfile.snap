@@ -3,7 +3,7 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "CI": "true",
@@ -11,13 +11,25 @@ expression: plan
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
   },
-  "phases": [
-    {
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cmds": [
+        "npm run build"
+      ],
+      "cacheDirectories": [
+        "node_modules/.cache"
+      ]
+    },
+    "install": {
       "name": "install",
       "dependsOn": [
         "setup"
       ],
-      "commands": [
+      "cmds": [
         "npm i"
       ],
       "cacheDirectories": [
@@ -27,29 +39,30 @@ expression: plan
         "/app/node_modules/.bin"
       ]
     },
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "nodejs-16_x"
-        },
-        {
-          "name": "npm-8_x",
-          "overlay": "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
-        }
+    "release": {
+      "name": "release",
+      "dependsOn": [
+        "setup",
+        "install",
+        "build"
+      ],
+      "cmds": [
+        "echo release"
       ]
     },
-    {
-      "name": "build",
-      "dependsOn": [
-        "install"
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "nodejs-16_x",
+        "npm-8_x"
       ],
-      "cacheDirectories": [
-        "node_modules/.cache"
-      ]
+      "nixOverlays": [
+        "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+      ],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
-    "cmd": "node index.js"
+  },
+  "start": {
+    "cmd": "echo start from procfile"
   }
 }

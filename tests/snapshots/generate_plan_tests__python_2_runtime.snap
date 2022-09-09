@@ -3,42 +3,34 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "python",
     "PYTHONUNBUFFERED": "1"
   },
-  "phases": [
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "python27"
-        },
-        {
-          "name": "gcc"
-        }
-      ],
-      "nixLibraries": [
-        "zlib",
-        "stdenv.cc.cc.lib"
-      ]
-    },
-    {
+  "phases": {
+    "install": {
       "name": "install",
       "dependsOn": [
         "setup"
       ]
     },
-    {
-      "name": "build",
-      "dependsOn": [
-        "install"
-      ]
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "python27",
+        "gcc"
+      ],
+      "nixLibs": [
+        "zlib",
+        "stdenv.cc.cc.lib"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "python main.py"
   }
 }

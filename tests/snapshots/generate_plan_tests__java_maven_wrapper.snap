@@ -3,43 +3,35 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "Java"
   },
-  "phases": [
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
-      ]
-    },
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "jdk"
-        },
-        {
-          "name": "maven"
-        }
-      ]
-    },
-    {
+  "phases": {
+    "build": {
       "name": "build",
       "dependsOn": [
-        "install"
+        "setup"
       ],
-      "commands": [
+      "cmds": [
         "./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install"
       ],
       "cacheDirectories": [
         ".m2/repository"
       ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "jdk",
+        "maven"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar"
   }
 }

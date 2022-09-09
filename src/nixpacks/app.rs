@@ -1,12 +1,11 @@
+use anyhow::{bail, Context, Result};
+use globset::Glob;
 use path_slash::PathBufExt;
+use regex::Regex;
+use serde::de::DeserializeOwned;
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::{env, fs, path::PathBuf};
-
-use anyhow::{bail, Context, Result};
-use globset::Glob;
-use regex::Regex;
-use serde::de::DeserializeOwned;
 use walkdir::{DirEntry, WalkDir};
 
 pub type StaticAssets = BTreeMap<String, String>;

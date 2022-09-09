@@ -53,7 +53,7 @@ impl Provider for StaticfileProvider {
 
         let static_assets = StaticfileProvider::get_static_assets(app, env)?;
 
-        let mut plan = BuildPlan::new(vec![setup, build], Some(start));
+        let mut plan = BuildPlan::new(&vec![setup, build], Some(start));
         plan.add_static_assets(static_assets);
 
         Ok(Some(plan))

@@ -3,29 +3,21 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_START_CMD": "./start.sh"
   },
-  "phases": [
-    {
-      "name": "setup"
-    },
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
-      ]
-    },
-    {
-      "name": "build",
-      "dependsOn": [
-        "install"
-      ]
+  "phases": {
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "cowsay"
+      ],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "./start.sh"
   }
 }

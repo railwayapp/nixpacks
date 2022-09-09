@@ -1,3 +1,17 @@
+use anyhow::{bail, Result};
+use clap::{arg, Arg, Command};
+use nixpacks::{
+    create_docker_image, generate_build_plan,
+    nixpacks::{
+        builder::docker::DockerBuilderOptions,
+        nix::pkg::Pkg,
+        plan::{
+            generator::GeneratePlanOptions,
+            phase::{Phase, StartPhase},
+            BuildPlan,
+        },
+    },
+};
 use std::{
     collections::hash_map::DefaultHasher,
     env,
@@ -5,14 +19,20 @@ use std::{
     string::ToString,
 };
 
-use anyhow::Result;
-use clap::{arg, Arg, Command};
-use nixpacks::{
-    create_docker_image, generate_build_plan,
-    nixpacks::{
-        builder::docker::DockerBuilderOptions, nix::pkg::Pkg, plan::config::GeneratePlanConfig,
-    },
-};
+enum PlanFormat {
+    Json,
+    Toml,
+}
+
+impl PlanFormat {
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "json" => Ok(PlanFormat::Json),
+            "toml" => Ok(PlanFormat::Toml),
+            _ => bail!("Invalid plan format"),
+        }
+    }
+}
 
 fn main() -> Result<()> {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -24,7 +44,13 @@ fn main() -> Result<()> {
         .subcommand(
             Command::new("plan")
                 .about("Generate a build plan for an app")
-                .arg(arg!(<PATH> "App source")),
+                .arg(arg!(<PATH> "App source"))
+                .arg(
+                    Arg::new("format")
+                        .short('f')
+                        .takes_value(true)
+                        .help("json|toml. Specify the output format of the plan"),
+                ),
         )
         .subcommand(
             Command::new("build")
@@ -101,6 +127,11 @@ fn main() -> Result<()> {
                     Arg::new("cache-from")
                         .long("cache-from")
                         .help("Image to consider as cache sources"),
+                )
+                .arg(
+                    Arg::new("no-error-without-start")
+                        .long("no-error-without-start")
+                        .help("Do not error when no start command can be found"),
                 ),
         )
         .arg(
@@ -153,13 +184,6 @@ fn main() -> Result<()> {
                 .global(true),
         )
         .arg(
-            Arg::new("pin")
-                .long("pin")
-                .help("Pin the nixpkgs")
-                .takes_value(false)
-                .global(true),
-        )
-        .arg(
             Arg::new("env")
                 .long("env")
                 .help("Provide environment variables to your build")
@@ -168,9 +192,10 @@ fn main() -> Result<()> {
                 .global(true),
         )
         .arg(
-            Arg::new("no-error-without-start")
-                .long("no-error-without-start")
-                .help("Do not error when no start command can be found")
+            Arg::new("config")
+                .short('c')
+                .help("Path to config file")
+                .takes_value(true)
                 .global(true),
         )
         .get_matches();
@@ -191,33 +216,53 @@ fn main() -> Result<()> {
         None => Vec::new(),
     };
 
-    let pin_pkgs = matches.is_present("pin");
-
     let envs: Vec<_> = match matches.values_of("env") {
         Some(envs) => envs.collect(),
         None => Vec::new(),
     };
-    let no_error_without_start = matches.is_present("no-error-without-start");
 
-    let plan_options = &GeneratePlanConfig {
-        custom_install_cmd: install_cmd,
-        custom_start_cmd: start_cmd,
-        custom_build_cmd: build_cmd,
-        custom_pkgs: pkgs,
-        custom_libs: libs,
-        custom_apt_pkgs: apt_pkgs,
-        pin_pkgs,
-        no_error_without_start,
-        ..Default::default()
+    // CLI build plan
+    let mut cli_plan = BuildPlan::default();
+    if !pkgs.is_empty() || !libs.is_empty() || !apt_pkgs.is_empty() {
+        let mut setup = Phase::setup(Some(vec![pkgs, vec![Pkg::new("...")]].concat()));
+        setup.apt_pkgs = Some(vec![apt_pkgs, vec!["...".to_string()]].concat());
+        setup.nix_libs = Some(vec![libs, vec!["...".to_string()]].concat());
+        cli_plan.add_phase(setup);
+    }
+    if let Some(install_cmds) = install_cmd {
+        let mut install = Phase::install(None);
+        install.cmds = Some(install_cmds);
+        cli_plan.add_phase(install);
+    }
+    if let Some(build_cmds) = build_cmd {
+        let mut build = Phase::build(None);
+        build.cmds = Some(build_cmds);
+        cli_plan.add_phase(build);
+    }
+    if let Some(start_cmd) = start_cmd {
+        let start = StartPhase::new(start_cmd);
+        cli_plan.set_start_phase(start);
+    }
+
+    let config_file = matches.value_of("config").map(ToString::to_string);
+    let options = GeneratePlanOptions {
+        plan: Some(cli_plan),
+        config_file,
     };
 
     match &matches.subcommand() {
         Some(("plan", matches)) => {
             let path = matches.value_of("PATH").expect("required");
+            let format = PlanFormat::from_str(matches.value_of("format").unwrap_or("json"))?;
 
-            let plan = generate_build_plan(path, envs, plan_options)?;
-            let json = serde_json::to_string_pretty(&plan)?;
-            println!("{}", json);
+            let plan = generate_build_plan(path, envs, &options)?;
+
+            let plan_s = match format {
+                PlanFormat::Json => serde_json::to_string_pretty(&plan)?,
+                PlanFormat::Toml => toml::to_string_pretty(&plan)?,
+            };
+
+            println!("{}", plan_s);
         }
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").expect("required");
@@ -250,6 +295,8 @@ fn main() -> Result<()> {
                 .map(|values| values.map(ToString::to_string).collect::<Vec<_>>())
                 .unwrap_or_default();
 
+            let no_error_without_start = matches.is_present("no-error-without-start");
+
             let build_options = &DockerBuilderOptions {
                 name,
                 tags,
@@ -263,9 +310,10 @@ fn main() -> Result<()> {
                 current_dir,
                 inline_cache,
                 cache_from,
+                no_error_without_start,
             };
 
-            create_docker_image(path, envs, plan_options, build_options)?;
+            create_docker_image(path, envs, &options, build_options)?;
         }
         _ => eprintln!("Invalid command"),
     }

@@ -1,5 +1,5 @@
 use super::{phase::Phase, BuildPlan};
-use crate::nixpacks::{nix::pkg::Pkg, NIX_PACKS_VERSION};
+use crate::nixpacks::NIX_PACKS_VERSION;
 use anyhow::Result;
 use colored::Colorize;
 use indoc::formatdoc;
@@ -17,7 +17,7 @@ impl BuildPlan {
         let phase_contents = self
             .get_sorted_phases()?
             .iter()
-            .map(|phase| (phase.name.clone(), self.get_phase_content(phase).unwrap()))
+            .map(|phase| (phase.get_name(), self.get_phase_content(phase).unwrap()))
             .collect::<Vec<_>>();
 
         let start_contents = self
@@ -112,7 +112,7 @@ impl BuildPlan {
             .into_iter()
             .map(|(name, content)| {
                 print_row(
-                    uppercase_first_letter(name.as_str()).as_str(),
+                    name.as_str(),
                     content.as_str(),
                     edge.as_str(),
                     middle_padding.as_str(),
@@ -125,7 +125,7 @@ impl BuildPlan {
             .join(format!("\n{}\n", hor_sep).as_str());
 
         let start_row = print_row(
-            "Start",
+            "start",
             start_contents.as_str(),
             edge.as_str(),
             middle_padding.as_str(),
@@ -156,14 +156,7 @@ impl BuildPlan {
         let nix_pkgs = phase.nix_pkgs.clone().unwrap_or_default();
         let apt_pkgs = phase.apt_pkgs.clone().unwrap_or_default();
         let cmds = phase.cmds.clone().unwrap_or_default();
-        let pkgs = [
-            nix_pkgs
-                .iter()
-                .map(Pkg::to_pretty_string)
-                .collect::<Vec<_>>(),
-            apt_pkgs,
-        ]
-        .concat();
+        let pkgs = [nix_pkgs, apt_pkgs].concat();
 
         let show_label = !pkgs.is_empty() && !cmds.is_empty();
 
@@ -238,8 +231,4 @@ fn print_row(
     }
 
     output
-}
-
-fn uppercase_first_letter(s: &str) -> String {
-    s[0..1].to_uppercase() + &s[1..]
 }

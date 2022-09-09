@@ -3,41 +3,20 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "rust",
     "NIXPACKS_NO_MUSL": "1",
     "ROCKET_ADDRESS": "0.0.0.0"
   },
-  "phases": [
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
-      ]
-    },
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "gcc"
-        },
-        {
-          "name": "rust-bin.stable.latest.default",
-          "overlay": "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
-        }
-      ],
-      "aptPackages": [
-        "binutils"
-      ]
-    },
-    {
+  "phases": {
+    "build": {
       "name": "build",
       "dependsOn": [
-        "install"
+        "setup"
       ],
-      "commands": [
+      "cmds": [
         "mkdir -p bin",
         "cargo build --release",
         "cp target/release/rocket bin"
@@ -47,9 +26,23 @@ expression: plan
         "/root/.cargo/registry",
         "target"
       ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "gcc",
+        "rust-bin.stable.latest.default"
+      ],
+      "nixOverlays": [
+        "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
+      ],
+      "nixpkgsArchive": "[archive]",
+      "aptPkgs": [
+        "binutils"
+      ]
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "./bin/rocket"
   }
 }

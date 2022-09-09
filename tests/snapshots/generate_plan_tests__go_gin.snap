@@ -3,47 +3,48 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "CGO_ENABLED": "0",
     "NIXPACKS_METADATA": "golang"
   },
-  "phases": [
-    {
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install",
+        "setup"
+      ],
+      "cmds": [
+        "go build -o out"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/go-build"
+      ]
+    },
+    "install": {
       "name": "install",
       "dependsOn": [
         "setup"
       ],
-      "commands": [
+      "cmds": [
         "go mod download"
       ],
       "cacheDirectories": [
         "/root/.cache/go-build"
       ]
     },
-    {
+    "setup": {
       "name": "setup",
-      "nixPackages": [
-        {
-          "name": "go_1_18"
-        }
-      ]
-    },
-    {
-      "name": "build",
-      "dependsOn": [
-        "install"
+      "nixPkgs": [
+        "go_1_18"
       ],
-      "commands": [
-        "go build -o out"
-      ],
-      "cacheDirectories": [
-        "/root/.cache/go-build"
-      ]
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "./out",
     "runImage": "debian:bullseye-slim"
   }
