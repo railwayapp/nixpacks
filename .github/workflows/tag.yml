@@ -27,11 +27,9 @@ jobs:
         with:
           toolchain: stable
       
-      - run: echo ${{ steps.release-label.outputs.level }}
-      
       - run: echo 'Dry Run PATCH' # cargo release patch --execute
-        if: ${{ steps.release-label.outputs.level == 'release/patch' }}
+        if: ${{ steps.release-label.outputs.level == 'patch' }}
       - run: echo 'Dry Run MINOR' # cargo release minor --execute
-        if: ${{ steps.release-label.outputs.level == 'release/minor' }}
+        if: ${{ steps.release-label.outputs.level == 'minor' }}
       - run: echo 'Dry Run MAJOR' # cargo release major --execute
-        if: ${{ steps.release-label.outputs.level == 'release/major' }}
+        if: ${{ steps.release-label.outputs.level == 'major' }}
