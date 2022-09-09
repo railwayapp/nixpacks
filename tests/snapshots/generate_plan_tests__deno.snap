@@ -12,7 +12,8 @@ expression: plan
     "build": {
       "name": "build",
       "dependsOn": [
-        "install"
+        "install",
+        "setup"
       ],
       "cmds": [
         "deno cache src/index.ts"
