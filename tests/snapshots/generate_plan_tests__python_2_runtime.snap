@@ -10,6 +10,12 @@ expression: plan
     "PYTHONUNBUFFERED": "1"
   },
   "phases": {
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ]
+    },
     "setup": {
       "name": "setup",
       "nixPkgs": [
