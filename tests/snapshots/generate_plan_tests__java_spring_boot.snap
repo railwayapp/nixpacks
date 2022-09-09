@@ -15,7 +15,7 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "./gradlew build"
+        "./gradlew build -x check"
       ],
       "cacheDirectories": [
         ".gradle"
