@@ -28,8 +28,14 @@ jobs:
           toolchain: stable
       
       - run: cargo install cargo-release
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: login
+          args: ${{ secrets.NIXPACKS_CARGO_RELEASE_TOKEN }}
       
       - uses: actions-rs/cargo@v1
         with:
           command: release ${{ steps.release-label.outputs.level }}
           args: --execute
+
