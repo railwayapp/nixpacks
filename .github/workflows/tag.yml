@@ -16,7 +16,7 @@ jobs:
           toolchain: stable
       - uses: nash-ws/cargo-release-action@main
         with:
-          major-label: major
-          minor-label: minor
-          patch-label: patch
+          major-label: release/major
+          minor-label: release/minor
+          patch-label: release/patch
           cargo-token: ${{ secrets.NIXPACKS_CARGO_RELEASE_TOKEN }}
