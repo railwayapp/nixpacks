@@ -13,7 +13,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - uses: nash-ws/cargo-release-action@main
+      - uses: nash-io/cargo-release-action@main
         with:
           major-label: release/major
           minor-label: release/minor
