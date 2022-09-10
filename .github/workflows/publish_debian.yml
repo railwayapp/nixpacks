@@ -69,3 +69,4 @@ jobs:
           branch: debian-${{ steps.date.outputs.date }}
           delete-branch: true
           title: Bump base image to `debian-${{ steps.date.outputs.date }}`
+          labels: release/patch
