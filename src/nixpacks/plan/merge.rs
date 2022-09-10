@@ -13,7 +13,7 @@ impl Mergeable for BuildPlan {
         let plan2 = c2.clone();
 
         new_plan.providers = fill_auto_in_vec(new_plan.providers.clone(), plan2.providers.clone());
-        new_plan.build_image = new_plan.build_image.or(plan2.build_image);
+        new_plan.build_image = plan2.build_image.or(new_plan.build_image);
 
         new_plan.static_assets = match (new_plan.static_assets, plan2.static_assets) {
             (None, assets) | (assets, None) => assets,
