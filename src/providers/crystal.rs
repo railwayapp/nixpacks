@@ -45,7 +45,7 @@ impl Provider for CrystalProvider {
                 .ok_or_else(|| anyhow::anyhow!("Unable to get executable name"))?
         ));
 
-        let plan = BuildPlan::new(vec![setup, install, build], Some(start));
+        let plan = BuildPlan::new(&vec![setup, install, build], Some(start));
         Ok(Some(plan))
     }
 }

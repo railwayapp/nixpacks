@@ -74,7 +74,10 @@ jobs:
 
   test-plan:
     name: Test Suite
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     outputs:
       matrix: ${{ steps.docker-prep.outputs.matrix }}
     steps:      
@@ -102,6 +105,7 @@ jobs:
           args: --package nixpacks --lib --test generate_plan_tests
       - name: List docker tests (prep test-docker)
         id: docker-prep
+        if: matrix.os == 'ubuntu-latest'
         # generate list of tests in json format for test-docker
         run: |
           echo "::set-output name=matrix::{\"tests\":[\"$(cargo test -q --package nixpacks --test docker_run_tests -- --list --format=terse | sed -z 's/: test\n/\", \"/g' | sed 's/...$//')]}"
@@ -138,7 +142,10 @@ jobs:
 
   msrv:
     name: Test Suite (MSRV)
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0

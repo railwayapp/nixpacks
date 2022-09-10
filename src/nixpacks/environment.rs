@@ -1,4 +1,5 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
+use regex::Regex;
 use std::{collections::BTreeMap, env};
 
 pub type EnvironmentVariables = BTreeMap<String, String>;
@@ -16,19 +17,22 @@ impl Environment {
     pub fn from_envs(envs: Vec<&str>) -> Result<Environment> {
         let mut environment = Environment::default();
         for env in envs {
-            let v: Vec<&str> = env.split('=').collect();
-            if v.len() == 1 {
-                // Pull the variable from the current environment
-                let name = v[0];
+            let matches = Regex::new(r"([A-Za-z0-9_-]*)(?:=?)([\s\S]*)")
+                .unwrap()
+                .captures(env)
+                .unwrap();
+            if matches.get(2).unwrap().as_str() == "" {
+                // No value, pull from the current environment
+                let name = matches.get(1).unwrap().as_str();
                 if let Ok(value) = env::var(name) {
-                    // Variable is set
                     environment.set_variable(name.to_string(), value);
                 }
-            } else if v.len() > 2 {
-                bail!("Unable to parse variable string");
             } else {
                 // Use provided name, value pair
-                environment.set_variable(v[0].to_string(), v[1].to_string());
+                environment.set_variable(
+                    matches.get(1).unwrap().as_str().to_string(),
+                    matches.get(2).unwrap().as_str().to_string(),
+                );
             }
         }
 
@@ -87,8 +91,9 @@ mod tests {
     }
 
     #[test]
-    fn test_create_invalid_environment() {
-        assert!(Environment::from_envs(vec!["INVALID=ENV=CONFIG"]).is_err());
+    fn test_create_equals_sign_parsing() {
+        let environment = Environment::from_envs(vec!["INVALID=ENV=CONFIG"]).unwrap();
+        assert_eq!(environment.get_variable("INVALID"), Some("ENV=CONFIG"));
     }
 
     #[test]

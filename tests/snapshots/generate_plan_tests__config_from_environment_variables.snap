@@ -3,7 +3,7 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_BUILD_CACHE_DIRS": "/build,barbaz",
@@ -14,38 +14,35 @@ expression: plan
     "NIXPACKS_RUN_IMAGE": "alpine",
     "NIXPACKS_START_CMD": "start"
   },
-  "phases": [
-    {
-      "name": "setup",
-      "nixPackages": [
-        {
-          "name": "cowsay"
-        },
-        {
-          "name": "ripgrep"
-        }
-      ]
-    },
-    {
-      "name": "install",
-      "dependsOn": [
-        "setup"
-      ],
-      "commands": [
-        "install"
-      ]
-    },
-    {
+  "phases": {
+    "build": {
       "name": "build",
       "dependsOn": [
         "install"
       ],
-      "commands": [
+      "cmds": [
         "build"
       ]
+    },
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "install"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "cowsay",
+        "ripgrep"
+      ],
+      "nixpkgsArchive": "[archive]"
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "start"
   }
 }

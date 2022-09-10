@@ -16,7 +16,7 @@ use serde::Deserialize;
 use std::result::Result::Ok as OkResult;
 use std::{collections::HashMap, fs};
 
-use super::Provider;
+use super::{Provider, ProviderMetadata};
 
 const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
 const POETRY_VERSION: &str = "1.1.13";
@@ -36,18 +36,35 @@ impl Provider for PythonProvider {
         Ok(has_python)
     }
 
+    fn metadata(&self, app: &App, env: &Environment) -> Result<ProviderMetadata> {
+        let is_django = PythonProvider::is_django(app, env)?;
+        let is_using_postgres = PythonProvider::is_using_postgres(app, env)?;
+        let is_poetry = app.includes_file("poetry.lock");
+
+        Ok(ProviderMetadata::from(vec![
+            (is_django, "django"),
+            (is_using_postgres, "postgres"),
+            (is_poetry, "poetry"),
+        ]))
+    }
+
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
 
-        if let Some(setup) = self.setup(app, env)? {
-            plan.add_phase(setup);
-        }
-        if let Some(install) = self.install(app, env)? {
-            plan.add_phase(install);
-        }
+        let setup = self.setup(app, env)?.unwrap_or_default();
+        plan.add_phase(setup);
+
+        let install = self.install(app, env)?.unwrap_or_default();
+        plan.add_phase(install);
+
         if let Some(start) = self.start(app, env)? {
             plan.set_start_phase(start);
         }
+
+        plan.add_variables(EnvironmentVariables::from([(
+            "PYTHONUNBUFFERED".to_owned(),
+            "1".to_owned(),
+        )]));
 
         if app.includes_file("poetry.lock") {
             plan.add_variables(EnvironmentVariables::from([(
@@ -97,18 +114,22 @@ impl PythonProvider {
 
         if PythonProvider::is_django(app, env)? && PythonProvider::is_using_postgres(app, env)? {
             // Django with Postgres requires postgresql and gcc on top of the original python packages
-            pkgs.append(&mut vec![Pkg::new("postgresql"), Pkg::new("gcc")]);
+            pkgs.append(&mut vec![Pkg::new("postgresql")]);
         }
 
-        let mut setup_phase = Phase::setup(Some(pkgs));
+        if PythonProvider::is_django(app, env)? && PythonProvider::is_using_mysql(app, env)? {
+            // We need the MySQL client library and its headers to build the mysqlclient python module needed by Django
+            pkgs.append(&mut vec![Pkg::new("libmysqlclient.dev")]);
+        }
 
-        // Numpy needs some C headers to be available
+        let mut setup = Phase::setup(Some(pkgs));
+
+        // Many Python packages need some C headers to be available
         // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
-        if PythonProvider::uses_numpy(app)? {
-            setup_phase.add_pkgs_libs(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
-        }
+        setup.add_pkgs_libs(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
+        setup.add_nix_pkgs(&[Pkg::new("gcc")]);
 
-        Ok(Some(setup_phase))
+        Ok(Some(setup))
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<Phase>> {
@@ -122,9 +143,7 @@ impl PythonProvider {
                 create_env, activate_env
             )));
 
-            install_phase.add_file_dependency("requirements.txt".to_string());
             install_phase.add_path(format!("{}/bin", env_loc));
-
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
             return Ok(Some(install_phase));
@@ -136,8 +155,6 @@ impl PythonProvider {
                     create_env, activate_env, install_poetry
                 )));
 
-                install_phase.add_file_dependency("poetry.lock".to_string());
-                install_phase.add_file_dependency("pyproject.toml".to_string());
                 install_phase.add_path(format!("{}/bin", env_loc));
 
                 install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
@@ -157,7 +174,7 @@ impl PythonProvider {
             return Ok(Some(install_phase));
         }
 
-        Ok(None)
+        Ok(Some(Phase::install(None)))
     }
 
     fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
@@ -203,6 +220,12 @@ impl PythonProvider {
         // Check for the engine database type in settings.py
         let re = Regex::new(r"django.db.backends.postgresql").unwrap();
 
+        app.find_match(&re, "/**/*.py")
+    }
+
+    fn is_using_mysql(app: &App, _env: &Environment) -> Result<bool> {
+        // django_psdb_engine is a PlanetScale specific variant of django.db.backends.mysql
+        let re = Regex::new(r"django\.db\.backends\.mysql|django_psdb_engine").unwrap();
         app.find_match(&re, "/**/*.py")
     }
 
@@ -327,20 +350,21 @@ impl PythonProvider {
         ))
     }
 
-    fn uses_numpy(app: &App) -> Result<bool> {
-        let requirements_numpy = app.includes_file("requirements.txt")
+    #[allow(dead_code)]
+    fn uses_dep(app: &App, dep: &str) -> Result<bool> {
+        let requirements_usage = app.includes_file("requirements.txt")
             && app
                 .read_file("requirements.txt")?
                 .to_lowercase()
-                .contains("numpy");
+                .contains(dep);
 
-        let project_numpy = app.includes_file("pyproject.toml")
+        let pyproject_usage = app.includes_file("pyproject.toml")
             && app
                 .read_file("pyproject.toml")?
                 .to_lowercase()
-                .contains("numpy");
+                .contains(dep);
 
-        Ok(requirements_numpy || project_numpy)
+        Ok(requirements_usage || pyproject_usage)
     }
 }
 
@@ -407,12 +431,44 @@ mod test {
 
     #[test]
     fn test_numpy_detection() -> Result<()> {
-        assert!(!PythonProvider::uses_numpy(&App::new(
-            "./examples/python"
-        )?)?,);
-        assert!(PythonProvider::uses_numpy(&App::new(
-            "./examples/python-numpy"
-        )?)?,);
+        assert!(!PythonProvider::uses_dep(
+            &App::new("./examples/python",)?,
+            "numpy"
+        )?,);
+        assert!(PythonProvider::uses_dep(
+            &App::new("./examples/python-numpy",)?,
+            "numpy"
+        )?,);
+        Ok(())
+    }
+
+    #[test]
+    fn test_django_postgres_detection() -> Result<()> {
+        assert!(PythonProvider::is_using_postgres(
+            &App::new("./examples/python-django",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
+        assert!(!PythonProvider::is_using_postgres(
+            &App::new("./examples/python-django-mysql",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
+        Ok(())
+    }
+
+    #[test]
+    fn test_django_mysql_detection() -> Result<()> {
+        assert!(!PythonProvider::is_using_mysql(
+            &App::new("./examples/python-django",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
+        assert!(PythonProvider::is_using_mysql(
+            &App::new("./examples/python-django-mysql",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
         Ok(())
     }
 }

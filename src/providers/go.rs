@@ -35,17 +35,20 @@ impl Provider for GolangProvider {
         plan.add_phase(Phase::setup(Some(vec![Pkg::new(&nix_pkg)])));
 
         if app.includes_file("go.mod") {
-            let mut install = Phase::install(Some("go get".to_string()));
+            let mut install = Phase::install(Some("go mod download".to_string()));
             install.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
             plan.add_phase(install);
         }
 
         let mut build = if app.includes_file("go.mod") {
             Phase::build(Some(format!("go build -o {}", BINARY_NAME)))
-        } else {
+        } else if app.includes_file("main.go") {
             Phase::build(Some(format!("go build -o {} main.go", BINARY_NAME)))
+        } else {
+            Phase::build(None)
         };
         build.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
+        build.depends_on_phase("setup");
         plan.add_phase(build);
 
         let mut start = StartPhase::new(format!("./{}", BINARY_NAME));

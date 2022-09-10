@@ -35,7 +35,7 @@ impl Provider for PhpProvider {
         let start = PhpProvider::get_start(app);
 
         let mut plan = BuildPlan::new(
-            vec![Some(setup), Some(install), build]
+            &vec![Some(setup), Some(install), build]
                 .into_iter()
                 .flatten()
                 .collect::<Vec<_>>(),

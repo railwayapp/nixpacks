@@ -1,0 +1,4 @@
+providers = []
+
+[start]
+cmd = "not the start command"

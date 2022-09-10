@@ -6,6 +6,8 @@ import { Hero, SideNav, TableOfContents, TopNav } from "../components";
 
 // Import other Prism themes here
 import "prismjs/components/prism-bash.min";
+import "prismjs/components/prism-toml.min";
+import "prismjs/components/prism-json.min";
 import "../public/prism-one-light.css";
 
 import "../public/globals.css";

@@ -1,0 +1,37 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "Java"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "./gradlew build -x check"
+      ],
+      "cacheDirectories": [
+        ".gradle"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "jdk11",
+        "gradle_6"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "java $JAVA_OPTS -jar -Dserver.port=$PORT build/libs/*.jar"
+  }
+}

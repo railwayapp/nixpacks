@@ -2,6 +2,7 @@ use super::{utils, DockerBuilderOptions};
 use crate::nixpacks::{
     app,
     environment::Environment,
+    images::DEFAULT_BASE_IMAGE,
     nix,
     plan::{
         phase::{Phase, StartPhase},
@@ -24,18 +25,23 @@ pub const APP_DIR: &str = "/app/";
 pub struct OutputDir {
     pub root: PathBuf,
     pub asset_root: PathBuf,
+    pub is_temp: bool,
 }
 
 impl OutputDir {
-    pub fn new(root: PathBuf) -> Result<Self> {
+    pub fn new(root: PathBuf, is_temp: bool) -> Result<Self> {
         let root = root;
         let asset_root = PathBuf::from(NIXPACKS_OUTPUT_DIR);
 
-        Ok(Self { root, asset_root })
+        Ok(Self {
+            root,
+            asset_root,
+            is_temp,
+        })
     }
 
-    pub fn from(root: &str) -> Result<Self> {
-        Self::new(PathBuf::from(root))
+    pub fn from(root: &str, is_temp: bool) -> Result<Self> {
+        Self::new(PathBuf::from(root), is_temp)
     }
 
     /// Ensure that the output directory and all necessary subdirectories exist.
@@ -65,7 +71,7 @@ impl OutputDir {
 
 impl Default for OutputDir {
     fn default() -> Self {
-        Self::from(".").unwrap()
+        Self::from(".", false).unwrap()
     }
 }
 
@@ -127,15 +133,21 @@ impl DockerfileGenerator for BuildPlan {
             format!("COPY {} {}", rel_assets_slash_path, app::ASSETS_DIR)
         };
 
-        let dockerfile_phases = plan
-            .get_sorted_phases()?
+        let phases = plan.get_sorted_phases()?;
+
+        let dockerfile_phases = phases
+            .clone()
             .into_iter()
             .map(|phase| {
-                let phase_dockerfile = phase
-                    .generate_dockerfile(options, env, output)
-                    .context(format!("Generating Dockerfile for phase {}", phase.name))?;
+                let phase_dockerfile =
+                    phase
+                        .generate_dockerfile(options, env, output)
+                        .context(format!(
+                            "Generating Dockerfile for phase {}",
+                            phase.get_name()
+                        ))?;
 
-                match phase.name.as_str() {
+                match phase.get_name().as_str() {
                     // We want to load the variables immediately after the setup phase
                     "setup" => Ok(format!(
                         "{}\n# load variables\n{}\n",
@@ -147,27 +159,48 @@ impl DockerfileGenerator for BuildPlan {
             .collect::<Result<Vec<_>>>();
         let dockerfile_phases_str = dockerfile_phases?.join("\n");
 
+        // Handle the case where there is only a setup phase and all the app files have not been copied into
+        // the image yet
+        let setup_copy_command = match (phases.first(), phases.len()) {
+            (Some(first_phase), 1) => {
+                if first_phase.get_name() == "setup" {
+                    utils::get_copy_command(&[".".to_string()], APP_DIR)
+                } else {
+                    "".to_string()
+                }
+            }
+            _ => "".to_string(),
+        };
+
         let start_phase_str = plan
             .start_phase
             .clone()
             .unwrap_or_default()
             .generate_dockerfile(options, env, output)?;
 
-        let base_image = plan.build_image.clone();
+        let base_image = plan
+            .build_image
+            .clone()
+            .unwrap_or_else(|| DEFAULT_BASE_IMAGE.to_string());
 
         let dockerfile = formatdoc! {"
             FROM {base_image}
+
+            ENTRYPOINT [\"/bin/bash\", \"-l\", \"-c\"]
             WORKDIR {APP_DIR}
+
             {assets_copy_cmd}
 
             {dockerfile_phases_str}
 
+            {setup_copy_command}
             {start_phase_str}
         ", 
         base_image=base_image,
         APP_DIR=APP_DIR,
         assets_copy_cmd=assets_copy_cmd,
         dockerfile_phases_str=dockerfile_phases_str,
+        setup_copy_command=setup_copy_command,
         start_phase_str=start_phase_str};
 
         Ok(dockerfile)
@@ -184,7 +217,7 @@ impl DockerfileGenerator for BuildPlan {
         for phase in self.get_sorted_phases()? {
             phase
                 .write_supporting_files(options, env, output)
-                .context(format!("Writing files for phase {}", phase.name))?;
+                .context(format!("Writing files for phase {}", phase.get_name()))?;
         }
 
         Ok(())
@@ -223,9 +256,7 @@ impl DockerfileGenerator for StartPhase {
         _output: &OutputDir,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
-            Some(cmd) => {
-                format!("CMD {}", cmd)
-            }
+            Some(cmd) => utils::get_exec_command(cmd),
             None => "".to_string(),
         };
 
@@ -296,13 +327,13 @@ impl DockerfileGenerator for Phase {
 
         // Install nix packages and libraries
         let install_nix_pkgs_str = if self.uses_nix() {
-            let nix_file = output.get_relative_path(format!("{}.nix", phase.name));
+            let nix_file = output.get_relative_path(format!("{}.nix", phase.get_name()));
 
             let nix_file_path = nix_file
                 .to_slash()
                 .context("Failed to convert nix file path to slash path.")?;
             format!(
-                "COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path}",
+                "COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path} && nix-collect-garbage -d",
                 nix_file_path = nix_file_path
             )
         } else {
@@ -321,7 +352,7 @@ impl DockerfileGenerator for Phase {
         };
 
         // Copy over app files
-        let phase_files = match (phase.name.as_str(), &phase.only_include_files) {
+        let phase_files = match (phase.get_name().as_str(), &phase.only_include_files) {
             (_, Some(files)) => files.clone(),
             // Special case for the setup phase, which has no files
             ("setup", None) => vec![],
@@ -356,7 +387,7 @@ impl DockerfileGenerator for Phase {
             # {name} phase
             {dockerfile_stmts}
         ", 
-          name=phase.name,
+          name=phase.get_name(),
           dockerfile_stmts=dockerfile_stmts
         };
 
@@ -371,7 +402,7 @@ impl DockerfileGenerator for Phase {
     ) -> Result<()> {
         if self.uses_nix() {
             // Write the Nix expressions to the output directory
-            let nix_file_name = format!("{}.nix", self.name);
+            let nix_file_name = format!("{}.nix", self.get_name());
             let nix_path = output.get_absolute_path(nix_file_name);
             let nix_expression = nix::create_nix_expression(self);
 

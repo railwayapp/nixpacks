@@ -1,0 +1,20 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "phases": {
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "cowsay"
+      ],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "not the start command"
+  }
+}
