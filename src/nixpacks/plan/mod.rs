@@ -3,7 +3,7 @@ use self::{
     phase::{Phase, Phases, StartPhase},
     topological_sort::topological_sort,
 };
-use super::images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE};
+use super::images::DEFAULT_BASE_IMAGE;
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
@@ -48,7 +48,6 @@ impl BuildPlan {
         Self {
             phases: Some(phases.iter().map(|p| (p.get_name(), p.clone())).collect()),
             start_phase,
-            build_image: Some(DEFAULT_BASE_IMAGE.to_string()),
             ..Default::default()
         }
     }
@@ -243,7 +242,7 @@ impl BuildPlan {
     pub fn pin(&mut self) {
         self.providers = Some(Vec::new());
         if self.build_image.is_none() {
-            self.build_image = Some(DEBIAN_SLIM_IMAGE.to_string());
+            self.build_image = Some(DEFAULT_BASE_IMAGE.to_string());
         }
 
         self.resolve_phase_names();
