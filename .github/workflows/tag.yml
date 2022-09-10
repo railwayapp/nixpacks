@@ -7,6 +7,9 @@ on:
 
 jobs:
   tag:
+    # Bot will commit new cargo version after release
+    # Skip commits for cargo release as to not retrigger
+    if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     runs-on: ubuntu-latest
     steps:
       - name: checkout
