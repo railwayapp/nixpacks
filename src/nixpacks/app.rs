@@ -77,6 +77,7 @@ impl App {
         };
 
         let walker = WalkBuilder::new(&self.source)
+            // this includes hidden directories & files
             .hidden(false)
             .sort_by_file_name(OsStr::cmp)
             .build();

@@ -5,6 +5,7 @@ use std::{fs, io, path::Path};
 pub fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) -> Result<()> {
     let walker = WalkBuilder::new(&source)
         .follow_links(false)
+        // this includes hidden directories & files
         .hidden(false)
         .build();
     for entry in walker {
