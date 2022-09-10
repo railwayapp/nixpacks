@@ -27,9 +27,7 @@ jobs:
         with:
           toolchain: stable
       
-      - run: cargo release patch --execute
-        if: ${{ steps.release-label.outputs.level == 'patch' }}
-      - run: cargo release minor --execute
-        if: ${{ steps.release-label.outputs.level == 'minor' }}
-      - run: cargo release major --execute
-        if: ${{ steps.release-label.outputs.level == 'major' }}
+      - uses: actions-rs/cargo@v1
+        with:
+          command: release ${{ steps.release-label.outputs.level }}
+          args: --execute
