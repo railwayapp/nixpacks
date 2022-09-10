@@ -27,6 +27,8 @@ jobs:
         with:
           toolchain: stable
       
+      - run: cargo install cargo-release
+      
       - uses: actions-rs/cargo@v1
         with:
           command: release ${{ steps.release-label.outputs.level }}
