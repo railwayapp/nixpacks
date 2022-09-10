@@ -9,15 +9,6 @@ use globset::Glob;
 use ignore::{DirEntry, WalkBuilder};
 use regex::Regex;
 use serde::de::DeserializeOwned;
-use anyhow::{bail, Context, Result};
-use globset::Glob;
-use path_slash::PathBufExt;
-use regex::Regex;
-use serde::de::DeserializeOwned;
-use std::collections::BTreeMap;
-use std::path::Path;
-use std::{env, fs, path::PathBuf};
-use walkdir::{DirEntry, WalkDir};
 
 pub type StaticAssets = BTreeMap<String, String>;
 
