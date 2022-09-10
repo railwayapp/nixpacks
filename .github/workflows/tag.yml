@@ -9,7 +9,11 @@ jobs:
   tag:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.COMMITTER_TOKEN }}
+
       - run: git config --global user.email ${{ secrets.RAILWAY_BOT_EMAIL }}
       - run: git config --global user.name ${{ secrets.RAILWAY_BOT_NAME }}
 
@@ -29,7 +33,7 @@ jobs:
         with:
           toolchain: stable
       
-      - run: cargo install cargo-release --token ${{ secrets.COMMITTER_TOKEN }}
+      - run: cargo install cargo-release
 
       - uses: actions-rs/cargo@v1
         with:
