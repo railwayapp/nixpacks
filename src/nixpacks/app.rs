@@ -1,12 +1,14 @@
-use anyhow::{bail, Context, Result};
-use globset::Glob;
 use path_slash::PathBufExt;
-use regex::Regex;
-use serde::de::DeserializeOwned;
 use std::collections::BTreeMap;
+use std::ffi::OsStr;
 use std::path::Path;
 use std::{env, fs, path::PathBuf};
-use walkdir::{DirEntry, WalkDir};
+
+use anyhow::{bail, Context, Result};
+use globset::Glob;
+use ignore::{DirEntry, WalkBuilder};
+use regex::Regex;
+use serde::de::DeserializeOwned;
 
 pub type StaticAssets = BTreeMap<String, String>;
 
@@ -74,11 +76,14 @@ impl App {
             None => return Ok(Vec::new()),
         };
 
-        let walker = WalkDir::new(&self.source);
+        let walker = WalkBuilder::new(&self.source)
+            // this includes hidden directories & files
+            .hidden(false)
+            .sort_by_file_name(OsStr::cmp)
+            .build();
         let glob = Glob::new(pattern_str)?.compile_matcher();
 
         let relative_paths = walker
-            .sort_by_file_name()
             .into_iter()
             .filter_map(Result::ok) // remove bad ones
             .map(DirEntry::into_path) // convert to paths
