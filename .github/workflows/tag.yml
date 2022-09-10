@@ -19,4 +19,4 @@ jobs:
           major-label: major
           minor-label: minor
           patch-label: patch
-          cargo-token: ${{ secrets.CARGO_TOKEN }}
+          cargo-token: ${{ secrets.NIXPACKS_CARGO_RELEASE_TOKEN }}
