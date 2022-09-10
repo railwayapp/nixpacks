@@ -1,16 +1,20 @@
 name: Release Label Check
 
 on:
-  pull_request_target:
-    types: [opened, labeled, unlabeled, synchronize]
-
+  pull_request:
+    branches:
+      - main
 jobs:
-  label-check:
+  check-release:
     runs-on: ubuntu-latest
+    name: Check Release
     steps:
-      - uses: jesusvasquez333/verify-pr-label-action@v1.4.0
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
         with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-          valid-labels: "release/patch, release/minor, release/major"
-          pull-request-number: '${{ github.event.pull_request.number }}'
-          disable-reviews: true
+          toolchain: stable
+      - uses: nash-io/cargo-release-action@main
+        with:
+          major-label: release/major
+          minor-label: release/minor
+          patch-label: release/patch
