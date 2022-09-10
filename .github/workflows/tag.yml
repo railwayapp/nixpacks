@@ -34,4 +34,4 @@ jobs:
           command: login
           args: ${{ secrets.NIXPACKS_CARGO_RELEASE_TOKEN }}
       
-      - run: cargo release ${{ steps.release-label.outputs.level }} --execute
+      - run: cargo release ${{ steps.release-label.outputs.level }} --execute --no-confirm
