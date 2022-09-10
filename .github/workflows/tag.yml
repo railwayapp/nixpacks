@@ -4,19 +4,38 @@ on:
   push:
     branches:
       - main
+
 jobs:
-  release:
+  tag:
     runs-on: ubuntu-latest
-    environment: Release
-    name: Release
     steps:
       - uses: actions/checkout@v2
+
+      - uses: actions-ecosystem/action-get-merged-pull-request@v1
+        id: get-merged-pull-request
+        with:
+          github_token: ${{ secrets.COMMITTER_TOKEN }}
+
+      - uses: actions-ecosystem/action-release-label@v1
+        id: release-label
+        if: ${{ steps.get-merged-pull-request.outputs.title != null }}
+        with:
+          github_token: ${{ secrets.GH_PAT }}
+          labels: ${{ steps.get-merged-pull-request.outputs.labels }}
+      
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - uses: nash-io/cargo-release-action@main
+      
+      - run: cargo install cargo-release
+
+      - uses: actions-rs/cargo@v1
         with:
-          major-label: release/major
-          minor-label: release/minor
-          patch-label: release/patch
-          cargo-token: ${{ secrets.NIXPACKS_CARGO_RELEASE_TOKEN }}
+          command: login
+          args: ${{ secrets.NIXPACKS_CARGO_RELEASE_TOKEN }}
+      
+      - uses: actions-rs/cargo@v1
+        with:
+          command: release ${{ steps.release-label.outputs.level }}
+          args: --execute
+
