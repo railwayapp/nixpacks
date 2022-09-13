@@ -48,3 +48,4 @@ jobs:
           branch: ${{ env.BRANCH_NAME }}
           signoff: true
           delete-branch: true
+          labels: release/skip

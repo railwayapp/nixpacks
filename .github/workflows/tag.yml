@@ -21,26 +21,30 @@ jobs:
       - run: git config --global user.name ${{ secrets.RAILWAY_BOT_NAME }}
 
       - uses: actions-ecosystem/action-get-merged-pull-request@v1
-        id: get-merged-pull-request
+        id: pull-request
         with:
           github_token: ${{ secrets.COMMITTER_TOKEN }}
 
       - uses: actions-ecosystem/action-release-label@v1
         id: release-label
-        if: ${{ steps.get-merged-pull-request.outputs.title != null }}
+        if: ${{ steps.pull-request.outputs.title != null && !contains(steps.pull-request.outputs.labels, 'release/skip') }}
         with:
           github_token: ${{ secrets.GH_PAT }}
-          labels: ${{ steps.get-merged-pull-request.outputs.labels }}
+          labels: ${{ steps.pull-request.outputs.labels }}
       
       - uses: actions-rs/toolchain@v1
+        if: ${{ !contains(steps.pull-request.outputs.labels, 'release/skip') }}
         with:
           toolchain: stable
       
       - run: cargo install cargo-release
+        if: ${{ !contains(steps.pull-request.outputs.labels, 'release/skip') }}
 
       - uses: actions-rs/cargo@v1
+        if: ${{ !contains(steps.pull-request.outputs.labels, 'release/skip') }}
         with:
           command: login
           args: ${{ secrets.NIXPACKS_CARGO_RELEASE_TOKEN }}
       
       - run: cargo release ${{ steps.release-label.outputs.level }} --execute --no-confirm
+        if: ${{ !contains(steps.pull-request.outputs.labels, 'release/skip') }}
