@@ -11,6 +11,6 @@ jobs:
       - uses: jesusvasquez333/verify-pr-label-action@v1.4.0
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
-          valid-labels: "release/patch, release/minor, release/major"
+          valid-labels: "release/patch, release/minor, release/major, release/skip"
           pull-request-number: '${{ github.event.pull_request.number }}'
           disable-reviews: true
