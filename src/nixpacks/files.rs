@@ -6,10 +6,14 @@ pub fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) ->
     let walker = WalkBuilder::new(&source)
         .follow_links(false)
         // this includes hidden directories & files
+        .standard_filters(false)
+        .git_ignore(true)
         .hidden(false)
         .build();
+
     for entry in walker {
         let entry = entry?;
+
         if let Some(file_type) = entry.file_type() {
             let from = entry.path();
             let to = dest.as_ref().join(from.strip_prefix(&source)?);
