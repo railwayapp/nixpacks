@@ -119,6 +119,11 @@ fn main() -> Result<()> {
                         .help("Disable building with the cache"),
                 )
                 .arg(
+                    Arg::new("buildtime-cache")
+                        .long("buildtime-cache")
+                        .help("Image to hold the cached directories between builds."),
+                )
+                .arg(
                     Arg::new("inline-cache")
                         .long("inline-cache")
                         .help("Enable writing cache metadata into the output image"),
@@ -273,6 +278,7 @@ fn main() -> Result<()> {
             let no_cache = matches.is_present("no-cache");
             let inline_cache = matches.is_present("inline-cache");
             let cache_from = matches.value_of("cache-from").map(ToString::to_string);
+            let buildtime_cache = matches.value_of("buildtime-cache").map(ToString::to_string);
 
             // Default to absolute `path` of the source that is being built as the cache-key if not disabled
             if !no_cache && cache_key.is_none() {
@@ -311,6 +317,7 @@ fn main() -> Result<()> {
                 inline_cache,
                 cache_from,
                 no_error_without_start,
+                buildtime_cache,
             };
 
             create_docker_image(path, envs, &options, build_options)?;

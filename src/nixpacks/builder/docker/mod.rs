@@ -16,6 +16,7 @@ pub struct DockerBuilderOptions {
     pub platform: Vec<String>,
     pub current_dir: bool,
     pub no_error_without_start: bool,
+    pub buildtime_cache: Option<String>,
 }
 
 mod cache;

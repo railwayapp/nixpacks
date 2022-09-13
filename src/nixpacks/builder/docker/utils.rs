@@ -21,6 +21,27 @@ pub fn get_cache_mount(
     }
 }
 
+pub fn copy_cache_dir_to_host(
+    cache_key: &Option<String>,
+    cache_directories: &Option<Vec<String>>,
+) -> String {
+    match (cache_key, cache_directories) {
+        (Some(cache_key), Some(cache_directories)) => cache_directories
+            .iter()
+            .map(|dir| {
+                let sanitized_dir = dir.replace('~', "/root");
+                let sanitized_key = sanitize_cache_key(&format!("{}-{}", cache_key, sanitized_dir));
+                format!(
+                    "--mount=type=cache,id={},target={}",
+                    sanitized_key, sanitized_dir
+                )
+            })
+            .collect::<Vec<String>>()
+            .join(" "),
+        _ => "".to_string(),
+    }
+}
+
 pub fn get_copy_command(files: &[String], app_dir: &str) -> String {
     if files.is_empty() {
         "".to_owned()
