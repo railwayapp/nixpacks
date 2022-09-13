@@ -37,6 +37,8 @@ jobs:
         with:
           toolchain: stable
       
+      - uses: Swatinem/rust-cache@v2
+      
       - run: cargo install cargo-release
         if: ${{ !contains(steps.pull-request.outputs.labels, 'release/skip') }}
 
