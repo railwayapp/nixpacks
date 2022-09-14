@@ -1,3 +1,5 @@
+use std::{fmt::format, fs, path::PathBuf};
+
 use tempdir::TempDir;
 
 use super::{cache::sanitize_cache_key, dockerfile_generation::OutputDir, DockerBuilderOptions};
@@ -24,7 +26,7 @@ pub fn get_cache_mount(
     }
 }
 
-pub fn get_send_cached_dirs_command(
+pub fn get_copy_out_cached_dirs_command(
     server_url: String,
     cache_directories: &Option<Vec<String>>,
 ) -> Vec<String> {
@@ -36,7 +38,60 @@ pub fn get_send_cached_dirs_command(
                 let compressed_file_name = sanitized_dir.replace("/", "%2f");
                 vec![
                     format!("tar -cf {}.tar.gz {}", compressed_file_name, sanitized_dir),
-                    format!("curl -v -F upload=@{}.tar.gz {}", compressed_file_name, server_url),
+                    format!(
+                        "curl -v -F upload=@{}.tar.gz {}",
+                        compressed_file_name, server_url
+                    ),
+                ]
+            })
+            .flatten()
+            .collect::<Vec<String>>(),
+        _ => vec![],
+    }
+}
+
+struct CachedDirInfo {
+    target_cache_dir: String,
+    compressed_file_name: String,
+    source_file_path: String,
+}
+pub fn get_copy_in_cached_dirs_command(
+    output_dir: &OutputDir,
+    cache_directories: &Option<Vec<String>>,
+) -> Vec<String> {
+    match cache_directories {
+        Some(cache_directories) => cache_directories
+            .iter()
+            .filter_map(|dir| {
+                let target_cache_dir = dir.replace('~', "/root");
+
+                let compressed_file_name =
+                    format!("{}.tar.gz", target_cache_dir.replace("/", "%2f"));
+
+                let source_file_path = output_dir
+                    .get_relative_path("cached-dirs")
+                    .join(PathBuf::from(&compressed_file_name));
+
+                match fs::metadata(output_dir.root.join(PathBuf::from(&source_file_path))) {
+                    Ok(_) => Some(CachedDirInfo {
+                        target_cache_dir,
+                        compressed_file_name,
+                        source_file_path: source_file_path.display().to_string(),
+                    }),
+
+                    _ => None,
+                }
+            })
+            .map(|info| {
+                vec![
+                    format!(
+                        "COPY {} {}",
+                        info.source_file_path, info.compressed_file_name
+                    ),
+                    format!(
+                        "RUN mkdir -p {}; tar -xf {} -C {}",
+                        info.target_cache_dir, info.compressed_file_name, info.target_cache_dir
+                    ),
                 ]
             })
             .flatten()

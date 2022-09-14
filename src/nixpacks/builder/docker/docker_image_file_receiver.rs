@@ -62,19 +62,23 @@ impl DockerImageFileReceiver {
     async fn run_app(tx: mpsc::Sender<ServerHandle>, save_to: PathBuf) -> std::io::Result<()> {
         let save_to_data = web::Data::new(save_to.clone());
 
+        std::env::set_var("RUST_LOG", "info");
+        std::env::set_var("RUST_BACKTRACE", "1");
+
         println!("Starting Nixpacks HTTP server");
 
         let server = HttpServer::new(move || {
             ActixApp::new()
                 .app_data(save_to_data.clone())
                 .wrap(middleware::Logger::default())
-                .service(web::resource("/").route(web::post().to(DockerImageFileReceiver::upload)))
+                .service(web::resource("/upload").route(web::post().to(DockerImageFileReceiver::upload)))
+                .service(web::resource("/get").route(web::get().to(|| async { "Hello World!" })))
         })
         .bind(("127.0.0.1", 8080))?
         .run();
 
         // Send server handle back to the main thread
-        let _ = tx.send(server.handle());
+        // let _ = tx.send(server.handle());
 
         server.await
     }
@@ -133,7 +137,7 @@ impl DockerImageFileReceiver {
 
             web::block(move || f.flush()).await??;
 
-            DockerImageFileReceiver::decompress_file(filepath)?
+            // DockerImageFileReceiver::decompress_file(filepath)?
         }
         Ok(HttpResponse::Ok().into())
 

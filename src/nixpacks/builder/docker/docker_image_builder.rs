@@ -24,8 +24,6 @@ pub struct DockerImageBuilder {
 }
 
 impl ImageBuilder for DockerImageBuilder {
-    
-
     fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
@@ -45,7 +43,8 @@ impl ImageBuilder for DockerImageBuilder {
 
         if self.options.incremental_cache_image.is_some() {
             println!("starting the server");
-            let save_to = output.root.join(".nixpacks").join("cached00000-dirs");
+            let save_to = output.root.join(".nixpacks").join("cached-dirs");
+            OutputDir::new(save_to.clone(), false)?.ensure_output_exists()?;
 
             let file_receiver = DockerImageFileReceiver::new(save_to);
             file_receiver.start();
@@ -89,7 +88,7 @@ impl DockerImageBuilder {
     pub fn new(logger: Logger, options: DockerBuilderOptions) -> DockerImageBuilder {
         DockerImageBuilder { logger, options }
     }
-    
+
     fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<OutputDir> {
         if let Some(value) = &options.out_dir {
             OutputDir::new(value.into(), false)

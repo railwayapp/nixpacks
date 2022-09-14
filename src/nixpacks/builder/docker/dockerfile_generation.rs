@@ -13,6 +13,7 @@ use anyhow::{Context, Ok, Result};
 use indoc::formatdoc;
 use path_slash::PathBufExt;
 use std::{
+    fmt::format,
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
@@ -362,17 +363,28 @@ impl DockerfileGenerator for Phase {
 
         let cmds_str: String;
         if options.incremental_cache_image.is_some() {
-            let cache_send_command = utils::get_send_cached_dirs_command(
-                "http://host.docker.internal:8080/".to_string(),
+            let cach_copy_in_command =
+                utils::get_copy_in_cached_dirs_command(&output, &phase.cache_directories)
+                    .join("\n");
+
+                    println!("copy is {}",cach_copy_in_command);
+
+            let cache_copy_out_command = utils::get_copy_out_cached_dirs_command(
+                "http://host.docker.internal:8080/upload".to_string(),
                 &phase.cache_directories,
             );
 
-            cmds_str = [phase.cmds.clone().unwrap_or_default(), cache_send_command]
-                .concat()
-                .iter()
-                .map(|s| format!("RUN {}", s))
-                .collect::<Vec<_>>()
-                .join("\n");
+            let run_commands = [
+                phase.cmds.clone().unwrap_or_default(),
+                cache_copy_out_command,
+            ]
+            .concat()
+            .iter()
+            .map(|s| format!("RUN {}", s))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+            cmds_str = format!("{}\n{}", cach_copy_in_command, run_commands);
         } else {
             let cache_mount = utils::get_cache_mount(&cache_key, &phase.cache_directories);
             cmds_str = phase
