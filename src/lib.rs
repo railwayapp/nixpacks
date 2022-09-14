@@ -27,7 +27,7 @@ use crate::nixpacks::{
     plan::{generator::NixpacksBuildPlanGenerator, BuildPlan, PlanGenerator},
 };
 
-use anyhow::{Result};
+use anyhow::Result;
 use nixpacks::{builder::docker::DockerBuilderOptions, plan::generator::GeneratePlanOptions};
 use providers::{
     clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
