@@ -68,7 +68,6 @@ impl DockerImageFileReceiver {
             let mut f: File = web::block(|| File::create(in_path)).await??;
             while let Some(chunk) = byte_stream_field.next().await {
                 let data = chunk?;
-                // Writing a file is also a blocking operation, so use a thread pool
                 f = web::block(move || f.write_all(&data).map(|_| f)).await??;
             }
 
