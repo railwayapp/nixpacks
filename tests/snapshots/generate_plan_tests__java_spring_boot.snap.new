@@ -1,5 +1,6 @@
 ---
 source: tests/generate_plan_tests.rs
+assertion_line: 4
 expression: plan
 ---
 {
@@ -24,14 +25,14 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "jdk",
-        "gradle"
+        "jdk11",
+        "gradle_6"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]"
     }
   },
   "start": {
-    "cmd": "java $JAVA_OPTS -jar  build/libs/*.jar"
+    "cmd": "java $JAVA_OPTS -jar -Dserver.port=$PORT build/libs/*.jar"
   }
 }
