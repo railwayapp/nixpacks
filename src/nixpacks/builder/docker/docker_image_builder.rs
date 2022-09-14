@@ -48,6 +48,11 @@ impl ImageBuilder for DockerImageBuilder {
 
         println!("{}", plan.get_build_string()?);
 
+        let start = plan.start_phase.clone().unwrap_or_default();
+        if start.cmd.is_none() && !self.options.no_error_without_start {
+            bail!("No start command could be found")
+        }
+
         self.write_app(app_src, &output).context("Writing app")?;
         self.write_dockerfile(dockerfile, &output)
             .context("Writing Dockerfile")?;
