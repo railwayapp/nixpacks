@@ -18,9 +18,7 @@ pub struct DockerImageFileReceiver {
 
 impl DockerImageFileReceiver {
     pub fn new(save_to: PathBuf) -> DockerImageFileReceiver {
-        DockerImageFileReceiver {
-            save_to,
-        }
+        DockerImageFileReceiver { save_to }
     }
 
     pub fn start(self) {
@@ -40,7 +38,9 @@ impl DockerImageFileReceiver {
             ActixApp::new()
                 .app_data(save_to_data.clone())
                 .wrap(middleware::Logger::default())
-                .service(web::resource("/upload").route(web::post().to(DockerImageFileReceiver::upload)))
+                .service(
+                    web::resource("/upload").route(web::post().to(DockerImageFileReceiver::upload)),
+                )
         })
         .bind(("127.0.0.1", 8080))?
         .run();
@@ -61,7 +61,7 @@ impl DockerImageFileReceiver {
             let filename = byte_stream_field
                 .content_disposition()
                 .get_filename()
-                .ok_or_else(|| ParseError::Incomplete)?;
+                .ok_or(ParseError::Incomplete)?;
 
             let filepath = save_to.join(sanitize_filename::sanitize(&filename));
             let in_path = PathBuf::from(&filepath);
@@ -76,5 +76,4 @@ impl DockerImageFileReceiver {
         }
         Ok(HttpResponse::Ok().into())
     }
-
 }

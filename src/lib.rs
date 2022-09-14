@@ -28,10 +28,7 @@ use crate::nixpacks::{
 };
 
 use anyhow::{bail, Result};
-use nixpacks::{
-    builder::docker::{utils, DockerBuilderOptions},
-    plan::generator::GeneratePlanOptions,
-};
+use nixpacks::{builder::docker::DockerBuilderOptions, plan::generator::GeneratePlanOptions};
 use providers::{
     clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
     deno::DenoProvider, elixir::ElixirProvider, fsharp::FSharpProvider, go::GolangProvider,

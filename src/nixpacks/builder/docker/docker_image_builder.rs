@@ -2,7 +2,6 @@ use super::{dockerfile_generation::DockerfileGenerator, DockerBuilderOptions, Im
 use crate::nixpacks::{
     builder::docker::{
         docker_image_file_receiver::DockerImageFileReceiver, dockerfile_generation::OutputDir,
-        utils,
     },
     environment::Environment,
     files,
@@ -10,12 +9,11 @@ use crate::nixpacks::{
     plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
-use tempdir::TempDir;
-
 use std::{
     fs::{self, remove_dir_all, File},
     process::Command,
 };
+use tempdir::TempDir;
 use uuid::Uuid;
 
 pub struct DockerImageBuilder {
@@ -23,11 +21,22 @@ pub struct DockerImageBuilder {
     options: DockerBuilderOptions,
 }
 
+fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<OutputDir> {
+    if let Some(value) = &options.out_dir {
+        OutputDir::new(value.into(), false)
+    } else if options.current_dir {
+        OutputDir::new(app_src.into(), false)
+    } else {
+        let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
+        OutputDir::new(tmp.into_path(), true)
+    }
+}
+
 impl ImageBuilder for DockerImageBuilder {
     fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
-        let output = DockerImageBuilder::get_output_dir(app_src, &self.options)?;
+        let output = get_output_dir(app_src, &self.options)?;
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
         output.ensure_output_exists()?;
 
@@ -87,17 +96,6 @@ impl ImageBuilder for DockerImageBuilder {
 impl DockerImageBuilder {
     pub fn new(logger: Logger, options: DockerBuilderOptions) -> DockerImageBuilder {
         DockerImageBuilder { logger, options }
-    }
-
-    fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<OutputDir> {
-        if let Some(value) = &options.out_dir {
-            OutputDir::new(value.into(), false)
-        } else if options.current_dir {
-            OutputDir::new(app_src.into(), false)
-        } else {
-            let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
-            OutputDir::new(tmp.into_path(), true)
-        }
     }
 
     fn get_docker_build_cmd(

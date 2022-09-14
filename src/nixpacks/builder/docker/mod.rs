@@ -21,6 +21,6 @@ pub struct DockerBuilderOptions {
 
 mod cache;
 pub mod docker_image_builder;
+pub mod docker_image_file_receiver;
 mod dockerfile_generation;
 pub mod utils;
-pub mod docker_image_file_receiver;

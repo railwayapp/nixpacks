@@ -1,9 +1,5 @@
-use std::{fmt::format, fs, path::PathBuf};
-
-use tempdir::TempDir;
-
-use super::{cache::sanitize_cache_key, dockerfile_generation::OutputDir, DockerBuilderOptions};
-use anyhow::{Context, Result};
+use super::{cache::sanitize_cache_key, dockerfile_generation::OutputDir};
+use std::{fs, path::PathBuf};
 
 pub fn get_cache_mount(
     cache_key: &Option<String>,
@@ -27,15 +23,15 @@ pub fn get_cache_mount(
 }
 
 pub fn get_copy_out_cached_dirs_command(
-    server_url: String,
+    server_url: &str,
     cache_directories: &Option<Vec<String>>,
 ) -> Vec<String> {
     match cache_directories {
         Some(cache_directories) => cache_directories
             .iter()
-            .map(|dir| {
+            .flat_map(|dir| {
                 let sanitized_dir = dir.replace('~', "/root");
-                let compressed_file_name = sanitized_dir.replace("/", "%2f");
+                let compressed_file_name = sanitized_dir.replace('/', "%2f");
                 vec![
                     format!("tar -cf {}.tar.gz {}", compressed_file_name, sanitized_dir),
                     format!(
@@ -44,7 +40,6 @@ pub fn get_copy_out_cached_dirs_command(
                     ),
                 ]
             })
-            .flatten()
             .collect::<Vec<String>>(),
         _ => vec![],
     }
@@ -66,7 +61,7 @@ pub fn get_copy_in_cached_dirs_command(
                 let target_cache_dir = dir.replace('~', "/root");
 
                 let compressed_file_name =
-                    format!("{}.tar.gz", target_cache_dir.replace("/", "%2f"));
+                    format!("{}.tar.gz", target_cache_dir.replace('/', "%2f"));
 
                 let source_file_path = output_dir
                     .get_relative_path("cached-dirs")
@@ -82,12 +77,12 @@ pub fn get_copy_in_cached_dirs_command(
                     _ => None,
                 }
             })
-            .map(|info| {
+            .flat_map(|info| {
                 let path_components_count = info
                     .target_cache_dir
-                    .split("/")
+                    .split('/')
                     .into_iter()
-                    .filter(|c| *c != "")
+                    .filter(|c| !c.is_empty())
                     .count();
 
                 vec![
@@ -97,11 +92,13 @@ pub fn get_copy_in_cached_dirs_command(
                     ),
                     format!(
                         "RUN mkdir -p {}; tar -xf {} -C {} --strip-components {}",
-                        info.target_cache_dir, info.compressed_file_name, info.target_cache_dir, path_components_count
+                        info.target_cache_dir,
+                        info.compressed_file_name,
+                        info.target_cache_dir,
+                        path_components_count
                     ),
                 ]
             })
-            .flatten()
             .collect::<Vec<String>>(),
         _ => vec![],
     }
