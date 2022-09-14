@@ -49,7 +49,7 @@ impl NixpacksBuildPlanGenerator<'_> {
 
     /// Get a build plan from the provider and by applying the config from the environment
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
-        let file_plan = self.read_file_plan(app)?;
+        let file_plan = self.read_file_plan(app, env)?;
         let env_plan = BuildPlan::from_environment(env);
         let cli_plan = self.config.plan.clone().unwrap_or_default();
         let plan_before_providers = BuildPlan::merge_plans(&vec![file_plan, env_plan, cli_plan]);
@@ -142,9 +142,15 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(plan)
     }
 
-    fn read_file_plan(&self, app: &App) -> Result<BuildPlan> {
+    fn read_file_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
         let file_path = if let Some(file_path) = &self.config.config_file {
             Some(file_path.clone())
+        } else if let Some(env_config_file) = env.get_config_variable("CONFIG_FILE") {
+            if !app.includes_file(&env_config_file) {
+                bail!("Config file {} does not exist", env_config_file);
+            }
+
+            Some(env_config_file)
         } else if app.includes_file("nixpacks.toml") {
             Some("nixpacks.toml".to_owned())
         } else if app.includes_file("nixpacks.json") {

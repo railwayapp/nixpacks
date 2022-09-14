@@ -27,7 +27,7 @@ use crate::nixpacks::{
     plan::{generator::NixpacksBuildPlanGenerator, BuildPlan, PlanGenerator},
 };
 
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use nixpacks::{builder::docker::DockerBuilderOptions, plan::generator::GeneratePlanOptions};
 use providers::{
     clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
@@ -90,12 +90,6 @@ pub fn create_docker_image(
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
     let plan = generator.generate_plan(&app, &environment)?;
-
-    if let Some(ref phase) = plan.start_phase {
-        if phase.cmd.is_none() && !build_options.no_error_without_start {
-            bail!("No start command could be found")
-        }
-    }
 
     let logger = Logger::new();
     let builder = DockerImageBuilder::new(logger, build_options.clone());

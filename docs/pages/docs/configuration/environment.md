@@ -17,3 +17,4 @@ Nixpacks can be configured via environment variables. All of these variables are
 | `NIXPACKS_INSTALL_CACHE_DIRS` | Add additional directories to cache during the install phase                                 |
 | `NIXPACKS_BUILD_CACHE_DIRS`   | Add additional directories to cache during the build phase                                   |
 | `NIXPACKS_NO_CACHE`           | Disable caching for the build                                                                |
+| `NIXPACKS_CONFIG_FILE`        | Location of the Nixpacks configuration file relative to the root of the app                  |
