@@ -1,4 +1,4 @@
-use self::nx::{Options, ProjectJson};
+use self::nx::ProjectJson;
 use super::Provider;
 use crate::{
     nixpacks::{
