@@ -1,9 +1,10 @@
 use std::{
     collections::{HashMap, HashSet},
+    fmt::format,
     path::PathBuf,
 };
 
-use self::nx::ProjectJson;
+use self::{nx::ProjectJson, turborepo::Turborepo};
 
 use super::Provider;
 use crate::{
@@ -24,6 +25,7 @@ use path_slash::PathExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 mod nx;
+mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
@@ -100,6 +102,18 @@ impl Provider for NodeProvider {
         let mut build = if NodeProvider::is_nx_monorepo(app) {
             let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
             Phase::build(Some(format!("npx nx run {}:build:production", app_name)))
+        } else if Turborepo::is_turborepo(app) {
+            let turbo_cfg = Turborepo::get_config(app)?;
+            if let Some(build_cmd) = Turborepo::get_build_cmd(&turbo_cfg) {
+                Phase::build(Some(build_cmd))
+            } else if let Some(app_name) = Turborepo::get_app_name(env) {
+                Phase::build(Some(format!("npx turbo run {}:build", app_name)))
+            } else if NodeProvider::has_script(app, "build")? {
+                let pkg_manager = NodeProvider::get_package_manager(app);
+                Phase::build(Some(format!("{} run build", pkg_manager)))
+            } else {
+                Phase::build(None)
+            }
         } else if NodeProvider::has_script(app, "build")? {
             let pkg_manager = NodeProvider::get_package_manager(app);
             Phase::build(Some(format!("{} run build", pkg_manager)))
@@ -178,6 +192,19 @@ impl NodeProvider {
                 return Ok(Some(format!("node {}/{}.js", output_path, file_name)));
             }
             return Ok(Some(format!("node {}/index.js", output_path)));
+        }
+
+        if Turborepo::is_turborepo(app) {
+            let turbo_cfg = Turborepo::get_config(app)?;
+            let app_name = Turborepo::get_app_name(env);
+
+            if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
+                return Ok(Some(start_pipeline));
+            } else if let Some(name) = app_name {
+                return Ok(Some(format!("npx turbo run {}:start", name)));
+            } else {
+                return Ok(Some(format!("npx turbo run start")));
+            }
         }
 
         let package_manager = NodeProvider::get_package_manager(app);
