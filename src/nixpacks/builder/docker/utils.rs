@@ -83,14 +83,21 @@ pub fn get_copy_in_cached_dirs_command(
                 }
             })
             .map(|info| {
+                let path_components_count = info
+                    .target_cache_dir
+                    .split("/")
+                    .into_iter()
+                    .filter(|c| *c != "")
+                    .count();
+
                 vec![
                     format!(
                         "COPY {} {}",
                         info.source_file_path, info.compressed_file_name
                     ),
                     format!(
-                        "RUN mkdir -p {}; tar -xf {} -C {}",
-                        info.target_cache_dir, info.compressed_file_name, info.target_cache_dir
+                        "RUN mkdir -p {}; tar -xf {} -C {} --strip-components {}",
+                        info.target_cache_dir, info.compressed_file_name, info.target_cache_dir, path_components_count
                     ),
                 ]
             })

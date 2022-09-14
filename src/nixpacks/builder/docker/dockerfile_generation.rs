@@ -367,8 +367,6 @@ impl DockerfileGenerator for Phase {
                 utils::get_copy_in_cached_dirs_command(&output, &phase.cache_directories)
                     .join("\n");
 
-                    println!("copy is {}",cach_copy_in_command);
-
             let cache_copy_out_command = utils::get_copy_out_cached_dirs_command(
                 "http://host.docker.internal:8080/upload".to_string(),
                 &phase.cache_directories,
