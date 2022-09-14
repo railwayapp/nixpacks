@@ -124,8 +124,7 @@ impl DockerImageBuilder {
             .arg("-f")
             .arg(&output.get_absolute_path("Dockerfile"))
             .arg("-t")
-            .arg(name)
-            .arg("--progress=plain");
+            .arg(name);
 
         if self.options.quiet {
             docker_build_cmd.arg("--quiet");
