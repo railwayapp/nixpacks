@@ -1,4 +1,7 @@
-use super::cache::sanitize_cache_key;
+use tempdir::TempDir;
+
+use super::{cache::sanitize_cache_key, dockerfile_generation::OutputDir, DockerBuilderOptions};
+use anyhow::{Context, Result};
 
 pub fn get_cache_mount(
     cache_key: &Option<String>,
@@ -21,24 +24,24 @@ pub fn get_cache_mount(
     }
 }
 
-pub fn copy_cache_dir_to_host(
-    cache_key: &Option<String>,
+pub fn get_send_cached_dirs_command(
+    server_url: String,
     cache_directories: &Option<Vec<String>>,
-) -> String {
-    match (cache_key, cache_directories) {
-        (Some(cache_key), Some(cache_directories)) => cache_directories
+) -> Vec<String> {
+    match cache_directories {
+        Some(cache_directories) => cache_directories
             .iter()
             .map(|dir| {
                 let sanitized_dir = dir.replace('~', "/root");
-                let sanitized_key = sanitize_cache_key(&format!("{}-{}", cache_key, sanitized_dir));
-                format!(
-                    "--mount=type=cache,id={},target={}",
-                    sanitized_key, sanitized_dir
-                )
+                let compressed_file_name = sanitized_dir.replace("/", "%2f");
+                vec![
+                    format!("tar -c {} {}.tar.gz", compressed_file_name, sanitized_dir),
+                    format!("curl -v -F upload=@{}.tar.gz {}", compressed_file_name, server_url),
+                ]
             })
-            .collect::<Vec<String>>()
-            .join(" "),
-        _ => "".to_string(),
+            .flatten()
+            .collect::<Vec<String>>(),
+        _ => vec![],
     }
 }
 
@@ -143,5 +146,16 @@ mod tests {
             "CMD [\"command1 command2 -l \\\"asdf\\\"\"]".to_string(),
             get_exec_command("command1 command2 -l \"asdf\"")
         );
+    }
+}
+
+pub fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<OutputDir> {
+    if let Some(value) = &options.out_dir {
+        OutputDir::new(value.into(), false)
+    } else if options.current_dir {
+        OutputDir::new(app_src.into(), false)
+    } else {
+        let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
+        OutputDir::new(tmp.into_path(), true)
     }
 }

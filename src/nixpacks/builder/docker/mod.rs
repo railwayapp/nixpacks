@@ -16,10 +16,11 @@ pub struct DockerBuilderOptions {
     pub platform: Vec<String>,
     pub current_dir: bool,
     pub no_error_without_start: bool,
-    pub buildtime_cache: Option<String>,
+    pub incremental_cache_image: Option<String>,
 }
 
 mod cache;
 pub mod docker_image_builder;
 mod dockerfile_generation;
-mod utils;
+pub mod utils;
+pub mod docker_image_file_receiver;

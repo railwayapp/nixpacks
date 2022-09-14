@@ -360,15 +360,30 @@ impl DockerfileGenerator for Phase {
         };
         let phase_copy_cmd = utils::get_copy_command(&phase_files, APP_DIR);
 
-        let cache_mount = utils::get_cache_mount(&cache_key, &phase.cache_directories);
-        let cmds_str = phase
-            .cmds
-            .clone()
-            .unwrap_or_default()
-            .iter()
-            .map(|s| format!("RUN {} {}", cache_mount, s))
-            .collect::<Vec<_>>()
-            .join("\n");
+        let cmds_str: String;
+        if options.incremental_cache_image.is_some() {
+            let cache_send_command = utils::get_send_cached_dirs_command(
+                "http://localhost:8080/".to_string(),
+                &phase.cache_directories,
+            );
+
+            cmds_str = [phase.cmds.clone().unwrap_or_default(), cache_send_command]
+                .concat()
+                .iter()
+                .map(|s| format!("RUN {}", s))
+                .collect::<Vec<_>>()
+                .join("\n");
+        } else {
+            let cache_mount = utils::get_cache_mount(&cache_key, &phase.cache_directories);
+            cmds_str = phase
+                .cmds
+                .clone()
+                .unwrap_or_default()
+                .iter()
+                .map(|s| format!("RUN {} {}", cache_mount, s))
+                .collect::<Vec<_>>()
+                .join("\n");
+        }
 
         let dockerfile_stmts = vec![
             build_path,
