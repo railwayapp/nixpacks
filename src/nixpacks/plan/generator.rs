@@ -145,7 +145,7 @@ impl NixpacksBuildPlanGenerator<'_> {
     fn read_file_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
         let file_path = if let Some(file_path) = &self.config.config_file {
             Some(file_path.clone())
-        } else if let Some(env_config_file) = env.get_config_variable("CONFIG") {
+        } else if let Some(env_config_file) = env.get_config_variable("CONFIG_FILE") {
             if !app.includes_file(&env_config_file) {
                 bail!("Config file {} does not exist", env_config_file);
             }
