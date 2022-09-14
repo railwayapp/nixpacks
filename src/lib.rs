@@ -20,13 +20,7 @@
 
 use crate::nixpacks::{
     app::App,
-    builder::{
-        docker::{
-            docker_image_builder::DockerImageBuilder,
-            docker_image_file_receiver::DockerImageFileReceiver, DockerBuilderOptions,
-        },
-        ImageBuilder,
-    },
+    builder::{docker::docker_image_builder::DockerImageBuilder, ImageBuilder},
     environment::Environment,
     logger::Logger,
     nix::pkg::Pkg,
@@ -34,7 +28,10 @@ use crate::nixpacks::{
 };
 
 use anyhow::{bail, Result};
-use nixpacks::{builder::docker::utils, plan::generator::GeneratePlanOptions};
+use nixpacks::{
+    builder::docker::{utils, DockerBuilderOptions},
+    plan::generator::GeneratePlanOptions,
+};
 use providers::{
     clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
     deno::DenoProvider, elixir::ElixirProvider, fsharp::FSharpProvider, go::GolangProvider,
@@ -105,17 +102,8 @@ pub fn create_docker_image(
 
     let logger = Logger::new();
     let builder = DockerImageBuilder::new(logger, build_options.clone());
-    if build_options.incremental_cache_image.is_some() {
-        println!("starting the server");
-        let root_path = utils::get_output_dir(app.source.to_str().unwrap(), build_options)?.root;
-        let save_to = root_path.join(".nixpacks").join("cached-dirs");
-
-        let file_receiver = DockerImageFileReceiver::new(save_to);
-        file_receiver.start();
-    }
 
     builder.create_image(app.source.to_str().unwrap(), &plan, &environment)?;
-    println!("ending the server");
 
     Ok(())
 }

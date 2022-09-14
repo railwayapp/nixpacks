@@ -35,7 +35,7 @@ pub fn get_send_cached_dirs_command(
                 let sanitized_dir = dir.replace('~', "/root");
                 let compressed_file_name = sanitized_dir.replace("/", "%2f");
                 vec![
-                    format!("tar -c {} {}.tar.gz", compressed_file_name, sanitized_dir),
+                    format!("tar -cf {}.tar.gz {}", compressed_file_name, sanitized_dir),
                     format!("curl -v -F upload=@{}.tar.gz {}", compressed_file_name, server_url),
                 ]
             })
@@ -146,16 +146,5 @@ mod tests {
             "CMD [\"command1 command2 -l \\\"asdf\\\"\"]".to_string(),
             get_exec_command("command1 command2 -l \"asdf\"")
         );
-    }
-}
-
-pub fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<OutputDir> {
-    if let Some(value) = &options.out_dir {
-        OutputDir::new(value.into(), false)
-    } else if options.current_dir {
-        OutputDir::new(app_src.into(), false)
-    } else {
-        let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
-        OutputDir::new(tmp.into_path(), true)
     }
 }

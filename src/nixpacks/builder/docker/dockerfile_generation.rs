@@ -363,7 +363,7 @@ impl DockerfileGenerator for Phase {
         let cmds_str: String;
         if options.incremental_cache_image.is_some() {
             let cache_send_command = utils::get_send_cached_dirs_command(
-                "http://localhost:8080/".to_string(),
+                "http://host.docker.internal:8080/".to_string(),
                 &phase.cache_directories,
             );
 

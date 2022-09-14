@@ -49,9 +49,9 @@ impl DockerImageFileReceiver {
             rt::System::new().block_on(server_future)
         });
 
-        let server_handle = rx.recv().unwrap();
+        // let server_handle = rx.recv().unwrap();
 
-        println!("waiting 10 seconds");
+        // println!("waiting 10 seconds");
         // thread::sleep(time::Duration::from_secs(10));
 
         // Send a stop signal to the server, waiting for it to exit gracefully
@@ -62,7 +62,7 @@ impl DockerImageFileReceiver {
     async fn run_app(tx: mpsc::Sender<ServerHandle>, save_to: PathBuf) -> std::io::Result<()> {
         let save_to_data = web::Data::new(save_to.clone());
 
-        println!("starting HTTP server at http://localhost:8080");
+        println!("Starting Nixpacks HTTP server");
 
         let server = HttpServer::new(move || {
             ActixApp::new()
@@ -107,8 +107,7 @@ impl DockerImageFileReceiver {
         data: web::Data<PathBuf>,
     ) -> Result<HttpResponse, ActixError> {
         let save_to = data;
-
-        println!("upload reached at http://localhost:8080");
+        println!("upload 1111111111");
 
         while let Some(item) = payload.next().await {
             let mut byte_stream_field = item?;
