@@ -23,7 +23,7 @@ pub struct Targets {
 #[derive(Debug, Serialize, PartialEq, Eq, Deserialize)]
 pub struct Target {
     pub executor: String,
-    pub options: Options,
+    pub options: Option<Options>,
     pub configurations: Option<Configuration>,
 }
 
