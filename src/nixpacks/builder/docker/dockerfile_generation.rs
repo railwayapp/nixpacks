@@ -367,10 +367,14 @@ impl DockerfileGenerator for Phase {
             let cach_copy_in_command =
                 utils::get_copy_in_cached_dirs_command(output, &phase.cache_directories).join("\n");
 
-            let file_server_url = options
-                .file_server_url
-                .clone()
-                .unwrap_or("http://host.docker.internal:8008/".to_string());
+            let file_server_url = {
+                let this = options.file_server_url.clone();
+                let default = "http://host.docker.internal:8008/".to_string();
+                match this {
+                    Some(v) => v,
+                    None => default,
+                }
+            };
 
             let cache_copy_out_command = utils::get_copy_out_cached_dirs_command(
                 &file_server_url,

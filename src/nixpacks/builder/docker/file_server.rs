@@ -64,14 +64,14 @@ impl FileServer {
     }
 
     fn has_valid_access_token(token: Option<&HeaderValue>, access_token: &str) -> bool {
-        if token.is_some() {
-            return match token.unwrap().to_str() {
-                Ok(v) => v == access_token,
+        if let Some(header) = token {
+            match header.to_str() {
+                Ok(value) => value == access_token,
                 _ => false,
-            };
+            }
+        } else {
+            false
         }
-
-        false
     }
 
     #[allow(dead_code)]

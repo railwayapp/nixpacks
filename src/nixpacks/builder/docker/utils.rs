@@ -65,7 +65,7 @@ pub fn get_copy_in_cached_dirs_command(
                     format!("{}.tar.gz", target_cache_dir.replace('/', "%2f"));
 
                 let source_file_path = output_dir
-                    .get_relative_path("cached-dirs")
+                    .get_relative_path("incremental-cache")
                     .join(PathBuf::from(&compressed_file_name));
 
                 match fs::metadata(output_dir.root.join(PathBuf::from(&source_file_path))) {
@@ -74,7 +74,6 @@ pub fn get_copy_in_cached_dirs_command(
                         compressed_file_name,
                         source_file_path: source_file_path.display().to_string(),
                     }),
-
                     _ => None,
                 }
             })

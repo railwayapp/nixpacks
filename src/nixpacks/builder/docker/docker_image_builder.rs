@@ -51,9 +51,9 @@ impl ImageBuilder for DockerImageBuilder {
         }
 
         if self.options.incremental_cache_image.is_some() {
-            let save_to = output.root.join(".nixpacks").join("cached-dirs");
+            let save_to = output.root.join(".nixpacks").join("incremental-cache");
             if fs::metadata(&save_to).is_err() {
-                fs::create_dir_all(&save_to).context("Creating cached-dirs directory")?;
+                fs::create_dir_all(&save_to).context("Creating incremental-cache directory")?;
             }
 
             let file_receiver = FileServer::new(save_to, file_server_access_token);
