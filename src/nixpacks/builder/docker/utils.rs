@@ -34,14 +34,14 @@ pub fn get_copy_out_cached_dirs_command(
                 let sanitized_dir = dir.replace('~', "/root");
                 let compressed_file_name = sanitized_dir.replace('/', "%2f");
                 vec![
-                    format!("tar -cf {}.tar.gz {}", compressed_file_name, sanitized_dir),
+                    format!("if [ -d \"{}\" ]; then tar -cf {}.tar.gz {}; fi", sanitized_dir, compressed_file_name, sanitized_dir),
                     format!(
-                        "curl -v -F upload=@{}.tar.gz {} --header \"t:{}\" --retry 3 --retry-all-errors ",
-                        compressed_file_name, server_url, file_server_access_token,
+                        "if [ -d \"{}\" ]; then curl -v -F upload=@{}.tar.gz {} --header \"t:{}\" --retry 3 --retry-all-errors; fi ",
+                        sanitized_dir, compressed_file_name, server_url, file_server_access_token,
                     ),
                     format!(
-                        "rm -rf {}",
-                        sanitized_dir
+                        "if [ -d \"{}\" ]; then rm -rf {}; fi",
+                        sanitized_dir,  sanitized_dir
                     ),
                 ]
             })

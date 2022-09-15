@@ -9,6 +9,7 @@ use crate::nixpacks::{
 use anyhow::{bail, Context, Ok, Result};
 use std::{
     fs::{self, remove_dir_all, File},
+    path::PathBuf,
     process::Command,
 };
 use tempdir::TempDir;
@@ -28,6 +29,52 @@ fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<Outpu
         let tmp = TempDir::new("nixpacks").context("Creating a temp directory")?;
         OutputDir::new(tmp.into_path(), true)
     }
+}
+
+fn write_incremental_cache_dockerfile(dir_path: &PathBuf) -> Result<PathBuf> {
+    let paths = fs::read_dir(&dir_path)?
+        .filter_map(|path| {
+            path.ok()?
+                .file_name()
+                .to_str()
+                .map(|p| format!("COPY {} {}", p, p))
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let dockerfile = format!("FROM alpine\n{}", paths);
+
+    let dockerfile_path = dir_path.join("Dockerfile");
+    fs::write(dockerfile_path.clone(), dockerfile)?;
+
+    Ok(dockerfile_path)
+}
+
+fn build_incremental_cache_image(dir_path: &PathBuf, tag: String) -> Result<()> {
+    let dockerfile_path = write_incremental_cache_dockerfile(dir_path)?;
+    let mut docker_build_cmd = Command::new("docker");
+
+    // Enable BuildKit for all builds
+    docker_build_cmd.env("DOCKER_BUILDKIT", "1");
+
+    docker_build_cmd
+        .arg("build")
+        .arg(&dir_path.display().to_string())
+        .arg("-f")
+        .arg(dockerfile_path.display().to_string())
+        .arg("-t")
+        .arg(tag);
+
+    let result = docker_build_cmd
+        .spawn()?
+        .wait()
+        .context("Build incremental cache image")?;
+
+    if !result.success() {
+        bail!("Building incremental cache image failed")
+    }
+
+    Ok(())
 }
 
 impl ImageBuilder for DockerImageBuilder {
@@ -86,6 +133,14 @@ impl ImageBuilder for DockerImageBuilder {
             self.logger.log_section("Successfully Built!");
             println!("\nRun:");
             println!("  docker run -it {}", name);
+
+            if self.options.incremental_cache_image.is_some() {
+                println!("Building  incremental cache image!");
+                build_incremental_cache_image(
+                    &output.get_absolute_path("incremental-cache"),
+                    self.options.incremental_cache_image.clone().unwrap(),
+                )?;
+            }
 
             if output.is_temp {
                 remove_dir_all(output.root)?;
