@@ -442,8 +442,8 @@ impl NodeProvider {
         let project_json = NodeProvider::get_nx_project_json_for_app(app, env)?;
         if let Some(options) = project_json.targets.build.options {
             if let Some(output_path) = options.output_path {
-                if let Some(output_path) = output_path.as_str() {
-                    return Ok(output_path.to_string());
+                if let Some(the_output_path) = output_path.as_str() {
+                    return Ok(the_output_path.to_string());
                 }
             }
         }
