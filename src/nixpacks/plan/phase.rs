@@ -1,33 +1,36 @@
-use serde::{Deserialize, Serialize};
-
+use super::generator::NIXPKGS_ARCHIVE;
 use crate::nixpacks::{
     images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
     nix::pkg::Pkg,
 };
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
-use super::topological_sort::TopItem;
+pub type Phases = BTreeMap<String, Phase>;
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(PartialEq, Eq, Serialize, Deserialize, Default, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Phase {
-    pub name: String,
+    pub name: Option<String>,
 
     #[serde(rename = "dependsOn")]
     pub depends_on: Option<Vec<String>>,
 
-    #[serde(rename = "nixPackages")]
-    pub nix_pkgs: Option<Vec<Pkg>>,
+    #[serde(alias = "nixPackages")]
+    pub nix_pkgs: Option<Vec<String>>,
 
-    #[serde(rename = "nixLibraries")]
-    pub nix_libraries: Option<Vec<String>>,
+    #[serde(alias = "nixLibraries")]
+    pub nix_libs: Option<Vec<String>>,
 
-    #[serde(rename = "nixpacksArchive")]
-    pub nixpacks_archive: Option<String>,
+    pub nix_overlays: Option<Vec<String>>,
 
-    #[serde(rename = "aptPackages")]
+    pub nixpkgs_archive: Option<String>,
+
+    #[serde(alias = "aptPackages")]
     pub apt_pkgs: Option<Vec<String>>,
 
-    #[serde(rename = "commands")]
+    #[serde(alias = "commands")]
     pub cmds: Option<Vec<String>>,
 
     #[serde(rename = "onlyIncludeFiles")]
@@ -36,51 +39,60 @@ pub struct Phase {
     #[serde(rename = "cacheDirectories")]
     pub cache_directories: Option<Vec<String>>,
 
+    #[serde(alias = "envPaths")]
     pub paths: Option<Vec<String>>,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(PartialEq, Eq, Serialize, Deserialize, Default, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct StartPhase {
     pub cmd: Option<String>,
-
-    #[serde(rename = "runImage")]
     pub run_image: Option<String>,
-
-    #[serde(rename = "onlyIncludeFiles")]
     pub only_include_files: Option<Vec<String>>,
-}
-
-impl TopItem for Phase {
-    fn get_name(&self) -> String {
-        self.name.clone()
-    }
-
-    fn get_dependencies(&self) -> &[String] {
-        match &self.depends_on {
-            Some(depends_on) => depends_on.as_slice(),
-            None => &[],
-        }
-    }
 }
 
 impl Phase {
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
-            name: name.into(),
+            name: Some(name.into()),
             ..Default::default()
         }
     }
 
+    pub fn get_name(&self) -> String {
+        self.name.clone().unwrap_or_default()
+    }
+
     pub fn prefix_name(&mut self, prefix: &str) {
-        self.name = format!("{}:{}", prefix, self.name);
+        self.name = Some(format!("{}:{}", prefix, self.get_name()));
+    }
+
+    pub fn prefix_dependencies(&mut self, prefix: &str) {
+        if let Some(depends_on) = &self.depends_on {
+            self.depends_on = Some(
+                depends_on
+                    .clone()
+                    .iter()
+                    .map(|name| format!("{}:{}", prefix, name))
+                    .collect::<Vec<_>>(),
+            );
+        }
+    }
+
+    pub fn set_name<S: Into<String>>(&mut self, name: S) {
+        self.name = Some(name.into());
     }
 
     /// Shortcut for creating a setup phase from a list of nix packages.
     pub fn setup(pkgs: Option<Vec<Pkg>>) -> Self {
         Self {
-            nix_pkgs: pkgs,
-            name: "setup".to_string(),
+            nix_pkgs: pkgs
+                .clone()
+                .map(|pkgs| pkgs.iter().map(Pkg::to_nix_string).collect()),
+            nix_overlays: pkgs
+                .map(|pkgs| pkgs.iter().filter_map(|pkg| pkg.overlay.clone()).collect()),
+            name: Some("setup".to_string()),
             ..Default::default()
         }
     }
@@ -88,7 +100,7 @@ impl Phase {
     /// Shortcut for creating an install phase from a command
     pub fn install(cmd: Option<String>) -> Self {
         Self {
-            name: "install".to_string(),
+            name: Some("install".to_string()),
             cmds: cmd.map(|cmd| vec![cmd]),
             depends_on: Some(vec!["setup".to_string()]),
             ..Default::default()
@@ -98,7 +110,7 @@ impl Phase {
     /// Shortcut for creating a build phase from a command
     pub fn build(cmd: Option<String>) -> Self {
         Self {
-            name: "build".to_string(),
+            name: Some("build".to_string()),
             cmds: cmd.map(|cmd| vec![cmd]),
             depends_on: Some(vec!["install".to_string()]),
             ..Default::default()
@@ -107,20 +119,30 @@ impl Phase {
 
     pub fn uses_nix(&self) -> bool {
         !self.nix_pkgs.clone().unwrap_or_default().is_empty()
-            || !self.nix_libraries.clone().unwrap_or_default().is_empty()
+            || !self.nix_libs.clone().unwrap_or_default().is_empty()
     }
 
     pub fn depends_on_phase<S: Into<String>>(&mut self, name: S) {
         self.depends_on = Some(add_to_option_vec(self.depends_on.clone(), name.into()));
     }
 
-    pub fn add_nix_pkgs(&mut self, new_pkgs: Vec<Pkg>) {
-        self.nix_pkgs = Some(add_multiple_to_option_vec(self.nix_pkgs.clone(), new_pkgs));
+    pub fn add_nix_pkgs(&mut self, new_pkgs: &[Pkg]) {
+        self.nix_overlays = Some(add_multiple_to_option_vec(
+            self.nix_overlays.clone(),
+            new_pkgs
+                .iter()
+                .filter_map(|pkg| pkg.overlay.clone())
+                .collect::<Vec<_>>(),
+        ));
+        self.nix_pkgs = Some(add_multiple_to_option_vec(
+            self.nix_pkgs.clone(),
+            new_pkgs.iter().map(Pkg::to_nix_string).collect(),
+        ));
     }
 
     pub fn add_pkgs_libs(&mut self, new_libraries: Vec<String>) {
-        self.nix_libraries = Some(add_multiple_to_option_vec(
-            self.nix_libraries.clone(),
+        self.nix_libs = Some(add_multiple_to_option_vec(
+            self.nix_libs.clone(),
             new_libraries,
         ));
     }
@@ -152,7 +174,23 @@ impl Phase {
     }
 
     pub fn set_nix_archive(&mut self, archive: String) {
-        self.nixpacks_archive = Some(archive);
+        self.nixpkgs_archive = Some(archive);
+    }
+
+    pub fn pin(&mut self) {
+        if self.uses_nix() && self.nixpkgs_archive.is_none() {
+            self.nixpkgs_archive = Some(NIXPKGS_ARCHIVE.to_string());
+        }
+
+        self.cmds = pin_option_vec(&self.cmds);
+        self.depends_on = pin_option_vec(&self.depends_on);
+        self.nix_pkgs = pin_option_vec(&self.nix_pkgs);
+        self.nix_libs = pin_option_vec(&self.nix_libs);
+        self.apt_pkgs = pin_option_vec(&self.apt_pkgs);
+        self.nix_overlays = pin_option_vec(&self.nix_overlays);
+        self.only_include_files = pin_option_vec(&self.only_include_files);
+        self.cache_directories = pin_option_vec(&self.cache_directories);
+        self.paths = pin_option_vec(&self.paths);
     }
 }
 
@@ -182,6 +220,26 @@ impl StartPhase {
             file.into(),
         ));
     }
+
+    pub fn pin(&mut self) {
+        self.only_include_files = pin_option_vec(&self.only_include_files);
+    }
+}
+
+fn pin_option_vec(vec: &Option<Vec<String>>) -> Option<Vec<String>> {
+    if let Some(vec) = vec {
+        Some(remove_autos_from_vec(vec.clone()))
+    } else {
+        vec.clone()
+    }
+}
+
+/// Removes all the `"..."`'s or `"@auto"`'s from the `original`
+fn remove_autos_from_vec(original: Vec<String>) -> Vec<String> {
+    original
+        .into_iter()
+        .filter(|x| x != "@auto" && x != "...")
+        .collect::<Vec<_>>()
 }
 
 fn add_to_option_vec<T>(values: Option<Vec<T>>, v: T) -> Vec<T> {
@@ -198,5 +256,32 @@ fn add_multiple_to_option_vec<T: Clone>(values: Option<Vec<T>>, new_values: Vec<
         [values, new_values].concat()
     } else {
         new_values
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn vs(v: Vec<&str>) -> Vec<String> {
+        v.into_iter()
+            .map(std::string::ToString::to_string)
+            .collect()
+    }
+
+    #[test]
+    fn test_remove_autos_from_vec() {
+        assert_eq!(
+            vs(vec!["a", "b", "c"]),
+            remove_autos_from_vec(vs(vec!["a", "b", "c"]))
+        );
+        assert_eq!(
+            vs(vec!["a", "c"]),
+            remove_autos_from_vec(vs(vec!["a", "...", "c"]))
+        );
+        assert_eq!(
+            vs(vec!["a", "c"]),
+            remove_autos_from_vec(vs(vec!["@auto", "a", "...", "c", "@auto"]))
+        );
     }
 }

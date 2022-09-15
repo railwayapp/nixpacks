@@ -86,7 +86,7 @@ impl Provider for SwiftProvider {
         let name = SwiftProvider::get_executable_name(app)?;
         let start = StartPhase::new(format!("./{}", name));
 
-        let plan = BuildPlan::new(vec![setup, install, build], Some(start));
+        let plan = BuildPlan::new(&vec![setup, install, build], Some(start));
 
         Ok(Some(plan))
     }

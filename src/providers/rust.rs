@@ -37,7 +37,7 @@ impl Provider for RustProvider {
         let build = RustProvider::get_build(app, env)?;
         let start = RustProvider::get_start(app, env)?;
 
-        let mut plan = BuildPlan::new(vec![setup, build], start);
+        let mut plan = BuildPlan::new(&vec![setup, build], start);
         plan.add_variables(EnvironmentVariables::from([(
             "ROCKET_ADDRESS".to_string(),
             "0.0.0.0".to_string(),
@@ -83,6 +83,7 @@ impl RustProvider {
         let mut build = Phase::build(None);
 
         build.add_cmd("mkdir -p bin");
+        build.depends_on = Some(vec!["setup".to_string()]);
 
         let mut build_cmd = "cargo build --release".to_string();
 

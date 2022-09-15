@@ -1,39 +1,37 @@
-use super::{config::GeneratePlanConfig, BuildPlan, PlanGenerator};
+use std::path::Path;
+
 use crate::{
-    nixpacks::{app::App, environment::Environment, nix::pkg::Pkg},
-    providers::Provider,
+    nixpacks::{
+        app::App,
+        environment::{Environment, EnvironmentVariables},
+        plan::{BuildPlan, PlanGenerator},
+    },
+    providers::{procfile::ProcfileProvider, Provider},
 };
-use anyhow::{Context, Ok, Result};
-use std::collections::HashMap;
+use anyhow::{bail, Context, Ok, Result};
+use colored::Colorize;
+
+use super::merge::Mergeable;
 
 // This line is automatically updated.
-// Last Modified: 2022-08-29 17:07:50 UTC+0000
-// https://github.com/NixOS/nixpkgs/commit/0e304ff0d9db453a4b230e9386418fd974d5804a
-pub const NIXPKGS_ARCHIVE: &str = "0e304ff0d9db453a4b230e9386418fd974d5804a";
+// Last Modified: 2022-09-12 17:11:54 UTC+0000
+// https://github.com/NixOS/nixpkgs/commit/a0b7e70db7a55088d3de0cc370a59f9fbcc906c3
+pub const NIXPKGS_ARCHIVE: &str = "a0b7e70db7a55088d3de0cc370a59f9fbcc906c3";
+const NIXPACKS_METADATA: &str = "NIXPACKS_METADATA";
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratePlanOptions {
-    pub custom_install_cmd: Option<Vec<String>>,
-    pub custom_build_cmd: Option<Vec<String>>,
-    pub custom_start_cmd: Option<String>,
-    pub custom_pkgs: Vec<Pkg>,
-    pub custom_libs: Vec<String>,
-    pub custom_apt_pkgs: Vec<String>,
-    pub pin_pkgs: bool,
-    pub plan_path: Option<String>,
+    pub plan: Option<BuildPlan>,
+    pub config_file: Option<String>,
 }
 
 pub struct NixpacksBuildPlanGenerator<'a> {
     providers: &'a [&'a dyn Provider],
-    matched_provider: Option<&'a dyn Provider>,
-    config: GeneratePlanConfig,
+    config: GeneratePlanOptions,
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan> {
-        // Match a specific provider
-        self.detect(app, environment)?;
-
         // If the provider defines a build plan in the new format, use that
         let plan = self.get_build_plan(app, environment)?;
 
@@ -44,95 +42,154 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
 impl NixpacksBuildPlanGenerator<'_> {
     pub fn new<'a>(
         providers: &'a [&'a dyn Provider],
-        config: GeneratePlanConfig,
+        config: GeneratePlanOptions,
     ) -> NixpacksBuildPlanGenerator<'a> {
-        NixpacksBuildPlanGenerator {
-            providers,
-            matched_provider: None,
-            config,
-        }
+        NixpacksBuildPlanGenerator { providers, config }
     }
 
-    /// Match a single provider from the given app and environment.
-    fn detect(&mut self, app: &App, environment: &Environment) -> Result<()> {
-        for &provider in self.providers {
-            let matches = provider.detect(app, environment)?;
-            if matches {
-                self.matched_provider = Some(provider);
+    /// Get a build plan from the provider and by applying the config from the environment
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
+        let file_plan = self.read_file_plan(app, env)?;
+        let env_plan = BuildPlan::from_environment(env);
+        let cli_plan = self.config.plan.clone().unwrap_or_default();
+        let plan_before_providers = BuildPlan::merge_plans(&vec![file_plan, env_plan, cli_plan]);
+
+        let provider_plan =
+            self.get_plan_from_providers(plan_before_providers.providers.clone(), app, env)?;
+
+        let procfile_plan = (ProcfileProvider {})
+            .get_build_plan(app, env)?
+            .unwrap_or_default();
+
+        let mut plan =
+            BuildPlan::merge_plans(&vec![provider_plan, procfile_plan, plan_before_providers]);
+
+        if !env.get_variable_names().is_empty() {
+            plan.add_variables(Environment::clone_variables(env));
+        }
+
+        plan.pin();
+
+        Ok(plan)
+    }
+
+    fn get_auto_providers(&self, app: &App, env: &Environment) -> Result<Vec<String>> {
+        let mut providers = Vec::new();
+
+        for provider in self.providers {
+            if provider.detect(app, env)? {
+                providers.push(provider.name().to_string());
+
+                // Only match a single provider... for now
                 break;
             }
         }
 
-        Ok(())
+        Ok(providers)
     }
 
-    /// Get a build plan from the provider and by applying the config from the environment
-    fn get_build_plan(&self, app: &App, environment: &Environment) -> Result<BuildPlan> {
-        // Merge the config from the CLI flags with the config from the environment variables
-        // The CLI config takes precedence
-        let config = GeneratePlanConfig::merge(
-            &GeneratePlanConfig::from_environment(environment),
-            &self.config,
-        );
+    fn get_plan_from_providers(
+        &self,
+        provider_names: Option<Vec<String>>,
+        app: &App,
+        env: &Environment,
+    ) -> Result<BuildPlan> {
+        let provider_names = if let Some(provider_names) = provider_names {
+            provider_names
+        } else {
+            self.get_auto_providers(app, env)?
+        };
+
+        if provider_names.len() > 1 {
+            bail!("Only a single provider is supported at this time");
+        }
 
         let mut plan = BuildPlan::default();
+        let mut count = 0;
 
-        if let Some(provider) = self.matched_provider {
-            if let Some(provider_build_plan) = provider.get_build_plan(app, environment)? {
-                plan = provider_build_plan;
+        let mut metadata = Vec::new();
+
+        for name in provider_names {
+            let provider = self.providers.iter().find(|p| p.name() == name);
+            if let Some(provider) = provider {
+                if let Some(mut provider_plan) = provider.get_build_plan(app, env)? {
+                    // All but the first provider have their phases prefixed with their name
+                    if count > 0 {
+                        provider_plan.prefix_phases(provider.name());
+                    }
+
+                    let metadata_string = provider
+                        .metadata(app, env)?
+                        .join_as_comma_separated(provider.name().to_owned());
+                    metadata.push(metadata_string);
+
+                    plan = BuildPlan::merge(&plan, &provider_plan);
+                }
+            } else {
+                bail!("Provider {} not found", name);
             }
+
+            count += 1;
         }
 
-        // The Procfile start command has precedence over the provider's start command
-        if let Some(procfile_start) = self.get_procfile_start_cmd(app)? {
-            let mut start_phase = plan.start_phase.clone().unwrap_or_default();
-            start_phase.cmd = Some(procfile_start);
-            plan.set_start_phase(start_phase);
-        }
-
-        // The Procfiles release command is append to the provider's build command
-        if let Some(procfile_release) = self.get_procfile_release_cmd(app)? {
-            if let Some(build) = plan.get_phase_mut("build") {
-                build.add_cmd(procfile_release);
-            }
-        }
-
-        plan = BuildPlan::apply_config(&plan, &config);
-
-        if !environment.get_variable_names().is_empty() {
-            plan.add_variables(Environment::clone_variables(environment));
+        if count > 0 {
+            plan.add_variables(EnvironmentVariables::from([(
+                NIXPACKS_METADATA.to_string(),
+                metadata.join(","),
+            )]));
         }
 
         Ok(plan)
     }
 
-    fn get_procfile_start_cmd(&self, app: &App) -> Result<Option<String>> {
-        if app.includes_file("Procfile") {
-            let mut procfile: HashMap<String, String> =
-                app.read_yaml("Procfile").context("Reading Procfile")?;
-            procfile.remove("release");
-            if procfile.is_empty() {
-                Ok(None)
-            } else {
-                let process = procfile.values().collect::<Vec<_>>()[0].to_string();
-                Ok(Some(process))
+    fn read_file_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
+        let file_path = if let Some(file_path) = &self.config.config_file {
+            Some(file_path.clone())
+        } else if let Some(env_config_file) = env.get_config_variable("CONFIG_FILE") {
+            if !app.includes_file(&env_config_file) {
+                bail!("Config file {} does not exist", env_config_file);
             }
-        } else {
-            Ok(None)
-        }
-    }
 
-    fn get_procfile_release_cmd(&self, app: &App) -> Result<Option<String>> {
-        if app.includes_file("Procfile") {
-            let procfile: HashMap<String, String> =
-                app.read_yaml("Procfile").context("Reading Procfile")?;
-            if let Some(release) = procfile.get("release") {
-                Ok(Some(release.to_string()))
-            } else {
-                Ok(None)
-            }
+            Some(env_config_file)
+        } else if app.includes_file("nixpacks.toml") {
+            Some("nixpacks.toml".to_owned())
+        } else if app.includes_file("nixpacks.json") {
+            Some("nixpacks.json".to_owned())
         } else {
-            Ok(None)
+            None
+        };
+
+        let plan =
+            if let Some(file_path) = file_path {
+                let filename = Path::new(&file_path);
+                let ext = filename.extension().unwrap_or_default();
+
+                let contents = app.read_file(file_path.as_str()).with_context(|| {
+                    format!("Failed to read Nixpacks config file `{}`", file_path)
+                })?;
+                let plan = if ext == "toml" {
+                    BuildPlan::from_toml(&contents)
+                } else if ext == "json" {
+                    BuildPlan::from_json(&contents)
+                } else {
+                    bail!("Unknown file type: {}", file_path)
+                };
+
+                Some(plan.with_context(|| {
+                    format!("Failed to parse Nixpacks config file `{}`", file_path)
+                })?)
+            } else {
+                None
+            };
+
+        if plan.is_some() {
+            println!(
+                "{}",
+                "\n Nixpacks file based configuration is experimental and may change\n"
+                    .bright_yellow()
+            );
         }
+
+        Ok(plan.unwrap_or_default())
     }
 }

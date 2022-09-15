@@ -6,10 +6,18 @@ title: Installation
 
 ## Homebrew
 
-Install Nixpacks with [Homebrew](https://brew.sh/) (MacOS Only)
+Install Nixpacks with [Homebrew](https://brew.sh/) (macOS Only)
 
 ```sh
 brew install railwayapp/tap/nixpacks
+```
+
+## MacPorts
+
+Install Nixpacks with [MacPorts](https://www.macports.org/) (macOS Only)
+
+```sh
+sudo port install nixpacks
 ```
 
 ## Curl
@@ -18,6 +26,14 @@ Download Nixpacks from GH releases and install automatically
 
 ```sh
 curl -sSL https://nixpacks.com/install.sh | bash
+```
+
+## PowerShell
+
+Download Nixpacks from GH release and install automatically (with powershell)
+
+```ps1
+irm https://nixpacks.com/install.ps1 | iex
 ```
 
 ## Debian (and derivatives like Ubuntu)

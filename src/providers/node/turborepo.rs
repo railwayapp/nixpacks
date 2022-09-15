@@ -1,11 +1,9 @@
-use std::{collections::HashMap, env};
+use std::collections::HashMap;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::nixpacks::{app::App, environment::Environment};
-
-use super::NodeProvider;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TurboJson {

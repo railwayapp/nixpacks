@@ -1,11 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::format,
-    path::PathBuf,
-};
-
 use self::{nx::ProjectJson, turborepo::Turborepo};
-
 use super::Provider;
 use crate::{
     nixpacks::{
@@ -24,12 +17,16 @@ use anyhow::Result;
 use path_slash::PathExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 mod nx;
 mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const DEFAULT_NODE_PKG_NAME: &str = "nodejs";
+const DEFAULT_NODE_PKG_NAME: &str = "nodejs-16_x";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 
 const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
@@ -53,6 +50,7 @@ pub struct PackageJson {
     pub project_type: Option<String>,
 }
 
+#[derive(Default, Debug)]
 pub struct NodeProvider {}
 
 impl Provider for NodeProvider {
@@ -67,11 +65,9 @@ impl Provider for NodeProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
-        if NodeProvider::uses_node_dependency(app, "canvas") {
-            setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
-        }
 
         if NodeProvider::uses_node_dependency(app, "puppeteer") {
+            // https://gist.github.com/winuxue/cfef08e2f5fe9dfc16a1d67a4ad38a01
             setup.add_apt_pkgs(vec![
                 "libnss3".to_string(),
                 "libatk1.0-0".to_string(),
@@ -85,6 +81,8 @@ impl Provider for NodeProvider {
                 "libxshmfence1".to_string(),
                 "libglu1".to_string(),
             ]);
+        } else if NodeProvider::uses_node_dependency(app, "canvas") {
+            setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
 
         // Install
@@ -138,7 +136,7 @@ impl Provider for NodeProvider {
         // Start
         let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
 
-        let mut plan = BuildPlan::new(vec![setup, install, build], start);
+        let mut plan = BuildPlan::new(&vec![setup, install, build], start);
         plan.add_variables(NodeProvider::get_node_environment_variables());
 
         Ok(Some(plan))
@@ -155,7 +153,7 @@ impl NodeProvider {
     }
 
     pub fn has_script(app: &App, script: &str) -> Result<bool> {
-        let package_json: PackageJson = app.read_json("package.json")?;
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         if let Some(scripts) = package_json.scripts {
             if scripts.get(script).is_some() {
                 return Ok(true);
@@ -202,9 +200,8 @@ impl NodeProvider {
                 return Ok(Some(start_pipeline));
             } else if let Some(name) = app_name {
                 return Ok(Some(format!("npx turbo run {}:start", name)));
-            } else {
-                return Ok(Some(format!("npx turbo run start")));
             }
+            return Ok(Some("npx turbo run start".to_string()));
         }
 
         let package_manager = NodeProvider::get_package_manager(app);
@@ -212,7 +209,7 @@ impl NodeProvider {
             return Ok(Some(format!("{} run start", package_manager)));
         }
 
-        let package_json: PackageJson = app.read_json("package.json")?;
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         if let Some(main) = package_json.main {
             if app.includes_file(&main) {
                 if package_manager == "bun" {
@@ -316,7 +313,11 @@ impl NodeProvider {
 
     /// Returns the nodejs nix package and the appropriate package manager nix image.
     pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
-        let package_json: PackageJson = app.read_json("package.json")?;
+        let package_json: PackageJson = if app.includes_file("package.json") {
+            app.read_json("package.json")?
+        } else {
+            PackageJson::default()
+        };
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
 
         let pm_pkg: Pkg;
@@ -705,7 +706,7 @@ mod test {
                 &Environment::default()
             )?
             .name,
-            "nodejs"
+            DEFAULT_NODE_PKG_NAME
         );
 
         Ok(())

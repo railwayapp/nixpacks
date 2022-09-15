@@ -30,21 +30,21 @@ impl Provider for RubyProvider {
         let start = self.get_start(app)?;
 
         let mut plan = BuildPlan::new(
-            vec![setup, install, build]
+            &vec![setup, install, build]
                 .into_iter()
                 .flatten()
                 .collect::<Vec<_>>(),
             start,
         );
 
-        let node = NodeProvider {};
+        let node = NodeProvider::default();
         if node.detect(app, env)? {
             let node_build_plan = node.get_build_plan(app, env)?;
             if let Some(node_build_plan) = node_build_plan {
                 // Include the install phase from the node provider
-                let phase_name =
+                let root_phase_name =
                     plan.add_phases_from_another_plan(&node_build_plan, node.name(), "install");
-                plan.add_dependency_between_phases("build", phase_name.as_str());
+                plan.add_dependency_between_phases("build", root_phase_name.as_str());
             }
         }
 
@@ -81,7 +81,6 @@ impl RubyProvider {
 
     fn get_install(&self, app: &App) -> Result<Option<Phase>> {
         let mut install = Phase::install(None);
-        install.add_file_dependency("Gemfile*".to_string());
         install.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
         install.add_cmd("bundle install".to_string());

@@ -1,7 +1,22 @@
-use nixpacks::{generate_build_plan, nixpacks::plan::config::GeneratePlanConfig};
+use nixpacks::{generate_build_plan, nixpacks::plan::generator::GeneratePlanOptions};
 use std::env::consts::ARCH;
 
 test_helper::generate_plan_tests!();
+
+#[test]
+fn test_custom_plan_path() {
+    let plan = generate_build_plan(
+        "./examples/custom-plan-path",
+        Vec::new(),
+        &GeneratePlanOptions {
+            config_file: Some("custom-nixpacks.toml".to_string()),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
+    assert_plan_snapshot!(plan);
+}
 
 #[test]
 fn test_custom_rust_version() {
@@ -25,7 +40,7 @@ fn test_custom_rust_version() {
             .nix_pkgs
             .unwrap()
             .iter()
-            .filter(|p| p.name.contains("1.56.0"))
+            .filter(|p| p.contains("1.56.0"))
             .count(),
         1
     );
@@ -55,7 +70,7 @@ fn test_rust_rocket_no_musl() {
     let plan = generate_build_plan(
         "./examples/rust-rocket",
         vec!["NIXPACKS_NO_MUSL=1"],
-        &GeneratePlanConfig::default(),
+        &GeneratePlanOptions::default(),
     )
     .unwrap();
     assert_plan_snapshot!(plan);

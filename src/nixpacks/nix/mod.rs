@@ -5,17 +5,11 @@ use super::plan::phase::Phase;
 pub mod pkg;
 
 pub fn create_nix_expression(phase: &Phase) -> String {
-    let pkgs = phase.nix_pkgs.clone().unwrap_or_default();
+    let nixpkgs = phase.nix_pkgs.clone().unwrap_or_default().join(" ");
 
-    let nixpkgs = pkgs
-        .iter()
-        .map(pkg::Pkg::to_nix_string)
-        .collect::<Vec<String>>()
-        .join(" ");
+    let libraries = phase.nix_libs.clone().unwrap_or_default().join(" ");
 
-    let libraries = phase.nix_libraries.clone().unwrap_or_default().join(" ");
-
-    let nix_archive = phase.nixpacks_archive.clone();
+    let nix_archive = phase.nixpkgs_archive.clone();
     let pkg_import = match nix_archive {
         Some(archive) => format!(
             "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
@@ -24,12 +18,7 @@ pub fn create_nix_expression(phase: &Phase) -> String {
         None => "import <nixpkgs>".to_string(),
     };
 
-    let mut overlays: Vec<String> = Vec::new();
-    for pkg in &pkgs {
-        if let Some(overlay) = &pkg.overlay {
-            overlays.push(overlay.to_string());
-        }
-    }
+    let overlays = phase.nix_overlays.clone().unwrap_or_default();
 
     let overlays_string = overlays
         .iter()
@@ -48,7 +37,7 @@ pub fn create_nix_expression(phase: &Phase) -> String {
         String::new()
     };
 
-    let name = format!("{}-env", phase.name);
+    let name = format!("{}-env", phase.get_name());
     let nix_expression = formatdoc! {"
             {{ }}:
 
