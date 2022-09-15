@@ -375,7 +375,7 @@ fn test_node_nx_no_options() {
         vec!["NIXPACKS_NX_APP_NAME=no-options"],
     );
 
-    assert!(run_image(&name, None).contains("fake fake start command started!"));
+    assert!(run_image(&name, None).contains("fake start command started!"));
 }
 
 #[test]
