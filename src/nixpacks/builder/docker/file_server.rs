@@ -1,7 +1,9 @@
 use actix_multipart::Multipart;
 use actix_web::error::ParseError;
+use actix_web::http::header::HeaderValue;
 use actix_web::{
-    middleware, rt, web, App as ActixApp, Error as ActixError, HttpResponse, HttpServer,
+    middleware, rt, web, App as ActixApp, Error as ActixError, HttpRequest, HttpResponse,
+    HttpServer,
 };
 use futures_util::stream::StreamExt;
 
@@ -12,57 +14,84 @@ use std::path::PathBuf;
 use std::thread;
 
 #[derive(Debug, Clone)]
-pub struct DockerImageFileReceiver {
-    save_to: PathBuf,
+pub struct FileServer {
+    data: FileServerData,
 }
 
-impl DockerImageFileReceiver {
-    pub fn new(save_to: PathBuf) -> DockerImageFileReceiver {
-        DockerImageFileReceiver { save_to }
+#[derive(Debug, Clone)]
+pub struct FileServerData {
+    save_to: PathBuf,
+    access_token: String,
+    host: String,
+    port: u16,
+}
+
+impl FileServer {
+    pub fn new(save_to: PathBuf, access_token: String) -> FileServer {
+        FileServer {
+            data: FileServerData {
+                save_to,
+                access_token,
+                host: "0.0.0.0".to_string(),
+                port: 8008,
+            },
+        }
     }
 
     pub fn start(self) {
         thread::spawn(move || {
-            let server_future = DockerImageFileReceiver::run_app(self.save_to);
+            let server_future = FileServer::run_app(self.data);
             rt::System::new().block_on(server_future)
         });
     }
 
-    async fn run_app(save_to: PathBuf) -> std::io::Result<()> {
-        let save_to_data = web::Data::new(save_to.clone());
-
+    async fn run_app(data: FileServerData) -> std::io::Result<()> {
+        let save_to_data = web::Data::new(data.clone());
         let server = HttpServer::new(move || {
             ActixApp::new()
                 .app_data(save_to_data.clone())
                 .wrap(middleware::Logger::default())
-                .service(web::resource("/").route(web::post().to(DockerImageFileReceiver::upload)))
+                .service(web::resource("/").route(web::post().to(FileServer::upload)))
                 .service(
                     web::resource("/health")
                         .route(web::get().to(|| async { "Nixpacks HTTP server is up & running!" })),
                 )
         })
-        .bind(("0.0.0.0", 8080))?
+        .bind((data.host, data.port))?
         .run();
 
         server.await
     }
 
+    fn has_valid_access_token(token: Option<&HeaderValue>, access_token: &str) -> bool {
+        if token.is_some() {
+            return match token.unwrap().to_str() {
+                Ok(v) => v == access_token,
+                _ => false,
+            };
+        }
+
+        false
+    }
+
     #[allow(dead_code)]
     async fn upload(
         mut payload: Multipart,
-        data: web::Data<PathBuf>,
+        req: HttpRequest,
+        data: web::Data<FileServerData>,
     ) -> Result<HttpResponse, ActixError> {
-        let save_to = data;
-
         while let Some(item) = payload.next().await {
             let mut byte_stream_field = item?;
+            if !FileServer::has_valid_access_token(req.headers().get("t"), &data.access_token) {
+                return Ok(HttpResponse::Unauthorized().into());
+            }
 
             let filename = byte_stream_field
                 .content_disposition()
                 .get_filename()
                 .ok_or(ParseError::Incomplete)?;
 
-            let filepath = save_to.join(sanitize_filename::sanitize(&filename));
+            let filepath = data.save_to.join(sanitize_filename::sanitize(&filename));
             let in_path = PathBuf::from(&filepath);
             let mut f: File = web::block(|| File::create(in_path)).await??;
             while let Some(chunk) = byte_stream_field.next().await {

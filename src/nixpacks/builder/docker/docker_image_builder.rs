@@ -1,8 +1,6 @@
 use super::{dockerfile_generation::DockerfileGenerator, DockerBuilderOptions, ImageBuilder};
 use crate::nixpacks::{
-    builder::docker::{
-        docker_image_file_receiver::DockerImageFileReceiver, dockerfile_generation::OutputDir,
-    },
+    builder::docker::{dockerfile_generation::OutputDir, file_server::FileServer},
     environment::Environment,
     files,
     logger::Logger,
@@ -40,8 +38,10 @@ impl ImageBuilder for DockerImageBuilder {
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
         output.ensure_output_exists()?;
 
+        let file_server_access_token = Uuid::new_v4().to_string();
+
         let dockerfile = plan
-            .generate_dockerfile(&self.options, env, &output)
+            .generate_dockerfile(&self.options, env, &output, &file_server_access_token)
             .context("Generating Dockerfile for plan")?;
 
         // If printing the Dockerfile, don't write anything to disk
@@ -51,11 +51,12 @@ impl ImageBuilder for DockerImageBuilder {
         }
 
         if self.options.incremental_cache_image.is_some() {
-            println!("starting the server");
             let save_to = output.root.join(".nixpacks").join("cached-dirs");
-            OutputDir::new(save_to.clone(), false)?.ensure_output_exists()?;
+            if fs::metadata(&save_to).is_err() {
+                fs::create_dir_all(&save_to).context("Creating cached-dirs directory")?;
+            }
 
-            let file_receiver = DockerImageFileReceiver::new(save_to);
+            let file_receiver = FileServer::new(save_to, file_server_access_token);
             file_receiver.start();
         }
 

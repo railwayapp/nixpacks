@@ -119,6 +119,12 @@ fn main() -> Result<()> {
                         .help("Disable building with the cache"),
                 )
                 .arg(
+                    Arg::new("file-server-url")
+                        .long("file-server-url")
+                        .help("URL of file server to send tar archives of cached directions to")
+                        .takes_value(true),
+                )
+                .arg(
                     Arg::new("incremental-cache-image")
                         .long("incremental-cache-image")
                         .help("Image to hold the cached directories between builds.")
@@ -285,6 +291,7 @@ fn main() -> Result<()> {
             let inline_cache = matches.is_present("inline-cache");
             let cache_from = matches.value_of("cache-from").map(ToString::to_string);
             let verbose = matches.is_present("verbose");
+            let file_server_url = matches.value_of("file-server-url").map(ToString::to_string);
             let incremental_cache_image = matches
                 .value_of("incremental-cache-image")
                 .map(ToString::to_string);
@@ -328,6 +335,7 @@ fn main() -> Result<()> {
                 no_error_without_start,
                 incremental_cache_image,
                 verbose,
+                file_server_url,
             };
 
             create_docker_image(path, envs, &options, build_options)?;

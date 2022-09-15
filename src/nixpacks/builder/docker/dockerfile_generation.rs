@@ -81,6 +81,7 @@ pub trait DockerfileGenerator {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
+        file_server_access_token: &str,
     ) -> Result<String>;
     fn write_supporting_files(
         &self,
@@ -98,6 +99,7 @@ impl DockerfileGenerator for BuildPlan {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
+        file_server_access_token: &str,
     ) -> Result<String> {
         let plan = self;
 
@@ -139,13 +141,12 @@ impl DockerfileGenerator for BuildPlan {
             .clone()
             .into_iter()
             .map(|phase| {
-                let phase_dockerfile =
-                    phase
-                        .generate_dockerfile(options, env, output)
-                        .context(format!(
-                            "Generating Dockerfile for phase {}",
-                            phase.get_name()
-                        ))?;
+                let phase_dockerfile = phase
+                    .generate_dockerfile(options, env, output, file_server_access_token)
+                    .context(format!(
+                        "Generating Dockerfile for phase {}",
+                        phase.get_name()
+                    ))?;
 
                 match phase.get_name().as_str() {
                     // We want to load the variables immediately after the setup phase
@@ -176,7 +177,7 @@ impl DockerfileGenerator for BuildPlan {
             .start_phase
             .clone()
             .unwrap_or_default()
-            .generate_dockerfile(options, env, output)?;
+            .generate_dockerfile(options, env, output, file_server_access_token)?;
 
         let base_image = plan
             .build_image
@@ -254,6 +255,7 @@ impl DockerfileGenerator for StartPhase {
         _options: &DockerBuilderOptions,
         _env: &Environment,
         _output: &OutputDir,
+        _file_server_access_token: &str,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
             Some(cmd) => utils::get_exec_command(cmd),
@@ -302,6 +304,7 @@ impl DockerfileGenerator for Phase {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
+        file_server_access_token: &str,
     ) -> Result<String> {
         let phase = self;
 
@@ -364,9 +367,15 @@ impl DockerfileGenerator for Phase {
             let cach_copy_in_command =
                 utils::get_copy_in_cached_dirs_command(output, &phase.cache_directories).join("\n");
 
+            let file_server_url = options
+                .file_server_url
+                .clone()
+                .unwrap_or("http://host.docker.internal:8008/".to_string());
+
             let cache_copy_out_command = utils::get_copy_out_cached_dirs_command(
-                "http://host.docker.internal:8080/",
+                &file_server_url,
                 &phase.cache_directories,
+                file_server_access_token,
             );
 
             let run_commands = [
@@ -453,6 +462,7 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
+                "",
             )
             .unwrap();
 
@@ -478,6 +488,7 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
+                "",
             )
             .unwrap();
 

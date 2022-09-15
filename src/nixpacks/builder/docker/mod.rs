@@ -18,10 +18,11 @@ pub struct DockerBuilderOptions {
     pub no_error_without_start: bool,
     pub incremental_cache_image: Option<String>,
     pub verbose: bool,
+    pub file_server_url: Option<String>,
 }
 
 mod cache;
 pub mod docker_image_builder;
-pub mod docker_image_file_receiver;
 mod dockerfile_generation;
+pub mod file_server;
 pub mod utils;
