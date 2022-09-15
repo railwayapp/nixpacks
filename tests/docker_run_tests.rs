@@ -351,7 +351,8 @@ fn test_node_nx_default_app() {
 
 #[test]
 fn test_node_nx_next() {
-    let name = build_with_build_time_env_vars("./examples/node-nx", vec!["image.png"]);
+    let name =
+        build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=next-app"]);
 
     assert!(run_image(&name, None)
         .contains("ready - started server on 0.0.0.0:3000, url: http://localhost:3000"));
