@@ -11,8 +11,9 @@ pub struct TurboJson {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[allow(non_snake_case)]
 pub struct Pipeline {
-    // Fields not used
+    pub dependsOn: Option<Vec<String>>,
 }
 
 pub struct Turborepo;
