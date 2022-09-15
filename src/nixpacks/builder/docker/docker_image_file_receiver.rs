@@ -31,18 +31,17 @@ impl DockerImageFileReceiver {
     async fn run_app(save_to: PathBuf) -> std::io::Result<()> {
         let save_to_data = web::Data::new(save_to.clone());
 
-        std::env::set_var("RUST_LOG", "info");
-        std::env::set_var("RUST_BACKTRACE", "1");
-
         let server = HttpServer::new(move || {
             ActixApp::new()
                 .app_data(save_to_data.clone())
                 .wrap(middleware::Logger::default())
+                .service(web::resource("/").route(web::post().to(DockerImageFileReceiver::upload)))
                 .service(
-                    web::resource("/upload").route(web::post().to(DockerImageFileReceiver::upload)),
+                    web::resource("/health")
+                        .route(web::get().to(|| async { "Nixpacks HTTP server is up & running!" })),
                 )
         })
-        .bind(("127.0.0.1", 8080))?
+        .bind(("0.0.0.0", 8080))?
         .run();
 
         server.await

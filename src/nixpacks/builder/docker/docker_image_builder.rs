@@ -126,6 +126,10 @@ impl DockerImageBuilder {
             .arg("-t")
             .arg(name);
 
+        if self.options.verbose {
+            docker_build_cmd.arg("--progress=plain");
+        }
+
         if self.options.quiet {
             docker_build_cmd.arg("--quiet");
         }

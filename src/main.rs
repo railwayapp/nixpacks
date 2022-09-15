@@ -125,6 +125,11 @@ fn main() -> Result<()> {
                         .takes_value(true),
                 )
                 .arg(
+                    Arg::new("verbose")
+                        .long("verbose")
+                        .help("Display more info during build."),
+                )
+                .arg(
                     Arg::new("inline-cache")
                         .long("inline-cache")
                         .help("Enable writing cache metadata into the output image"),
@@ -279,6 +284,7 @@ fn main() -> Result<()> {
             let no_cache = matches.is_present("no-cache");
             let inline_cache = matches.is_present("inline-cache");
             let cache_from = matches.value_of("cache-from").map(ToString::to_string);
+            let verbose = matches.is_present("verbose");
             let incremental_cache_image = matches
                 .value_of("incremental-cache-image")
                 .map(ToString::to_string);
@@ -321,6 +327,7 @@ fn main() -> Result<()> {
                 cache_from,
                 no_error_without_start,
                 incremental_cache_image,
+                verbose,
             };
 
             create_docker_image(path, envs, &options, build_options)?;
