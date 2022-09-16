@@ -75,10 +75,6 @@ impl IncrementalCache {
 
     fn write_dockerfile(&self, dir_path: &PathBuf) -> Result<PathBuf> {
         let dockerfile_path = dir_path.join("Dockerfile");
-        if fs::metadata(&dockerfile_path).is_ok() {
-            fs::remove_file(&dockerfile_path).context("Remove old incremental cache dockerfile")?;
-        }
-
         let paths = fs::read_dir(&dir_path)
             .context("Read files at incremental cache dir")?
             .filter_map(|path| {
@@ -90,7 +86,7 @@ impl IncrementalCache {
             .collect::<Vec<_>>()
             .join("\n");
 
-        let dockerfile = format!("FROM alpine\n{}", paths);
+        let dockerfile = format!("FROM scratch\n{}", paths);
 
         fs::write(dockerfile_path.clone(), dockerfile)
             .context("Write incremental cache dockerfile")?;
@@ -98,7 +94,7 @@ impl IncrementalCache {
         Ok(dockerfile_path)
     }
 
-    pub fn build_image(&self, dirs: &IncrementalCacheDirs, tag: String) -> Result<()> {
+    pub fn create_image(&self, dirs: &IncrementalCacheDirs, tag: String) -> Result<()> {
         let dockerfile_path = self.write_dockerfile(&dirs.tar_archives_dir)?;
         let mut docker_build_cmd = Command::new("docker");
 

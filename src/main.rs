@@ -289,8 +289,15 @@ fn main() -> Result<()> {
             let mut cache_key = matches.value_of("cache-key").map(ToString::to_string);
             let no_cache = matches.is_present("no-cache");
             let inline_cache = matches.is_present("inline-cache");
-            let cache_from = matches.value_of("cache-from").map(ToString::to_string);
             let verbose = matches.is_present("verbose");
+
+            // Even if below flags are passed, They won't be considered unless beta features were explicitly enabled
+            // This should help Nixpacks to offer uninterrupted production experience, while beta testers/users are trying things out
+            let cache_from = if envs.contains(&"NIXPACKS_BETA_FEATURES=1") {
+                matches.value_of("cache-from").map(ToString::to_string)
+            } else {
+                None
+            };
 
             let file_server_url = if envs.contains(&"NIXPACKS_BETA_FEATURES=1") {
                 matches.value_of("file-server-url").map(ToString::to_string)
