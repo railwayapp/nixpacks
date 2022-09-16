@@ -25,4 +25,5 @@ mod cache;
 pub mod docker_image_builder;
 mod dockerfile_generation;
 pub mod file_server;
+pub mod incremental_cache;
 pub mod utils;
