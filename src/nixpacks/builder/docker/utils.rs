@@ -34,9 +34,9 @@ pub fn get_copy_out_cached_dirs_command(
                 let sanitized_dir = dir.replace('~', "/root");
                 let compressed_file_name = sanitized_dir.replace('/', "%2f");
                 vec![
-                    format!("if [ -d \"{}\" ]; then tar -cf {}.tar.gz {}; fi", sanitized_dir, compressed_file_name, sanitized_dir),
+                    format!("if [ -d \"{}\" ]; then tar -cf {}.tar {}; fi", sanitized_dir, compressed_file_name, sanitized_dir),
                     format!(
-                        "if [ -d \"{}\" ]; then curl -v -F upload=@{}.tar.gz {} --header \"t:{}\" --retry 3 --retry-all-errors; fi ",
+                        "if [ -d \"{}\" ]; then curl -v -F upload=@{}.tar {} --header \"t:{}\" --retry 3 --retry-all-errors; fi ",
                         sanitized_dir, compressed_file_name, server_url, file_server_access_token,
                     ),
                     format!(
@@ -65,8 +65,7 @@ pub fn get_copy_in_cached_dirs_command(
             .filter_map(|dir| {
                 let target_cache_dir = dir.replace('~', "/root");
 
-                let compressed_file_name =
-                    format!("{}.tar.gz", target_cache_dir.replace('/', "%2f"));
+                let compressed_file_name = format!("{}.tar", target_cache_dir.replace('/', "%2f"));
 
                 let source_file_path = output_dir
                     .get_relative_path("incremental-cache")

@@ -29,10 +29,13 @@ pub struct IncrementalCacheDirs {
 }
 
 impl IncrementalCache {
-    pub fn download_files(&self, tag: &str, dirs: &IncrementalCacheDirs) -> Result<()> {
+    pub fn download_files(&self, tag: &str, dirs: &IncrementalCacheDirs) -> Result<bool> {
         let image_file_path = dirs.image_dir.join("oci-image.tar");
 
-        self.pull_image(tag)?;
+        if !self.pull_image(tag)? {
+            return Ok(false);
+        }
+
         self.save_image(tag, &image_file_path)?;
         let archives = self.extract_archives(&image_file_path, &dirs.image_dir)?;
 
@@ -41,25 +44,28 @@ impl IncrementalCache {
             fs::rename(item.path, to_path).context("Move tar file to incremental cahce")?;
         }
 
-        Ok(())
+        Ok(true)
     }
 
     pub fn ensure_dirs_exists(&self, out_dir: &OutputDir) -> Result<IncrementalCacheDirs> {
         let save_to = out_dir.get_absolute_path("incremental-cache");
         if fs::metadata(&save_to)
             .context("Check if incremental-cache dir exists")
-            .is_err()
+            .is_ok()
         {
-            fs::create_dir_all(&save_to).context("Creating incremental-cache directory")?;
+            fs::remove_dir_all(&save_to)?;
         }
 
         let dir_path = out_dir.get_absolute_path("incremental-cache-image");
         if fs::metadata(&dir_path)
             .context("Check if incremental cache image dir exists")
-            .is_err()
+            .is_ok()
         {
-            fs::create_dir_all(&dir_path).context("Create incremental cache image dir")?;
+            fs::remove_dir_all(&dir_path)?;
         }
+
+        fs::create_dir_all(&save_to).context("Creating incremental-cache directory")?;
+        fs::create_dir_all(&dir_path).context("Create incremental cache image dir")?;
 
         Ok(IncrementalCacheDirs {
             tar_archives_dir: save_to,
@@ -119,7 +125,11 @@ impl IncrementalCache {
         Ok(())
     }
 
-    fn pull_image(&self, tag: &str) -> Result<()> {
+    fn pull_image(&self, tag: &str) -> Result<bool> {
+        if tag.starts_with("https://") || tag.starts_with("http://") {
+            bail!("Invalid image tag, should not start with https or http")
+        }
+
         let mut docker_pull_cmd = Command::new("docker");
 
         docker_pull_cmd.arg("pull").arg(&tag);
@@ -129,11 +139,7 @@ impl IncrementalCache {
             .wait()
             .context("Pull incremental cache image")?;
 
-        if !result.success() {
-            bail!("Pulling incremental cache image failed")
-        }
-
-        Ok(())
+        Ok(result.success())
     }
 
     fn save_image(&self, tag: &str, tar_file_path: &Path) -> Result<()> {
@@ -147,10 +153,10 @@ impl IncrementalCache {
         let result = docker_save_cmd
             .spawn()?
             .wait()
-            .context("Pull incremental cache image")?;
+            .context("Save incremental cache image")?;
 
         if !result.success() {
-            bail!("Pulling incremental cache image failed")
+            bail!("Saving incremental cache image failed")
         }
 
         Ok(())
