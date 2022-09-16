@@ -291,10 +291,20 @@ fn main() -> Result<()> {
             let inline_cache = matches.is_present("inline-cache");
             let cache_from = matches.value_of("cache-from").map(ToString::to_string);
             let verbose = matches.is_present("verbose");
-            let file_server_url = matches.value_of("file-server-url").map(ToString::to_string);
-            let incremental_cache_image = matches
-                .value_of("incremental-cache-image")
-                .map(ToString::to_string);
+
+            let file_server_url = if envs.contains(&"NIXPACKS_BETA_FEATURES=1") {
+                matches.value_of("file-server-url").map(ToString::to_string)
+            } else {
+                None
+            };
+
+            let incremental_cache_image = if envs.contains(&"NIXPACKS_BETA_FEATURES=1") {
+                matches
+                    .value_of("incremental-cache-image")
+                    .map(ToString::to_string)
+            } else {
+                None
+            };
 
             // Default to absolute `path` of the source that is being built as the cache-key if not disabled
             if !no_cache && cache_key.is_none() {
