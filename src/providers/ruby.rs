@@ -114,7 +114,7 @@ impl RubyProvider {
 
     fn get_environment_variables(&self, app: &App) -> Result<EnvironmentVariables> {
         let ruby_version = self.get_ruby_version(app)?;
-        Ok(EnvironmentVariables::from([
+        let mut env_vars = EnvironmentVariables::from([
             ("BUNDLE_GEMFILE".to_string(), "/app/Gemfile".to_string()),
             (
                 "GEM_PATH".to_string(),
@@ -127,7 +127,11 @@ impl RubyProvider {
                 "GEM_HOME".to_string(),
                 format!("/usr/local/rvm/gems/{}", ruby_version),
             ),
-        ]))
+        ]);
+        if self.is_rails_app(app) {
+            env_vars.insert("RAILS_LOG_TO_STDOUT".to_string(), "enabled".to_string());
+        }
+        Ok(env_vars)
     }
 
     fn get_start_command(&self, app: &App) -> Option<String> {
