@@ -3,17 +3,17 @@ on:
     branches:
       - main
     paths:
-      - 'docker-images/debian/*'
+      - 'docker-images/builder/*'
   pull_request:
     branches:
       - main
     paths:
-      - 'docker-images/debian/*'
+      - 'docker-images/builder/*'
   schedule:
     - cron:  '0 0 * * 2'
   workflow_dispatch:
 
-name: Publish Docker Images
+name: Publish Builder Docker Images
 
 jobs:
   debian:
@@ -49,16 +49,11 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          context: docker-images/debian
+          context: docker-images/builder
           platforms: linux/arm64, linux/amd64, linux/386
           push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-          tags: ghcr.io/railwayapp/nixpacks:debian, ghcr.io/railwayapp/nixpacks:latest, ghcr.io/railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
-      
-      - name: Bump base image
-        if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-        run: |
-          sed -i 's/nixpacks:debian-.*/nixpacks:debian-${{ steps.date.outputs.date }}";/g' src/nixpacks/images.rs
-      
+          tags: ghcr.io/railwayapp/nixpacks:builder, ghcr.io/railwayapp/nixpacks:latest, ghcr.io/railwayapp/nixpacks:builder-${{ steps.date.outputs.date }}
+           
       - name: Create Pull Request
         if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         uses: peter-evans/create-pull-request@v4
