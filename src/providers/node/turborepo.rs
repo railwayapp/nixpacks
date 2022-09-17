@@ -1,3 +1,4 @@
+use serde_json::Value;
 use std::collections::HashMap;
 
 use anyhow::Result;
@@ -7,13 +8,7 @@ use crate::nixpacks::{app::App, environment::Environment};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TurboJson {
-    pub pipeline: HashMap<String, Pipeline>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Pipeline {
-    #[serde(rename = "dependsOn")]
-    pub depends_on: Option<Vec<String>>,
+    pub pipeline: HashMap<String, Value>,
 }
 
 pub struct Turborepo;
