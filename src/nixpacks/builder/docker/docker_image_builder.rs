@@ -43,20 +43,20 @@ impl ImageBuilder for DockerImageBuilder {
 
         let file_server_access_token = Uuid::new_v4().to_string();
         let incremental_cache = IncrementalCache::default();
+        let dirs = incremental_cache.ensure_dirs_exists(&output)?;
 
-        let incremental_cache_dirs = if self.options.incremental_cache_image.is_some() {
-            let dirs = incremental_cache.ensure_dirs_exists(&output)?;
+        let incremental_cache_dirs =
+            if !self.options.no_cache && self.options.incremental_cache_image.is_some() {
+                // download incremental cache files to be included in Dockerfile generation
+                incremental_cache.download_files(
+                    &self.options.incremental_cache_image.clone().unwrap(),
+                    &dirs,
+                )?;
 
-            // download incremental cache files to be included in Dockerfile generation
-            incremental_cache.download_files(
-                &self.options.incremental_cache_image.clone().unwrap(),
-                &dirs,
-            )?;
-
-            Some(dirs)
-        } else {
-            None
-        };
+                Some(dirs)
+            } else {
+                None
+            };
 
         let dockerfile = plan
             .generate_dockerfile(&self.options, env, &output, &file_server_access_token)
@@ -68,7 +68,7 @@ impl ImageBuilder for DockerImageBuilder {
             return Ok(());
         }
 
-        if incremental_cache_dirs.is_some() {
+        if self.options.incremental_cache_image.is_some() {
             let file_server = FileServer::new(
                 incremental_cache_dirs
                     .as_ref()
