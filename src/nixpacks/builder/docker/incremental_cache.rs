@@ -95,8 +95,8 @@ impl IncrementalCache {
     }
 
     pub fn create_image(&self, dirs: &IncrementalCacheDirs, tag: String) -> Result<()> {
-        // ADR: writing a Dockerfile with minimal base image > copy tar files to > build the image 
-        // Seems way faster than using some Rust crates to compose the OCI image file (1-2 minutes vs ~20 seconds) 
+        // ADR: writing a Dockerfile with minimal base image > copy tar files to > build the image
+        // Seems way faster than using some Rust crates to compose the OCI image file (1-2 minutes vs ~20 seconds)
         // The overhead we need to take, is an extra layer to our final image with 5 MB of size. which is not that much compared with the average image size we deal with.
         let dockerfile_path = self.write_dockerfile(&dirs.tar_archives_dir)?;
         let mut docker_build_cmd = Command::new("docker");
