@@ -424,7 +424,7 @@ fn test_node_turborepo() {
         vec!["NIXPACKS_TURBO_APP_NAME=web"],
     );
 
-    assert!(run_image(&name, None).contains("ready - server started"));
+    assert!(run_image(&name, None).contains("web:start"));
 }
 
 #[test]
