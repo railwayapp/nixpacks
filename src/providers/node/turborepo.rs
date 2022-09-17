@@ -11,7 +11,6 @@ pub struct TurboJson {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-#[allow(non_snake_case)]
 pub struct Pipeline {
     #[serde(rename = "dependsOn")]
     pub depends_on: Option<Vec<String>>,
