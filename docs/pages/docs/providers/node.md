@@ -54,7 +54,7 @@ The start command priority is
   - If the app is a NextJS project: `npm run start`
   - If `targets.build.options.main` exists in the apps `Project.json`: `node <outputPath>/<mainFileName>.js` (e.g `node dist/apps/my-app/main.js`)
   - Fallback: `node <outputPath>/index.js` (e.g `node dist/apps/my-app/index.js`)
-- If it's a Turborepo
+- If Turborepo is detected
   - If a `start` pipeline exists, call that;
   - Otherwise, if `NIXPACKS_TURBO_APP_NAME` is provided, call the `start` script of that package;
   - Otherwise, run `npx turbo run start`, which will simply run all `start` scripts in the monorepo in parallel.
