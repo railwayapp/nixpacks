@@ -169,12 +169,13 @@ impl NodeProvider {
                 return Ok(Some(format!("cd {} && npm run start", output_path)));
             }
 
-            let main = project_json.targets.build.options.main;
-            if let Some(main_path) = main {
-                let current_path = PathBuf::from(main_path.as_str().unwrap());
-                let file_name = current_path.file_stem().unwrap().to_str().unwrap();
+            if let Some(options) = project_json.targets.build.options {
+                if let Some(main_path) = options.main {
+                    let current_path = PathBuf::from(main_path.as_str().unwrap());
+                    let file_name = current_path.file_stem().unwrap().to_str().unwrap();
 
-                return Ok(Some(format!("node {}/{}.js", output_path, file_name)));
+                    return Ok(Some(format!("node {}/{}.js", output_path, file_name)));
+                }
             }
             return Ok(Some(format!("node {}/index.js", output_path)));
         }
@@ -439,9 +440,11 @@ impl NodeProvider {
 
     pub fn get_nx_output_path(app: &App, env: &Environment) -> Result<String> {
         let project_json = NodeProvider::get_nx_project_json_for_app(app, env)?;
-        if let Some(output_path) = project_json.targets.build.options.output_path {
-            if let Some(output_path) = output_path.as_str() {
-                return Ok(output_path.to_string());
+        if let Some(options) = project_json.targets.build.options {
+            if let Some(output_path) = options.output_path {
+                if let Some(the_output_path) = output_path.as_str() {
+                    return Ok(the_output_path.to_string());
+                }
             }
         }
 

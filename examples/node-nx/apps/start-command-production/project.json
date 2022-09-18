@@ -31,7 +31,9 @@
       "options": {
         "outputPath": "dist/apps/start-command-production",
         "commands": [
-          { "command": "node dist/apps/start-command-production/main.js" }
+          {
+            "command": "node dist/apps/start-command-production/main.js"
+          }
         ]
       },
       "configurations": {

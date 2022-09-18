@@ -23,12 +23,12 @@ pub struct Targets {
 #[derive(Debug, Serialize, PartialEq, Eq, Deserialize)]
 pub struct Target {
     pub executor: String,
-    pub options: Options,
+    pub options: Option<NxTargetOptions>,
     pub configurations: Option<Configuration>,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq, Deserialize)]
-pub struct Options {
+pub struct NxTargetOptions {
     #[serde(alias = "outputPath")]
     pub output_path: Option<Value>,
     pub main: Option<Value>,

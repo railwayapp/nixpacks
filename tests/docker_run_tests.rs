@@ -369,6 +369,16 @@ fn test_node_nx_start_command() {
 }
 
 #[test]
+fn test_node_nx_no_options() {
+    let name = build_with_build_time_env_vars(
+        "./examples/node-nx",
+        vec!["NIXPACKS_NX_APP_NAME=no-options"],
+    );
+
+    assert!(run_image(&name, None).contains("fake start command started!"));
+}
+
+#[test]
 fn test_node_nx_start_command_production() {
     let name = build_with_build_time_env_vars(
         "./examples/node-nx",
