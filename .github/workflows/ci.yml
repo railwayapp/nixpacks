@@ -14,6 +14,7 @@ jobs:
   check:
     name: Check
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
@@ -40,6 +41,7 @@ jobs:
   lints:
     name: Lints
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
@@ -80,6 +82,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     outputs:
       matrix: ${{ steps.docker-prep.outputs.matrix }}
+    if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:      
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
@@ -116,6 +119,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{fromJson(needs.test-plan.outputs.matrix)}}
+    if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:      
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
@@ -146,6 +150,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.10.0
