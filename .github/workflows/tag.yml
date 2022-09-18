@@ -12,14 +12,6 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for tests to succeed
-        uses: lewagon/wait-on-check-action@v1.1.2
-        with:
-          ref: ${{ github.ref }}
-          running-workflow-name: CI
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-          
       - name: checkout
         uses: actions/checkout@v3
         with:
