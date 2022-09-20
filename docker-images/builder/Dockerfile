@@ -20,3 +20,5 @@ RUN curl -sSL https://nixpacks.com/install.sh | bash
 
 
 COPY ./read-port.sh read-port.sh
+
+ENTRYPOINT [ ". /read-port.sh; nixpacks" ]
