@@ -64,6 +64,18 @@ impl BuildPlan {
         Ok(plan)
     }
 
+    pub fn to_toml(&self) -> Result<String> {
+        let mut plan = self.clone();
+        plan.remove_phase_names();
+        Ok(toml::to_string_pretty(&plan)?)
+    }
+
+    pub fn to_json(&self) -> Result<String> {
+        let mut plan = self.clone();
+        plan.remove_phase_names();
+        Ok(serde_json::to_string_pretty(&plan)?)
+    }
+
     pub fn add_phase(&mut self, phase: Phase) {
         let phases = self.phases.get_or_insert(BTreeMap::default());
         phases.insert(phase.get_name(), phase);
@@ -179,6 +191,13 @@ impl BuildPlan {
         let phases = self.phases.get_or_insert(BTreeMap::default());
         for (name, phase) in phases.iter_mut() {
             phase.set_name(name);
+        }
+    }
+
+    pub fn remove_phase_names(&mut self) {
+        let phases = self.phases.get_or_insert(BTreeMap::default());
+        for (_, phase) in phases.iter_mut() {
+            phase.name = None;
         }
     }
 
