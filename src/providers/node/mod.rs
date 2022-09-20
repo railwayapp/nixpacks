@@ -85,7 +85,7 @@ impl Provider for NodeProvider {
         }
 
         // Install
-        let mut install = Phase::install(Some(NodeProvider::get_install_command(app)));
+        let mut install = Phase::install(NodeProvider::get_install_command(app));
         install.add_cache_directory(NodeProvider::get_package_manager_cache_dir(app));
         install.add_path("/app/node_modules/.bin".to_string());
 
@@ -255,23 +255,32 @@ impl NodeProvider {
         pkg_manager.to_string()
     }
 
-    pub fn get_install_command(app: &App) -> String {
-        let mut install_cmd = "npm i";
+    pub fn get_install_command(app: &App) -> Option<String> {
+        if !app.includes_file("package.json") {
+            return None;
+        }
+
         let package_manager = NodeProvider::get_package_manager(app);
-        if package_manager == "pnpm" {
-            install_cmd = "pnpm i --frozen-lockfile";
+
+        let cmd = if package_manager == "pnpm" {
+            "pnpm i --frozen-lockfile"
         } else if package_manager == "yarn" {
             if app.includes_file(".yarnrc.yml") {
-                install_cmd = "yarn set version berry && yarn install --check-cache";
+                "yarn set version berry && yarn install --check-cache"
             } else {
-                install_cmd = "yarn install --frozen-lockfile";
+                "yarn install --frozen-lockfile"
             }
         } else if app.includes_file("package-lock.json") {
-            install_cmd = "npm ci";
+            "npm ci"
         } else if app.includes_file("bun.lockb") {
-            install_cmd = "bun i --no-save";
-        }
-        install_cmd.to_string()
+            "bun i --no-save"
+        } else if app.includes_file("package.json") {
+            "bun i --no-save"
+        } else {
+            "npm i"
+        };
+
+        Some(cmd.to_string())
     }
 
     fn get_package_manager_cache_dir(app: &App) -> String {
