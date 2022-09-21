@@ -4,7 +4,7 @@ title: Node
 
 # {% $markdoc.frontmatter.title %}
 
-The Node provider supports NPM, Yarn, Yarn 2, and PNPM.
+The Node provider supports NPM, Yarn, Yarn 2, PNPM and Bun.
 
 ## Environment Variables
 
@@ -36,7 +36,7 @@ If [node-canvas](https://www.npmjs.com/package/canvas) is found in the `package.
 
 ## Install
 
-All dependencies found in `packages.json` are installed with either NPM, Yarn, or PNPM.
+All dependencies found in `packages.json` are installed with either NPM, Yarn, or PNPM. If Bun is detected (due to a `bun.lockb` existing), Nixpacks will install the packages with Bun.
 
 ## Build
 
