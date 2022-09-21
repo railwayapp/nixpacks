@@ -62,6 +62,7 @@ fn stop_and_remove_container(name: String) {
     remove_containers(&name);
 }
 
+#[derive(Debug, Clone)]
 struct Config {
     environment_variables: EnvironmentVariables,
     network: Option<String>,
