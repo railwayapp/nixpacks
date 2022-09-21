@@ -97,15 +97,19 @@ impl Provider for NodeProvider {
         }
 
         // Build
+        let dlx = NodeProvider::get_package_manager_dlx_command(app);
         let mut build = if NodeProvider::is_nx_monorepo(app) {
             let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
-            Phase::build(Some(format!("npx nx run {}:build:production", app_name)))
+            Phase::build(Some(format!(
+                "{} nx run {}:build:production",
+                dlx, app_name
+            )))
         } else if Turborepo::is_turborepo(app) {
             let turbo_cfg = Turborepo::get_config(app)?;
             if let Some(build_cmd) = Turborepo::get_build_cmd(&turbo_cfg) {
                 Phase::build(Some(build_cmd))
             } else if let Some(app_name) = Turborepo::get_app_name(env) {
-                Phase::build(Some(format!("npx turbo run {}:build", app_name)))
+                Phase::build(Some(format!("{} turbo run {}:build", dlx, app_name)))
             } else if NodeProvider::has_script(app, "build")? {
                 let pkg_manager = NodeProvider::get_package_manager(app);
                 Phase::build(Some(format!("{} run build", pkg_manager)))
@@ -118,6 +122,7 @@ impl Provider for NodeProvider {
         } else {
             Phase::build(None)
         };
+        drop(dlx);
 
         // Next build cache directories
         let next_cache_dirs = NodeProvider::find_next_packages(app)?;
@@ -164,6 +169,8 @@ impl NodeProvider {
     }
 
     pub fn get_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
+        let dlx = NodeProvider::get_package_manager_dlx_command(app);
+        let pkg_manager = NodeProvider::get_package_manager(app);
         if NodeProvider::is_nx_monorepo(app) {
             let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
             let output_path = NodeProvider::get_nx_output_path(app, env)?;
@@ -173,23 +180,37 @@ impl NodeProvider {
                 if start_target.configurations.is_some()
                     && start_target.configurations.unwrap().production.is_some()
                 {
-                    return Ok(Some(format!("npx nx run {}:start:production ", app_name)));
+                    return Ok(Some(format!(
+                        "{} nx run {}:start:production ",
+                        dlx, app_name
+                    )));
                 }
-                return Ok(Some(format!("npx nx run {}:start", app_name)));
+                return Ok(Some(format!("{} nx run {}:start", dlx, app_name)));
             }
 
             if project_json.targets.build.executor == "@nrwl/next:build" {
-                return Ok(Some(format!("cd {} && npm run start", output_path)));
+                return Ok(Some(format!(
+                    "cd {} && {} run start",
+                    pkg_manager, output_path
+                )));
             }
 
             let main = project_json.targets.build.options.main;
+            let executor = if pkg_manager == "bun".to_string() {
+                "bun"
+            } else {
+                "node"
+            };
             if let Some(main_path) = main {
                 let current_path = PathBuf::from(main_path.as_str().unwrap());
                 let file_name = current_path.file_stem().unwrap().to_str().unwrap();
 
-                return Ok(Some(format!("node {}/{}.js", output_path, file_name)));
+                return Ok(Some(format!(
+                    "{} {}/{}.js",
+                    executor, output_path, file_name
+                )));
             }
-            return Ok(Some(format!("node {}/index.js", output_path)));
+            return Ok(Some(format!("{} {}/index.js", executor, output_path)));
         }
 
         if Turborepo::is_turborepo(app) {
@@ -199,9 +220,9 @@ impl NodeProvider {
             if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
                 return Ok(Some(start_pipeline));
             } else if let Some(name) = app_name {
-                return Ok(Some(format!("npx turbo run {}:start", name)));
+                return Ok(Some(format!("{} turbo run {}:start", dlx, name)));
             }
-            return Ok(Some("npx turbo run start".to_string()));
+            return Ok(Some(format!("{} turbo run start", dlx)));
         }
 
         let package_manager = NodeProvider::get_package_manager(app);
@@ -277,6 +298,16 @@ impl NodeProvider {
             pkg_manager = "bun";
         }
         pkg_manager.to_string()
+    }
+
+    pub fn get_package_manager_dlx_command(app: &App) -> String {
+        let pkg_manager = NodeProvider::get_package_manager(app);
+        match (pkg_manager.as_str()) {
+            "pnpm" => "pnpx",
+            "yarn" => "yarn",
+            _ => "npx",
+        }
+        .to_string()
     }
 
     pub fn get_install_command(app: &App) -> String {
