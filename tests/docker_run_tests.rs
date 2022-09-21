@@ -16,7 +16,8 @@ use rand::thread_rng;
 use rand::{distributions::Alphanumeric, Rng};
 
 fn get_container_ids_from_image(image: &str) -> String {
-    let output = Command::new("docker")
+    // just unwrapping here is fine - the which error is clearer
+    let output = Command::new(which::which("docker").unwrap())
         .arg("ps")
         .arg("-a")
         .arg("-q")
@@ -29,7 +30,7 @@ fn get_container_ids_from_image(image: &str) -> String {
 }
 
 fn stop_containers(container_id: &str) {
-    Command::new("docker")
+    Command::new(which::which("docker").unwrap())
         .arg("stop")
         .arg(container_id)
         .spawn()
@@ -40,7 +41,7 @@ fn stop_containers(container_id: &str) {
 }
 
 fn remove_containers(container_id: &str) {
-    Command::new("docker")
+    Command::new(which::which("docker").unwrap())
         .arg("rm")
         .arg(container_id)
         .spawn()
@@ -70,7 +71,7 @@ struct Config {
 /// Runs an image with Docker and returns the output
 /// The image is automatically stopped and removed after `TIMEOUT_SECONDS`
 fn run_image(name: &str, cfg: Option<Config>) -> String {
-    let mut cmd = Command::new("docker");
+    let mut cmd = Command::new(which::which("docker").unwrap());
     cmd.arg("run");
 
     if let Some(config) = cfg {
@@ -149,7 +150,7 @@ struct Network {
 }
 
 fn attach_container_to_network(network_name: String, container_name: String) {
-    Command::new("docker")
+    Command::new(which::which("docker").unwrap())
         .arg("network")
         .arg("connect")
         .arg(network_name)
@@ -164,7 +165,7 @@ fn attach_container_to_network(network_name: String, container_name: String) {
 fn create_network() -> Network {
     let network_name = format!("test-net-{}", Uuid::new_v4());
 
-    Command::new("docker")
+    Command::new(which::which("docker").unwrap())
         .arg("network")
         .arg("create")
         .arg(network_name.clone())
@@ -178,7 +179,7 @@ fn create_network() -> Network {
 }
 
 fn remove_network(network_name: String) {
-    Command::new("docker")
+    Command::new(which::which("docker").unwrap())
         .arg("network")
         .arg("rm")
         .arg(network_name)
@@ -195,7 +196,7 @@ struct Container {
 }
 
 fn run_postgres() -> Container {
-    let mut docker_cmd = Command::new("docker");
+    let mut docker_cmd = Command::new(which::which("docker").unwrap());
 
     let hash = Uuid::new_v4().to_string();
     let container_name = format!("postgres-{}", hash);
@@ -249,7 +250,7 @@ fn run_postgres() -> Container {
 }
 
 fn run_mysql() -> Container {
-    let mut docker_cmd = Command::new("docker");
+    let mut docker_cmd = Command::new(which::which("docker").unwrap());
 
     let hash = Uuid::new_v4().to_string();
     let container_name = format!("mysql-{}", hash);
@@ -288,7 +289,7 @@ fn run_mysql() -> Container {
     // MySQL starts listening for connections after it has initialised its default database
     // so wait until mysqladmin ping via TCP succeeds (or we timeout)
     let test_loop = format!("while ! mysqladmin ping --password={} -h localhost --port=3306 --protocol=TCP 2> /dev/null ; do echo 'waiting for mysql'; sleep 1; done", &password);
-    let mut docker_exec_cmd = Command::new("docker");
+    let mut docker_exec_cmd = Command::new(which::which("docker").unwrap());
     docker_exec_cmd
         .arg("exec")
         .arg(container_name.clone())

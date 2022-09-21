@@ -96,7 +96,7 @@ impl DockerImageBuilder {
         name: &str,
         output: &OutputDir,
     ) -> Result<Command> {
-        let mut docker_build_cmd = Command::new("docker");
+        let mut docker_build_cmd = Command::new(which::which("docker")?);
 
         if docker_build_cmd.output().is_err() {
             bail!("Please install Docker to build the app https://docs.docker.com/engine/install/")
