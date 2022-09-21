@@ -294,25 +294,17 @@ fn main() -> Result<()> {
 
             // Even if below flags are passed, They won't be considered unless beta features were explicitly enabled
             // This should help Nixpacks to offer uninterrupted production experience, while beta testers/users are trying things out
-            let cache_from = if !no_cache && envs.contains(&"NIXPACKS_BETA_FEATURES=1") {
+            let cache_from = if !no_cache {
                 matches.value_of("cache-from").map(ToString::to_string)
             } else {
                 None
             };
 
-            let incremental_cache_image = if envs.contains(&"NIXPACKS_BETA_FEATURES=1") {
-                matches
-                    .value_of("incremental-cache-image")
-                    .map(ToString::to_string)
-            } else {
-                None
-            };
+            let incremental_cache_image = matches
+                .value_of("incremental-cache-image")
+                .map(ToString::to_string);
 
-            let file_server_url = if envs.contains(&"NIXPACKS_BETA_FEATURES=1") {
-                matches.value_of("file-server-url").map(ToString::to_string)
-            } else {
-                None
-            };
+            let file_server_url = matches.value_of("file-server-url").map(ToString::to_string);
 
             // Default to absolute `path` of the source that is being built as the cache-key if not disabled
             if !no_cache && cache_key.is_none() {
