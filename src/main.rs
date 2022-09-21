@@ -126,7 +126,8 @@ fn main() -> Result<()> {
                 .arg(
                     Arg::new("cache-from")
                         .long("cache-from")
-                        .help("Image to consider as cache sources"),
+                        .help("Image to consider as cache sources")
+                        .takes_value(true),
                 )
                 .arg(
                     Arg::new("no-error-without-start")
