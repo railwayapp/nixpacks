@@ -229,11 +229,18 @@ fn run_postgres() -> Container {
         name: container_name.clone(),
         config: Some(Config {
             environment_variables: EnvironmentVariables::from([
-                ("PGPORT".to_string(), port.to_string()),
+                ("PGPORT".to_string(), port.clone().to_string()),
                 ("PGUSER".to_string(), "postgres".to_string()),
                 ("PGDATABASE".to_string(), "postgres".to_string()),
-                ("PGPASSWORD".to_string(), password),
-                ("PGHOST".to_string(), container_name),
+                ("PGPASSWORD".to_string(), password.clone()),
+                ("PGHOST".to_string(), container_name.clone()),
+                (
+                    "DATABASE_URL".to_string(),
+                    format!(
+                        "postgresql://postgres:{}@{}:{}/postgres",
+                        password, container_name, port
+                    ),
+                ),
             ]),
             network: None,
         }),
