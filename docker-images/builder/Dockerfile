@@ -15,7 +15,7 @@ RUN echo \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 RUN sudo apt-get update
-RUN sudo apt-get install docker-ce-cli 
+RUN sudo apt-get install docker-ce-cli -y
 RUN curl -sSL https://nixpacks.com/install.sh | bash
 
 
