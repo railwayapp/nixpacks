@@ -36,7 +36,7 @@ If [node-canvas](https://www.npmjs.com/package/canvas) is found in the `package.
 
 ## Install
 
-All dependencies found in `packages.json` are installed with either NPM, Yarn, or PNPM. If Bun is detected (due to a `bun.lockb` existing), Nixpacks will install the packages with Bun.
+All dependencies found in `packages.json` are installed with either NPM, Yarn, PNPM, or Bun (depending on the lockfile detected).
 
 ## Build
 
