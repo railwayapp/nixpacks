@@ -38,9 +38,8 @@ impl Provider for CobolProvider {
             .unwrap_or("-x -o");
 
         let app_path = CobolProvider::get_app_path(&self, app, environment).unwrap();
-
         let file_name = app_path.file_stem().unwrap().to_str().unwrap();
-        println!("file_name {:?}", file_name);
+
         let mut build = Phase::build(Some(format!(
             "cobc {} {} {}",
             compile_args,

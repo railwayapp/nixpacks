@@ -850,7 +850,7 @@ fn test_cobol() {
 
 #[test]
 fn test_cobol_src_index() {
-    let name = simple_build("./examples/cobol-src-index");
+    let name = simple_build("./examples/cobol-src");
     let output = run_image(&name, None);
     assert_eq!(output, "Hello from cobol! src-index");
 }
@@ -861,4 +861,14 @@ fn test_cobol_my_app() {
         build_with_build_time_env_vars("./examples/cobol", vec!["NIXPACKS_COBOL_APP_NAME=my-app"]);
 
     assert_eq!(run_image(&name, None), "Hello from cobol! my-app");
+}
+
+#[test]
+fn test_cobol_src_my_app() {
+    let name = build_with_build_time_env_vars(
+        "./examples/cobol-src",
+        vec!["NIXPACKS_COBOL_APP_NAME=my-app"],
+    );
+
+    assert_eq!(run_image(&name, None), "Hello from cobol! src-my-app");
 }
