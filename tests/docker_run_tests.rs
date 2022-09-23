@@ -839,3 +839,10 @@ fn test_clojure_ring_app() {
     let output = run_image(&name, None);
     assert_eq!(output, "Started server on port 3000");
 }
+
+#[test]
+fn test_cobol() {
+    let name = simple_build("./examples/cobol");
+    let output = run_image(&name, None);
+    assert_eq!(output, "Started server on port 3000");
+}

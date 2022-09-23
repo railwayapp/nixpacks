@@ -10,6 +10,8 @@ use crate::nixpacks::{
 };
 use anyhow::Result;
 
+const COBOL_COMPILE_ARGS: &str = "NIXPACKS_COBOL_COMPILE_ARGS";
+
 pub struct CobolProvider {}
 
 impl Provider for CobolProvider {
@@ -25,11 +27,15 @@ impl Provider for CobolProvider {
     fn get_build_plan(
         &self,
         _app: &App,
-        _environment: &Environment,
+        environment: &Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::plan::BuildPlan>> {
         let setup = Phase::setup(Some(vec![Pkg::new("gnu-cobol"), Pkg::new("gcc")]));
 
-        let mut build = Phase::build(Some(format!("cobc -free -x -o index index.cbl")));
+        let compile_args = environment
+            .get_variable(COBOL_COMPILE_ARGS)
+            .unwrap_or("-x -o");
+
+        let mut build = Phase::build(Some(format!("cobc {} index index.cbl", compile_args)));
         build.depends_on_phase("setup");
 
         let start = StartPhase::new("./index");
@@ -38,3 +44,5 @@ impl Provider for CobolProvider {
         Ok(Some(plan))
     }
 }
+
+impl CobolProvider {}
