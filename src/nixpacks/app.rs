@@ -109,7 +109,11 @@ impl App {
     pub fn read_file(&self, name: &str) -> Result<String> {
         let data = fs::read_to_string(PathBuf::from_slash_lossy(
             self.source.join(name).as_os_str(),
-        ))?;
+        ))
+        .with_context(|| {
+            let relative_path = self.strip_source_path(Path::new(name)).unwrap();
+            format!("Error reading {}", relative_path.to_str().unwrap())
+        })?;
 
         Ok(data.replace("\r\n", "\n"))
     }
