@@ -65,10 +65,10 @@ impl CobolProvider {
             }
         }
 
-        if app.includes_file("index.cbl") {
-            return Ok(PathBuf::from("index.cbl"));
-        } else if app.includes_file("./src/index.cbl") {
-            return Ok(PathBuf::from("./src/index.cbl"));
+        if let Ok(matches) = app.find_files("*index.cbl") {
+            if let Some(first) = matches.first() {
+                return app.strip_source_path(first);
+            }
         }
 
         if let Ok(matches) = app.find_files("*.cbl") {
