@@ -90,7 +90,8 @@ impl Nx {
     }
 
     pub fn get_nx_build_cmd(app: &App, env: &Environment) -> Option<String> {
-        Nx::get_nx_app_name(app, env).map(|nx_app_name| format!("npx nx run {}:build:production", nx_app_name))
+        Nx::get_nx_app_name(app, env)
+            .map(|nx_app_name| format!("npx nx run {}:build:production", nx_app_name))
     }
 
     pub fn get_nx_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
