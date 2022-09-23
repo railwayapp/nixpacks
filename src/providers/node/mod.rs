@@ -1,25 +1,20 @@
-use self::nx::{Nx, ProjectJson};
+use self::nx::Nx;
 use super::Provider;
-use crate::{
-    nixpacks::{
-        app::App,
-        environment::{Environment, EnvironmentVariables},
-        nix::pkg::Pkg,
-        plan::{
-            phase::{Phase, StartPhase},
-            BuildPlan,
-        },
+use crate::nixpacks::{
+    app::App,
+    environment::{Environment, EnvironmentVariables},
+    nix::pkg::Pkg,
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
     },
-    providers::node::nx::NxJson,
 };
-use anyhow::{bail, Result};
+use anyhow::Result;
 use path_slash::PathExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::{HashMap, HashSet},
-    path::PathBuf,
-};
+use std::collections::{HashMap, HashSet};
+
 mod nx;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
@@ -142,7 +137,7 @@ impl NodeProvider {
 
     pub fn get_build_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
         if Nx::is_nx_monorepo(app, env) {
-            if let Some(nx_build_cmd) = Nx::get_nx_build_cmd(app, env)? {
+            if let Some(nx_build_cmd) = Nx::get_nx_build_cmd(app, env) {
                 return Ok(Some(nx_build_cmd));
             }
         }
