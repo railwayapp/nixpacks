@@ -12,8 +12,8 @@ use crate::nixpacks::{
 };
 use anyhow::{bail, Result};
 
-const COBOL_COMPILE_ARGS: &str = "NIXPACKS_COBOL_COMPILE_ARGS";
-const COBOL_APP_NAME: &str = "NIXPACKS_COBOL_APP_NAME";
+const COBOL_COMPILE_ARGS: &str = "COBOL_COMPILE_ARGS";
+const COBOL_APP_NAME: &str = "COBOL_APP_NAME";
 
 pub struct CobolProvider {}
 
@@ -23,7 +23,6 @@ impl Provider for CobolProvider {
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        println!("cobol detect {:?}", app.has_match("*.cbl"));
         Ok(app.has_match("*.cbl"))
     }
 
@@ -41,7 +40,7 @@ impl Provider for CobolProvider {
         let app_path = CobolProvider::get_app_path(&self, app, environment).unwrap();
 
         let file_name = app_path.file_stem().unwrap().to_str().unwrap();
-
+        println!("file_name {:?}", file_name);
         let mut build = Phase::build(Some(format!(
             "cobc {} {} {}",
             compile_args,
@@ -50,7 +49,7 @@ impl Provider for CobolProvider {
         )));
         build.depends_on_phase("setup");
 
-        let start = StartPhase::new("./index");
+        let start = StartPhase::new(format!("./{}", file_name));
 
         let plan = BuildPlan::new(&vec![setup, build], Some(start));
         Ok(Some(plan))
@@ -59,10 +58,10 @@ impl Provider for CobolProvider {
 
 impl CobolProvider {
     fn get_app_path(&self, app: &App, environment: &Environment) -> anyhow::Result<PathBuf> {
-        if let Some(app_name) = environment.get_variable(COBOL_APP_NAME) {
+        if let Some(app_name) = environment.get_config_variable(COBOL_APP_NAME) {
             if let Ok(matches) = app.find_files(&format!("*{}.cbl", &app_name)) {
                 if let Some(path) = matches.first() {
-                    return Ok(path.clone());
+                    return app.strip_source_path(path);
                 };
             }
         }
@@ -79,6 +78,6 @@ impl CobolProvider {
             }
         }
 
-        bail!(format!("Could not work out COBOL to compile and run please provide the {} environment variable", COBOL_APP_NAME));
+        bail!(format!("Could not work out COBOL to compile and run please provide the NIXPACKS_{} environment variable", COBOL_APP_NAME));
     }
 }

@@ -844,5 +844,21 @@ fn test_clojure_ring_app() {
 fn test_cobol() {
     let name = simple_build("./examples/cobol");
     let output = run_image(&name, None);
-    assert_eq!(output, "Started server on port 3000");
+    println!("{}", output);
+    assert_eq!(output, "Hello from cobol! index");
+}
+
+#[test]
+fn test_cobol_src_index() {
+    let name = simple_build("./examples/cobol-src-index");
+    let output = run_image(&name, None);
+    assert_eq!(output, "Hello from cobol! src-index");
+}
+
+#[test]
+fn test_cobol_my_app() {
+    let name =
+        build_with_build_time_env_vars("./examples/cobol", vec!["NIXPACKS_COBOL_APP_NAME=my-app"]);
+
+    assert_eq!(run_image(&name, None), "Hello from cobol! my-app");
 }

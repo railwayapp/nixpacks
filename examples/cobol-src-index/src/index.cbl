@@ -4,7 +4,7 @@
        PROCEDURE DIVISION.
        000-MAINLINE SECTION.
        000-START.
-           DISPLAY "Hello from cobol! index".
+           DISPLAY "Hello from cobol! src-index".
        000-EXIT.
        EXIT-PROGRAM.
 
