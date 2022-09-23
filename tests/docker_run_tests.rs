@@ -844,7 +844,6 @@ fn test_clojure_ring_app() {
 fn test_cobol() {
     let name = simple_build("./examples/cobol");
     let output = run_image(&name, None);
-    println!("{}", output);
     assert_eq!(output, "Hello from cobol! index");
 }
 
@@ -884,4 +883,11 @@ fn test_cobol_free() {
     );
 
     assert_eq!(run_image(&name, None), "Hello from cobol! cobol-free");
+}
+
+#[test]
+fn test_cobol_no_index() {
+    let name = simple_build("./examples/cobol-no-index");
+
+    assert_eq!(run_image(&name, None), "Hello from cobol! cobol-no-index");
 }
