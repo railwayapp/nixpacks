@@ -872,3 +872,16 @@ fn test_cobol_src_my_app() {
 
     assert_eq!(run_image(&name, None), "Hello from cobol! src-my-app");
 }
+
+#[test]
+fn test_cobol_free() {
+    let name = build_with_build_time_env_vars(
+        "./examples/cobol",
+        vec![
+            "NIXPACKS_COBOL_APP_NAME=cobol-free",
+            "NIXPACKS_COBOL_COMPILE_ARGS=-free -x -o",
+        ],
+    );
+
+    assert_eq!(run_image(&name, None), "Hello from cobol! cobol-free");
+}

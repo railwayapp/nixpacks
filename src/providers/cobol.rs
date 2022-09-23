@@ -34,8 +34,8 @@ impl Provider for CobolProvider {
         let setup = Phase::setup(Some(vec![Pkg::new("gnu-cobol"), Pkg::new("gcc")]));
 
         let compile_args = environment
-            .get_variable(COBOL_COMPILE_ARGS)
-            .unwrap_or("-x -o");
+            .get_config_variable(COBOL_COMPILE_ARGS)
+            .unwrap_or("-x -o".to_string());
 
         let app_path = CobolProvider::get_app_path(&self, app, environment).unwrap();
         let file_name = app_path.file_stem().unwrap().to_str().unwrap();
