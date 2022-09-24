@@ -10,7 +10,7 @@ use crate::nixpacks::{
         BuildPlan,
     },
 };
-use anyhow::{bail, Result};
+use anyhow::Result;
 
 const COBOL_COMPILE_ARGS: &str = "COBOL_COMPILE_ARGS";
 const COBOL_APP_NAME: &str = "COBOL_APP_NAME";
