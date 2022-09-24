@@ -18,7 +18,7 @@ expression: plan
         "install"
       ],
       "cmds": [
-        "yarn run build"
+        "npm run build"
       ],
       "cacheDirectories": [
         "node_modules/.cache"
@@ -30,10 +30,10 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "yarn install --frozen-lockfile"
+        "npm ci"
       ],
       "cacheDirectories": [
-        "/usr/local/share/.cache/yarn/v6"
+        "/root/.npm"
       ],
       "paths": [
         "/app/node_modules/.bin"
@@ -42,8 +42,8 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "nodejs-16_x",
-        "yarn-1_x"
+        "nodejs-18_x",
+        "npm-6_x"
       ],
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
@@ -52,6 +52,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "yarn run start"
+    "cmd": "npm run start"
   }
 }

@@ -14,9 +14,9 @@ use colored::Colorize;
 use super::merge::Mergeable;
 
 // This line is automatically updated.
-// Last Modified: 2022-09-19 17:12:38 UTC+0000
-// https://github.com/NixOS/nixpkgs/commit/8a5b9ee7b7a2b38267c9481f5c629c015108ab0d
-pub const NIXPKGS_ARCHIVE: &str = "8a5b9ee7b7a2b38267c9481f5c629c015108ab0d";
+// Last Modified: 2022-09-12 17:11:54 UTC+0000
+// https://github.com/NixOS/nixpkgs/commit/a0b7e70db7a55088d3de0cc370a59f9fbcc906c3
+pub const NIXPKGS_ARCHIVE: &str = "a0b7e70db7a55088d3de0cc370a59f9fbcc906c3";
 const NIXPACKS_METADATA: &str = "NIXPACKS_METADATA";
 
 #[derive(Clone, Default, Debug)]
