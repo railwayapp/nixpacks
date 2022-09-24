@@ -216,10 +216,13 @@ impl NodeProvider {
             let turbo_cfg = Turborepo::get_config(app)?;
             let app_name = Turborepo::get_app_name(env);
 
-            if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
+            if let Some(name) = app_name {
+                return Ok(Some(format!(
+                    "{} --workspace {} run start",
+                    pkg_manager, name
+                )));
+            } else if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
                 return Ok(Some(start_pipeline));
-            } else if let Some(name) = app_name {
-                return Ok(Some(format!("{} turbo run {}:start", dlx, name)));
             }
             return Ok(Some(format!("{} turbo run start", dlx)));
         }

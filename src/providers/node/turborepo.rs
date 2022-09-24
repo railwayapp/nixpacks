@@ -39,6 +39,6 @@ impl Turborepo {
     }
 
     pub fn get_app_name(env: &Environment) -> Option<String> {
-        env.get_config_variable("NIXPACKS_TURBO_APP_NAME")
+        env.get_config_variable("TURBO_APP_NAME")
     }
 }
