@@ -136,27 +136,27 @@ impl PhpProvider {
     fn get_php_version(app: &App) -> Result<String> {
         let composer_json: ComposerJson = app.read_json("composer.json")?;
         let version = composer_json.require.get("php").cloned();
-        Ok(match version {
-            Some(v) => {
-                if v.contains("8.0") {
-                    "8.0".to_string()
-                } else if v.contains("8.1") {
-                    "8.1".to_string()
-                } else if v.contains("7.4") {
-                    "7.4".to_string()
-                } else {
-                    println!(
-                        "Warning: PHP version {} is not available, using PHP {}",
-                        v, DEFAULT_PHP_VERSION
-                    );
-                    DEFAULT_PHP_VERSION.to_string()
-                }
-            }
-            None => {
-                println!("Warning: No PHP version specified, using PHP {}; see https://getcomposer.org/doc/04-schema.md#package-links for how to specify a PHP version.", DEFAULT_PHP_VERSION);
+
+        let version = if let Some(v) = version {
+            if v.contains("8.0") {
+                "8.0".to_string()
+            } else if v.contains("8.1") {
+                "8.1".to_string()
+            } else if v.contains("7.4") {
+                "7.4".to_string()
+            } else {
+                println!(
+                    "Warning: PHP version {} is not available, using PHP {}",
+                    v, DEFAULT_PHP_VERSION
+                );
                 DEFAULT_PHP_VERSION.to_string()
             }
-        })
+        } else {
+            println!("Warning: No PHP version specified, using PHP {}; see https://getcomposer.org/doc/04-schema.md#package-links for how to specify a PHP version.", DEFAULT_PHP_VERSION);
+            DEFAULT_PHP_VERSION.to_string()
+        };
+
+        Ok(version)
     }
 
     fn get_php_extensions(app: &App) -> Result<Vec<String>> {
