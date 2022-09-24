@@ -37,7 +37,7 @@ impl Provider for CobolProvider {
             .get_config_variable(COBOL_COMPILE_ARGS)
             .unwrap_or("-x -o".to_string());
 
-        let app_path = CobolProvider::get_app_path(&self, app, environment).unwrap();
+        let app_path = CobolProvider::get_app_path(&self, app, environment);
         let file_name = app_path.file_stem().unwrap().to_str().unwrap();
 
         let mut build = Phase::build(Some(format!(
@@ -56,27 +56,27 @@ impl Provider for CobolProvider {
 }
 
 impl CobolProvider {
-    fn get_app_path(&self, app: &App, environment: &Environment) -> anyhow::Result<PathBuf> {
+    fn get_app_path(&self, app: &App, environment: &Environment) -> PathBuf {
         if let Some(app_name) = environment.get_config_variable(COBOL_APP_NAME) {
             if let Ok(matches) = app.find_files(&format!("*{}.cbl", &app_name)) {
                 if let Some(path) = matches.first() {
-                    return app.strip_source_path(path);
+                    return app.strip_source_path(path).unwrap();
                 };
             }
         }
 
         if let Ok(matches) = app.find_files("*index.cbl") {
             if let Some(first) = matches.first() {
-                return app.strip_source_path(first);
+                return app.strip_source_path(first).unwrap();
             }
         }
 
         if let Ok(matches) = app.find_files("*.cbl") {
             if let Some(first) = matches.first() {
-                return Ok(first.clone());
+                return first.clone();
             }
         }
 
-        bail!(format!("Could not work out COBOL to compile and run please provide the NIXPACKS_{} environment variable", COBOL_APP_NAME));
+        PathBuf::from("./")
     }
 }
