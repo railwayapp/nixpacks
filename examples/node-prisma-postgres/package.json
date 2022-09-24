@@ -3,8 +3,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "ts-node ./src/index.ts",
-    "build": "tsc && prisma migrate deploy",
-    "start": "node dist/index.js"
+    "build": "prisma generate && tsc",
+    "start": "prisma migrate deploy && node dist/index.js"
   },
   "devDependencies": {
     "@types/node": "18.7.18",
@@ -14,5 +14,8 @@
   },
   "dependencies": {
     "@prisma/client": "4.3.1"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }

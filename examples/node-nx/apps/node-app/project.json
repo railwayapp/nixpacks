@@ -8,7 +8,11 @@
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/node-app",
-        "commands": [{ "command": "node apps/node-app/build.js" }]
+        "commands": [
+          {
+            "command": "node apps/node-app/build.js"
+          }
+        ]
       },
       "configurations": {
         "production": {

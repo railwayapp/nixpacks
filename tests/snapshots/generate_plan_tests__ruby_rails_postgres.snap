@@ -9,7 +9,8 @@ expression: plan
     "BUNDLE_GEMFILE": "/app/Gemfile",
     "GEM_HOME": "/usr/local/rvm/gems/3.1.2",
     "GEM_PATH": "/usr/local/rvm/gems/3.1.2:/usr/local/rvm/gems/3.1.2@global",
-    "NIXPACKS_METADATA": "Ruby"
+    "NIXPACKS_METADATA": "Ruby",
+    "RAILS_LOG_TO_STDOUT": "enabled"
   },
   "phases": {
     "build": {

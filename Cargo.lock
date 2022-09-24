@@ -951,7 +951,7 @@ dependencies = [
 
 [[package]]
 name = "nixpacks"
-version = "0.5.6"
+version = "0.7.0"
 dependencies = [
  "actix-multipart",
  "actix-web",

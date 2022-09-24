@@ -4,6 +4,7 @@
   "projects": {
     "express-app": "apps/express-app",
     "next-app": "apps/next-app",
+    "no-options": "apps/no-options",
     "node-app": "apps/node-app",
     "start-command": "apps/start-command",
     "start-command-production": "apps/start-command-production"
