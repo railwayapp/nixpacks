@@ -1,8 +1,45 @@
+use super::plan::phase::{Phase, Phases};
 use indoc::formatdoc;
-
-use super::plan::phase::Phase;
+use itertools::*;
+use std::collections::BTreeMap;
 
 pub mod pkg;
+
+#[derive(Debug, Clone)]
+struct NixGroup {
+    archive: Option<String>,
+    pkgs: Vec<String>,
+    libs: Vec<String>,
+}
+
+fn group_nix_packages_by_archive(
+    phases: &Vec<Phase>,
+) -> BTreeMap<Option<String>, (Vec<String>, Vec<String>)> {
+    let mut archive_to_packages: BTreeMap<Option<String>, (Vec<String>, Vec<String>)> =
+        BTreeMap::new();
+
+    let groups = phases.clone().into_iter().map(|phase| NixGroup {
+        archive: phase.nixpkgs_archive,
+        pkgs: phase.nix_pkgs.unwrap_or_default(),
+        libs: phase.nix_libs.unwrap_or_default(),
+    });
+
+    for g in groups {
+        match archive_to_packages.get_mut(&g.archive) {
+            Some((pkgs, libs)) => {
+                pkgs.extend(g.pkgs);
+                libs.extend(g.libs);
+            }
+            None => {
+                archive_to_packages.insert(g.archive, (g.pkgs, g.libs));
+            }
+        }
+    }
+
+    archive_to_packages
+}
+
+pub fn create_nix_expression_2(phases: &Phase) {}
 
 pub fn create_nix_expression(phase: &Phase) -> String {
     let nixpkgs = phase.nix_pkgs.clone().unwrap_or_default().join(" ");
@@ -70,4 +107,34 @@ pub fn create_nix_expression(phase: &Phase) -> String {
     };
 
     nix_expression
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{pkg::Pkg, *};
+
+    #[test]
+    fn test_group_nix_packages_by_archive() {
+        let mut setup1 = Phase::setup(Some(vec![Pkg::new("foo"), Pkg::new("bar")]));
+        setup1.add_pkgs_libs(vec!["lib1".to_string()]);
+
+        let mut setup2 = Phase::setup(Some(vec![Pkg::new("hello"), Pkg::new("world")]));
+        setup2.nixpkgs_archive = Some("archive2".to_string());
+
+        let setup3 = Phase::setup(Some(vec![Pkg::new("baz")]));
+
+        let groups = group_nix_packages_by_archive(&vec![setup1, setup2, setup3]);
+        assert_eq!(groups.len(), 2);
+        assert_eq!(
+            groups.get(&None).unwrap(),
+            &(
+                vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
+                vec!["lib1".to_string()]
+            )
+        );
+        assert_eq!(
+            groups.get(&Some("archive2".to_string())).unwrap(),
+            &(vec!["hello".to_string(), "world".to_string()], vec![])
+        );
+    }
 }
