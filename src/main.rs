@@ -44,7 +44,7 @@ fn main() -> Result<()> {
         .subcommand(
             Command::new("plan")
                 .about("Generate a build plan for an app")
-                .arg(arg!(<PATH> "App source"))
+                .arg(arg!([PATH] "App source"))
                 .arg(
                     Arg::new("format")
                         .short('f')
@@ -55,7 +55,7 @@ fn main() -> Result<()> {
         .subcommand(
             Command::new("build")
                 .about("Create a docker image for an app")
-                .arg(arg!(<PATH> "App source"))
+                .arg(arg!([PATH] "App source"))
                 .arg(
                     Arg::new("name")
                         .long("name")
@@ -253,7 +253,7 @@ fn main() -> Result<()> {
 
     match &matches.subcommand() {
         Some(("plan", matches)) => {
-            let path = matches.value_of("PATH").expect("required");
+            let path = matches.value_of("PATH").unwrap_or(".");
             let format = PlanFormat::from_str(matches.value_of("format").unwrap_or("json"))?;
 
             let plan = generate_build_plan(path, envs, &options)?;
@@ -266,7 +266,7 @@ fn main() -> Result<()> {
             println!("{}", plan_s);
         }
         Some(("build", matches)) => {
-            let path = matches.value_of("PATH").expect("required");
+            let path = matches.value_of("PATH").unwrap_or(".");
             let name = matches.value_of("name").map(ToString::to_string);
             let out_dir = matches.value_of("out").map(ToString::to_string);
             let current_dir = matches.is_present("current-dir");
