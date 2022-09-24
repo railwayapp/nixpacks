@@ -37,7 +37,7 @@ the following command is used ( see section below to see how the arguments are g
 
 ### `path`
 
--   The logic used to generate the `appName` is used but the file path is added to the start of the `appName` and `.cbl` to thew end of the `appName`
+-   The source files are searched for `*<appName>.cbl` if found that path is used.
 
 ## Start
 
