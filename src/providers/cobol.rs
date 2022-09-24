@@ -35,9 +35,9 @@ impl Provider for CobolProvider {
 
         let compile_args = environment
             .get_config_variable(COBOL_COMPILE_ARGS)
-            .unwrap_or("-x -o".to_string());
+            .unwrap_or_else("-x -o".to_string());
 
-        let app_path = CobolProvider::get_app_path(&self, app, environment);
+        let app_path = CobolProvider::get_app_path(self, app, environment);
         let file_name = app_path.file_stem().unwrap().to_str().unwrap();
 
         let mut build = Phase::build(Some(format!(
