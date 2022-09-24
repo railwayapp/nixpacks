@@ -122,7 +122,6 @@ impl Provider for NodeProvider {
         } else {
             Phase::build(None)
         };
-        drop(dlx);
 
         // Next build cache directories
         let next_cache_dirs = NodeProvider::find_next_packages(app)?;
@@ -171,6 +170,11 @@ impl NodeProvider {
     pub fn get_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
         let dlx = NodeProvider::get_package_manager_dlx_command(app);
         let pkg_manager = NodeProvider::get_package_manager(app);
+        let executor = if pkg_manager == "bun".to_string() {
+            "bun"
+        } else {
+            "node"
+        };
         if NodeProvider::is_nx_monorepo(app) {
             let app_name = NodeProvider::get_nx_app_name(app, env)?.unwrap();
             let output_path = NodeProvider::get_nx_output_path(app, env)?;
@@ -196,11 +200,6 @@ impl NodeProvider {
             }
 
             let main = project_json.targets.build.options.main;
-            let executor = if pkg_manager == "bun".to_string() {
-                "bun"
-            } else {
-                "node"
-            };
             if let Some(main_path) = main {
                 let current_path = PathBuf::from(main_path.as_str().unwrap());
                 let file_name = current_path.file_stem().unwrap().to_str().unwrap();
@@ -233,18 +232,12 @@ impl NodeProvider {
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         if let Some(main) = package_json.main {
             if app.includes_file(&main) {
-                if package_manager == "bun" {
-                    return Ok(Some(format!("bun {}", main)));
-                }
-                return Ok(Some(format!("node {}", main)));
+                return Ok(Some(format!("{} {}", executor, main)));
             }
         }
 
         if app.includes_file("index.js") {
-            if package_manager == "bun" {
-                return Ok(Some("bun index.js".to_string()));
-            }
-            return Ok(Some("node index.js".to_string()));
+            return Ok(Some(format!("{} index.js", executor)));
         } else if app.includes_file("index.ts") && package_manager == "bun" {
             return Ok(Some("bun index.ts".to_string()));
         }
@@ -302,7 +295,7 @@ impl NodeProvider {
 
     pub fn get_package_manager_dlx_command(app: &App) -> String {
         let pkg_manager = NodeProvider::get_package_manager(app);
-        match (pkg_manager.as_str()) {
+        match pkg_manager.as_str() {
             "pnpm" => "pnpx",
             "yarn" => "yarn",
             _ => "npx",
