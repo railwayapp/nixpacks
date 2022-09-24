@@ -14,6 +14,7 @@ use anyhow::Result;
 
 const COBOL_COMPILE_ARGS: &str = "COBOL_COMPILE_ARGS";
 const COBOL_APP_NAME: &str = "COBOL_APP_NAME";
+const DEFAULT_COBOL_COMPILE_ARGS: &str = "-x -o";
 
 pub struct CobolProvider {}
 
@@ -35,7 +36,7 @@ impl Provider for CobolProvider {
 
         let compile_args = environment
             .get_config_variable(COBOL_COMPILE_ARGS)
-            .unwrap_or_else("-x -o".to_string());
+            .unwrap_or_else(|| DEFAULT_COBOL_COMPILE_ARGS.to_string());
 
         let app_path = CobolProvider::get_app_path(self, app, environment);
         let file_name = app_path.file_stem().unwrap().to_str().unwrap();
