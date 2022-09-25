@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, str::FromStr};
 
 use super::Provider;
 use crate::nixpacks::{
@@ -11,6 +11,7 @@ use crate::nixpacks::{
     },
 };
 use anyhow::Result;
+use path_slash::PathBufExt;
 
 const COBOL_COMPILE_ARGS: &str = "COBOL_COMPILE_ARGS";
 const COBOL_APP_NAME: &str = "COBOL_APP_NAME";
@@ -67,23 +68,48 @@ impl CobolProvider {
         if let Some(app_name) = environment.get_config_variable(COBOL_APP_NAME) {
             if let Ok(matches) = app.find_files(&format!("*{}.cbl", &app_name)) {
                 if let Some(path) = matches.first() {
-                    return app.strip_source_path(path).unwrap();
+                    if let Ok(relative_path) = app.strip_source_path(path) {
+                        if let Some(normalized_path) =
+                            CobolProvider::normalized_path(&relative_path)
+                        {
+                            return normalized_path;
+                        }
+                    }
                 };
             }
         }
 
         if let Ok(matches) = app.find_files("*index.cbl") {
             if let Some(first) = matches.first() {
-                return app.strip_source_path(first).unwrap();
+                if let Ok(relative_path) = app.strip_source_path(first) {
+                    if let Some(normalized_path) = CobolProvider::normalized_path(&relative_path) {
+                        return normalized_path;
+                    }
+                }
             }
         }
 
         if let Ok(matches) = app.find_files("*.cbl") {
             if let Some(first) = matches.first() {
-                return first.clone();
+                if let Ok(relative_path) = app.strip_source_path(first) {
+                    if let Some(normalized_path) = CobolProvider::normalized_path(&relative_path) {
+                        return normalized_path;
+                    }
+                }
             }
         }
 
         PathBuf::from("./")
+    }
+
+    fn normalized_path(path: &PathBuf) -> Option<PathBuf> {
+        if let Some(normalized_path) = path.to_slash() {
+            let p = PathBuf::from_str(&normalized_path.to_string().as_str());
+
+            if p.is_ok() {
+                return Some(p.unwrap());
+            }
+        }
+        None
     }
 }
