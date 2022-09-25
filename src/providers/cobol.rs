@@ -104,10 +104,10 @@ impl CobolProvider {
 
     fn normalized_path(path: &PathBuf) -> Option<PathBuf> {
         if let Some(normalized_path) = path.to_slash() {
-            let p = PathBuf::from_str(&normalized_path.to_string().as_str());
+            let path_string = PathBuf::from_str(normalized_path.to_string().as_str());
 
-            if p.is_ok() {
-                return Some(p.unwrap());
+            if let Ok(path) = path_string {
+                return Some(path);
             }
         }
         None
