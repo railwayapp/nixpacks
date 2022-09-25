@@ -1,6 +1,5 @@
 use super::plan::phase::{Phase, Phases};
 use indoc::formatdoc;
-use itertools::*;
 use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
@@ -86,8 +85,8 @@ fn nix_expression_for_group(group: &NixGroup) -> String {
         .archive
         .clone()
         .unwrap_or_else(|| NIXPKGS_ARCHIVE.to_string());
-    let pkgs = group.pkgs.clone().into_iter().join(" ");
-    let libs = group.libs.clone().into_iter().join(" ");
+    let pkgs = group.pkgs.clone().join(" ");
+    let libs = group.libs.clone().join(" ");
     let overlays_string = group
         .overlays
         .iter()
