@@ -60,5 +60,3 @@ result
 
 .vscode/
 
-# Ignore cobol artifact
-examples/cobol/index
