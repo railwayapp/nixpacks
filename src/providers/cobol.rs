@@ -39,7 +39,15 @@ impl Provider for CobolProvider {
             .unwrap_or_else(|| DEFAULT_COBOL_COMPILE_ARGS.to_string());
 
         let app_path = CobolProvider::get_app_path(self, app, environment);
-        let file_name = app_path.file_stem().unwrap().to_str().unwrap();
+
+        let file_stem = app_path.file_stem();
+        let mut file_name = "";
+
+        if file_stem.is_some() {
+            if let Some(unwrapped_file_name) = file_stem.unwrap().to_str() {
+                file_name = unwrapped_file_name;
+            }
+        }
 
         let mut build = Phase::build(Some(format!(
             "cobc {} {} {}",
