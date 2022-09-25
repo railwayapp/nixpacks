@@ -39,12 +39,10 @@ impl Provider for CobolProvider {
             .unwrap_or_else(|| DEFAULT_COBOL_COMPILE_ARGS.to_string());
 
         let app_path = CobolProvider::get_app_path(self, app, environment);
-
-        let file_stem = app_path.file_stem();
         let mut file_name = "";
 
-        if file_stem.is_some() {
-            if let Some(unwrapped_file_name) = file_stem.unwrap().to_str() {
+        if let Some(file_stem) = app_path.file_stem() {
+            if let Some(unwrapped_file_name) = file_stem.to_str() {
                 file_name = unwrapped_file_name;
             }
         }
