@@ -96,7 +96,11 @@ impl DockerImageBuilder {
         name: &str,
         output: &OutputDir,
     ) -> Result<Command> {
-        let mut docker_build_cmd = Command::new(which::which("docker").unwrap());
+        let mut docker_build_cmd = Command::new(
+            which::which("docker")
+                .context("The docker binary could not be found")
+                .unwrap(),
+        );
 
         if docker_build_cmd.output().is_err() {
             bail!("Please install Docker to build the app https://docs.docker.com/engine/install/")
