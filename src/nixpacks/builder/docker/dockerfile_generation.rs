@@ -3,7 +3,7 @@ use crate::nixpacks::{
     app,
     environment::Environment,
     images::DEFAULT_BASE_IMAGE,
-    nix::{self, create_nix_expressions_for_phases, nix_file_names_for_phases},
+    nix::{create_nix_expressions_for_phases, nix_file_names_for_phases},
     plan::{
         phase::{Phase, StartPhase},
         BuildPlan,
@@ -13,7 +13,6 @@ use anyhow::{Context, Ok, Result};
 use indoc::formatdoc;
 use path_slash::PathBufExt;
 use std::{
-    collections::BTreeMap,
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
@@ -164,7 +163,6 @@ impl DockerfileGenerator for BuildPlan {
         let phases = plan.get_sorted_phases()?;
 
         let dockerfile_phases = phases
-            .clone()
             .into_iter()
             .map(|phase| {
                 let phase_dockerfile =
@@ -333,7 +331,7 @@ impl DockerfileGenerator for Phase {
         &self,
         options: &DockerBuilderOptions,
         env: &Environment,
-        output: &OutputDir,
+        _output: &OutputDir,
     ) -> Result<String> {
         let phase = self;
 
@@ -420,8 +418,6 @@ mod tests {
             .unwrap();
 
         assert!(dockerfile.contains("echo test"));
-        assert!(dockerfile.contains("apt-get update"));
-        assert!(dockerfile.contains("wget"));
     }
 
     #[test]
@@ -430,6 +426,7 @@ mod tests {
 
         let mut test1 = Phase::new("test1");
         test1.add_cmd("echo test1");
+        test1.add_apt_pkgs(vec!["wget".to_owned()]);
         plan.add_phase(test1);
 
         let mut test2 = Phase::new("test2");
@@ -446,5 +443,7 @@ mod tests {
 
         assert!(dockerfile.contains("echo test1"));
         assert!(dockerfile.contains("echo test2"));
+        assert!(dockerfile.contains("apt-get update"));
+        assert!(dockerfile.contains("wget"));
     }
 }
