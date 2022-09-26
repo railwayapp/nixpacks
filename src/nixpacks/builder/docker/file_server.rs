@@ -1,5 +1,4 @@
-use actix_multipart::Multipart;
-use actix_web::error::ParseError;
+// use actix_multipart::Multipart;
 use actix_web::http::header::HeaderValue;
 use actix_web::{
     middleware, rt, web, App as ActixApp, Error as ActixError, HttpRequest, HttpResponse,
@@ -33,7 +32,7 @@ impl FileServer {
                 save_to,
                 access_token,
                 host: "0.0.0.0".to_string(),
-                port: 8008,
+                port: 8080,
             },
         }
     }
@@ -41,7 +40,7 @@ impl FileServer {
     pub fn start(self) {
         thread::spawn(move || {
             let server_future = FileServer::run_app(self.data);
-            rt::System::new().block_on(server_future)
+            rt::System::new().block_on(server_future);
         });
     }
 
@@ -51,10 +50,12 @@ impl FileServer {
             ActixApp::new()
                 .app_data(save_to_data.clone())
                 .wrap(middleware::Logger::default())
-                .service(web::resource("/").route(web::post().to(FileServer::upload)))
+                .service(web::resource("/health").route(web::get().to(|| async {
+                    println!("GO TEST RUST");
+                    "Nixpacks HTTP server is up & running!"
+                })))
                 .service(
-                    web::resource("/health")
-                        .route(web::get().to(|| async { "Nixpacks HTTP server is up & running!" })),
+                    web::resource("/upload/{filename}").route(web::put().to(FileServer::upload)),
                 )
         })
         .bind((data.host, data.port))?
@@ -76,31 +77,42 @@ impl FileServer {
 
     #[allow(dead_code)]
     async fn upload(
-        mut payload: Multipart,
+        mut payload: web::Payload,
+        path: web::Path<String>,
         req: HttpRequest,
         data: web::Data<FileServerData>,
     ) -> Result<HttpResponse, ActixError> {
-        while let Some(item) = payload.next().await {
-            let mut byte_stream_field = item?;
-            if !FileServer::has_valid_access_token(req.headers().get("t"), &data.access_token) {
-                return Ok(HttpResponse::Unauthorized().into());
-            }
-
-            let filename = byte_stream_field
-                .content_disposition()
-                .get_filename()
-                .ok_or(ParseError::Incomplete)?;
-
-            let filepath = data.save_to.join(sanitize_filename::sanitize(&filename));
-            let in_path = PathBuf::from(&filepath);
-            let mut f: File = web::block(|| File::create(in_path)).await??;
-            while let Some(chunk) = byte_stream_field.next().await {
-                let data = chunk?;
-                f = web::block(move || f.write_all(&data).map(|_| f)).await??;
-            }
-
-            web::block(move || f.flush()).await??;
+        if !FileServer::has_valid_access_token(req.headers().get("t"), &data.access_token) {
+            return Ok(HttpResponse::Unauthorized().into());
         }
+
+        let filename = path.into_inner();
+        let filepath = data.save_to.join(sanitize_filename::sanitize(&filename));
+
+        let in_path = PathBuf::from(&filepath);
+        let mut f: File = web::block(|| File::create(in_path)).await??;
+        let mut counter = 0;
+
+        while let Some(chunk) = payload.next().await {
+            let data = chunk?;
+            f = web::block(move || f.write_all(&data).map(|_| f)).await??;
+
+            counter = counter + 1;
+            // println!("Save chunk count: {}", counter)
+            // let mut byte_stream_field = item?;
+
+            // let filename = byte_stream_field
+            //     .content_disposition()
+            //     .get_filename()
+            //     .ok_or(ParseError::Incomplete)?;
+
+            // while let Some(chunk) = payload.next().await {
+            //     let data = chunk?;
+            //     f = web::block(move || f.write_all(&data).map(|_| f)).await??;
+            // }
+        }
+        web::block(move || f.flush()).await??;
+
         Ok(HttpResponse::Ok().into())
     }
 }

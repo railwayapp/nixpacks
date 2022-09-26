@@ -1,8 +1,9 @@
 use super::{dockerfile_generation::DockerfileGenerator, DockerBuilderOptions, ImageBuilder};
 use crate::nixpacks::{
     builder::docker::{
-        dockerfile_generation::OutputDir, file_server::FileServer,
-        incremental_cache::IncrementalCache,
+        dockerfile_generation::OutputDir,
+        file_server::FileServer,
+        incremental_cache::{IncrementalCache, IncrementalCacheConfig},
     },
     environment::Environment,
     files,
@@ -41,16 +42,15 @@ impl ImageBuilder for DockerImageBuilder {
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
         output.ensure_output_exists()?;
 
-        let file_server_access_token = Uuid::new_v4().to_string();
         let incremental_cache = IncrementalCache::default();
-        let dirs = incremental_cache.ensure_dirs_exists(&output)?;
+        let incremental_cache_config = IncrementalCacheConfig::create(&output)?;
 
         let incremental_cache_dirs =
             if !self.options.no_cache && self.options.incremental_cache_image.is_some() {
                 // download incremental cache files to be included in Dockerfile generation
-                incremental_cache.download_files(
+                let dirs = incremental_cache.download_files(
                     &self.options.incremental_cache_image.clone().unwrap(),
-                    &dirs,
+                    &incremental_cache_config,
                 )?;
 
                 Some(dirs)
@@ -59,7 +59,7 @@ impl ImageBuilder for DockerImageBuilder {
             };
 
         let dockerfile = plan
-            .generate_dockerfile(&self.options, env, &output, &file_server_access_token)
+            .generate_dockerfile(&self.options, env, &output, &incremental_cache_config)
             .context("Generating Dockerfile for plan")?;
 
         // If printing the Dockerfile, don't write anything to disk
@@ -70,12 +70,8 @@ impl ImageBuilder for DockerImageBuilder {
 
         if self.options.incremental_cache_image.is_some() {
             let file_server = FileServer::new(
-                incremental_cache_dirs
-                    .as_ref()
-                    .unwrap()
-                    .tar_archives_dir
-                    .clone(),
-                file_server_access_token,
+                incremental_cache_config.uploads_dir.clone(),
+                incremental_cache_config.upload_server_access_token.clone(),
             );
             file_server.start();
         };
@@ -110,7 +106,7 @@ impl ImageBuilder for DockerImageBuilder {
             if self.options.incremental_cache_image.is_some() && incremental_cache_dirs.is_some() {
                 println!("Creating incremental cache image!");
                 incremental_cache.create_image(
-                    &incremental_cache_dirs.unwrap(),
+                    &incremental_cache_config,
                     self.options.incremental_cache_image.clone().unwrap(),
                 )?;
             }

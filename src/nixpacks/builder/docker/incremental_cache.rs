@@ -8,12 +8,18 @@ use super::dockerfile_generation::OutputDir;
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use tar::Archive;
+use uuid::Uuid;
+
+const INCREMENTAL_CACHE_DIR: &str = "incremental-cache";
+const INCREMENTAL_CACHE_DOWNLOADS_DIR: &str = "downloads";
+const INCREMENTAL_CACHE_UPLOADS_DIR: &str = "uploads";
+const INCREMENTAL_CACHE_IMAGE_DIR: &str = "image";
 
 #[derive(Default)]
 pub struct IncrementalCache {}
 
 #[derive(Serialize, Deserialize)]
-struct Manifest {
+struct ManifestItem {
     #[serde(rename = "Layers")]
     layers: Vec<String>,
 }
@@ -23,13 +29,71 @@ struct IncrementalCacheArchive {
     path: PathBuf,
 }
 
-pub struct IncrementalCacheDirs {
-    pub tar_archives_dir: PathBuf,
+pub struct IncrementalCacheConfig {
+    pub downloads_dir: PathBuf,
+    pub uploads_dir: PathBuf,
     pub image_dir: PathBuf,
+    pub upload_server_access_token: String,
+}
+
+impl IncrementalCacheConfig {
+    pub fn create(out_dir: &OutputDir) -> Result<IncrementalCacheConfig> {
+        let incremental_cache_root = out_dir.get_absolute_path(INCREMENTAL_CACHE_DIR);
+
+        if fs::metadata(&incremental_cache_root)
+            .context("Check if incremental-cache dir exists")
+            .is_ok()
+        {
+            fs::remove_dir_all(&incremental_cache_root)?;
+        }
+
+        let image_dir = incremental_cache_root.join(PathBuf::from(INCREMENTAL_CACHE_IMAGE_DIR));
+        if fs::metadata(&image_dir)
+            .context("Check if incremental cache image dir exists")
+            .is_ok()
+        {
+            fs::remove_dir_all(&image_dir)?;
+        }
+
+        let downloads_dir =
+            incremental_cache_root.join(PathBuf::from(INCREMENTAL_CACHE_DOWNLOADS_DIR));
+        if fs::metadata(&downloads_dir)
+            .context("Check if incremental cache downloads dir exists")
+            .is_ok()
+        {
+            fs::remove_dir_all(&downloads_dir)?;
+        }
+
+        let uploads_dir = incremental_cache_root.join(PathBuf::from(INCREMENTAL_CACHE_UPLOADS_DIR));
+        if fs::metadata(&uploads_dir)
+            .context("Check if incremental cache uploads dir exists")
+            .is_ok()
+        {
+            fs::remove_dir_all(&uploads_dir)?;
+        }
+
+        fs::create_dir_all(&image_dir).context("Create incremental cache image dir")?;
+        fs::create_dir_all(&downloads_dir)
+            .context("Creating incremental-cache downloads directory")?;
+        fs::create_dir_all(&uploads_dir).context("Creating incremental-cache uploads directory")?;
+
+        Ok(IncrementalCacheConfig {
+            downloads_dir: downloads_dir,
+            uploads_dir: uploads_dir,
+            image_dir: image_dir,
+            upload_server_access_token: Uuid::new_v4().to_string(),
+        })
+    }
+
+    pub fn get_downloads_relative_path(&self, filename: &str) -> PathBuf {
+        PathBuf::from(INCREMENTAL_CACHE_DIR)
+            .join(PathBuf::from(INCREMENTAL_CACHE_DOWNLOADS_DIR))
+            .join(PathBuf::from(filename))
+    }
 }
 
 impl IncrementalCache {
-    pub fn download_files(&self, tag: &str, dirs: &IncrementalCacheDirs) -> Result<bool> {
+    pub fn download_files(&self, tag: &str, dirs: &IncrementalCacheConfig) -> Result<bool> {
         let image_file_path = dirs.image_dir.join("oci-image.tar");
 
         if !self.pull_image(tag)? {
@@ -40,37 +104,17 @@ impl IncrementalCache {
         let archives = self.extract_archives(&image_file_path, &dirs.image_dir)?;
 
         for item in archives {
-            let to_path = dirs.tar_archives_dir.join(item.name);
-            fs::rename(item.path, to_path).context("Move tar file to incremental cahce")?;
+            let filename_parts: Vec<&str> = item.name.split(".tar.nixpacks-").collect();
+            if filename_parts.len() < 1 {
+                continue;
+            }
+
+            let filename: &str = filename_parts[0];
+            let to_path = dirs.downloads_dir.join(format!("{}.tar", filename));
+            fs::copy(item.path, to_path).context("Move tar file to incremental cache")?;
         }
 
         Ok(true)
-    }
-
-    pub fn ensure_dirs_exists(&self, out_dir: &OutputDir) -> Result<IncrementalCacheDirs> {
-        let save_to = out_dir.get_absolute_path("incremental-cache");
-        if fs::metadata(&save_to)
-            .context("Check if incremental-cache dir exists")
-            .is_ok()
-        {
-            fs::remove_dir_all(&save_to)?;
-        }
-
-        let dir_path = out_dir.get_absolute_path("incremental-cache-image");
-        if fs::metadata(&dir_path)
-            .context("Check if incremental cache image dir exists")
-            .is_ok()
-        {
-            fs::remove_dir_all(&dir_path)?;
-        }
-
-        fs::create_dir_all(&save_to).context("Creating incremental-cache directory")?;
-        fs::create_dir_all(&dir_path).context("Create incremental cache image dir")?;
-
-        Ok(IncrementalCacheDirs {
-            tar_archives_dir: save_to,
-            image_dir: dir_path,
-        })
     }
 
     fn write_dockerfile(&self, dir_path: &PathBuf) -> Result<PathBuf> {
@@ -94,11 +138,11 @@ impl IncrementalCache {
         Ok(dockerfile_path)
     }
 
-    pub fn create_image(&self, dirs: &IncrementalCacheDirs, tag: String) -> Result<()> {
+    pub fn create_image(&self, dirs: &IncrementalCacheConfig, tag: String) -> Result<()> {
         // ADR: writing a Dockerfile with minimal base image > copy tar files to > build the image
         // Seems way faster than using some Rust crates to compose the OCI image file (1-2 minutes vs ~20 seconds)
         // The overhead we need to take, is an extra layer to our final image with 5 MB of size. which is not that much compared with the average image size we deal with.
-        let dockerfile_path = self.write_dockerfile(&dirs.tar_archives_dir)?;
+        let dockerfile_path = self.write_dockerfile(&dirs.uploads_dir)?;
         let mut docker_build_cmd = Command::new("docker");
 
         // Enable BuildKit for all builds
@@ -106,7 +150,7 @@ impl IncrementalCache {
 
         docker_build_cmd
             .arg("build")
-            .arg(&dirs.tar_archives_dir.display().to_string())
+            .arg(&dirs.uploads_dir.display().to_string())
             .arg("-f")
             .arg(dockerfile_path.display().to_string())
             .arg("-t")
@@ -172,37 +216,42 @@ impl IncrementalCache {
 
         let json_path = dest_dir.join("manifest.json");
         let json_str = fs::read_to_string(json_path).context("Read manifest.json")?;
-        let value: Vec<Manifest> = serde_json::from_str(&json_str)?;
+        let value: Vec<ManifestItem> = serde_json::from_str(&json_str)?;
 
         if value.first().is_none() {
             Ok(vec![])
         } else {
             let mut archives: Vec<IncrementalCacheArchive> = vec![];
-            for layer_name in value.first().unwrap().layers.iter().skip(1) {
-                let tar_file_path = dest_dir.join(layer_name);
-                let extract_to = dest_dir.join(layer_name.replace("/layer.tar", "/layer"));
 
-                fs::create_dir_all(&extract_to).context("Create extract-to dir")?;
-                let file = File::open(tar_file_path)?;
+            for item in value {
+                for layer_name in item.layers.iter() {
+                    let tar_file_path = dest_dir.join(layer_name);
+                    let extract_to = dest_dir.join(layer_name.replace("/layer.tar", "/layer"));
 
-                let mut archive = Archive::new(file);
-                archive.unpack(&extract_to)?;
+                    fs::create_dir_all(&extract_to).context("Create extract-to dir")?;
+                    let file = File::open(&tar_file_path)?;
 
-                let mut found_files = fs::read_dir(&extract_to)
-                    .context("Read files of extract-to dir")?
-                    .filter_map(|path| {
-                        path.ok()?
-                            .file_name()
-                            .to_str()
-                            .map(std::string::ToString::to_string)
-                    })
-                    .map(|value| IncrementalCacheArchive {
-                        name: value.clone(),
-                        path: extract_to.join(value),
-                    })
-                    .collect::<Vec<_>>();
+                    let mut archive = Archive::new(file);
+                    archive.unpack(&extract_to)?;
 
-                archives.append(&mut found_files);
+                    let mut found_files = fs::read_dir(&extract_to)
+                        .context("Read files of extract-to dir")?
+                        .filter_map(|path| {
+                            path.ok()?
+                                .file_name()
+                                .to_str()
+                                .map(std::string::ToString::to_string)
+                        })
+                        .map(|value| {
+                            IncrementalCacheArchive {
+                                name: value.clone(),
+                                path: extract_to.join(value),
+                            }
+                        })
+                        .collect::<Vec<_>>();
+
+                    archives.append(&mut found_files);
+                }
             }
             Ok(archives)
         }

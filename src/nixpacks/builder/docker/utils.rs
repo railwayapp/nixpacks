@@ -1,4 +1,8 @@
-use super::{cache::sanitize_cache_key, dockerfile_generation::OutputDir};
+use super::{
+    cache::sanitize_cache_key, dockerfile_generation::OutputDir,
+    incremental_cache::IncrementalCacheConfig,
+};
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs, path::PathBuf};
 
 pub fn get_cache_mount(
@@ -27,16 +31,21 @@ pub fn get_copy_out_cached_dirs_command(
     cache_directories: &Option<Vec<String>>,
     file_server_access_token: &str,
 ) -> Vec<String> {
+    let unique_value_per_build = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Get time since UNIX epoch")
+        .as_millis();
+
     match cache_directories {
         Some(cache_directories) => cache_directories
             .iter()
             .flat_map(|dir| {
-                let sanitized_dir = dir.replace('~', "/root");
-                let compressed_file_name = sanitized_dir.replace('/', "%2f");
+                let sanitized_dir =dir.replace('~', "/root");
+                let compressed_file_name =  format!("{}.tar.nixpacks-{}", sanitized_dir.replace('/', "%2f"), unique_value_per_build);
                 vec![
-                    format!("if [ -d \"{}\" ]; then tar -cf {}.tar {}; fi", sanitized_dir, compressed_file_name, sanitized_dir),
+                    format!("if [ -d \"{}\" ]; then tar -cf {} {}; fi", sanitized_dir, compressed_file_name, sanitized_dir),
                     format!(
-                        "if [ -d \"{}\" ]; then curl -v -F upload=@{}.tar {} --header \"t:{}\" --retry 3 --retry-all-errors; fi ",
+                        "if [ -d \"{}\" ]; then curl -v -T {} {} --header \"t:{}\" --retry 3 --retry-all-errors --fail; fi",
                         sanitized_dir, compressed_file_name, server_url, file_server_access_token,
                     ),
                     format!(
@@ -58,26 +67,39 @@ struct CachedDirInfo {
 pub fn get_copy_in_cached_dirs_command(
     output_dir: &OutputDir,
     cache_directories: &Option<Vec<String>>,
+    incremental_cache_config: &IncrementalCacheConfig,
 ) -> Vec<String> {
     match cache_directories {
         Some(cache_directories) => cache_directories
             .iter()
             .filter_map(|dir| {
                 let target_cache_dir = dir.replace('~', "/root");
-
                 let compressed_file_name = format!("{}.tar", target_cache_dir.replace('/', "%2f"));
 
-                let source_file_path = output_dir
-                    .get_relative_path("incremental-cache")
+                let source_file_path = incremental_cache_config
+                    .downloads_dir
                     .join(PathBuf::from(&compressed_file_name));
 
-                match fs::metadata(output_dir.root.join(PathBuf::from(&source_file_path))) {
-                    Ok(_) => Some(CachedDirInfo {
-                        target_cache_dir,
-                        compressed_file_name,
-                        source_file_path: source_file_path.display().to_string(),
-                    }),
-                    _ => None,
+                match fs::metadata(&source_file_path) {
+                    Ok(_) => {
+                        let source_file_relative_path = output_dir.get_relative_path(
+                            incremental_cache_config
+                                .get_downloads_relative_path(&compressed_file_name),
+                        );
+
+                        Some(CachedDirInfo {
+                            target_cache_dir,
+                            compressed_file_name,
+                            source_file_path: source_file_relative_path.display().to_string(),
+                        })
+                    }
+                    _ => {
+                        println!(
+                            "FILE NOT FOUNDDDDD: {}",
+                            &source_file_path.display().to_string()
+                        );
+                        None
+                    }
                 }
             })
             .flat_map(|info| {
