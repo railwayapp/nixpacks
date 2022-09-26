@@ -40,7 +40,10 @@ impl FileServer {
     pub fn start(self) {
         thread::spawn(move || {
             let server_future = FileServer::run_app(self.data);
-            rt::System::new().block_on(server_future);
+            match rt::System::new().block_on(server_future) {
+                Err(e) => println!("File server error: {}", e),
+                _ => ()
+            }
         });
     }
 
@@ -50,10 +53,10 @@ impl FileServer {
             ActixApp::new()
                 .app_data(save_to_data.clone())
                 .wrap(middleware::Logger::default())
-                .service(web::resource("/health").route(web::get().to(|| async {
-                    println!("GO TEST RUST");
-                    "Nixpacks HTTP server is up & running!"
-                })))
+                .service(
+                    web::resource("/health")
+                        .route(web::get().to(|| async { "Nixpacks HTTP server is up & running!" })),
+                )
                 .service(
                     web::resource("/upload/{filename}").route(web::put().to(FileServer::upload)),
                 )

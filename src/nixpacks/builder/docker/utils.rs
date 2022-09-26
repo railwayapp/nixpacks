@@ -31,32 +31,40 @@ pub fn get_copy_out_cached_dirs_command(
     cache_directories: &Option<Vec<String>>,
     file_server_access_token: &str,
 ) -> Vec<String> {
+    let dirs = cache_directories.clone().unwrap_or(vec![]);
+    if dirs.len() == 0 {
+        return vec![];
+    }
+
     let unique_value_per_build = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Get time since UNIX epoch")
         .as_millis();
 
-    match cache_directories {
-        Some(cache_directories) => cache_directories
-            .iter()
+    let first_cmd = vec!["tar cvf nixpacks-cached-dirs.tar --files-from /dev/null".to_string()];
+
+    let cmds =  dirs .iter()
             .flat_map(|dir| {
                 let sanitized_dir =dir.replace('~', "/root");
                 let compressed_file_name =  format!("{}.tar.nixpacks-{}", sanitized_dir.replace('/', "%2f"), unique_value_per_build);
                 vec![
-                    format!("if [ -d \"{}\" ]; then tar -cf {} {}; fi", sanitized_dir, compressed_file_name, sanitized_dir),
-                    format!(
-                        "if [ -d \"{}\" ]; then curl -v -T {} {} --header \"t:{}\" --retry 3 --retry-all-errors --fail; fi",
-                        sanitized_dir, compressed_file_name, server_url, file_server_access_token,
-                    ),
+                    format!("if [ -d \"{}\" ]; then tar -cf {} {}; tar -rf nixpacks-cached-dirs.tar  {}; fi", sanitized_dir, compressed_file_name, sanitized_dir, compressed_file_name),                    
                     format!(
                         "if [ -d \"{}\" ]; then rm -rf {}; fi",
                         sanitized_dir,  sanitized_dir
                     ),
                 ]
             })
-            .collect::<Vec<String>>(),
-        _ => vec![],
-    }
+            .collect::<Vec<String>>();
+
+    let last_cmd =  vec![
+        format!(
+            "curl -v -T nixpacks-cached-dirs.tar {} --header \"t:{}\" --retry 3 --retry-all-errors --fail",
+            server_url, file_server_access_token,
+        )
+    ];
+
+    [first_cmd, cmds, last_cmd].concat()
 }
 
 struct CachedDirInfo {
@@ -69,64 +77,60 @@ pub fn get_copy_in_cached_dirs_command(
     cache_directories: &Option<Vec<String>>,
     incremental_cache_config: &IncrementalCacheConfig,
 ) -> Vec<String> {
-    match cache_directories {
-        Some(cache_directories) => cache_directories
-            .iter()
-            .filter_map(|dir| {
-                let target_cache_dir = dir.replace('~', "/root");
-                let compressed_file_name = format!("{}.tar", target_cache_dir.replace('/', "%2f"));
-
-                let source_file_path = incremental_cache_config
-                    .downloads_dir
-                    .join(PathBuf::from(&compressed_file_name));
-
-                match fs::metadata(&source_file_path) {
-                    Ok(_) => {
-                        let source_file_relative_path = output_dir.get_relative_path(
-                            incremental_cache_config
-                                .get_downloads_relative_path(&compressed_file_name),
-                        );
-
-                        Some(CachedDirInfo {
-                            target_cache_dir,
-                            compressed_file_name,
-                            source_file_path: source_file_relative_path.display().to_string(),
-                        })
-                    }
-                    _ => {
-                        println!(
-                            "FILE NOT FOUNDDDDD: {}",
-                            &source_file_path.display().to_string()
-                        );
-                        None
-                    }
-                }
-            })
-            .flat_map(|info| {
-                let path_components_count = info
-                    .target_cache_dir
-                    .split('/')
-                    .into_iter()
-                    .filter(|c| !c.is_empty())
-                    .count();
-
-                vec![
-                    format!(
-                        "COPY {} {}",
-                        info.source_file_path, info.compressed_file_name
-                    ),
-                    format!(
-                        "RUN mkdir -p {}; tar -xf {} -C {} --strip-components {}",
-                        info.target_cache_dir,
-                        info.compressed_file_name,
-                        info.target_cache_dir,
-                        path_components_count
-                    ),
-                ]
-            })
-            .collect::<Vec<String>>(),
-        _ => vec![],
+    let dirs = &cache_directories.clone().unwrap_or(vec![]);
+    if dirs.len() == 0 {
+        return vec![];
     }
+
+    dirs.iter()
+        .filter_map(|dir| {
+            let target_cache_dir = dir.replace('~', "/root");
+            let compressed_file_name = format!("{}.tar", target_cache_dir.replace('/', "%2f"));
+
+            let source_file_path = incremental_cache_config
+                .downloads_dir
+                .join(PathBuf::from(&compressed_file_name));
+
+            match fs::metadata(&source_file_path) {
+                Ok(_) => {
+                    let source_file_relative_path = output_dir.get_relative_path(
+                        incremental_cache_config.get_downloads_relative_path(&compressed_file_name),
+                    );
+
+                    Some(CachedDirInfo {
+                        target_cache_dir,
+                        compressed_file_name,
+                        source_file_path: source_file_relative_path.display().to_string(),
+                    })
+                }
+                _ => {
+                    None
+                }
+            }
+        })
+        .flat_map(|info| {
+            let path_components_count = info
+                .target_cache_dir
+                .split('/')
+                .into_iter()
+                .filter(|c| !c.is_empty())
+                .count();
+
+            vec![
+                format!(
+                    "COPY {} {}",
+                    info.source_file_path, info.compressed_file_name
+                ),
+                format!(
+                    "RUN mkdir -p {}; tar -xf {} -C {} --strip-components {}",
+                    info.target_cache_dir,
+                    info.compressed_file_name,
+                    info.target_cache_dir,
+                    path_components_count
+                ),
+            ]
+        })
+        .collect::<Vec<String>>()
 }
 
 pub fn get_copy_command(files: &[String], app_dir: &str) -> String {

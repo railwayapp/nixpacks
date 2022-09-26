@@ -93,15 +93,20 @@ impl IncrementalCacheConfig {
 }
 
 impl IncrementalCache {
-    pub fn download_files(&self, tag: &str, dirs: &IncrementalCacheConfig) -> Result<bool> {
-        let image_file_path = dirs.image_dir.join("oci-image.tar");
+    pub fn download_files(
+        &self,
+        tag: &str,
+        incremental_cache_config: &IncrementalCacheConfig,
+    ) -> Result<bool> {
+        let image_file_path = incremental_cache_config.image_dir.join("oci-image.tar");
 
         if !self.pull_image(tag)? {
             return Ok(false);
         }
 
         self.save_image(tag, &image_file_path)?;
-        let archives = self.extract_archives(&image_file_path, &dirs.image_dir)?;
+        let archives =
+            self.extract_archives(&image_file_path, &incremental_cache_config.image_dir)?;
 
         for item in archives {
             let filename_parts: Vec<&str> = item.name.split(".tar.nixpacks-").collect();
@@ -110,61 +115,52 @@ impl IncrementalCache {
             }
 
             let filename: &str = filename_parts[0];
-            let to_path = dirs.downloads_dir.join(format!("{}.tar", filename));
+            let to_path = incremental_cache_config
+                .downloads_dir
+                .join(format!("{}.tar", filename));
             fs::copy(item.path, to_path).context("Move tar file to incremental cache")?;
+        }
+
+        if fs::metadata(&incremental_cache_config.image_dir).is_ok() {
+            fs::remove_dir_all(&incremental_cache_config.image_dir)?;
         }
 
         Ok(true)
     }
 
-    fn write_dockerfile(&self, dir_path: &PathBuf) -> Result<PathBuf> {
-        let dockerfile_path = dir_path.join("Dockerfile");
-        let paths = fs::read_dir(&dir_path)
-            .context("Read files at incremental cache dir")?
-            .filter_map(|path| {
-                path.ok()?
-                    .file_name()
-                    .to_str()
-                    .map(|p| format!("COPY {} {}", p, p))
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
+    pub fn create_image(
+        &self,
+        incremental_cache_config: &IncrementalCacheConfig,
+        tag: String,
+    ) -> Result<()> {
+        let tar_file_path = &incremental_cache_config
+            .uploads_dir
+            .join(PathBuf::from("nixpacks-cached-dirs.tar"));
 
-        let dockerfile = format!("FROM scratch\n{}", paths);
-
-        fs::write(dockerfile_path.clone(), dockerfile)
-            .context("Write incremental cache dockerfile")?;
-
-        Ok(dockerfile_path)
-    }
-
-    pub fn create_image(&self, dirs: &IncrementalCacheConfig, tag: String) -> Result<()> {
-        // ADR: writing a Dockerfile with minimal base image > copy tar files to > build the image
-        // Seems way faster than using some Rust crates to compose the OCI image file (1-2 minutes vs ~20 seconds)
-        // The overhead we need to take, is an extra layer to our final image with 5 MB of size. which is not that much compared with the average image size we deal with.
-        let dockerfile_path = self.write_dockerfile(&dirs.uploads_dir)?;
-        let mut docker_build_cmd = Command::new("docker");
-
-        // Enable BuildKit for all builds
-        docker_build_cmd.env("DOCKER_BUILDKIT", "1");
-
-        docker_build_cmd
-            .arg("build")
-            .arg(&dirs.uploads_dir.display().to_string())
-            .arg("-f")
-            .arg(dockerfile_path.display().to_string())
-            .arg("-t")
-            .arg(tag);
-
-        let result = docker_build_cmd
-            .spawn()?
-            .wait()
-            .context("Build incremental cache image")?;
-
-        if !result.success() {
-            bail!("Building incremental cache image failed")
+        if fs::metadata(tar_file_path).is_err() {
+            return Ok(());
         }
 
+        // There are three options to create a filesystem image that contains only tar files
+        // #1 Use a Rust crate to create the image: 30+ seconds in a sample test, Also no clear winner Crate for creating OCI image
+        // #2 Create minimal Dockerfile: 6 seconds in a sample test 
+        // #3 Use Docker import: Provide 3 seconds in a sample test
+        let mut docker_import_cmd = Command::new("docker");
+        docker_import_cmd
+            .arg("import")
+            .arg(&tar_file_path.display().to_string())
+            .arg(&tag);
+
+        let result = docker_import_cmd
+            .spawn()?
+            .wait()
+            .context("Create incremental cache image")?;
+
+        if !result.success() {
+            bail!("Creating incremental cache image failed")
+        }
+
+        println!("Incremental cache image created: {}", &tag);
         Ok(())
     }
 
@@ -242,11 +238,9 @@ impl IncrementalCache {
                                 .to_str()
                                 .map(std::string::ToString::to_string)
                         })
-                        .map(|value| {
-                            IncrementalCacheArchive {
-                                name: value.clone(),
-                                path: extract_to.join(value),
-                            }
+                        .map(|value| IncrementalCacheArchive {
+                            name: value.clone(),
+                            path: extract_to.join(value),
                         })
                         .collect::<Vec<_>>();
 
