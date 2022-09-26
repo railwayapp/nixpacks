@@ -19,7 +19,6 @@ struct NixGroup {
 }
 
 fn group_nix_packages_by_archive(phases: &[Phase]) -> Vec<NixGroup> {
-    // Mapping from nixpkgs archive to (packages, libraries)
     let mut archive_to_packages: BTreeMap<Option<String>, NixGroup> = BTreeMap::new();
 
     let groups = phases
