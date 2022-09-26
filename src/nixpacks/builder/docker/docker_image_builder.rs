@@ -69,11 +69,8 @@ impl ImageBuilder for DockerImageBuilder {
         }
 
         if self.options.incremental_cache_image.is_some() {
-            let file_server = FileServer::new(
-                incremental_cache_config.uploads_dir.clone(),
-                incremental_cache_config.upload_server_access_token.clone(),
-            );
-            file_server.start();
+            let file_server = FileServer {};
+            file_server.start(&incremental_cache_config);
         };
 
         println!("{}", plan.get_build_string()?);
@@ -106,7 +103,7 @@ impl ImageBuilder for DockerImageBuilder {
             if self.options.incremental_cache_image.is_some() && incremental_cache_dirs.is_some() {
                 incremental_cache.create_image(
                     &incremental_cache_config,
-                    self.options.incremental_cache_image.clone().unwrap(),
+                    &self.options.incremental_cache_image.clone().unwrap(),
                 )?;
             }
 

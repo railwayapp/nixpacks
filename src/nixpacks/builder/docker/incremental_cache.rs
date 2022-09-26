@@ -78,9 +78,9 @@ impl IncrementalCacheConfig {
         fs::create_dir_all(&uploads_dir).context("Creating incremental-cache uploads directory")?;
 
         Ok(IncrementalCacheConfig {
-            downloads_dir: downloads_dir,
-            uploads_dir: uploads_dir,
-            image_dir: image_dir,
+            downloads_dir,
+            uploads_dir,
+            image_dir,
             upload_server_access_token: Uuid::new_v4().to_string(),
         })
     }
@@ -110,7 +110,7 @@ impl IncrementalCache {
 
         for item in archives {
             let filename_parts: Vec<&str> = item.name.split(".tar.nixpacks-").collect();
-            if filename_parts.len() < 1 {
+            if filename_parts.is_empty() {
                 continue;
             }
 
@@ -131,7 +131,7 @@ impl IncrementalCache {
     pub fn create_image(
         &self,
         incremental_cache_config: &IncrementalCacheConfig,
-        tag: String,
+        tag: &str,
     ) -> Result<()> {
         let tar_file_path = &incremental_cache_config
             .uploads_dir
@@ -143,7 +143,7 @@ impl IncrementalCache {
 
         // There are three options to create a filesystem image that contains only tar files
         // #1 Use a Rust crate to create the image: 30+ seconds in a sample test, Also no clear winner Crate for creating OCI image
-        // #2 Create minimal Dockerfile: 6 seconds in a sample test 
+        // #2 Create minimal Dockerfile: 6 seconds in a sample test
         // #3 Use Docker import: Provide 3 seconds in a sample test
         let mut docker_import_cmd = Command::new("docker");
         docker_import_cmd
@@ -220,7 +220,7 @@ impl IncrementalCache {
             let mut archives: Vec<IncrementalCacheArchive> = vec![];
 
             for item in value {
-                for layer_name in item.layers.iter() {
+                for layer_name in &item.layers {
                     let tar_file_path = dest_dir.join(layer_name);
                     let extract_to = dest_dir.join(layer_name.replace("/layer.tar", "/layer"));
 

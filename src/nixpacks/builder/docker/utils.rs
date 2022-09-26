@@ -31,8 +31,8 @@ pub fn get_copy_out_cached_dirs_command(
     cache_directories: &Option<Vec<String>>,
     file_server_access_token: &str,
 ) -> Vec<String> {
-    let dirs = cache_directories.clone().unwrap_or(vec![]);
-    if dirs.len() == 0 {
+    let dirs = cache_directories.clone().unwrap_or_default();
+    if dirs.is_empty() {
         return vec![];
     }
 
@@ -77,8 +77,8 @@ pub fn get_copy_in_cached_dirs_command(
     cache_directories: &Option<Vec<String>>,
     incremental_cache_config: &IncrementalCacheConfig,
 ) -> Vec<String> {
-    let dirs = &cache_directories.clone().unwrap_or(vec![]);
-    if dirs.len() == 0 {
+    let dirs = &cache_directories.clone().unwrap_or_default();
+    if dirs.is_empty() {
         return vec![];
     }
 
@@ -103,9 +103,7 @@ pub fn get_copy_in_cached_dirs_command(
                         source_file_path: source_file_relative_path.display().to_string(),
                     })
                 }
-                _ => {
-                    None
-                }
+                _ => None,
             }
         })
         .flat_map(|info| {

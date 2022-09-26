@@ -143,7 +143,7 @@ impl DockerfileGenerator for BuildPlan {
             .into_iter()
             .map(|phase| {
                 let phase_dockerfile = phase
-                    .generate_dockerfile(options, env, output, &incremental_cache_config)
+                    .generate_dockerfile(options, env, output, incremental_cache_config)
                     .context(format!(
                         "Generating Dockerfile for phase {}",
                         phase.get_name()
@@ -178,7 +178,7 @@ impl DockerfileGenerator for BuildPlan {
             .start_phase
             .clone()
             .unwrap_or_default()
-            .generate_dockerfile(options, env, output, &incremental_cache_config)?;
+            .generate_dockerfile(options, env, output, incremental_cache_config)?;
 
         let base_image = plan
             .build_image

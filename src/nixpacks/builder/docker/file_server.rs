@@ -4,18 +4,18 @@ use actix_web::{
     middleware, rt, web, App as ActixApp, Error as ActixError, HttpRequest, HttpResponse,
     HttpServer,
 };
-use futures_util::stream::StreamExt;
-
 use anyhow::Result;
+use futures_util::stream::StreamExt;
+use portpicker::pick_unused_port;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::thread;
 
+use super::incremental_cache::IncrementalCacheConfig;
+
 #[derive(Debug, Clone)]
-pub struct FileServer {
-    data: FileServerData,
-}
+pub struct FileServer {}
 
 #[derive(Debug, Clone)]
 pub struct FileServerData {
@@ -26,23 +26,21 @@ pub struct FileServerData {
 }
 
 impl FileServer {
-    pub fn new(save_to: PathBuf, access_token: String) -> FileServer {
-        FileServer {
-            data: FileServerData {
-                save_to,
-                access_token,
-                host: "0.0.0.0".to_string(),
-                port: 8080,
-            },
-        }
-    }
+    pub fn start(self, incremental_cache_config: &IncrementalCacheConfig) {
+        let port: u16 = pick_unused_port().expect("No ports available");
+        let data = FileServerData {
+            save_to: incremental_cache_config.uploads_dir.clone(),
+            access_token: incremental_cache_config.upload_server_access_token.clone(),
+            host: "0.0.0.0".to_string(),
+            port,
+        };
 
-    pub fn start(self) {
         thread::spawn(move || {
-            let server_future = FileServer::run_app(self.data);
-            match rt::System::new().block_on(server_future) {
-                Err(e) => println!("File server error: {}", e),
-                _ => ()
+            println!("Nixpacks Web server running at {}:{}", data.host, data.port);
+
+            let server_future = FileServer::run_app(data);
+            if let Err(e) = rt::System::new().block_on(server_future) {
+                println!("File server error: {}", e);
             }
         });
     }
@@ -94,25 +92,10 @@ impl FileServer {
 
         let in_path = PathBuf::from(&filepath);
         let mut f: File = web::block(|| File::create(in_path)).await??;
-        let mut counter = 0;
 
         while let Some(chunk) = payload.next().await {
             let data = chunk?;
             f = web::block(move || f.write_all(&data).map(|_| f)).await??;
-
-            counter = counter + 1;
-            // println!("Save chunk count: {}", counter)
-            // let mut byte_stream_field = item?;
-
-            // let filename = byte_stream_field
-            //     .content_disposition()
-            //     .get_filename()
-            //     .ok_or(ParseError::Incomplete)?;
-
-            // while let Some(chunk) = payload.next().await {
-            //     let data = chunk?;
-            //     f = web::block(move || f.write_all(&data).map(|_| f)).await??;
-            // }
         }
         web::block(move || f.flush()).await??;
 
