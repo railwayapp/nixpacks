@@ -480,7 +480,7 @@ mod tests {
                 &Environment::default(),
                 &OutputDir::default(),
                 &IncrementalCacheDirs::default(),
-                &FileServerConfig::default(),
+                Some(FileServerConfig::default()),
             )
             .unwrap();
 
@@ -507,7 +507,7 @@ mod tests {
                 &Environment::default(),
                 &OutputDir::default(),
                 &IncrementalCacheDirs::default(),
-                &FileServerConfig::default(),
+                Some(FileServerConfig::default()),
             )
             .unwrap();
 
