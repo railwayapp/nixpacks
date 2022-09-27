@@ -4,7 +4,7 @@ title: Node
 
 # {% $markdoc.frontmatter.title %}
 
-The Node provider supports NPM, Yarn, Yarn 2, and PNPM.
+The Node provider supports NPM, Yarn, Yarn 2, PNPM and Bun.
 
 ## Environment Variables
 
@@ -36,7 +36,7 @@ If [node-canvas](https://www.npmjs.com/package/canvas) is found in the `package.
 
 ## Install
 
-All dependencies found in `packages.json` are installed with either NPM, Yarn, or PNPM.
+All dependencies found in `packages.json` are installed with either NPM, Yarn, PNPM, or Bun (depending on the lockfile detected).
 
 ## Build
 
@@ -64,3 +64,7 @@ These directories are cached between builds
 - Build: `node_modules/.cache`
 - Build (if NextJS detected): `.next/cache`
 - Build (if its an NX Monorepo): `<outputPathForApp>`
+
+## Bun Support
+
+We support Bun, but due to Bun being in alpha, it is unstable and very experimental.

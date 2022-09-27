@@ -50,3 +50,4 @@ jobs:
           delete-branch: true
           author: ${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>
           branch: ${{ env.BRANCH_NAME }}
+          labels: release/patch
