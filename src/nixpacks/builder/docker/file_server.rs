@@ -10,22 +10,20 @@ use portpicker::pick_unused_port;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::mpsc;
-use std::sync::mpsc::Sender;
 use std::thread;
 
 use super::incremental_cache::IncrementalCacheDirs;
 use uuid::Uuid;
 
-const NIXPACKS_SERVER_HOST: &str = "172.17.0.1";
-const NIXPACKS_SERVER_LISTEN_TO: &str = "0.0.0.0";
+const NIXPACKS_SERVER_GATEWAY_IP: &str = "172.17.0.1";
+const NIXPACKS_SERVER_LISTEN_TO_IP: &str = "0.0.0.0";
 
 #[derive(Debug, Clone)]
 pub struct FileServer {}
 
 #[derive(Debug, Clone, Default)]
 pub struct FileServerConfig {
-    pub host: String,
+    pub listen_to_ip: String,
     pub port: u16,
     pub access_token: String,
     pub upload_url: String,
@@ -39,18 +37,16 @@ impl FileServer {
         let config = FileServerConfig {
             files_dir: incremental_cache_dirs.uploads_dir.clone(),
             access_token: Uuid::new_v4().to_string(),
-            host: NIXPACKS_SERVER_HOST.to_string(),
+            listen_to_ip: NIXPACKS_SERVER_LISTEN_TO_IP.to_string(),
             port,
-            upload_url: format!("http://{}:{}/upload/", NIXPACKS_SERVER_HOST, port),
+            upload_url: format!("http://{}:{}/upload/", NIXPACKS_SERVER_GATEWAY_IP, port),
         };
-
-        let (tx, rx) = mpsc::channel::<bool>();
 
         let server_config = config.clone();
         thread::spawn(move || {
             println!(
-                "Nixpacks Web server running at {}:{}",
-                server_config.host, server_config.port
+                "Nixpacks Web server can receive files at {}",
+                server_config.upload_url
             );
 
             let server_future = FileServer::run_app(server_config);
@@ -88,7 +84,7 @@ impl FileServer {
                     web::resource("/upload/{filename}").route(web::put().to(FileServer::upload)),
                 )
         })
-        .bind((data.host, data.port))?
+        .bind((data.listen_to_ip, data.port))?
         .run();
 
         server.await

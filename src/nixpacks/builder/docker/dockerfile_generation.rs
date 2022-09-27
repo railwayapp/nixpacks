@@ -1,4 +1,7 @@
-use super::{incremental_cache::{IncrementalCacheDirs}, file_server::FileServerConfig, utils, DockerBuilderOptions};
+use super::{
+    file_server::FileServerConfig, incremental_cache::IncrementalCacheDirs, utils,
+    DockerBuilderOptions,
+};
 use crate::nixpacks::{
     app,
     environment::Environment,
@@ -144,7 +147,13 @@ impl DockerfileGenerator for BuildPlan {
             .into_iter()
             .map(|phase| {
                 let phase_dockerfile = phase
-                    .generate_dockerfile(options, env, output, incremental_cache_dirs, file_server_config.clone())
+                    .generate_dockerfile(
+                        options,
+                        env,
+                        output,
+                        incremental_cache_dirs,
+                        file_server_config.clone(),
+                    )
                     .context(format!(
                         "Generating Dockerfile for phase {}",
                         phase.get_name()
@@ -179,7 +188,13 @@ impl DockerfileGenerator for BuildPlan {
             .start_phase
             .clone()
             .unwrap_or_default()
-            .generate_dockerfile(options, env, output, incremental_cache_dirs, file_server_config)?;
+            .generate_dockerfile(
+                options,
+                env,
+                output,
+                incremental_cache_dirs,
+                file_server_config,
+            )?;
 
         let base_image = plan
             .build_image

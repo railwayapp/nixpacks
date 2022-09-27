@@ -1,6 +1,6 @@
 use super::{
-    cache::sanitize_cache_key, dockerfile_generation::OutputDir,
-    incremental_cache::{IncrementalCacheDirs}, file_server::FileServerConfig,
+    cache::sanitize_cache_key, dockerfile_generation::OutputDir, file_server::FileServerConfig,
+    incremental_cache::IncrementalCacheDirs,
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs, path::PathBuf};
@@ -31,7 +31,7 @@ pub fn get_copy_out_cached_dirs_command(
     file_server_config: Option<FileServerConfig>,
 ) -> Vec<String> {
     let container_dirs = cache_directories.clone().unwrap_or_default();
-    if container_dirs.is_empty() || file_server_config.is_none(){
+    if container_dirs.is_empty() || file_server_config.is_none() {
         return vec![];
     }
 
