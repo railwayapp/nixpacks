@@ -461,7 +461,6 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
-                &IncrementalCacheDirs::default(),
                 Some(FileServerConfig::default()),
             )
             .unwrap();
@@ -488,7 +487,6 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
-                &IncrementalCacheDirs::default(),
                 Some(FileServerConfig::default()),
             )
             .unwrap();
