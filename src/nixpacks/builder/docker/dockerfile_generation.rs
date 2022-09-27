@@ -1,6 +1,5 @@
 use super::{
-    file_server::FileServerConfig, incremental_cache::IncrementalCacheDirs, utils,
-    DockerBuilderOptions,
+    file_server::FileServerConfig, incremental_cache::IncrementalCache, utils, DockerBuilderOptions,
 };
 use crate::nixpacks::{
     app,
@@ -84,7 +83,6 @@ pub trait DockerfileGenerator {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
-        incremental_cache_dirs: &IncrementalCacheDirs,
         file_server_config: Option<FileServerConfig>,
     ) -> Result<String>;
     fn write_supporting_files(
@@ -103,7 +101,6 @@ impl DockerfileGenerator for BuildPlan {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
-        incremental_cache_dirs: &IncrementalCacheDirs,
         file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let plan = self;
@@ -147,13 +144,7 @@ impl DockerfileGenerator for BuildPlan {
             .into_iter()
             .map(|phase| {
                 let phase_dockerfile = phase
-                    .generate_dockerfile(
-                        options,
-                        env,
-                        output,
-                        incremental_cache_dirs,
-                        file_server_config.clone(),
-                    )
+                    .generate_dockerfile(options, env, output, file_server_config.clone())
                     .context(format!(
                         "Generating Dockerfile for phase {}",
                         phase.get_name()
@@ -188,13 +179,7 @@ impl DockerfileGenerator for BuildPlan {
             .start_phase
             .clone()
             .unwrap_or_default()
-            .generate_dockerfile(
-                options,
-                env,
-                output,
-                incremental_cache_dirs,
-                file_server_config,
-            )?;
+            .generate_dockerfile(options, env, output, file_server_config)?;
 
         let base_image = plan
             .build_image
@@ -272,7 +257,6 @@ impl DockerfileGenerator for StartPhase {
         _options: &DockerBuilderOptions,
         _env: &Environment,
         _output: &OutputDir,
-        _incremental_cache_dirs: &IncrementalCacheDirs,
         _file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
@@ -322,7 +306,6 @@ impl DockerfileGenerator for Phase {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
-        incremental_cache_dirs: &IncrementalCacheDirs,
         file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let phase = self;
@@ -383,14 +366,13 @@ impl DockerfileGenerator for Phase {
         let phase_copy_cmd = utils::get_copy_command(&phase_files, APP_DIR);
 
         let cmds_str = if options.incremental_cache_image.is_some() {
-            let cach_copy_in_command = utils::get_copy_in_cached_dirs_command(
-                output,
+            let cach_copy_in_command = IncrementalCache::get_copy_to_image_command(
                 &phase.cache_directories,
-                incremental_cache_dirs,
-            )
+                &options.incremental_cache_image.clone().unwrap(),
+            )?
             .join("\n");
 
-            let cache_copy_out_command = utils::get_copy_out_cached_dirs_command(
+            let cache_copy_out_command = IncrementalCache::get_copy_from_image_command(
                 &phase.cache_directories,
                 file_server_config,
             );

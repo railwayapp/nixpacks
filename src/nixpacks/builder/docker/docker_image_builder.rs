@@ -45,19 +45,6 @@ impl ImageBuilder for DockerImageBuilder {
         let incremental_cache = IncrementalCache::default();
         let incremental_cache_dirs = IncrementalCacheDirs::create(&output)?;
 
-        let incremental_cache_archives =
-            if !self.options.no_cache && self.options.incremental_cache_image.is_some() {
-                // download incremental cache files to be included in Dockerfile generation
-                let archives = incremental_cache.download_files(
-                    &self.options.incremental_cache_image.clone().unwrap(),
-                    &incremental_cache_dirs,
-                )?;
-
-                Some(archives)
-            } else {
-                None
-            };
-
         let file_server_config = if self.options.incremental_cache_image.is_some() {
             let file_server = FileServer {};
             let config = file_server.start(&incremental_cache_dirs);
@@ -67,13 +54,7 @@ impl ImageBuilder for DockerImageBuilder {
         };
 
         let dockerfile = plan
-            .generate_dockerfile(
-                &self.options,
-                env,
-                &output,
-                &incremental_cache_dirs,
-                file_server_config,
-            )
+            .generate_dockerfile(&self.options, env, &output, file_server_config)
             .context("Generating Dockerfile for plan")?;
 
         // If printing the Dockerfile, don't write anything to disk
@@ -110,7 +91,7 @@ impl ImageBuilder for DockerImageBuilder {
             println!("  docker run -it {}", name);
 
             if self.options.incremental_cache_image.is_some()
-                && incremental_cache_archives.is_some()
+            // && incremental_cache_archives.is_some()
             {
                 incremental_cache.create_image(
                     &incremental_cache_dirs,
