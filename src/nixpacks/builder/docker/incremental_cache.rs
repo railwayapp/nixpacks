@@ -88,8 +88,6 @@ impl IncrementalCache {
     }
 
     pub fn is_image_exists(image_tag: &str) -> Result<bool> {
-        // docker manifest inspect $IMGNAME:$IMGTAG
-
         let mut docker_inspect_cmd = Command::new("docker");
         docker_inspect_cmd
             .arg("manifest")

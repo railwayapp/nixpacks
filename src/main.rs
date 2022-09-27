@@ -286,8 +286,6 @@ fn main() -> Result<()> {
             let inline_cache = matches.is_present("inline-cache");
             let verbose = matches.is_present("verbose") || envs.contains(&"NIXPACKS_VERBOSE=1");
 
-            // Even if below flags are passed, They won't be considered unless beta features were explicitly enabled
-            // This should help Nixpacks to offer uninterrupted production experience, while beta testers/users are trying things out
             let cache_from = if !no_cache {
                 matches.value_of("cache-from").map(ToString::to_string)
             } else {

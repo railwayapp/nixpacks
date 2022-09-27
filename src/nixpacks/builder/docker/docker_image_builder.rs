@@ -90,9 +90,7 @@ impl ImageBuilder for DockerImageBuilder {
             println!("\nRun:");
             println!("  docker run -it {}", name);
 
-            if self.options.incremental_cache_image.is_some()
-            // && incremental_cache_archives.is_some()
-            {
+            if self.options.incremental_cache_image.is_some() {
                 incremental_cache.create_image(
                     &incremental_cache_dirs,
                     &self.options.incremental_cache_image.clone().unwrap(),
