@@ -44,11 +44,6 @@ impl FileServer {
 
         let server_config = config.clone();
         thread::spawn(move || {
-            println!(
-                "Nixpacks Web server can receive files at {}",
-                server_config.upload_url
-            );
-
             let server_future = FileServer::run_app(server_config);
             if let Err(e) = rt::System::new().block_on(server_future) {
                 println!("File server error: {}", e);

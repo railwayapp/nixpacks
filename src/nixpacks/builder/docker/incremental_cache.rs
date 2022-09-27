@@ -6,6 +6,7 @@ use std::{
 
 use super::{dockerfile_generation::OutputDir, file_server::FileServerConfig};
 use anyhow::{bail, Context, Result};
+use std::process::Stdio;
 
 const INCREMENTAL_CACHE_DIR: &str = "incremental-cache";
 const INCREMENTAL_CACHE_UPLOADS_DIR: &str = "uploads";
@@ -92,7 +93,9 @@ impl IncrementalCache {
         docker_inspect_cmd
             .arg("manifest")
             .arg("inspect")
-            .arg(&image_tag);
+            .arg(&image_tag)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
 
         let result = docker_inspect_cmd
             .spawn()?
@@ -135,20 +138,18 @@ impl IncrementalCache {
         }
 
         let server_config = file_server_config.unwrap();
-        container_dirs .iter()
+        container_dirs
+            .iter()
             .flat_map(|dir| {
-                let sanitized_dir =dir.replace('~', "/root");
-                let compressed_file_name =  format!("{}.tar", sanitized_dir.replace('/', "%2f"));
+                let sanitized_dir = dir.replace('~', "/root");
+                let compressed_file_name = format!("{}.tar", sanitized_dir.replace('/', "%2f"));
                 vec![
-                    format!("if [ ! -d \"{sanitized_dir}\" ]; then make -p \"{sanitized_dir}\"; fi; tar -cf {compressed_file_name} {sanitized_dir};"),                    
+                    format!("tar -cf {compressed_file_name} {sanitized_dir};"),
                     format!(
                         "curl -v -T {} {} --header \"t:{}\" --retry 3 --retry-all-errors --fail",
                         compressed_file_name, server_config.upload_url, server_config.access_token,
                     ),
-                    format!(
-                        "rm -rf {}",
-                        sanitized_dir
-                    ),
+                    format!("rm -rf {}", sanitized_dir),
                 ]
             })
             .collect::<Vec<String>>()
