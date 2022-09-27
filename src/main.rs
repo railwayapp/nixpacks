@@ -119,12 +119,6 @@ fn main() -> Result<()> {
                         .help("Disable building with the cache"),
                 )
                 .arg(
-                    Arg::new("file-server-url")
-                        .long("file-server-url")
-                        .help("URL of file server to send tar archives of cached directions to")
-                        .takes_value(true),
-                )
-                .arg(
                     Arg::new("incremental-cache-image")
                         .long("incremental-cache-image")
                         .help("Image to hold the cached directories between builds.")
@@ -304,8 +298,6 @@ fn main() -> Result<()> {
                 .value_of("incremental-cache-image")
                 .map(ToString::to_string);
 
-            let file_server_url = matches.value_of("file-server-url").map(ToString::to_string);
-
             // Default to absolute `path` of the source that is being built as the cache-key if not disabled
             if !no_cache && cache_key.is_none() {
                 cache_key = get_default_cache_key(path)?;
@@ -345,7 +337,6 @@ fn main() -> Result<()> {
                 no_error_without_start,
                 incremental_cache_image,
                 verbose,
-                file_server_url,
             };
 
             create_docker_image(path, envs, &options, build_options)?;

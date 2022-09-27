@@ -1,6 +1,6 @@
 use super::{
     cache::sanitize_cache_key, dockerfile_generation::OutputDir,
-    incremental_cache::IncrementalCacheConfig,
+    incremental_cache::{IncrementalCacheDirs}, file_server::FileServerConfig,
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs, path::PathBuf};
@@ -27,15 +27,15 @@ pub fn get_cache_mount(
 }
 
 pub fn get_copy_out_cached_dirs_command(
-    server_url: &str,
     cache_directories: &Option<Vec<String>>,
-    file_server_access_token: &str,
+    file_server_config: Option<FileServerConfig>,
 ) -> Vec<String> {
-    let dirs = cache_directories.clone().unwrap_or_default();
-    if dirs.is_empty() {
+    let container_dirs = cache_directories.clone().unwrap_or_default();
+    if container_dirs.is_empty() || file_server_config.is_none(){
         return vec![];
     }
 
+    let server_config = file_server_config.unwrap();
     let unique_value_per_build = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Get time since UNIX epoch")
@@ -43,7 +43,7 @@ pub fn get_copy_out_cached_dirs_command(
 
     let first_cmd = vec!["tar cvf nixpacks-cached-dirs.tar --files-from /dev/null".to_string()];
 
-    let cmds =  dirs .iter()
+    let cmds =  container_dirs .iter()
             .flat_map(|dir| {
                 let sanitized_dir =dir.replace('~', "/root");
                 let compressed_file_name =  format!("{}.tar.nixpacks-{}", sanitized_dir.replace('/', "%2f"), unique_value_per_build);
@@ -60,7 +60,7 @@ pub fn get_copy_out_cached_dirs_command(
     let last_cmd =  vec![
         format!(
             "curl -v -T nixpacks-cached-dirs.tar {} --header \"t:{}\" --retry 3 --retry-all-errors --fail",
-            server_url, file_server_access_token,
+            server_config.upload_url, server_config.access_token,
         )
     ];
 
@@ -75,7 +75,7 @@ struct CachedDirInfo {
 pub fn get_copy_in_cached_dirs_command(
     output_dir: &OutputDir,
     cache_directories: &Option<Vec<String>>,
-    incremental_cache_config: &IncrementalCacheConfig,
+    incremental_cache_dirs: &IncrementalCacheDirs,
 ) -> Vec<String> {
     let dirs = &cache_directories.clone().unwrap_or_default();
     if dirs.is_empty() {
@@ -87,14 +87,14 @@ pub fn get_copy_in_cached_dirs_command(
             let target_cache_dir = dir.replace('~', "/root");
             let compressed_file_name = format!("{}.tar", target_cache_dir.replace('/', "%2f"));
 
-            let source_file_path = incremental_cache_config
+            let source_file_path = incremental_cache_dirs
                 .downloads_dir
                 .join(PathBuf::from(&compressed_file_name));
 
             match fs::metadata(&source_file_path) {
                 Ok(_) => {
                     let source_file_relative_path = output_dir.get_relative_path(
-                        incremental_cache_config.get_downloads_relative_path(&compressed_file_name),
+                        incremental_cache_dirs.get_downloads_relative_path(&compressed_file_name),
                     );
 
                     Some(CachedDirInfo {

@@ -1,4 +1,4 @@
-use super::{incremental_cache::IncrementalCacheConfig, utils, DockerBuilderOptions};
+use super::{incremental_cache::{IncrementalCacheDirs}, file_server::FileServerConfig, utils, DockerBuilderOptions};
 use crate::nixpacks::{
     app,
     environment::Environment,
@@ -19,7 +19,6 @@ use std::{
 };
 
 const NIXPACKS_OUTPUT_DIR: &str = ".nixpacks";
-const NIXPACKS_DEFAULT_FILE_UPLOAD_ENDPOINT: &str = "http://172.17.0.1:8080/upload/";
 pub const APP_DIR: &str = "/app/";
 
 #[derive(Debug, Clone)]
@@ -82,7 +81,8 @@ pub trait DockerfileGenerator {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
-        incremental_cache_config: &IncrementalCacheConfig,
+        incremental_cache_dirs: &IncrementalCacheDirs,
+        file_server_config: Option<FileServerConfig>,
     ) -> Result<String>;
     fn write_supporting_files(
         &self,
@@ -100,7 +100,8 @@ impl DockerfileGenerator for BuildPlan {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
-        incremental_cache_config: &IncrementalCacheConfig,
+        incremental_cache_dirs: &IncrementalCacheDirs,
+        file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let plan = self;
 
@@ -143,7 +144,7 @@ impl DockerfileGenerator for BuildPlan {
             .into_iter()
             .map(|phase| {
                 let phase_dockerfile = phase
-                    .generate_dockerfile(options, env, output, incremental_cache_config)
+                    .generate_dockerfile(options, env, output, incremental_cache_dirs, file_server_config.clone())
                     .context(format!(
                         "Generating Dockerfile for phase {}",
                         phase.get_name()
@@ -178,7 +179,7 @@ impl DockerfileGenerator for BuildPlan {
             .start_phase
             .clone()
             .unwrap_or_default()
-            .generate_dockerfile(options, env, output, incremental_cache_config)?;
+            .generate_dockerfile(options, env, output, incremental_cache_dirs, file_server_config)?;
 
         let base_image = plan
             .build_image
@@ -256,7 +257,8 @@ impl DockerfileGenerator for StartPhase {
         _options: &DockerBuilderOptions,
         _env: &Environment,
         _output: &OutputDir,
-        _incremental_cache_config: &IncrementalCacheConfig,
+        _incremental_cache_dirs: &IncrementalCacheDirs,
+        _file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
             Some(cmd) => utils::get_exec_command(cmd),
@@ -305,7 +307,8 @@ impl DockerfileGenerator for Phase {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
-        incremental_cache_config: &IncrementalCacheConfig,
+        incremental_cache_dirs: &IncrementalCacheDirs,
+        file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let phase = self;
 
@@ -368,19 +371,13 @@ impl DockerfileGenerator for Phase {
             let cach_copy_in_command = utils::get_copy_in_cached_dirs_command(
                 output,
                 &phase.cache_directories,
-                incremental_cache_config,
+                incremental_cache_dirs,
             )
             .join("\n");
 
-            let upload_url = options
-                .file_server_url
-                .clone()
-                .unwrap_or_else(|| NIXPACKS_DEFAULT_FILE_UPLOAD_ENDPOINT.to_string());
-
             let cache_copy_out_command = utils::get_copy_out_cached_dirs_command(
-                &upload_url,
                 &phase.cache_directories,
-                &incremental_cache_config.upload_server_access_token,
+                file_server_config,
             );
 
             let run_commands = [
@@ -467,7 +464,8 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
-                "",
+                &IncrementalCacheDirs::default(),
+                &FileServerConfig::default(),
             )
             .unwrap();
 
@@ -493,7 +491,8 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
-                "",
+                &IncrementalCacheDirs::default(),
+                &FileServerConfig::default(),
             )
             .unwrap();
 

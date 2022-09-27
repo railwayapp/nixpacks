@@ -10,46 +10,75 @@ use portpicker::pick_unused_port;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+use std::sync::mpsc;
+use std::sync::mpsc::Sender;
 use std::thread;
 
-use super::incremental_cache::IncrementalCacheConfig;
+use super::incremental_cache::IncrementalCacheDirs;
+use uuid::Uuid;
+
+const NIXPACKS_SERVER_HOST: &str = "172.17.0.1";
+const NIXPACKS_SERVER_LISTEN_TO: &str = "0.0.0.0";
 
 #[derive(Debug, Clone)]
 pub struct FileServer {}
 
-#[derive(Debug, Clone)]
-pub struct FileServerData {
-    save_to: PathBuf,
-    access_token: String,
-    host: String,
-    port: u16,
+#[derive(Debug, Clone, Default)]
+pub struct FileServerConfig {
+    pub host: String,
+    pub port: u16,
+    pub access_token: String,
+    pub upload_url: String,
+    pub files_dir: PathBuf,
 }
 
 impl FileServer {
-    pub fn start(self, incremental_cache_config: &IncrementalCacheConfig) {
-        let port: u16 = pick_unused_port().expect("No ports available");
-        let data = FileServerData {
-            save_to: incremental_cache_config.uploads_dir.clone(),
-            access_token: incremental_cache_config.upload_server_access_token.clone(),
-            host: "0.0.0.0".to_string(),
+    pub fn start(self, incremental_cache_dirs: &IncrementalCacheDirs) -> FileServerConfig {
+        let port = self.get_free_port();
+
+        let config = FileServerConfig {
+            files_dir: incremental_cache_dirs.uploads_dir.clone(),
+            access_token: Uuid::new_v4().to_string(),
+            host: NIXPACKS_SERVER_HOST.to_string(),
             port,
+            upload_url: format!("http://{}:{}/upload/", NIXPACKS_SERVER_HOST, port),
         };
 
-        thread::spawn(move || {
-            println!("Nixpacks Web server running at {}:{}", data.host, data.port);
+        let (tx, rx) = mpsc::channel::<bool>();
 
-            let server_future = FileServer::run_app(data);
+        let server_config = config.clone();
+        thread::spawn(move || {
+            println!(
+                "Nixpacks Web server running at {}:{}",
+                server_config.host, server_config.port
+            );
+
+            let server_future = FileServer::run_app(server_config);
             if let Err(e) = rt::System::new().block_on(server_future) {
                 println!("File server error: {}", e);
             }
         });
+
+        config
     }
 
-    async fn run_app(data: FileServerData) -> std::io::Result<()> {
-        let save_to_data = web::Data::new(data.clone());
+    fn get_free_port(&self) -> u16 {
+        for _ in 1..3 {
+            // try 2 times
+            if let Some(port) = pick_unused_port() {
+                return port;
+            }
+        }
+
+        // last try to get free port then fail if no ports available
+        pick_unused_port().expect("No ports available")
+    }
+
+    async fn run_app(data: FileServerConfig) -> std::io::Result<()> {
+        let server_config = web::Data::new(data.clone());
         let server = HttpServer::new(move || {
             ActixApp::new()
-                .app_data(save_to_data.clone())
+                .app_data(server_config.clone())
                 .wrap(middleware::Logger::default())
                 .service(
                     web::resource("/health")
@@ -81,14 +110,14 @@ impl FileServer {
         mut payload: web::Payload,
         path: web::Path<String>,
         req: HttpRequest,
-        data: web::Data<FileServerData>,
+        data: web::Data<FileServerConfig>,
     ) -> Result<HttpResponse, ActixError> {
         if !FileServer::has_valid_access_token(req.headers().get("t"), &data.access_token) {
             return Ok(HttpResponse::Unauthorized().into());
         }
 
         let filename = path.into_inner();
-        let filepath = data.save_to.join(sanitize_filename::sanitize(&filename));
+        let filepath = data.files_dir.join(sanitize_filename::sanitize(&filename));
 
         let in_path = PathBuf::from(&filepath);
         let mut f: File = web::block(|| File::create(in_path)).await??;

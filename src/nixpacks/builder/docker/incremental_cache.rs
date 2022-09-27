@@ -8,7 +8,6 @@ use super::dockerfile_generation::OutputDir;
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use tar::Archive;
-use uuid::Uuid;
 
 const INCREMENTAL_CACHE_DIR: &str = "incremental-cache";
 const INCREMENTAL_CACHE_DOWNLOADS_DIR: &str = "downloads";
@@ -29,15 +28,15 @@ struct IncrementalCacheArchive {
     path: PathBuf,
 }
 
-pub struct IncrementalCacheConfig {
+#[derive(Default)]
+pub struct IncrementalCacheDirs {
     pub downloads_dir: PathBuf,
     pub uploads_dir: PathBuf,
     pub image_dir: PathBuf,
-    pub upload_server_access_token: String,
 }
 
-impl IncrementalCacheConfig {
-    pub fn create(out_dir: &OutputDir) -> Result<IncrementalCacheConfig> {
+impl IncrementalCacheDirs {
+    pub fn create(out_dir: &OutputDir) -> Result<IncrementalCacheDirs> {
         let incremental_cache_root = out_dir.get_absolute_path(INCREMENTAL_CACHE_DIR);
 
         if fs::metadata(&incremental_cache_root)
@@ -77,11 +76,10 @@ impl IncrementalCacheConfig {
             .context("Creating incremental-cache downloads directory")?;
         fs::create_dir_all(&uploads_dir).context("Creating incremental-cache uploads directory")?;
 
-        Ok(IncrementalCacheConfig {
+        Ok(IncrementalCacheDirs {
             downloads_dir,
             uploads_dir,
             image_dir,
-            upload_server_access_token: Uuid::new_v4().to_string(),
         })
     }
 
@@ -96,9 +94,9 @@ impl IncrementalCache {
     pub fn download_files(
         &self,
         tag: &str,
-        incremental_cache_config: &IncrementalCacheConfig,
+        incremental_cache_dirs: &IncrementalCacheDirs,
     ) -> Result<bool> {
-        let image_file_path = incremental_cache_config.image_dir.join("oci-image.tar");
+        let image_file_path = incremental_cache_dirs.image_dir.join("oci-image.tar");
 
         if !self.pull_image(tag)? {
             return Ok(false);
@@ -106,7 +104,7 @@ impl IncrementalCache {
 
         self.save_image(tag, &image_file_path)?;
         let archives =
-            self.extract_archives(&image_file_path, &incremental_cache_config.image_dir)?;
+            self.extract_archives(&image_file_path, &incremental_cache_dirs.image_dir)?;
 
         for item in archives {
             let filename_parts: Vec<&str> = item.name.split(".tar.nixpacks-").collect();
@@ -115,14 +113,14 @@ impl IncrementalCache {
             }
 
             let filename: &str = filename_parts[0];
-            let to_path = incremental_cache_config
+            let to_path = incremental_cache_dirs
                 .downloads_dir
                 .join(format!("{}.tar", filename));
             fs::copy(item.path, to_path).context("Move tar file to incremental cache")?;
         }
 
-        if fs::metadata(&incremental_cache_config.image_dir).is_ok() {
-            fs::remove_dir_all(&incremental_cache_config.image_dir)?;
+        if fs::metadata(&incremental_cache_dirs.image_dir).is_ok() {
+            fs::remove_dir_all(&incremental_cache_dirs.image_dir)?;
         }
 
         Ok(true)
@@ -130,10 +128,10 @@ impl IncrementalCache {
 
     pub fn create_image(
         &self,
-        incremental_cache_config: &IncrementalCacheConfig,
+        incremental_cache_dirs: &IncrementalCacheDirs,
         tag: &str,
     ) -> Result<()> {
-        let tar_file_path = &incremental_cache_config
+        let tar_file_path = &incremental_cache_dirs
             .uploads_dir
             .join(PathBuf::from("nixpacks-cached-dirs.tar"));
 
