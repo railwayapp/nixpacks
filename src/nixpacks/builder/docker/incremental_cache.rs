@@ -118,9 +118,17 @@ impl IncrementalCache {
             .iter()
             .flat_map(|dir| {
                 let target_cache_dir = dir.replace('~', "/root");
+                let target_cache_dir_optional = target_cache_dir
+                    .split('/')
+                    .into_iter()
+                    .filter(|c| !c.is_empty())
+                    .map(|c| format!("{}?", c))
+                    .collect::<Vec<_>>()
+                    .join("/");
+
                 vec![format!(
                     "COPY --from={} {} {}",
-                    incremental_cahge_image, target_cache_dir, target_cache_dir
+                    incremental_cahge_image, target_cache_dir_optional, target_cache_dir
                 )]
             })
             .collect::<Vec<String>>();
@@ -144,12 +152,12 @@ impl IncrementalCache {
                 let sanitized_dir = dir.replace('~', "/root");
                 let compressed_file_name = format!("{}.tar", sanitized_dir.replace('/', "%2f"));
                 vec![
-                    format!("tar -cf {compressed_file_name} {sanitized_dir};"),
+                    format!("if [ -d \"{sanitized_dir}\" ]; then tar -cf {compressed_file_name} {sanitized_dir}; fi;"),
                     format!(
-                        "curl -v -T {} {} --header \"t:{}\" --retry 3 --retry-all-errors --fail",
+                        "if [ -d \"{sanitized_dir}\" ] ; then curl -v -T {} {} --header \"t:{}\" --retry 3 --retry-all-errors; fi;",
                         compressed_file_name, server_config.upload_url, server_config.access_token,
                     ),
-                    format!("rm -rf {}", sanitized_dir),
+                    format!("if [ -d \"{sanitized_dir}\" ]; then rm -rf {}; fi", sanitized_dir),
                 ]
             })
             .collect::<Vec<String>>()
