@@ -155,7 +155,7 @@ impl NodeProvider {
                 Ok(Some(format!("{} run build", pkg_manager)))
             } else {
                 Ok(None)
-            }
+            };
         }
 
         if NodeProvider::has_script(app, "build")? {
@@ -169,11 +169,7 @@ impl NodeProvider {
     pub fn get_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
         let dlx = NodeProvider::get_package_manager_dlx_command(app);
         let pkg_manager = NodeProvider::get_package_manager(app);
-        let executor = if pkg_manager == "bun".to_string() {
-            "bun"
-        } else {
-            "node"
-        };
+        let executor = if pkg_manager == *"bun" { "bun" } else { "node" };
         if Nx::is_nx_monorepo(app, env) {
             if let Some(nx_start_cmd) = Nx::get_nx_start_cmd(app, env)? {
                 return Ok(Some(nx_start_cmd));
@@ -193,7 +189,6 @@ impl NodeProvider {
             }
             return Ok(Some(format!("{} turbo run start", dlx)));
         }
-
 
         let package_manager = NodeProvider::get_package_manager(app);
         if NodeProvider::has_script(app, "start")? {
