@@ -216,12 +216,10 @@ impl RubyProvider {
         Ok(false)
     }
 
-    fn uses_gem_dep(&self, app: &App, dep: &str) -> bool {
-        if app.includes_file("Gemfile") {
-            let gemfile = app.read_file("Gemfile").unwrap_or_default();
-            return gemfile.contains(&dep);
-        }
-        false
+    fn uses_gem_dep(&self, app: &App, dependency: &str) -> bool {
+        ["Gemfile", "Gemfile.lock"]
+            .iter()
+            .any(|file| app.read_file(file).unwrap_or_default().contains(dependency))
     }
 }
 
