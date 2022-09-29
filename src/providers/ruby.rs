@@ -91,6 +91,10 @@ impl RubyProvider {
         install.add_path(format!("/usr/local/rvm/gems/{}/bin", ruby_version));
         install.add_path(format!("/usr/local/rvm/gems/{}@global/bin", ruby_version));
 
+        if self.uses_gem_dep(app, "charlock_holmes") {
+            install.add_apt_pkgs(vec![String::from("libicu-dev")]);
+        }
+
         Ok(Some(install))
     }
 
@@ -210,6 +214,14 @@ impl RubyProvider {
             return Ok(gemfile.contains("mysql"));
         }
         Ok(false)
+    }
+
+    fn uses_gem_dep(&self, app: &App, dep: &str) -> bool {
+        if app.includes_file("Gemfile") {
+            let gemfile = app.read_file("Gemfile").unwrap_or_default();
+            return gemfile.contains(&dep);
+        }
+        false
     }
 }
 
