@@ -84,7 +84,8 @@ impl CobolProvider {
     fn find_first_file(app: &App, pattern: &str) -> Option<PathBuf> {
         app.find_files(pattern)
             .unwrap_or_default()
-            .first().map(|absolute_path| app.strip_source_path(absolute_path).unwrap_or_default())
+            .first()
+            .map(|absolute_path| app.strip_source_path(absolute_path).unwrap_or_default())
             .and_then(|relative_path| CobolProvider::normalized_path(&relative_path))
     }
 
