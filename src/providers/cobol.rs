@@ -43,7 +43,7 @@ impl Provider for CobolProvider {
 
         let file_name = app_path
             .file_stem()
-            .and_then(|stem| stem.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or_default();
 
         let mut build = Phase::build(Some(format!(
@@ -71,10 +71,10 @@ impl CobolProvider {
             }
         }
 
-        if let Some(path) = CobolProvider::find_first_file(&app, "*index.cbl") {
+        if let Some(path) = CobolProvider::find_first_file(app, "*index.cbl") {
             return path;
         }
-        if let Some(path) = CobolProvider::find_first_file(&app, "*.cbl") {
+        if let Some(path) = CobolProvider::find_first_file(app, "*.cbl") {
             return path;
         }
 
@@ -84,10 +84,7 @@ impl CobolProvider {
     fn find_first_file(app: &App, pattern: &str) -> Option<PathBuf> {
         app.find_files(pattern)
             .unwrap_or_default()
-            .first()
-            .and_then(|absolute_path| {
-                Some(app.strip_source_path(&absolute_path).unwrap_or_default())
-            })
+            .first().map(|absolute_path| app.strip_source_path(absolute_path).unwrap_or_default())
             .and_then(|relative_path| CobolProvider::normalized_path(&relative_path))
     }
 
