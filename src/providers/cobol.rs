@@ -63,18 +63,27 @@ impl Provider for CobolProvider {
 
 impl CobolProvider {
     fn get_app_path(&self, app: &App, environment: &Environment) -> PathBuf {
-        if let Some(app_name) = environment.get_config_variable(COBOL_APP_NAME) {
-            if let Ok(matches) = app.find_files(&format!("*{}.cbl", &app_name)) {
-                if let Some(path) = matches.first() {
-                    if let Ok(relative_path) = app.strip_source_path(path) {
-                        if let Some(normalized_path) =
-                            CobolProvider::normalized_path(&relative_path)
-                        {
-                            return normalized_path;
-                        }
-                    }
-                };
-            }
+        if let Some(app_path) = environment
+            .get_config_variable(COBOL_APP_NAME)
+            .and_then(|app_name| {
+                Some(
+                    app.find_files(&format!("*{}.cbl", &app_name))
+                        .unwrap_or_default(),
+                )
+            })
+            .and_then(|matches| {
+                if let Some(matched) = matches.first() {
+                    Some(matched.clone())
+                } else {
+                    None
+                }
+            })
+            .and_then(|absolute_path| {
+                Some(app.strip_source_path(&absolute_path).unwrap_or_default())
+            })
+            .and_then(|relative_path| CobolProvider::normalized_path(&relative_path))
+        {
+            return app_path;
         }
 
         if let Ok(matches) = app.find_files("*index.cbl") {
