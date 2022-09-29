@@ -55,7 +55,7 @@ The `"..."` represents a hole that will be populated by the values from plan tha
 The image to use as the base when building the application.
 
 ```toml
-build_image = 'ghcr.io/railwayapp/nixpacks:latest'
+buildImage = 'ghcr.io/railwayapp/nixpacks:latest'
 ```
 
 ## Variables

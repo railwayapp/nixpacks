@@ -62,6 +62,7 @@ fn stop_and_remove_container(name: String) {
     remove_containers(&name);
 }
 
+#[derive(Debug, Clone)]
 struct Config {
     environment_variables: EnvironmentVariables,
     network: Option<String>,
@@ -232,8 +233,15 @@ fn run_postgres() -> Container {
                 ("PGPORT".to_string(), port.to_string()),
                 ("PGUSER".to_string(), "postgres".to_string()),
                 ("PGDATABASE".to_string(), "postgres".to_string()),
-                ("PGPASSWORD".to_string(), password),
-                ("PGHOST".to_string(), container_name),
+                ("PGPASSWORD".to_string(), password.clone()),
+                ("PGHOST".to_string(), container_name.clone()),
+                (
+                    "DATABASE_URL".to_string(),
+                    format!(
+                        "postgresql://postgres:{}@{}:{}/postgres",
+                        password, container_name, port
+                    ),
+                ),
             ]),
             network: None,
         }),
@@ -369,6 +377,16 @@ fn test_node_nx_start_command() {
 }
 
 #[test]
+fn test_node_nx_no_options() {
+    let name = build_with_build_time_env_vars(
+        "./examples/node-nx",
+        vec!["NIXPACKS_NX_APP_NAME=no-options"],
+    );
+
+    assert!(run_image(&name, None).contains("fake start command started!"));
+}
+
+#[test]
 fn test_node_nx_start_command_production() {
     let name = build_with_build_time_env_vars(
         "./examples/node-nx",
@@ -408,6 +426,38 @@ fn test_node_canvas() {
     let name = simple_build("./examples/node-canvas");
     let output = run_image(&name, None);
     assert!(output.contains("Hello from Node canvas"));
+}
+
+#[test]
+fn test_prisma_postgres() {
+    // Create the network
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    // Create the postgres instance
+    let c = run_postgres();
+    let container_name = c.name.clone();
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    // Build the Django example
+    let name = simple_build("./examples/node-prisma-postgres");
+
+    // Run the Rails example on the attached network
+    let output = run_image(
+        &name,
+        Some(Config {
+            environment_variables: c.config.unwrap().environment_variables,
+            network: Some(network_name.clone()),
+        }),
+    );
+
+    // Cleanup containers and networks
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
+
+    assert!(output.contains("My post content"));
 }
 
 #[test]

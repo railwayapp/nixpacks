@@ -30,7 +30,11 @@
       "executor": "nx:run-commands",
       "options": {
         "outputPath": "dist/apps/start-command",
-        "commands": [{ "command": "node dist/apps/start-command/main.js" }]
+        "commands": [
+          {
+            "command": "node dist/apps/start-command/main.js"
+          }
+        ]
       }
     },
     "serve": {
