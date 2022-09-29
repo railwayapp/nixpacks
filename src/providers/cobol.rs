@@ -63,50 +63,32 @@ impl Provider for CobolProvider {
 
 impl CobolProvider {
     fn get_app_path(&self, app: &App, environment: &Environment) -> PathBuf {
-        if let Some(app_path) = environment
-            .get_config_variable(COBOL_APP_NAME)
-            .and_then(|app_name| {
-                Some(
-                    app.find_files(&format!("*{}.cbl", &app_name))
-                        .unwrap_or_default(),
-                )
-            })
-            .and_then(|matches| {
-                if let Some(matched) = matches.first() {
-                    Some(matched.clone())
-                } else {
-                    None
-                }
-            })
+        if let Some(app_name) = environment.get_config_variable(COBOL_APP_NAME) {
+            if let Some(file_path) =
+                CobolProvider::find_first_file(app, &format!("*{}.cbl", &app_name))
+            {
+                return file_path;
+            }
+        }
+
+        if let Some(path) = CobolProvider::find_first_file(&app, "*index.cbl") {
+            return path;
+        }
+        if let Some(path) = CobolProvider::find_first_file(&app, "*.cbl") {
+            return path;
+        }
+
+        PathBuf::from("./")
+    }
+
+    fn find_first_file(app: &App, pattern: &str) -> Option<PathBuf> {
+        app.find_files(pattern)
+            .unwrap_or_default()
+            .first()
             .and_then(|absolute_path| {
                 Some(app.strip_source_path(&absolute_path).unwrap_or_default())
             })
             .and_then(|relative_path| CobolProvider::normalized_path(&relative_path))
-        {
-            return app_path;
-        }
-
-        if let Ok(matches) = app.find_files("*index.cbl") {
-            if let Some(first) = matches.first() {
-                if let Ok(relative_path) = app.strip_source_path(first) {
-                    if let Some(normalized_path) = CobolProvider::normalized_path(&relative_path) {
-                        return normalized_path;
-                    }
-                }
-            }
-        }
-
-        if let Ok(matches) = app.find_files("*.cbl") {
-            if let Some(first) = matches.first() {
-                if let Ok(relative_path) = app.strip_source_path(first) {
-                    if let Some(normalized_path) = CobolProvider::normalized_path(&relative_path) {
-                        return normalized_path;
-                    }
-                }
-            }
-        }
-
-        PathBuf::from("./")
     }
 
     fn normalized_path(path: &PathBuf) -> Option<PathBuf> {
