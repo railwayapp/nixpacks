@@ -4,4 +4,5 @@ updates:
   directory: "/"
   schedule:
     interval: "daily"
-  labels: release/skip
+  labels: 
+    - release/skip
