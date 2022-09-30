@@ -15,7 +15,7 @@ You can easily install additional Nix or Apt packages so that they are available
 ```toml
 [phases.setup]
 nixPkgs = ["...", "ffmpeg"] # Install the ffmpeg package from Nix
-aptPkgs = ["...", "wget"] # Install the wget package with apt-get
+aptPkgs = ["...", "wget"]   # Install the wget package with apt-get
 ```
 
 The `"..."` item in the array is important as it extends the packages that will
