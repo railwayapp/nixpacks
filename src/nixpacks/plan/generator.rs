@@ -13,10 +13,6 @@ use colored::Colorize;
 
 use super::merge::Mergeable;
 
-// This line is automatically updated.
-// Last Modified: 2022-09-12 17:11:54 UTC+0000
-// https://github.com/NixOS/nixpkgs/commit/a0b7e70db7a55088d3de0cc370a59f9fbcc906c3
-pub const NIXPKGS_ARCHIVE: &str = "a0b7e70db7a55088d3de0cc370a59f9fbcc906c3";
 const NIXPACKS_METADATA: &str = "NIXPACKS_METADATA";
 
 #[derive(Clone, Default, Debug)]

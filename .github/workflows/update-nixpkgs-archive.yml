@@ -32,9 +32,9 @@ jobs:
           URL="$(echo $COMMIT_INFO | jq -r ".html_url")"
           DATE="$(date "+%Y-%m-%d %H:%M:%S %Z%z")"
 
-          sed -i "/\/\/ Last Modified:/c\/\/ Last Modified: ${DATE}" src/nixpacks/plan/generator.rs
-          sed -i "/\/\/ https:\/\/github.com\/NixOS\/nixpkgs\/commit/c\/\/ $URL" src/nixpacks/plan/generator.rs
-          sed -i "/const NIXPKGS_ARCHIVE: &str/c\pub const NIXPKGS_ARCHIVE: &str = \"$SHA\";" src/nixpacks/plan/generator.rs
+          sed -i "/\/\/ Last Modified:/c\/\/ Last Modified: ${DATE}" src/nixpacks/nix/mod.rs
+          sed -i "/\/\/ https:\/\/github.com\/NixOS\/nixpkgs\/commit/c\/\/ $URL" src/nixpacks/nix/mod.rs
+          sed -i "/const NIXPKGS_ARCHIVE: &str/c\pub const NIXPKGS_ARCHIVE: &str = \"$SHA\";" src/nixpacks/nix/mod.rs
 
           echo "::set-output name=sha::$SHA"
           echo "::set-output name=url::$URL"
@@ -50,3 +50,4 @@ jobs:
           delete-branch: true
           author: ${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>
           branch: ${{ env.BRANCH_NAME }}
+          labels: release/patch
