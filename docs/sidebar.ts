@@ -12,10 +12,19 @@ export const sidebarItems: ISidebarSection[] = [
   { href: "/docs/install", text: "Installation" },
   { href: "/docs/how-it-works", text: "How it Works" },
   {
+    text: "Guides",
+    links: [
+      { text: "Configuring Builds", href: "/docs/guides/configuring-builds" },
+    ],
+  },
+  {
     text: "Configuration",
     links: [
-      { text: "Configuration File", href: "/docs/configuration/file" },
-      { text: "Environment", href: "/docs/configuration/environment" },
+      { text: "File", href: "/docs/configuration/file" },
+      {
+        text: "Environment",
+        href: "/docs/configuration/environment",
+      },
       { text: "Procfile", href: "/docs/configuration/procfile" },
       { text: "Caching", href: "/docs/configuration/caching" },
     ],
