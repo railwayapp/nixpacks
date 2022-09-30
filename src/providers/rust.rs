@@ -81,6 +81,9 @@ impl RustProvider {
 
     fn get_build(app: &App, env: &Environment) -> Result<Phase> {
         let mut build = Phase::build(None);
+        if !app.includes_file("Cargo.toml") {
+            return Ok(build);
+        }
 
         build.add_cmd("mkdir -p bin");
         build.depends_on = Some(vec!["setup".to_string()]);
@@ -269,9 +272,9 @@ impl RustProvider {
             return Ok(Some(name));
         }
 
-        let manifest = RustProvider::parse_cargo_toml(app)?.context("Missing Cargo.toml")?;
-
-        if let Some(workspace) = manifest.workspace {
+        if let Some(workspace) =
+            RustProvider::parse_cargo_toml(app)?.and_then(|manifest| manifest.workspace)
+        {
             if let Some(binary) = RustProvider::find_binary_in_workspace(app, &workspace)? {
                 return Ok(Some(binary));
             }

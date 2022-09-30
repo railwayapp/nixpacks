@@ -1,0 +1,4 @@
+providers = ["node", "rust"]
+
+[start]
+cmd = "./start.sh"
