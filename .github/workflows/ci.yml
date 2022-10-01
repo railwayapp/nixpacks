@@ -144,7 +144,7 @@ jobs:
           command: test
           args: --package nixpacks --test docker_run_tests -- ${{ matrix.tests }} --exact
 
-    msrv:
+  msrv:
     name: Test Suite (MSRV)
     strategy:
       matrix:
