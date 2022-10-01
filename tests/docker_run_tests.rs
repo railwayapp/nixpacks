@@ -625,6 +625,13 @@ fn test_python_numpy() {
 }
 
 #[test]
+fn test_python_postgres() {
+    let name = simple_build("./examples/python-postgres");
+    let output = run_image(&name, None);
+    assert!(output.contains("psycopg2"));
+}
+
+#[test]
 fn test_rust_custom_version() {
     let name = Uuid::new_v4().to_string();
     create_docker_image(
