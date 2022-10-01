@@ -220,7 +220,9 @@ impl PythonProvider {
         // Check for the engine database type in settings.py
         let re = Regex::new(r"django.db.backends.postgresql").unwrap();
 
-        app.find_match(&re, "/**/*.py")
+        let uses_pg =
+            app.find_match(&re, "/**/*.py")? || PythonProvider::uses_dep(app, "psycopg2")?;
+        Ok(uses_pg)
     }
 
     fn is_using_mysql(app: &App, _env: &Environment) -> Result<bool> {
@@ -350,7 +352,6 @@ impl PythonProvider {
         ))
     }
 
-    #[allow(dead_code)]
     fn uses_dep(app: &App, dep: &str) -> Result<bool> {
         let requirements_usage = app.includes_file("requirements.txt")
             && app
