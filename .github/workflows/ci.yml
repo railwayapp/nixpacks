@@ -172,6 +172,7 @@ jobs:
       - name: Install Podman
         run: |
             sudo apt-get update -qq -y
+            sudo apt-get remove -y moby-cli 
             sudo apt-get -qq -y install podman podman-docker
 
       - name: Run cargo test
