@@ -17,7 +17,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.10.1
         with:
           access_token: ${{ github.token }}
 
@@ -44,7 +44,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.10.1
         with:
           access_token: ${{ github.token }}
           
@@ -85,7 +85,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:      
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.10.1
         with:
           access_token: ${{ github.token }}
         
@@ -122,7 +122,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:      
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.10.1
         with:
           access_token: ${{ github.token }}
         
@@ -153,7 +153,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.10.1
         with:
           access_token: ${{ github.token }}
         
