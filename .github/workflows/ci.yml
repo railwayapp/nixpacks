@@ -170,7 +170,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Install Podman
-        steps: |
+        run: |
             mkdir -p /etc/apt/keyrings
             curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_$(lsb_release -rs)/Release.key \
             \| gpg --dearmor \
