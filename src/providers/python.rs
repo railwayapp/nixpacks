@@ -112,8 +112,8 @@ impl PythonProvider {
 
         pkgs.append(&mut vec![python_base_package]);
 
-        if PythonProvider::is_django(app, env)? && PythonProvider::is_using_postgres(app, env)? {
-            // Django with Postgres requires postgresql and gcc on top of the original python packages
+        if PythonProvider::is_using_postgres(app, env)? {
+            // Postgres requires postgresql and gcc on top of the original python packages
             pkgs.append(&mut vec![Pkg::new("postgresql")]);
         }
 
@@ -444,7 +444,12 @@ mod test {
     }
 
     #[test]
-    fn test_django_postgres_detection() -> Result<()> {
+    fn test_postgres_detection() -> Result<()> {
+        assert!(PythonProvider::is_using_postgres(
+            &App::new("./examples/python-postgres",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
         assert!(PythonProvider::is_using_postgres(
             &App::new("./examples/python-django",)?,
             &Environment::new(BTreeMap::new())
