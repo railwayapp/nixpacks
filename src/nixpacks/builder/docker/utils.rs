@@ -11,7 +11,7 @@ pub fn get_cache_mount(
                 let mut sanitized_dir = dir.replace('~', "/root");
                 let sanitized_key = sanitize_cache_key(&format!("{}-{}", cache_key, sanitized_dir));
                 if !sanitized_dir.starts_with("/") {
-                    sanitized_dir = format!("/app/{}",sanitized_dir);
+                    sanitized_dir = format!("/app/{}", sanitized_dir);
                 }
                 format!(
                     "--mount=type=cache,id={},target={}",
