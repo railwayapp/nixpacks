@@ -625,6 +625,13 @@ fn test_python_numpy() {
 }
 
 #[test]
+fn test_python_postgres() {
+    let name = simple_build("./examples/python-postgres");
+    let output = run_image(&name, None);
+    assert!(output.contains("psycopg2"));
+}
+
+#[test]
 fn test_rust_custom_version() {
     let name = Uuid::new_v4().to_string();
     create_docker_image(
@@ -838,4 +845,56 @@ fn test_clojure_ring_app() {
     let name = simple_build("./examples/clojure-ring-app");
     let output = run_image(&name, None);
     assert_eq!(output, "Started server on port 3000");
+}
+
+#[test]
+fn test_cobol() {
+    let name = simple_build("./examples/cobol");
+    let output = run_image(&name, None);
+    assert_eq!(output, "Hello from cobol! index");
+}
+
+#[test]
+fn test_cobol_src_index() {
+    let name = simple_build("./examples/cobol-src");
+    let output = run_image(&name, None);
+    assert_eq!(output, "Hello from cobol! src-index");
+}
+
+#[test]
+fn test_cobol_my_app() {
+    let name =
+        build_with_build_time_env_vars("./examples/cobol", vec!["NIXPACKS_COBOL_APP_NAME=my-app"]);
+
+    assert_eq!(run_image(&name, None), "Hello from cobol! my-app");
+}
+
+#[test]
+fn test_cobol_src_my_app() {
+    let name = build_with_build_time_env_vars(
+        "./examples/cobol-src",
+        vec!["NIXPACKS_COBOL_APP_NAME=my-app"],
+    );
+
+    assert_eq!(run_image(&name, None), "Hello from cobol! src-my-app");
+}
+
+#[test]
+fn test_cobol_free() {
+    let name = build_with_build_time_env_vars(
+        "./examples/cobol",
+        vec![
+            "NIXPACKS_COBOL_APP_NAME=cobol-free",
+            "NIXPACKS_COBOL_COMPILE_ARGS=-free -x -o",
+        ],
+    );
+
+    assert_eq!(run_image(&name, None), "Hello from cobol! cobol-free");
+}
+
+#[test]
+fn test_cobol_no_index() {
+    let name = simple_build("./examples/cobol-no-index");
+
+    assert_eq!(run_image(&name, None), "Hello from cobol! cobol-no-index");
 }

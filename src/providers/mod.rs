@@ -2,6 +2,7 @@ use crate::nixpacks::{app::App, environment::Environment, plan::BuildPlan};
 use anyhow::Result;
 
 pub mod clojure;
+pub mod cobol;
 pub mod crystal;
 pub mod csharp;
 pub mod dart;

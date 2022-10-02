@@ -1,0 +1,46 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "python,postgres",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "phases": {
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/pip"
+      ],
+      "paths": [
+        "/opt/venv/bin"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "python38",
+        "postgresql",
+        "gcc"
+      ],
+      "nixLibs": [
+        "zlib",
+        "stdenv.cc.cc.lib"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "python main.py"
+  }
+}

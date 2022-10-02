@@ -46,8 +46,12 @@ tar.exe xf $NixpacksZip -C $BinDir
 
 Remove-Item $NixpacksZip
 
-if (($Env:Path -contains "nixpacks")) {
-    $Env:Path += ";$BinDir"
+$User = [EnvironmentVariableTarget]::User
+$Path = [Environment]::GetEnvironmentVariable('Path', $User)
+if (!(";$Path;".ToLower() -like "*;$BinDir;*".ToLower())) {
+  [Environment]::SetEnvironmentVariable('Path', "$Path;$BinDir", $User)
+  $Env:Path += ";$BinDir"
 }
+
 Write-Output "Nixpacks was installed successfully to $NixpacksExe"
 Write-Output "Run 'nixpacks --help' to get started"
