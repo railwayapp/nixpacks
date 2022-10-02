@@ -43,7 +43,7 @@ All dependencies found in `packages.json` are installed with either NPM, Yarn, P
 
 The build script found in `package.json` if it exists or if its an NX Monorepo `(npm|pnpm|yarn|bun) run build <NxAppName> --configuration=production`.
 
-Or, if it's a Turborepo monorepo (detected if `turbo.json` exists), the `build` pipeline will be called, if it exists; otherwise, the `build` script of the package referenced by `NIXPACKS_TURBO_APP_NAME` will be called, if the variable is provided; otherwise, it will fall back to the build script found in `package.json`.
+Or, if it's a Turborepo monorepo (detected if `turbo.json` exists), the `build` pipeline will be called (if it exists). Otherwise, the `build` script of the `package.json` referenced by `NIXPACKS_TURBO_APP_NAME` will be called, if `NIXPACKS_TURBO_APP_NAME` is provided. Otherwise, it will fall back to the build script found in `package.json` at the monorepos root.
 
 ## Start
 
