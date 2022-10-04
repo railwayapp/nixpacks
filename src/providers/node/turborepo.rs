@@ -6,9 +6,22 @@ use serde::{Deserialize, Serialize};
 
 use crate::nixpacks::{app::App, environment::Environment};
 
+use super::PackageJson;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TurboJson {
     pub pipeline: HashMap<String, Value>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct PnpmWorkspaces {
+    packages: Vec<String>,
+}
+
+pub fn pnpm_workspaces(app: &App) -> Result<Vec<String>> {
+    let workspaces: PnpmWorkspaces = app.read_yaml("pnpm-workspace.yaml")?;
+
+    Ok(workspaces.packages)
 }
 
 pub struct Turborepo;
@@ -40,5 +53,18 @@ impl Turborepo {
 
     pub fn get_app_name(env: &Environment) -> Option<String> {
         env.get_config_variable("TURBO_APP_NAME")
+    }
+
+    pub fn has_app(app: &App, workspaces: Vec<String>, name: String) -> Result<bool> {
+        //TODO: parallelize?
+        for glob in workspaces {
+            let files = app.find_directories(&glob)?;
+            for file in files {
+                if file.ends_with(format!("/{}", name)) {
+                    return Ok(true)
+                }
+            }
+        }
+        Ok(false)
     }
 }

@@ -41,6 +41,8 @@ pub struct PackageJson {
     pub dev_dependencies: Option<HashMap<String, String>>,
     #[serde(rename = "type")]
     pub project_type: Option<String>,
+
+    pub workspaces: Option<Vec<String>>,
 }
 
 #[derive(Default, Debug)]
@@ -170,6 +172,8 @@ impl NodeProvider {
         let dlx = NodeProvider::get_package_manager_dlx_command(app);
         let pkg_manager = NodeProvider::get_package_manager(app);
         let executor = if pkg_manager == *"bun" { "bun" } else { "node" };
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
+
         if Nx::is_nx_monorepo(app, env) {
             if let Some(nx_start_cmd) = Nx::get_nx_start_cmd(app, env)? {
                 return Ok(Some(nx_start_cmd));
@@ -180,11 +184,14 @@ impl NodeProvider {
             let app_name = Turborepo::get_app_name(env);
 
             if let Some(name) = app_name {
-                return Ok(Some(format!(
-                    "{} --workspace {} run start",
-                    pkg_manager, name
-                )));
-            } else if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
+                if Turborepo::has_app(app, if pkg_manager == "pnpm" { turborepo::pnpm_workspaces(app)? } else { package_json.workspaces.unwrap_or_else(|| vec! []) }, name.clone())? {
+                    return Ok(Some(format!(
+                        "{} --workspace {} run start",
+                        pkg_manager, name
+                    )));
+                }
+            }
+            if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
                 return Ok(Some(start_pipeline));
             }
             return Ok(Some(format!("{} turbo run start", dlx)));
@@ -195,7 +202,6 @@ impl NodeProvider {
             return Ok(Some(format!("{} run start", package_manager)));
         }
 
-        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         if let Some(main) = package_json.main {
             if app.includes_file(&main) {
                 return Ok(Some(format!("{} {}", executor, main)));
