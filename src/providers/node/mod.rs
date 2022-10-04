@@ -184,7 +184,15 @@ impl NodeProvider {
             let app_name = Turborepo::get_app_name(env);
 
             if let Some(name) = app_name {
-                if Turborepo::has_app(app, if pkg_manager == "pnpm" { turborepo::pnpm_workspaces(app)? } else { package_json.workspaces.unwrap_or_else(|| vec! []) }, name.clone())? {
+                if Turborepo::has_app(
+                    app,
+                    if pkg_manager == "pnpm" {
+                        turborepo::pnpm_workspaces(app)?
+                    } else {
+                        package_json.workspaces.unwrap_or_default()
+                    },
+                    &name,
+                )? {
                     return Ok(Some(format!(
                         "{} --workspace {} run start",
                         pkg_manager, name

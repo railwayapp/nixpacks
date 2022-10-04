@@ -6,8 +6,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::nixpacks::{app::App, environment::Environment};
 
-use super::PackageJson;
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TurboJson {
     pub pipeline: HashMap<String, Value>,
@@ -55,13 +53,13 @@ impl Turborepo {
         env.get_config_variable("TURBO_APP_NAME")
     }
 
-    pub fn has_app(app: &App, workspaces: Vec<String>, name: String) -> Result<bool> {
+    pub fn has_app(app: &App, workspaces: Vec<String>, name: &str) -> Result<bool> {
         //TODO: parallelize?
         for glob in workspaces {
             let files = app.find_directories(&glob)?;
             for file in files {
                 if file.ends_with(format!("/{}", name)) {
-                    return Ok(true)
+                    return Ok(true);
                 }
             }
         }
