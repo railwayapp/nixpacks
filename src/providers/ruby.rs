@@ -92,11 +92,11 @@ impl RubyProvider {
         install.add_path(format!("/usr/local/rvm/gems/{}@global/bin", ruby_version));
 
         if self.uses_gem_dep(app, "execjs") {
-            install.add_nix_pkgs(vec![String::from("nodejs")]);
+            install.add_nix_pkgs(&[Pkg::new("nodejs")]);
         }
         if self.uses_gem_dep(app, "rmagick") {
             install.add_apt_pkgs(vec![String::from("libmagickwand-dev")]);
-            install.add_nix_pkgs(vec![String::from("imagemagick")]);
+            install.add_nix_pkgs(&[Pkg::new("imagemagick")]);
         }
         if self.uses_gem_dep(app, "charlock_holmes") {
             install.add_apt_pkgs(vec![String::from("libicu-dev")]);
