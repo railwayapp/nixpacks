@@ -2,6 +2,7 @@ use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
+    nix::pkg::Pkg,
     plan::{
         phase::{Phase, StartPhase},
         BuildPlan,
