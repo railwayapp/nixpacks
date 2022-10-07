@@ -184,7 +184,7 @@ fn test_get_copy_from_image_command() {
 }
 
 #[test]
-fn test_get_copy_to_image_command() -> Result<()> {
+fn test_get_copy_to_image_command() {
     let cmds = IncrementalCache::get_copy_to_image_command(
         &Some(vec!["./parent_dir/child_dir".to_string()]),
         "docker.io/library/test-image",
@@ -196,6 +196,4 @@ fn test_get_copy_to_image_command() -> Result<()> {
         "COPY --from=docker.io/library/test-image .?/parent_dir?/child_dir? ./parent_dir/child_dir"
             .to_string()
     );
-
-    Ok(())
 }
