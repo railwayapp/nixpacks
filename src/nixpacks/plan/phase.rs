@@ -1,7 +1,6 @@
-use super::generator::NIXPKGS_ARCHIVE;
 use crate::nixpacks::{
     images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
-    nix::pkg::Pkg,
+    nix::{pkg::Pkg, NIXPKGS_ARCHIVE},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;

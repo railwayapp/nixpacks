@@ -8,8 +8,11 @@ pub fn get_cache_mount(
         (Some(cache_key), Some(cache_directories)) => cache_directories
             .iter()
             .map(|dir| {
-                let sanitized_dir = dir.replace('~', "/root");
+                let mut sanitized_dir = dir.replace('~', "/root");
                 let sanitized_key = sanitize_cache_key(&format!("{}-{}", cache_key, sanitized_dir));
+                if !sanitized_dir.starts_with('/') {
+                    sanitized_dir = format!("/app/{}", sanitized_dir);
+                }
                 format!(
                     "--mount=type=cache,id={},target={}",
                     sanitized_key, sanitized_dir
@@ -61,7 +64,7 @@ mod tests {
         let cache_key = Some("cache_key".to_string());
         let cache_directories = Some(vec!["dir1".to_string(), "dir2".to_string()]);
 
-        let expected = "--mount=type=cache,id=cache_key-dir1,target=dir1 --mount=type=cache,id=cache_key-dir2,target=dir2";
+        let expected = "--mount=type=cache,id=cache_key-dir1,target=/app/dir1 --mount=type=cache,id=cache_key-dir2,target=/app/dir2";
         let actual = get_cache_mount(&cache_key, &cache_directories);
 
         assert_eq!(expected, actual);
@@ -72,7 +75,7 @@ mod tests {
         let cache_key = Some("my cache key".to_string());
         let cache_directories = Some(vec!["dir1".to_string(), "dir2".to_string()]);
 
-        let expected = "--mount=type=cache,id=my-cache-key-dir1,target=dir1 --mount=type=cache,id=my-cache-key-dir2,target=dir2";
+        let expected = "--mount=type=cache,id=my-cache-key-dir1,target=/app/dir1 --mount=type=cache,id=my-cache-key-dir2,target=/app/dir2";
         let actual = get_cache_mount(&cache_key, &cache_directories);
 
         assert_eq!(expected, actual);

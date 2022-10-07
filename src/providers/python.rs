@@ -112,8 +112,8 @@ impl PythonProvider {
 
         pkgs.append(&mut vec![python_base_package]);
 
-        if PythonProvider::is_django(app, env)? && PythonProvider::is_using_postgres(app, env)? {
-            // Django with Postgres requires postgresql and gcc on top of the original python packages
+        if PythonProvider::is_using_postgres(app, env)? {
+            // Postgres requires postgresql and gcc on top of the original python packages
             pkgs.append(&mut vec![Pkg::new("postgresql")]);
         }
 
@@ -220,7 +220,9 @@ impl PythonProvider {
         // Check for the engine database type in settings.py
         let re = Regex::new(r"django.db.backends.postgresql").unwrap();
 
-        app.find_match(&re, "/**/*.py")
+        let uses_pg =
+            app.find_match(&re, "/**/*.py")? || PythonProvider::uses_dep(app, "psycopg2")?;
+        Ok(uses_pg)
     }
 
     fn is_using_mysql(app: &App, _env: &Environment) -> Result<bool> {
@@ -350,7 +352,6 @@ impl PythonProvider {
         ))
     }
 
-    #[allow(dead_code)]
     fn uses_dep(app: &App, dep: &str) -> Result<bool> {
         let requirements_usage = app.includes_file("requirements.txt")
             && app
@@ -443,7 +444,12 @@ mod test {
     }
 
     #[test]
-    fn test_django_postgres_detection() -> Result<()> {
+    fn test_postgres_detection() -> Result<()> {
+        assert!(PythonProvider::is_using_postgres(
+            &App::new("./examples/python-postgres",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
         assert!(PythonProvider::is_using_postgres(
             &App::new("./examples/python-django",)?,
             &Environment::new(BTreeMap::new())

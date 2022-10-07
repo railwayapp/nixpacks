@@ -336,19 +336,19 @@ CARGOTOML="$(curl -fsSL https://raw.githubusercontent.com/railwayapp/nixpacks/ma
 ALL_VERSIONS="$(sed -n 's/.*version = "\([^"]*\)".*/\1/p' <<< "$CARGOTOML")"
 IFS=$'\n' read -r -a VERSION <<< "$ALL_VERSIONS"
 # defaults
-if [ -z "${PLATFORM-}" ]; then
+if [ -z "${NIXPACKS_PLATFORM-}" ]; then
   PLATFORM="$(detect_platform)"
 fi
 
-if [ -z "${BIN_DIR-}" ]; then
+if [ -z "${NIXPACKS_BIN_DIR-}" ]; then
   BIN_DIR=/usr/local/bin
 fi
 
-if [ -z "${ARCH-}" ]; then
+if [ -z "${NIXPACKS_ARCH-}" ]; then
   ARCH="$(detect_arch)"
 fi
 
-if [ -z "${BASE_URL-}" ]; then
+if [ -z "${NIXPACKS_BASE_URL-}" ]; then
   BASE_URL="https://github.com/railwayapp/nixpacks/releases"
 fi
 

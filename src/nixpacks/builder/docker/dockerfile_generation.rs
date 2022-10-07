@@ -1,11 +1,9 @@
-use super::{
-    file_server::FileServerConfig, incremental_cache::IncrementalCache, utils, DockerBuilderOptions,
-};
+use super::{utils, DockerBuilderOptions};
 use crate::nixpacks::{
     app,
     environment::Environment,
     images::DEFAULT_BASE_IMAGE,
-    nix,
+    nix::{create_nix_expressions_for_phases, nix_file_names_for_phases},
     plan::{
         phase::{Phase, StartPhase},
         BuildPlan,
@@ -83,7 +81,6 @@ pub trait DockerfileGenerator {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
-        file_server_config: Option<FileServerConfig>,
     ) -> Result<String>;
     fn write_supporting_files(
         &self,
@@ -101,9 +98,35 @@ impl DockerfileGenerator for BuildPlan {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
-        file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let plan = self;
+
+        let nix_file_names = nix_file_names_for_phases(&plan.phases.clone().unwrap_or_default());
+
+        let mut nix_install_cmds: Vec<String> = Vec::new();
+        for name in nix_file_names {
+            let nix_file = output.get_relative_path(name);
+
+            let nix_file_path = nix_file
+                .to_slash()
+                .context("Failed to convert nix file path to slash path.")?;
+
+            nix_install_cmds.push(format!(
+                "COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path} && nix-collect-garbage -d",
+                nix_file_path = nix_file_path
+            ));
+        }
+        let nix_install_cmds = nix_install_cmds.join("\n");
+
+        let apt_pkgs = self.all_apt_packages();
+        let apt_pkgs_str = if apt_pkgs.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "RUN apt-get update && apt-get install -y --no-install-recommends {}",
+                apt_pkgs.join(" ")
+            )
+        };
 
         let variables = plan.variables.clone().unwrap_or_default();
         let args_string = if variables.is_empty() {
@@ -140,46 +163,26 @@ impl DockerfileGenerator for BuildPlan {
         let phases = plan.get_sorted_phases()?;
 
         let dockerfile_phases = phases
-            .clone()
             .into_iter()
             .map(|phase| {
-                let phase_dockerfile = phase
-                    .generate_dockerfile(options, env, output, file_server_config.clone())
-                    .context(format!(
-                        "Generating Dockerfile for phase {}",
-                        phase.get_name()
-                    ))?;
+                let phase_dockerfile =
+                    phase
+                        .generate_dockerfile(options, env, output)
+                        .context(format!(
+                            "Generating Dockerfile for phase {}",
+                            phase.get_name()
+                        ))?;
 
-                match phase.get_name().as_str() {
-                    // We want to load the variables immediately after the setup phase
-                    "setup" => Ok(format!(
-                        "{}\n# load variables\n{}\n",
-                        phase_dockerfile, args_string
-                    )),
-                    _ => Ok(phase_dockerfile),
-                }
+                Ok(phase_dockerfile)
             })
-            .collect::<Result<Vec<_>>>();
-        let dockerfile_phases_str = dockerfile_phases?.join("\n");
-
-        // Handle the case where there is only a setup phase and all the app files have not been copied into
-        // the image yet
-        let setup_copy_command = match (phases.first(), phases.len()) {
-            (Some(first_phase), 1) => {
-                if first_phase.get_name() == "setup" {
-                    utils::get_copy_command(&[".".to_string()], APP_DIR)
-                } else {
-                    "".to_string()
-                }
-            }
-            _ => "".to_string(),
-        };
+            .collect::<Result<Vec<_>>>()?;
+        let dockerfile_phases_str = dockerfile_phases.join("\n");
 
         let start_phase_str = plan
             .start_phase
             .clone()
             .unwrap_or_default()
-            .generate_dockerfile(options, env, output, file_server_config)?;
+            .generate_dockerfile(options, env, output)?;
 
         let base_image = plan
             .build_image
@@ -192,18 +195,22 @@ impl DockerfileGenerator for BuildPlan {
             ENTRYPOINT [\"/bin/bash\", \"-l\", \"-c\"]
             WORKDIR {APP_DIR}
 
+            {nix_install_cmds}
+            {apt_pkgs_str}
             {assets_copy_cmd}
+            {args_string}
 
             {dockerfile_phases_str}
 
-            {setup_copy_command}
             {start_phase_str}
         ", 
         base_image=base_image,
         APP_DIR=APP_DIR,
+        nix_install_cmds=nix_install_cmds,
+        apt_pkgs_str=apt_pkgs_str,
         assets_copy_cmd=assets_copy_cmd,
+        args_string=args_string,
         dockerfile_phases_str=dockerfile_phases_str,
-        setup_copy_command=setup_copy_command,
         start_phase_str=start_phase_str};
 
         Ok(dockerfile)
@@ -216,6 +223,17 @@ impl DockerfileGenerator for BuildPlan {
         output: &OutputDir,
     ) -> Result<()> {
         self.write_assets(self, output).context("Writing assets")?;
+
+        let nix_expressions =
+            create_nix_expressions_for_phases(&self.phases.clone().unwrap_or_default());
+
+        for (name, nix_expression) in nix_expressions {
+            let nix_path = output.get_absolute_path(name);
+            let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
+            nix_file
+                .write_all(nix_expression.as_bytes())
+                .context("Unable to write Nix expression")?;
+        }
 
         for phase in self.get_sorted_phases()? {
             phase
@@ -249,6 +267,15 @@ impl BuildPlan {
 
         Ok(())
     }
+
+    fn all_apt_packages(&self) -> Vec<String> {
+        self.phases
+            .clone()
+            .unwrap_or_default()
+            .values()
+            .flat_map(|phase| phase.apt_pkgs.clone().unwrap_or_default())
+            .collect()
+    }
 }
 
 impl DockerfileGenerator for StartPhase {
@@ -257,7 +284,6 @@ impl DockerfileGenerator for StartPhase {
         _options: &DockerBuilderOptions,
         _env: &Environment,
         _output: &OutputDir,
-        _file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
             Some(cmd) => utils::get_exec_command(cmd),
@@ -305,8 +331,7 @@ impl DockerfileGenerator for Phase {
         &self,
         options: &DockerBuilderOptions,
         env: &Environment,
-        output: &OutputDir,
-        file_server_config: Option<FileServerConfig>,
+        _output: &OutputDir,
     ) -> Result<String> {
         let phase = self;
 
@@ -330,88 +355,28 @@ impl DockerfileGenerator for Phase {
             ("".to_string(), "".to_string())
         };
 
-        // Install nix packages and libraries
-        let install_nix_pkgs_str = if self.uses_nix() {
-            let nix_file = output.get_relative_path(format!("{}.nix", phase.get_name()));
-
-            let nix_file_path = nix_file
-                .to_slash()
-                .context("Failed to convert nix file path to slash path.")?;
-            format!(
-                "COPY {nix_file_path} {nix_file_path}\nRUN nix-env -if {nix_file_path} && nix-collect-garbage -d",
-                nix_file_path = nix_file_path
-            )
-        } else {
-            "".to_string()
-        };
-
-        // Install apt packages
-        let apt_pkgs = phase.apt_pkgs.clone().unwrap_or_default();
-        let apt_pkgs_str = if apt_pkgs.is_empty() {
-            "".to_string()
-        } else {
-            format!(
-                "RUN apt-get update && apt-get install -y {}",
-                apt_pkgs.join(" ")
-            )
-        };
-
         // Copy over app files
         let phase_files = match (phase.get_name().as_str(), &phase.only_include_files) {
             (_, Some(files)) => files.clone(),
-            // Special case for the setup phase, which has no files
-            ("setup", None) => vec![],
             _ => vec![".".to_string()],
         };
         let phase_copy_cmd = utils::get_copy_command(&phase_files, APP_DIR);
 
-        let cmds_str = if options.incremental_cache_image.is_some() {
-            let cach_copy_in_command = IncrementalCache::get_copy_to_image_command(
-                &phase.cache_directories,
-                &options.incremental_cache_image.clone().unwrap(),
-            )?
-            .join("\n");
-
-            let cache_copy_out_command = IncrementalCache::get_copy_from_image_command(
-                &phase.cache_directories,
-                file_server_config,
-            );
-
-            let run_commands = [
-                phase.cmds.clone().unwrap_or_default(),
-                cache_copy_out_command,
-            ]
-            .concat()
+        let cache_mount = utils::get_cache_mount(&cache_key, &phase.cache_directories);
+        let cmds_str = phase
+            .cmds
+            .clone()
+            .unwrap_or_default()
             .iter()
-            .map(|s| format!("RUN {}", s))
+            .map(|s| format!("RUN {} {}", cache_mount, s))
             .collect::<Vec<_>>()
             .join("\n");
 
-            format!("{}\n{}", cach_copy_in_command, run_commands)
-        } else {
-            let cache_mount = utils::get_cache_mount(&cache_key, &phase.cache_directories);
-            phase
-                .cmds
-                .clone()
-                .unwrap_or_default()
-                .iter()
-                .map(|s| format!("RUN {} {}", cache_mount, s))
-                .collect::<Vec<_>>()
-                .join("\n")
-        };
-
-        let dockerfile_stmts = vec![
-            build_path,
-            run_path,
-            install_nix_pkgs_str,
-            apt_pkgs_str,
-            phase_copy_cmd,
-            cmds_str,
-        ]
-        .into_iter()
-        .filter(|stmt| !stmt.is_empty())
-        .collect::<Vec<_>>()
-        .join("\n");
+        let dockerfile_stmts = vec![build_path, run_path, phase_copy_cmd, cmds_str]
+            .into_iter()
+            .filter(|stmt| !stmt.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
 
         let dockerfile = formatdoc! {"
             # {name} phase
@@ -428,20 +393,8 @@ impl DockerfileGenerator for Phase {
         &self,
         _options: &DockerBuilderOptions,
         _env: &Environment,
-        output: &OutputDir,
+        _output: &OutputDir,
     ) -> Result<()> {
-        if self.uses_nix() {
-            // Write the Nix expressions to the output directory
-            let nix_file_name = format!("{}.nix", self.get_name());
-            let nix_path = output.get_absolute_path(nix_file_name);
-            let nix_expression = nix::create_nix_expression(self);
-
-            let mut nix_file = File::create(nix_path).context("Creating Nix environment file")?;
-            nix_file
-                .write_all(nix_expression.as_bytes())
-                .context("Unable to write Nix expression")?;
-        }
-
         Ok(())
     }
 }
@@ -461,13 +414,10 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
-                Some(FileServerConfig::default()),
             )
             .unwrap();
 
         assert!(dockerfile.contains("echo test"));
-        assert!(dockerfile.contains("apt-get update"));
-        assert!(dockerfile.contains("wget"));
     }
 
     #[test]
@@ -476,6 +426,7 @@ mod tests {
 
         let mut test1 = Phase::new("test1");
         test1.add_cmd("echo test1");
+        test1.add_apt_pkgs(vec!["wget".to_owned()]);
         plan.add_phase(test1);
 
         let mut test2 = Phase::new("test2");
@@ -487,11 +438,12 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
-                Some(FileServerConfig::default()),
             )
             .unwrap();
 
         assert!(dockerfile.contains("echo test1"));
         assert!(dockerfile.contains("echo test2"));
+        assert!(dockerfile.contains("apt-get update"));
+        assert!(dockerfile.contains("wget"));
     }
 }

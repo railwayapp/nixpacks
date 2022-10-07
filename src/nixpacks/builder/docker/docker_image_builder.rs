@@ -45,16 +45,18 @@ impl ImageBuilder for DockerImageBuilder {
         let incremental_cache = IncrementalCache::default();
         let incremental_cache_dirs = IncrementalCacheDirs::create(&output)?;
 
-        let file_server_config = if self.options.incremental_cache_image.is_some() {
-            let file_server = FileServer {};
-            let config = file_server.start(&incremental_cache_dirs);
-            Some(config)
-        } else {
-            None
-        };
+        //TODO: uncomment after merge conflict resolution 
+        // let file_server_config = if self.options.incremental_cache_image.is_some() {
+        //     let file_server = FileServer {};
+        //     let config = file_server.start(&incremental_cache_dirs);
+        //     Some(config)
+        // } else {
+        //     None
+        // };
 
         let dockerfile = plan
-            .generate_dockerfile(&self.options, env, &output, file_server_config)
+            .generate_dockerfile(&self.options, env, &output)
+            // .generate_dockerfile(&self.options, env, &output, file_server_config) //TODO: uncomment after merge conflict resolution 
             .context("Generating Dockerfile for plan")?;
 
         // If printing the Dockerfile, don't write anything to disk

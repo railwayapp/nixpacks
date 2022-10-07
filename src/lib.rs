@@ -20,21 +20,26 @@
 
 use crate::nixpacks::{
     app::App,
-    builder::{docker::docker_image_builder::DockerImageBuilder, ImageBuilder},
+    builder::{
+        docker::{docker_image_builder::DockerImageBuilder, DockerBuilderOptions},
+        ImageBuilder,
+    },
     environment::Environment,
     logger::Logger,
     nix::pkg::Pkg,
-    plan::{generator::NixpacksBuildPlanGenerator, BuildPlan, PlanGenerator},
+    plan::{
+        generator::{GeneratePlanOptions, NixpacksBuildPlanGenerator},
+        BuildPlan, PlanGenerator,
+    },
 };
-
 use anyhow::Result;
-use nixpacks::{builder::docker::DockerBuilderOptions, plan::generator::GeneratePlanOptions};
 use providers::{
-    clojure::ClojureProvider, crystal::CrystalProvider, csharp::CSharpProvider, dart::DartProvider,
-    deno::DenoProvider, elixir::ElixirProvider, fsharp::FSharpProvider, go::GolangProvider,
-    haskell::HaskellStackProvider, java::JavaProvider, node::NodeProvider, php::PhpProvider,
-    python::PythonProvider, ruby::RubyProvider, rust::RustProvider, staticfile::StaticfileProvider,
-    swift::SwiftProvider, zig::ZigProvider, Provider,
+    clojure::ClojureProvider, cobol::CobolProvider, crystal::CrystalProvider,
+    csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider, elixir::ElixirProvider,
+    fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
+    node::NodeProvider, php::PhpProvider, python::PythonProvider, ruby::RubyProvider,
+    rust::RustProvider, staticfile::StaticfileProvider, swift::SwiftProvider, zig::ZigProvider,
+    Provider,
 };
 
 mod chain;
@@ -62,6 +67,7 @@ pub fn get_providers() -> &'static [&'static dyn Provider] {
         &SwiftProvider {},
         &StaticfileProvider {},
         &ZigProvider {},
+        &CobolProvider {},
     ]
 }
 
@@ -93,7 +99,6 @@ pub fn create_docker_image(
 
     let logger = Logger::new();
     let builder = DockerImageBuilder::new(logger, build_options.clone());
-
     builder.create_image(app.source.to_str().unwrap(), &plan, &environment)?;
 
     Ok(())
