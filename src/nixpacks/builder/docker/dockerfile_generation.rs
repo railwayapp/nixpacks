@@ -1,4 +1,6 @@
-use super::{file_server::FileServerConfig, utils, DockerBuilderOptions};
+use super::{
+    file_server::FileServerConfig, incremental_cache::IncrementalCache, utils, DockerBuilderOptions,
+};
 use crate::nixpacks::{
     app,
     environment::Environment,
@@ -334,7 +336,7 @@ impl DockerfileGenerator for Phase {
         options: &DockerBuilderOptions,
         env: &Environment,
         _output: &OutputDir,
-        _file_server_config: Option<FileServerConfig>,
+        file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let phase = self;
 
@@ -366,14 +368,41 @@ impl DockerfileGenerator for Phase {
         let phase_copy_cmd = utils::get_copy_command(&phase_files, APP_DIR);
 
         let cache_mount = utils::get_cache_mount(&cache_key, &phase.cache_directories);
-        let cmds_str = phase
-            .cmds
-            .clone()
-            .unwrap_or_default()
+        let cmds_str = if options.incremental_cache_image.is_some() {
+            let image = &options.incremental_cache_image.clone().unwrap();
+            let cache_copy_in_command = if IncrementalCache::is_image_exists(image)? {
+                IncrementalCache::get_copy_to_image_command(&phase.cache_directories, image)?
+                    .join("\n")
+            } else {
+                "".to_string()
+            };
+
+            let cache_copy_out_command = IncrementalCache::get_copy_from_image_command(
+                &phase.cache_directories,
+                file_server_config,
+            );
+
+            let run_commands = [
+                phase.cmds.clone().unwrap_or_default(),
+                cache_copy_out_command,
+            ]
+            .concat()
             .iter()
-            .map(|s| format!("RUN {} {}", cache_mount, s))
+            .map(|s| format!("RUN {}", s))
             .collect::<Vec<_>>()
             .join("\n");
+
+            format!("{}\n{}", cache_copy_in_command, run_commands)
+        } else {
+            phase
+                .cmds
+                .clone()
+                .unwrap_or_default()
+                .iter()
+                .map(|s| format!("RUN {} {}", cache_mount, s))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
 
         let dockerfile_stmts = vec![build_path, run_path, phase_copy_cmd, cmds_str]
             .into_iter()
