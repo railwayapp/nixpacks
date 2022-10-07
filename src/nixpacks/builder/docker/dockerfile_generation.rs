@@ -101,7 +101,7 @@ impl DockerfileGenerator for BuildPlan {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
-        _file_server_config: Option<FileServerConfig>,
+        file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let plan = self;
 
@@ -170,7 +170,7 @@ impl DockerfileGenerator for BuildPlan {
             .into_iter()
             .map(|phase| {
                 let phase_dockerfile = phase
-                    .generate_dockerfile(options, env, output, Some(FileServerConfig::default()))
+                    .generate_dockerfile(options, env, output, file_server_config.clone())
                     .context(format!(
                         "Generating Dockerfile for phase {}",
                         phase.get_name()
@@ -185,7 +185,7 @@ impl DockerfileGenerator for BuildPlan {
             .start_phase
             .clone()
             .unwrap_or_default()
-            .generate_dockerfile(options, env, output, Some(FileServerConfig::default()))?;
+            .generate_dockerfile(options, env, output, file_server_config)?;
 
         let base_image = plan
             .build_image
