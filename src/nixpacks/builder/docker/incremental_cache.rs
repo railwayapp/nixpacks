@@ -182,3 +182,20 @@ fn test_get_copy_from_image_command() {
         "if [ -d \"./parent_dir/child_dir\" ]; then rm -rf ./parent_dir/child_dir; fi".to_string()
     );
 }
+
+#[test]
+fn test_get_copy_to_image_command() -> Result<()> {
+    let cmds = IncrementalCache::get_copy_to_image_command(
+        &Some(vec!["./parent_dir/child_dir".to_string()]),
+        "docker.io/library/test-image",
+    );
+
+    assert_eq!(cmds.len(), 1);
+    assert_eq!(
+        cmds[0],
+        "COPY --from=docker.io/library/test-image .?/parent_dir?/child_dir? ./parent_dir/child_dir"
+            .to_string()
+    );
+
+    Ok(())
+}
