@@ -1,4 +1,4 @@
-use super::{utils, DockerBuilderOptions};
+use super::{file_server::FileServerConfig, utils, DockerBuilderOptions};
 use crate::nixpacks::{
     app,
     environment::Environment,
@@ -81,6 +81,7 @@ pub trait DockerfileGenerator {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
+        _file_server_config: Option<FileServerConfig>,
     ) -> Result<String>;
     fn write_supporting_files(
         &self,
@@ -98,6 +99,7 @@ impl DockerfileGenerator for BuildPlan {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
+        _file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let plan = self;
 
@@ -165,13 +167,12 @@ impl DockerfileGenerator for BuildPlan {
         let dockerfile_phases = phases
             .into_iter()
             .map(|phase| {
-                let phase_dockerfile =
-                    phase
-                        .generate_dockerfile(options, env, output)
-                        .context(format!(
-                            "Generating Dockerfile for phase {}",
-                            phase.get_name()
-                        ))?;
+                let phase_dockerfile = phase
+                    .generate_dockerfile(options, env, output, Some(FileServerConfig::default()))
+                    .context(format!(
+                        "Generating Dockerfile for phase {}",
+                        phase.get_name()
+                    ))?;
 
                 Ok(phase_dockerfile)
             })
@@ -182,7 +183,7 @@ impl DockerfileGenerator for BuildPlan {
             .start_phase
             .clone()
             .unwrap_or_default()
-            .generate_dockerfile(options, env, output)?;
+            .generate_dockerfile(options, env, output, Some(FileServerConfig::default()))?;
 
         let base_image = plan
             .build_image
@@ -284,6 +285,7 @@ impl DockerfileGenerator for StartPhase {
         _options: &DockerBuilderOptions,
         _env: &Environment,
         _output: &OutputDir,
+        _file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
             Some(cmd) => utils::get_exec_command(cmd),
@@ -332,6 +334,7 @@ impl DockerfileGenerator for Phase {
         options: &DockerBuilderOptions,
         env: &Environment,
         _output: &OutputDir,
+        _file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let phase = self;
 
@@ -414,6 +417,7 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
+                Some(FileServerConfig::default()),
             )
             .unwrap();
 
@@ -438,6 +442,7 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
+                Some(FileServerConfig::default()),
             )
             .unwrap();
 
