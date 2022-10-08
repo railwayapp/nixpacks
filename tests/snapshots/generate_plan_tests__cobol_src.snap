@@ -1,0 +1,35 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "cobol"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install",
+        "setup"
+      ],
+      "cmds": [
+        "cobc -x -o index src/index.cbl"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "gnu-cobol",
+        "gcc"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "./index"
+  }
+}
