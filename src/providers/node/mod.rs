@@ -251,8 +251,6 @@ impl NodeProvider {
             "npm ci"
         } else if app.includes_file("bun.lockb") {
             "bun i --no-save"
-        } else if app.includes_file("package.json") {
-            "bun i --no-save"
         } else {
             "npm i"
         };
