@@ -62,7 +62,7 @@ impl JavaProvider {
     fn get_maven_exe(&self, app: &App) -> String {
         // App has a maven wrapper
         if app.includes_file("mvnw") && app.includes_file(".mvn/wrapper/maven-wrapper.properties") {
-            "./mvnw".to_string()
+            "chmod +x ./mvnw && ./mvnw".to_string()
         } else {
             "mvn".to_string()
         }
