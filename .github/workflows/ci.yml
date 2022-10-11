@@ -160,11 +160,11 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v3
 
-      - name: Install 1.57 rust toolchain
+      - name: Install 1.59 rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.57
+          toolchain: 1.59
           override: true
 
       - uses: Swatinem/rust-cache@v2

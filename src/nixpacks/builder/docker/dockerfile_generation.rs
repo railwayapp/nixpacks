@@ -1,4 +1,6 @@
-use super::{utils, DockerBuilderOptions};
+use super::{
+    file_server::FileServerConfig, incremental_cache::IncrementalCache, utils, DockerBuilderOptions,
+};
 use crate::nixpacks::{
     app,
     environment::Environment,
@@ -81,6 +83,7 @@ pub trait DockerfileGenerator {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
+        _file_server_config: Option<FileServerConfig>,
     ) -> Result<String>;
     fn write_supporting_files(
         &self,
@@ -98,6 +101,7 @@ impl DockerfileGenerator for BuildPlan {
         options: &DockerBuilderOptions,
         env: &Environment,
         output: &OutputDir,
+        file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let plan = self;
 
@@ -165,13 +169,12 @@ impl DockerfileGenerator for BuildPlan {
         let dockerfile_phases = phases
             .into_iter()
             .map(|phase| {
-                let phase_dockerfile =
-                    phase
-                        .generate_dockerfile(options, env, output)
-                        .context(format!(
-                            "Generating Dockerfile for phase {}",
-                            phase.get_name()
-                        ))?;
+                let phase_dockerfile = phase
+                    .generate_dockerfile(options, env, output, file_server_config.clone())
+                    .context(format!(
+                        "Generating Dockerfile for phase {}",
+                        phase.get_name()
+                    ))?;
 
                 Ok(phase_dockerfile)
             })
@@ -182,7 +185,7 @@ impl DockerfileGenerator for BuildPlan {
             .start_phase
             .clone()
             .unwrap_or_default()
-            .generate_dockerfile(options, env, output)?;
+            .generate_dockerfile(options, env, output, file_server_config)?;
 
         let base_image = plan
             .build_image
@@ -284,6 +287,7 @@ impl DockerfileGenerator for StartPhase {
         _options: &DockerBuilderOptions,
         _env: &Environment,
         _output: &OutputDir,
+        _file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
             Some(cmd) => utils::get_exec_command(cmd),
@@ -332,6 +336,7 @@ impl DockerfileGenerator for Phase {
         options: &DockerBuilderOptions,
         env: &Environment,
         _output: &OutputDir,
+        file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
         let phase = self;
 
@@ -363,14 +368,41 @@ impl DockerfileGenerator for Phase {
         let phase_copy_cmd = utils::get_copy_command(&phase_files, APP_DIR);
 
         let cache_mount = utils::get_cache_mount(&cache_key, &phase.cache_directories);
-        let cmds_str = phase
-            .cmds
-            .clone()
-            .unwrap_or_default()
+        let cmds_str = if options.incremental_cache_image.is_some() {
+            let image = &options.incremental_cache_image.clone().unwrap();
+            let cache_copy_in_command = if IncrementalCache::is_image_exists(image)? {
+                IncrementalCache::get_copy_to_image_command(&phase.cache_directories, image)
+                    .join("\n")
+            } else {
+                "".to_string()
+            };
+
+            let cache_copy_out_command = IncrementalCache::get_copy_from_image_command(
+                &phase.cache_directories,
+                file_server_config,
+            );
+
+            let run_commands = [
+                phase.cmds.clone().unwrap_or_default(),
+                cache_copy_out_command,
+            ]
+            .concat()
             .iter()
-            .map(|s| format!("RUN {} {}", cache_mount, s))
+            .map(|s| format!("RUN {}", s))
             .collect::<Vec<_>>()
             .join("\n");
+
+            format!("{}\n{}", cache_copy_in_command, run_commands)
+        } else {
+            phase
+                .cmds
+                .clone()
+                .unwrap_or_default()
+                .iter()
+                .map(|s| format!("RUN {} {}", cache_mount, s))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
 
         let dockerfile_stmts = vec![build_path, run_path, phase_copy_cmd, cmds_str]
             .into_iter()
@@ -414,6 +446,7 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
+                Some(FileServerConfig::default()),
             )
             .unwrap();
 
@@ -438,6 +471,7 @@ mod tests {
                 &DockerBuilderOptions::default(),
                 &Environment::default(),
                 &OutputDir::default(),
+                Some(FileServerConfig::default()),
             )
             .unwrap();
 
