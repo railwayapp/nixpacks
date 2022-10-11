@@ -1,10 +1,16 @@
 use super::{dockerfile_generation::DockerfileGenerator, DockerBuilderOptions, ImageBuilder};
 use crate::nixpacks::{
-    builder::docker::dockerfile_generation::OutputDir, environment::Environment, files,
-    logger::Logger, plan::BuildPlan,
+    builder::docker::{
+        dockerfile_generation::OutputDir,
+        file_server::FileServer,
+        incremental_cache::{IncrementalCache, IncrementalCacheDirs},
+    },
+    environment::Environment,
+    files,
+    logger::Logger,
+    plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
-
 use std::{
     fs::{self, remove_dir_all, File},
     process::Command,
@@ -36,8 +42,19 @@ impl ImageBuilder for DockerImageBuilder {
         let name = self.options.name.clone().unwrap_or_else(|| id.to_string());
         output.ensure_output_exists()?;
 
+        let incremental_cache = IncrementalCache::default();
+        let incremental_cache_dirs = IncrementalCacheDirs::create(&output)?;
+
+        let file_server_config = if self.options.incremental_cache_image.is_some() {
+            let file_server = FileServer {};
+            let config = file_server.start(&incremental_cache_dirs);
+            Some(config)
+        } else {
+            None
+        };
+
         let dockerfile = plan
-            .generate_dockerfile(&self.options, env, &output)
+            .generate_dockerfile(&self.options, env, &output, file_server_config)
             .context("Generating Dockerfile for plan")?;
 
         // If printing the Dockerfile, don't write anything to disk
@@ -72,6 +89,13 @@ impl ImageBuilder for DockerImageBuilder {
             self.logger.log_section("Successfully Built!");
             println!("\nRun:");
             println!("  docker run -it {}", name);
+
+            if self.options.incremental_cache_image.is_some() {
+                incremental_cache.create_image(
+                    &incremental_cache_dirs,
+                    &self.options.incremental_cache_image.clone().unwrap(),
+                )?;
+            }
 
             if output.is_temp {
                 remove_dir_all(output.root)?;
@@ -112,6 +136,10 @@ impl DockerImageBuilder {
             .arg(&output.get_absolute_path("Dockerfile"))
             .arg("-t")
             .arg(name);
+
+        if self.options.verbose {
+            docker_build_cmd.arg("--progress=plain");
+        }
 
         if self.options.quiet {
             docker_build_cmd.arg("--quiet");
@@ -163,7 +191,7 @@ impl DockerImageBuilder {
     fn write_dockerfile(&self, dockerfile: String, output: &OutputDir) -> Result<()> {
         let dockerfile_path = output.get_absolute_path("Dockerfile");
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;
-        fs::write(dockerfile_path, dockerfile)?;
+        fs::write(dockerfile_path, dockerfile).context("Write Dockerfile")?;
 
         Ok(())
     }
