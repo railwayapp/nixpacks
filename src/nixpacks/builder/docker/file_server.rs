@@ -15,7 +15,7 @@ use std::thread;
 use super::incremental_cache::IncrementalCacheDirs;
 use uuid::Uuid;
 
-const NIXPACKS_SERVER_GATEWAY_IP: &str = "172.17.0.1";
+const NIXPACKS_SERVER_HOST: &str = "host.docker.internal";
 const NIXPACKS_SERVER_LISTEN_TO_IP: &str = "0.0.0.0";
 
 #[derive(Debug, Clone)]
@@ -39,7 +39,7 @@ impl FileServer {
             access_token: Uuid::new_v4().to_string(),
             listen_to_ip: NIXPACKS_SERVER_LISTEN_TO_IP.to_string(),
             port,
-            upload_url: format!("http://{}:{}/upload/", NIXPACKS_SERVER_GATEWAY_IP, port),
+            upload_url: format!("http://{}:{}/upload/", NIXPACKS_SERVER_HOST, port),
         };
 
         let server_config = config.clone();
