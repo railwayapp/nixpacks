@@ -40,9 +40,7 @@ expression: plan
       "name": "setup",
       "nixPkgs": [
         "nodejs-16_x",
-        "npm-8_x",
-        "python39",
-        "gccStdenv"
+        "npm-8_x"
       ],
       "nixLibs": [
         "libuuid",
@@ -51,15 +49,7 @@ expression: plan
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
       ],
-      "nixpkgsArchive": "[archive]",
-      "aptPkgs": [
-        "build-essential",
-        "libcairo2-dev",
-        "libpango1.0-dev",
-        "libjpeg-dev",
-        "libgif-dev",
-        "librsvg2-dev"
-      ]
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {
