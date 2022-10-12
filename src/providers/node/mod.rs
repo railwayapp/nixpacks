@@ -73,24 +73,8 @@ impl Provider for NodeProvider {
                 "libxshmfence1".to_string(),
                 "libglu1".to_string(),
             ]);
-        }
-
-        if NodeProvider::uses_node_dependency(app, "canvas") {
+        } else if NodeProvider::uses_node_dependency(app, "canvas") {
             setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
-            setup.add_apt_pkgs(vec![
-                "build-essential".into(),
-                "libcairo2-dev".into(),
-                "libpango1.0-dev".into(),
-                "libjpeg-dev".into(),
-                "libgif-dev".into(),
-                "librsvg2-dev".into(),
-            ]);
-        }
-
-        if NodeProvider::uses_node_dependency(app, "node-gyp")
-            || NodeProvider::uses_node_dependency(app, "node-pre-gyp")
-        {
-            setup.add_nix_pkgs(&[Pkg::new("python39"), Pkg::new("gccStdenv")]);
         }
 
         // Install
