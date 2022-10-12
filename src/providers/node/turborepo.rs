@@ -58,7 +58,7 @@ impl Turborepo {
         for glob in workspaces {
             let files = app.find_directories(&glob)?;
             for file in files {
-                if file.ends_with(format!("/{}", name)) {
+                if file.ends_with(name) {
                     return Ok(true);
                 }
             }

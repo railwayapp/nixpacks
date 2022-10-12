@@ -213,6 +213,8 @@ impl NodeProvider {
                         "{} --workspace {} run start",
                         pkg_manager, name
                     )));
+                } else {
+                    println!("warning: app `{}` not found", name);
                 }
             }
             if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
