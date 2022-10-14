@@ -39,7 +39,7 @@ impl Provider for RubyProvider {
         );
 
         let node = NodeProvider::default();
-        if node.detect(app, env)? {
+        if node.detect(app, env)? || self.uses_gem_dep(app, "execjs") {
             let node_build_plan = node.get_build_plan(app, env)?;
             if let Some(node_build_plan) = node_build_plan {
                 // Include the install phase from the node provider
@@ -68,6 +68,15 @@ impl RubyProvider {
             setup.add_apt_pkgs(vec!["default-libmysqlclient-dev".to_string()]);
         }
 
+        if self.uses_gem_dep(app, "rmagick") {
+            setup.add_apt_pkgs(vec![String::from("libmagickwand-dev")]);
+            setup.add_nix_pkgs(&[Pkg::new("imagemagick")]);
+        }
+
+        if self.uses_gem_dep(app, "charlock_holmes") {
+            setup.add_apt_pkgs(vec![String::from("libicu-dev")]);
+        }
+
         setup.add_cmd(
             "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh".to_string(),
         );
@@ -91,17 +100,6 @@ impl RubyProvider {
         install.add_path(format!("/usr/local/rvm/rubies/{}/bin", ruby_version));
         install.add_path(format!("/usr/local/rvm/gems/{}/bin", ruby_version));
         install.add_path(format!("/usr/local/rvm/gems/{}@global/bin", ruby_version));
-
-        if self.uses_gem_dep(app, "execjs") {
-            install.add_nix_pkgs(&[Pkg::new("nodejs")]);
-        }
-        if self.uses_gem_dep(app, "rmagick") {
-            install.add_apt_pkgs(vec![String::from("libmagickwand-dev")]);
-            install.add_nix_pkgs(&[Pkg::new("imagemagick")]);
-        }
-        if self.uses_gem_dep(app, "charlock_holmes") {
-            install.add_apt_pkgs(vec![String::from("libicu-dev")]);
-        }
 
         Ok(Some(install))
     }
