@@ -795,6 +795,13 @@ fn test_ruby_node() {
 }
 
 #[test]
+fn test_ruby_execjs() {
+    let name = simple_build("./examples/ruby-execjs/");
+    let output = run_image(&name, None);
+    assert!(output.contains("HELLO FROM EXECJS"));
+}
+
+#[test]
 fn test_ruby_local_deps() {
     let name = simple_build("./examples/ruby-local-deps/");
     let output = run_image(&name, None);
