@@ -335,7 +335,13 @@ HELP=0
 CARGOTOML="$(curl -fsSL https://raw.githubusercontent.com/railwayapp/nixpacks/master/Cargo.toml)"
 ALL_VERSIONS="$(sed -n 's/.*version = "\([^"]*\)".*/\1/p' <<< "$CARGOTOML")"
 IFS=$'\n' read -r -a VERSION <<< "$ALL_VERSIONS"
+DEFAULT_VERSION="$VERSION"
+
 # defaults
+if [ -z "${NIXPACKS_VERSION-}" ]; then
+  NIXPACKS_VERSION="$DEFAULT_VERSION"
+fi
+
 if [ -z "${NIXPACKS_PLATFORM-}" ]; then
   PLATFORM="$(detect_platform)"
 fi
@@ -468,7 +474,7 @@ print_configuration () {
     debug "${BOLD}Bin directory${NO_COLOR}: ${GREEN}${BIN_DIR}${NO_COLOR}"
     debug "${BOLD}Platform${NO_COLOR}:      ${GREEN}${PLATFORM}${NO_COLOR}"
     debug "${BOLD}Arch${NO_COLOR}:          ${GREEN}${ARCH}${NO_COLOR}"
-    debug "${BOLD}Version${NO_COLOR}:       ${GREEN}${VERSION[0]}${NO_COLOR}"
+    debug "${BOLD}Version${NO_COLOR}:       ${GREEN}${NIXPACKS_VERSION}${NO_COLOR}"
     printf '\n'
   fi
 }
@@ -481,9 +487,9 @@ if [ "${PLATFORM}" = "pc-windows-msvc" ]; then
   EXT=zip
 fi
 
-URL="${BASE_URL}/latest/download/nixpacks-v${VERSION[0]}-${TARGET}.${EXT}"
+URL="${BASE_URL}/download/v${NIXPACKS_VERSION}/nixpacks-v${NIXPACKS_VERSION}-${TARGET}.${EXT}"
 debug "Tarball URL: ${UNDERLINE}${BLUE}${URL}${NO_COLOR}"
-confirm "Install nixpacks ${GREEN}${VERSION[0]}${NO_COLOR} to ${BOLD}${GREEN}${BIN_DIR}${NO_COLOR}?"
+confirm "Install nixpacks ${GREEN}${NIXPACKS_VERSION}${NO_COLOR} to ${BOLD}${GREEN}${BIN_DIR}${NO_COLOR}?"
 check_bin_dir "${BIN_DIR}"
 
 install "${EXT}"
