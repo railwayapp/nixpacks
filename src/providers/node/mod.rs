@@ -78,7 +78,7 @@ impl Provider for NodeProvider {
         }
 
         // Install
-        let mut install = Phase::install(Some(NodeProvider::get_install_command(app)));
+        let mut install = Phase::install(NodeProvider::get_install_command(app));
         install.add_cache_directory(NodeProvider::get_package_manager_cache_dir(app));
         install.add_path("/app/node_modules/.bin".to_string());
 
@@ -232,7 +232,11 @@ impl NodeProvider {
         pkg_manager.to_string()
     }
 
-    pub fn get_install_command(app: &App) -> String {
+    pub fn get_install_command(app: &App) -> Option<String> {
+        if !app.includes_file("package.json") {
+            return None;
+        }
+
         let mut install_cmd = "npm i";
         let package_manager = NodeProvider::get_package_manager(app);
         if package_manager == "pnpm" {
@@ -248,7 +252,8 @@ impl NodeProvider {
         } else if app.includes_file("bun.lockb") {
             install_cmd = "bun i --no-save";
         }
-        install_cmd.to_string()
+
+        Some(install_cmd.to_string())
     }
 
     fn get_package_manager_cache_dir(app: &App) -> String {
