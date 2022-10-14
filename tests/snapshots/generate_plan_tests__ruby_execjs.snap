@@ -34,9 +34,6 @@ expression: plan
       "dependsOn": [
         "setup"
       ],
-      "cmds": [
-        "npm i"
-      ],
       "cacheDirectories": [
         "/root/.npm"
       ],
@@ -47,7 +44,7 @@ expression: plan
     "node:setup": {
       "name": "node:setup",
       "nixPkgs": [
-        "nodejs-14_x",
+        "nodejs-16_x",
         "npm-8_x"
       ],
       "nixOverlays": [
