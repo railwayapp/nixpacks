@@ -49,7 +49,7 @@ Or you can add commands that will be run before or after the commands set by the
 cmds = ["echo first", "...", "echo last"]
 ```
 
-The same can be done to custom the commands for other phases.
+The same can be done to customize the commands for other phases.
 
 ## New phase
 
