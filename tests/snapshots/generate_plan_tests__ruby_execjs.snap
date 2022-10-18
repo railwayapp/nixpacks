@@ -1,0 +1,72 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "BUNDLE_GEMFILE": "/app/Gemfile",
+    "GEM_HOME": "/usr/local/rvm/gems/ruby-3.1.2",
+    "GEM_PATH": "/usr/local/rvm/gems/ruby-3.1.2:/usr/local/rvm/gems/ruby-3.1.2@global",
+    "NIXPACKS_METADATA": "Ruby"
+  },
+  "phases": {
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "bundle install"
+      ],
+      "cacheDirectories": [
+        "/root/.bundle/cache"
+      ],
+      "paths": [
+        "/usr/local/rvm/rubies/ruby-3.1.2/bin",
+        "/usr/local/rvm/gems/ruby-3.1.2/bin",
+        "/usr/local/rvm/gems/ruby-3.1.2@global/bin"
+      ]
+    },
+    "node:install": {
+      "name": "node:install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cacheDirectories": [
+        "/root/.npm"
+      ],
+      "paths": [
+        "/app/node_modules/.bin"
+      ]
+    },
+    "node:setup": {
+      "name": "node:setup",
+      "nixPkgs": [
+        "nodejs-16_x",
+        "npm-8_x"
+      ],
+      "nixOverlays": [
+        "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+      ],
+      "nixpkgsArchive": "[archive]"
+    },
+    "setup": {
+      "name": "setup",
+      "aptPkgs": [
+        "procps"
+      ],
+      "cmds": [
+        "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh",
+        "rvm install ruby-3.1.2",
+        "rvm --default use ruby-3.1.2",
+        "gem install bundler:2.3.7",
+        "echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile"
+      ]
+    }
+  },
+  "start": {
+    "cmd": "ruby app.rb"
+  }
+}

@@ -76,28 +76,12 @@ impl Provider for NodeProvider {
                 "libxshmfence1".to_string(),
                 "libglu1".to_string(),
             ]);
-        }
-
-        if NodeProvider::uses_node_dependency(app, "canvas") {
+        } else if NodeProvider::uses_node_dependency(app, "canvas") {
             setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
-            setup.add_apt_pkgs(vec![
-                "build-essential".into(),
-                "libcairo2-dev".into(),
-                "libpango1.0-dev".into(),
-                "libjpeg-dev".into(),
-                "libgif-dev".into(),
-                "librsvg2-dev".into(),
-            ]);
-        }
-
-        if NodeProvider::uses_node_dependency(app, "node-gyp")
-            || NodeProvider::uses_node_dependency(app, "node-pre-gyp")
-        {
-            setup.add_nix_pkgs(&[Pkg::new("python39"), Pkg::new("gccStdenv")]);
         }
 
         // Install
-        let mut install = Phase::install(Some(NodeProvider::get_install_command(app)));
+        let mut install = Phase::install(NodeProvider::get_install_command(app));
         install.add_cache_directory(NodeProvider::get_package_manager_cache_dir(app));
         install.add_path("/app/node_modules/.bin".to_string());
 
@@ -300,7 +284,11 @@ impl NodeProvider {
         .to_string()
     }
 
-    pub fn get_install_command(app: &App) -> String {
+    pub fn get_install_command(app: &App) -> Option<String> {
+        if !app.includes_file("package.json") {
+            return None;
+        }
+
         let mut install_cmd = "npm i";
         let package_manager = NodeProvider::get_package_manager(app);
         if package_manager == "pnpm" {
@@ -316,7 +304,8 @@ impl NodeProvider {
         } else if app.includes_file("bun.lockb") {
             install_cmd = "bun i --no-save";
         }
-        install_cmd.to_string()
+
+        Some(install_cmd.to_string())
     }
 
     fn get_package_manager_cache_dir(app: &App) -> String {
