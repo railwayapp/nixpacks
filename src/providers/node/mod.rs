@@ -164,7 +164,6 @@ impl NodeProvider {
     }
 
     pub fn get_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
-        let dlx = NodeProvider::get_package_manager_dlx_command(app);
         let pkg_manager = NodeProvider::get_package_manager(app);
         let executor = NodeProvider::get_executor(app);
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
@@ -198,7 +197,6 @@ impl NodeProvider {
             if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
                 return Ok(Some(start_pipeline));
             }
-            return Ok(Some(format!("{} turbo run start", dlx)));
         }
 
         let package_manager = NodeProvider::get_package_manager(app);
