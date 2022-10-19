@@ -193,7 +193,7 @@ impl NodeProvider {
                         pkg_manager, name
                     )));
                 }
-                println!("warning: app `{}` not found", name);
+                println!("Warning: Turborepo app `{}` not found", name);
             }
             if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
                 return Ok(Some(start_pipeline));
