@@ -166,7 +166,7 @@ impl NodeProvider {
     pub fn get_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
         let dlx = NodeProvider::get_package_manager_dlx_command(app);
         let pkg_manager = NodeProvider::get_package_manager(app);
-        let executor = if pkg_manager == *"bun" { "bun" } else { "node" };
+        let executor = NodeProvider::get_executor(app);
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
 
         if Nx::is_nx_monorepo(app, env) {
@@ -314,6 +314,11 @@ impl NodeProvider {
         } else {
             (*NPM_CACHE_DIR).to_string()
         }
+    }
+
+    fn get_executor(app: &App) -> String {
+        let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager == *"bun" { "bun" } else { "node" }.to_string()
     }
 
     /// Returns the nodejs nix package and the appropriate package manager nix image.
