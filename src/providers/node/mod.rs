@@ -251,12 +251,9 @@ impl NodeProvider {
             if app.includes_file(".yarnrc.yml") {
                 install_cmd = "yarn set version berry && yarn install --check-cache".to_string();
                 let yarnrc_yml: Yarnrc = app.read_yaml(".yarnrc.yml").unwrap_or_default();
-                let path = yarnrc_yml.yarn_path;
-                if path.is_some() {
-                    install_cmd = format!(
-                        "yarn set version ./{} && yarn install --check-cache",
-                        path.unwrap()
-                    );
+                if let Some(path) = yarnrc_yml.yarn_path {
+                    install_cmd =
+                        format!("yarn set version ./{} && yarn install --check-cache", path);
                 }
             } else {
                 install_cmd = "yarn install --frozen-lockfile".to_string();
