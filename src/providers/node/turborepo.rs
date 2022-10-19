@@ -1,10 +1,12 @@
 use serde_json::Value;
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::nixpacks::{app::App, environment::Environment};
+
+use super::{NodeProvider, PackageJson};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TurboJson {
@@ -45,8 +47,58 @@ impl Turborepo {
         Turborepo::get_pipeline_cmd(cfg, "build")
     }
 
+    pub fn get_actual_build_cmd(
+        app: &App,
+        env: &Environment,
+    ) -> Result<Option<String>, Box<dyn Error>> {
+        let turbo_cfg = Turborepo::get_config(app)?;
+        let dlx = NodeProvider::get_package_manager_dlx_command(app);
+        if let Some(build_cmd) = Turborepo::get_build_cmd(&turbo_cfg) {
+            return Ok(Some(build_cmd));
+        } else if let Some(app_name) = Turborepo::get_app_name(env) {
+            return Ok(Some(format!("{} turbo run {}:build", dlx, app_name)));
+        };
+        Ok(None)
+    }
+
     pub fn get_start_cmd(cfg: &TurboJson) -> Option<String> {
         Turborepo::get_pipeline_cmd(cfg, "start")
+    }
+
+    pub fn get_actual_start_cmd(
+        app: &App,
+        env: &Environment,
+        package_json: &PackageJson,
+    ) -> Result<Option<String>, Box<dyn Error>> {
+        let turbo_cfg = Turborepo::get_config(app)?;
+        let app_name = Turborepo::get_app_name(env);
+        let pkg_manager = NodeProvider::get_package_manager(app);
+
+        if let Some(name) = app_name {
+            if Turborepo::has_app(
+                app,
+                if pkg_manager == "pnpm" {
+                    pnpm_workspaces(app)?
+                } else {
+                    package_json
+                        .workspaces
+                        .as_ref()
+                        .unwrap_or(&Vec::default())
+                        .clone()
+                },
+                &name,
+            )? {
+                return Ok(Some(format!(
+                    "{} --workspace {} run start",
+                    pkg_manager, name
+                )));
+            }
+            println!("Warning: Turborepo app `{}` not found", name);
+        }
+        if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
+            return Ok(Some(start_pipeline));
+        }
+        Ok(None)
     }
 
     pub fn get_app_name(env: &Environment) -> Option<String> {

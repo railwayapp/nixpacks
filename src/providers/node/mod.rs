@@ -146,13 +146,9 @@ impl NodeProvider {
         }
 
         if Turborepo::is_turborepo(app) {
-            let turbo_cfg = Turborepo::get_config(app)?;
-            let dlx = NodeProvider::get_package_manager_dlx_command(app);
-            if let Some(build_cmd) = Turborepo::get_build_cmd(&turbo_cfg) {
-                return Ok(Some(build_cmd));
-            } else if let Some(app_name) = Turborepo::get_app_name(env) {
-                return Ok(Some(format!("{} turbo run {}:build", dlx, app_name)))
-            };
+            if let Ok(Some(turbo_build_cmd)) = Turborepo::get_actual_build_cmd(app, env) {
+                return Ok(Some(turbo_build_cmd));
+            }
         }
 
         if NodeProvider::has_script(app, "build")? {
@@ -164,7 +160,6 @@ impl NodeProvider {
     }
 
     pub fn get_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
-        let pkg_manager = NodeProvider::get_package_manager(app);
         let executor = NodeProvider::get_executor(app);
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
 
@@ -174,28 +169,10 @@ impl NodeProvider {
             }
         }
         if Turborepo::is_turborepo(app) {
-            let turbo_cfg = Turborepo::get_config(app)?;
-            let app_name = Turborepo::get_app_name(env);
-
-            if let Some(name) = app_name {
-                if Turborepo::has_app(
-                    app,
-                    if pkg_manager == "pnpm" {
-                        turborepo::pnpm_workspaces(app)?
-                    } else {
-                        package_json.workspaces.unwrap_or_default()
-                    },
-                    &name,
-                )? {
-                    return Ok(Some(format!(
-                        "{} --workspace {} run start",
-                        pkg_manager, name
-                    )));
-                }
-                println!("Warning: Turborepo app `{}` not found", name);
-            }
-            if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
-                return Ok(Some(start_pipeline));
+            if let Ok(Some(turbo_start_cmd)) =
+                Turborepo::get_actual_start_cmd(app, env, &package_json)
+            {
+                return Ok(Some(turbo_start_cmd));
             }
         }
 
@@ -316,7 +293,12 @@ impl NodeProvider {
 
     fn get_executor(app: &App) -> String {
         let package_manager = NodeProvider::get_package_manager(app);
-        if package_manager == *"bun" { "bun" } else { "node" }.to_string()
+        if package_manager == *"bun" {
+            "bun"
+        } else {
+            "node"
+        }
+        .to_string()
     }
 
     /// Returns the nodejs nix package and the appropriate package manager nix image.

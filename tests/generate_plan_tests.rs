@@ -132,6 +132,7 @@ fn test_node_turborepo_custom_app() {
         "./examples/node-turborepo",
         vec!["NIXPACKS_TURBO_APP_NAME=docs"],
         &GeneratePlanOptions::default(),
-    ).unwrap();
+    )
+    .unwrap();
     assert!(plan.start_phase.unwrap().cmd.unwrap().contains("docs"));
 }
