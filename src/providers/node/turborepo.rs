@@ -54,7 +54,6 @@ impl Turborepo {
     }
 
     pub fn has_app(app: &App, workspaces: Vec<String>, name: &str) -> Result<bool> {
-        //TODO: parallelize?
         for glob in workspaces {
             let files = app.find_directories(&glob)?;
             for file in files {
