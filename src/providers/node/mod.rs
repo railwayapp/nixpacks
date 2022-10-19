@@ -148,15 +148,10 @@ impl NodeProvider {
         if Turborepo::is_turborepo(app) {
             let turbo_cfg = Turborepo::get_config(app)?;
             let dlx = NodeProvider::get_package_manager_dlx_command(app);
-            return if let Some(build_cmd) = Turborepo::get_build_cmd(&turbo_cfg) {
-                Ok(Some(build_cmd))
+            if let Some(build_cmd) = Turborepo::get_build_cmd(&turbo_cfg) {
+                return Ok(Some(build_cmd));
             } else if let Some(app_name) = Turborepo::get_app_name(env) {
-                Ok(Some(format!("{} turbo run {}:build", dlx, app_name)))
-            } else if NodeProvider::has_script(app, "build")? {
-                let pkg_manager = NodeProvider::get_package_manager(app);
-                Ok(Some(format!("{} run build", pkg_manager)))
-            } else {
-                Ok(None)
+                return Ok(Some(format!("{} turbo run {}:build", dlx, app_name)))
             };
         }
 
