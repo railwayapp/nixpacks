@@ -127,12 +127,11 @@ fn test_zig_gyro() {
 }
 
 #[test]
-fn test_node_turborepo_custom_app() -> Result<(), Box<dyn std::error::Error>> {
+fn test_node_turborepo_custom_app() {
     let plan = generate_build_plan(
         "./examples/node-turborepo",
         vec!["NIXPACKS_TURBO_APP_NAME=docs"],
         &GeneratePlanOptions::default(),
-    )?;
+    ).unwrap();
     assert!(plan.start_phase.unwrap().cmd.unwrap().contains("docs"));
-    Ok(())
 }
