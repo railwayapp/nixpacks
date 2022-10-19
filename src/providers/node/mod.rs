@@ -249,12 +249,15 @@ impl NodeProvider {
             install_cmd = "pnpm i --frozen-lockfile".to_string();
         } else if package_manager == "yarn" {
             if app.includes_file(".yarnrc.yml") {
+                install_cmd = "yarn set version berry && yarn install --check-cache".to_string();
                 let yarnrc_yml: Yarnrc = app.read_yaml(".yarnrc.yml").unwrap_or_default();
-                let version = yarnrc_yml.yarn_path.unwrap_or_else(|| "berry".to_string());
-                install_cmd = format!(
-                    "yarn set version ./{} && yarn install --check-cache",
-                    version
-                );
+                let path = yarnrc_yml.yarn_path;
+                if path.is_some() {
+                    install_cmd = format!(
+                        "yarn set version ./{} && yarn install --check-cache",
+                        path.unwrap()
+                    );
+                }
             } else {
                 install_cmd = "yarn install --frozen-lockfile".to_string();
             }
