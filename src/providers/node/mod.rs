@@ -42,6 +42,12 @@ pub struct PackageJson {
     pub project_type: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct Yarnrc {
+    #[serde(rename = "yarnPath")]
+    pub yarn_path: Option<String>,
+}
+
 #[derive(Default, Debug)]
 pub struct NodeProvider {}
 
@@ -237,23 +243,28 @@ impl NodeProvider {
             return None;
         }
 
-        let mut install_cmd = "npm i";
+        let mut install_cmd = "npm i".to_string();
         let package_manager = NodeProvider::get_package_manager(app);
         if package_manager == "pnpm" {
-            install_cmd = "pnpm i --frozen-lockfile";
+            install_cmd = "pnpm i --frozen-lockfile".to_string();
         } else if package_manager == "yarn" {
             if app.includes_file(".yarnrc.yml") {
-                install_cmd = "yarn set version berry && yarn install --check-cache";
+                install_cmd = "yarn set version berry && yarn install --check-cache".to_string();
+                let yarnrc_yml: Yarnrc = app.read_yaml(".yarnrc.yml").unwrap_or_default();
+                if let Some(path) = yarnrc_yml.yarn_path {
+                    install_cmd =
+                        format!("yarn set version ./{} && yarn install --check-cache", path);
+                }
             } else {
-                install_cmd = "yarn install --frozen-lockfile";
+                install_cmd = "yarn install --frozen-lockfile".to_string();
             }
         } else if app.includes_file("package-lock.json") {
-            install_cmd = "npm ci";
+            install_cmd = "npm ci".to_string();
         } else if app.includes_file("bun.lockb") {
-            install_cmd = "bun i --no-save";
+            install_cmd = "bun i --no-save".to_string();
         }
 
-        Some(install_cmd.to_string())
+        Some(install_cmd)
     }
 
     fn get_package_manager_cache_dir(app: &App) -> String {
