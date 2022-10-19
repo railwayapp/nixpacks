@@ -251,7 +251,10 @@ impl NodeProvider {
             if app.includes_file(".yarnrc.yml") {
                 let yarnrc_yml: Yarnrc = app.read_yaml(".yarnrc.yml").unwrap_or_default();
                 let version = yarnrc_yml.yarn_path.unwrap_or_else(|| "berry".to_string());
-                install_cmd = format!("yarn set version ./{} && yarn install --check-cache", version);
+                install_cmd = format!(
+                    "yarn set version ./{} && yarn install --check-cache",
+                    version
+                );
             } else {
                 install_cmd = "yarn install --frozen-lockfile".to_string();
             }
