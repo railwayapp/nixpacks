@@ -329,19 +329,16 @@ mod test {
         let result = BuildPlan::from_toml(
             r#"
             [phases.setup]
-            name = "setup"
             nixPkgs = ["cowsay", "sl", "..."]
             aptPkgs = ["foo", "bar", "..."]
             nixLibs = ["my-lib", "..."]
 
             [phases.install]
-            name = "install"
             cmds = ["yarn install"]
             cacheDirectories = ["install/cache/dir"]
             dependsOn = ["setup"]
 
             [phases.build]
-            name = "build"
             cmds = ["yarn build"]
             cacheDirectories = ["build/cache/dir"]
             dependsOn = ["install"]
