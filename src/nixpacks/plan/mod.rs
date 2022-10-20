@@ -190,13 +190,13 @@ impl BuildPlan {
         let mut uses_setup = false;
 
         if let Some(pkg_string) = env.get_config_variable("PKGS") {
-            let mut pkgs = split_env_string(pkg_string);
+            let mut pkgs = split_env_string(pkg_string.as_str());
             pkgs.push("...".to_string());
             setup.nix_pkgs = Some(pkgs);
             uses_setup = true;
         }
         if let Some(apt_string) = env.get_config_variable("APT_PKGS") {
-            let mut apts = split_env_string(apt_string);
+            let mut apts = split_env_string(apt_string.as_str());
             apts.push("...".to_string());
             setup.apt_pkgs = Some(apts);
             uses_setup = true;
@@ -220,7 +220,7 @@ impl BuildPlan {
             let mut install = Phase::install(Some(cmd_string));
 
             if let Some(cache_dirs) = env.get_config_variable("INSTALL_CACHE_DIRS") {
-                split_env_string(cache_dirs)
+                split_env_string(cache_dirs.as_str())
                     .iter()
                     .for_each(|dir| install.add_cache_directory(dir));
             }
@@ -233,7 +233,7 @@ impl BuildPlan {
             let mut build = Phase::build(Some(cmd_string));
 
             if let Some(cache_dirs) = env.get_config_variable("BUILD_CACHE_DIRS") {
-                split_env_string(cache_dirs)
+                split_env_string(cache_dirs.as_str())
                     .iter()
                     .for_each(|dir| build.add_cache_directory(dir));
             }
@@ -300,7 +300,7 @@ impl topological_sort::TopItem for (String, Phase) {
     }
 }
 
-fn split_env_string(s: String) -> Vec<String> {
+fn split_env_string(s: &str) -> Vec<String> {
     s.split([' ', ','])
         .map(std::string::ToString::to_string)
         .filter(|s| !s.is_empty())
@@ -400,11 +400,11 @@ mod test {
     #[test]
     fn test_split_env_string() {
         assert_eq!(
-            split_env_string("nodejs yarn".to_string()),
+            split_env_string("nodejs yarn"),
             vec!["nodejs".to_string(), "yarn".to_string()]
         );
         assert_eq!(
-            split_env_string("nodejs, yarn".to_string()),
+            split_env_string("nodejs, yarn"),
             vec!["nodejs".to_string(), "yarn".to_string()]
         );
     }
