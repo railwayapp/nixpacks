@@ -63,7 +63,8 @@ expression: plan
         "rvm --default use ruby-3.1.2",
         "gem install bundler:2.3.7",
         "echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile"
-      ]
+      ],
+      "onlyIncludeFiles": []
     }
   },
   "start": {
