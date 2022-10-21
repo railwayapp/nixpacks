@@ -17,13 +17,26 @@ pub struct IncrementalCache {}
 
 #[derive(Default)]
 pub struct IncrementalCacheDirs {
+    out_dir: OutputDir,
     pub uploads_dir: PathBuf,
     pub image_dir: PathBuf,
 }
 
 impl IncrementalCacheDirs {
-    pub fn create(out_dir: &OutputDir) -> Result<IncrementalCacheDirs> {
+    pub fn new(out_dir: &OutputDir) -> Self {
         let incremental_cache_root = out_dir.get_absolute_path(INCREMENTAL_CACHE_DIR);
+        let image_dir = incremental_cache_root.join(PathBuf::from(INCREMENTAL_CACHE_IMAGE_DIR));
+        let uploads_dir = incremental_cache_root.join(PathBuf::from(INCREMENTAL_CACHE_UPLOADS_DIR));
+
+        IncrementalCacheDirs {
+            out_dir: out_dir.clone(),
+            uploads_dir,
+            image_dir,
+        }
+    }
+
+    pub fn create(&self) -> Result<()> {
+        let incremental_cache_root = self.out_dir.get_absolute_path(INCREMENTAL_CACHE_DIR);
 
         if fs::metadata(&incremental_cache_root)
             .context("Check if incremental-cache dir exists")
@@ -32,29 +45,25 @@ impl IncrementalCacheDirs {
             fs::remove_dir_all(&incremental_cache_root)?;
         }
 
-        let image_dir = incremental_cache_root.join(PathBuf::from(INCREMENTAL_CACHE_IMAGE_DIR));
-        if fs::metadata(&image_dir)
+        if fs::metadata(&self.image_dir)
             .context("Check if incremental cache image dir exists")
             .is_ok()
         {
-            fs::remove_dir_all(&image_dir)?;
+            fs::remove_dir_all(&self.image_dir)?;
         }
 
-        let uploads_dir = incremental_cache_root.join(PathBuf::from(INCREMENTAL_CACHE_UPLOADS_DIR));
-        if fs::metadata(&uploads_dir)
+        if fs::metadata(&self.uploads_dir)
             .context("Check if incremental cache uploads dir exists")
             .is_ok()
         {
-            fs::remove_dir_all(&uploads_dir)?;
+            fs::remove_dir_all(&self.uploads_dir)?;
         }
 
-        fs::create_dir_all(&image_dir).context("Create incremental cache image dir")?;
-        fs::create_dir_all(&uploads_dir).context("Creating incremental-cache uploads directory")?;
+        fs::create_dir_all(&self.image_dir).context("Create incremental cache image dir")?;
+        fs::create_dir_all(&self.uploads_dir)
+            .context("Creating incremental-cache uploads directory")?;
 
-        Ok(IncrementalCacheDirs {
-            uploads_dir,
-            image_dir,
-        })
+        Ok(())
     }
 }
 
