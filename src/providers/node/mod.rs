@@ -1,4 +1,4 @@
-use self::nx::Nx;
+use self::{nx::Nx, turborepo::Turborepo};
 use super::Provider;
 use crate::nixpacks::{
     app::App,
@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
 mod nx;
+mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
@@ -40,6 +41,8 @@ pub struct PackageJson {
     pub dev_dependencies: Option<HashMap<String, String>>,
     #[serde(rename = "type")]
     pub project_type: Option<String>,
+
+    pub workspaces: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]
@@ -148,6 +151,12 @@ impl NodeProvider {
             }
         }
 
+        if Turborepo::is_turborepo(app) {
+            if let Ok(Some(turbo_build_cmd)) = Turborepo::get_actual_build_cmd(app, env) {
+                return Ok(Some(turbo_build_cmd));
+            }
+        }
+
         if NodeProvider::has_script(app, "build")? {
             let pkg_manager = NodeProvider::get_package_manager(app);
             Ok(Some(format!("{} run build", pkg_manager)))
@@ -157,9 +166,19 @@ impl NodeProvider {
     }
 
     pub fn get_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
+        let executor = NodeProvider::get_executor(app);
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
+
         if Nx::is_nx_monorepo(app, env) {
             if let Some(nx_start_cmd) = Nx::get_nx_start_cmd(app, env)? {
                 return Ok(Some(nx_start_cmd));
+            }
+        }
+        if Turborepo::is_turborepo(app) {
+            if let Ok(Some(turbo_start_cmd)) =
+                Turborepo::get_actual_start_cmd(app, env, &package_json)
+            {
+                return Ok(Some(turbo_start_cmd));
             }
         }
 
@@ -168,21 +187,14 @@ impl NodeProvider {
             return Ok(Some(format!("{} run start", package_manager)));
         }
 
-        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         if let Some(main) = package_json.main {
             if app.includes_file(&main) {
-                if package_manager == "bun" {
-                    return Ok(Some(format!("bun {}", main)));
-                }
-                return Ok(Some(format!("node {}", main)));
+                return Ok(Some(format!("{} {}", executor, main)));
             }
         }
 
         if app.includes_file("index.js") {
-            if package_manager == "bun" {
-                return Ok(Some("bun index.js".to_string()));
-            }
-            return Ok(Some("node index.js".to_string()));
+            return Ok(Some(format!("{} index.js", executor)));
         } else if app.includes_file("index.ts") && package_manager == "bun" {
             return Ok(Some("bun index.ts".to_string()));
         }
@@ -238,6 +250,16 @@ impl NodeProvider {
         pkg_manager.to_string()
     }
 
+    pub fn get_package_manager_dlx_command(app: &App) -> String {
+        let pkg_manager = NodeProvider::get_package_manager(app);
+        match pkg_manager.as_str() {
+            "pnpm" => "pnpx",
+            "yarn" => "yarn",
+            _ => "npx",
+        }
+        .to_string()
+    }
+
     pub fn get_install_command(app: &App) -> Option<String> {
         if !app.includes_file("package.json") {
             return None;
@@ -278,6 +300,16 @@ impl NodeProvider {
         } else {
             (*NPM_CACHE_DIR).to_string()
         }
+    }
+
+    fn get_executor(app: &App) -> String {
+        let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager == *"bun" {
+            "bun"
+        } else {
+            "node"
+        }
+        .to_string()
     }
 
     /// Returns the nodejs nix package and the appropriate package manager nix image.
