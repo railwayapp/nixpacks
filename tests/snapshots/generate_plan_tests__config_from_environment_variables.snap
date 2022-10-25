@@ -22,6 +22,10 @@ expression: plan
       ],
       "cmds": [
         "build"
+      ],
+      "cacheDirectories": [
+        "/build",
+        "barbaz"
       ]
     },
     "install": {
@@ -31,6 +35,10 @@ expression: plan
       ],
       "cmds": [
         "install"
+      ],
+      "cacheDirectories": [
+        "/tmp",
+        "foobar"
       ]
     },
     "setup": {
