@@ -1,6 +1,6 @@
 [package]
 name = "nixpacks"
-version = "0.10.5"
+version = "0.11.0"
 edition = "2021"
 license = "MIT"
 authors = ["Railway <contact@railway.app>"]
@@ -62,4 +62,3 @@ test-helper = { path = "./test-helper" }
 [package.metadata.deb]
 # https://packages.debian.org/stretch
 section = "devel"
-
