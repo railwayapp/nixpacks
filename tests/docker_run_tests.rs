@@ -468,6 +468,16 @@ fn test_yarn_custom_version() {
 }
 
 #[test]
+fn test_node_turborepo() {
+    let name = build_with_build_time_env_vars(
+        "./examples/node-turborepo",
+        vec!["NIXPACKS_TURBO_APP_NAME=web"],
+    );
+
+    assert!(run_image(&name, None).contains("> next start"));
+}
+
+#[test]
 fn test_yarn_berry() {
     let name = simple_build("./examples/node-yarn-berry");
     let output = run_image(&name, None);
