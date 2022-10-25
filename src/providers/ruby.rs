@@ -60,6 +60,9 @@ impl RubyProvider {
         let mut setup = Phase::setup(None);
         setup.add_apt_pkgs(vec!["procps".to_string()]);
 
+        // Don't re-install ruby if the code has changed
+        setup.only_include_files = Some(Vec::new());
+
         if self.uses_postgres(app)? {
             setup.add_apt_pkgs(vec!["libpq-dev".to_string()]);
         }
