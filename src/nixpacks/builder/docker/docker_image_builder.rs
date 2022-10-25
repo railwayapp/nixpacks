@@ -43,9 +43,11 @@ impl ImageBuilder for DockerImageBuilder {
         output.ensure_output_exists()?;
 
         let incremental_cache = IncrementalCache::default();
-        let incremental_cache_dirs = IncrementalCacheDirs::create(&output)?;
+        let incremental_cache_dirs = IncrementalCacheDirs::new(&output);
 
         let file_server_config = if self.options.incremental_cache_image.is_some() {
+            incremental_cache_dirs.create()?;
+
             let file_server = FileServer {};
             let config = file_server.start(&incremental_cache_dirs);
             Some(config)
