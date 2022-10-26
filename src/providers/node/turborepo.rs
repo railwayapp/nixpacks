@@ -4,7 +4,10 @@ use std::{collections::HashMap, error::Error};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::nixpacks::{app::App, environment::Environment};
+use crate::{
+    nixpacks::{app::App, environment::Environment},
+    providers::node::Workspaces,
+};
 
 use super::{NodeProvider, PackageJson};
 
@@ -79,12 +82,10 @@ impl Turborepo {
                 app,
                 if pkg_manager == "pnpm" {
                     pnpm_workspaces(app)?
+                } else if let Some(Workspaces::Array(workspaces)) = &package_json.workspaces {
+                    workspaces.clone()
                 } else {
-                    package_json
-                        .workspaces
-                        .as_ref()
-                        .unwrap_or(&Vec::default())
-                        .clone()
+                    Vec::default()
                 },
                 &name,
             )? {
