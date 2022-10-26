@@ -13,6 +13,7 @@ use anyhow::Result;
 use path_slash::PathExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 
 mod nx;
@@ -30,6 +31,13 @@ const BUN_CACHE_DIR: &str = "/root/.bun";
 const CYPRESS_CACHE_DIR: &str = "/root/.cache/Cypress";
 const NODE_MODULES_CACHE_DIR: &str = "node_modules/.cache";
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+pub enum Workspaces {
+    Array(Vec<String>),
+    Unknown(Value),
+}
+
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
     pub name: Option<String>,
@@ -42,7 +50,7 @@ pub struct PackageJson {
     #[serde(rename = "type")]
     pub project_type: Option<String>,
 
-    pub workspaces: Option<Vec<String>>,
+    pub workspaces: Option<Workspaces>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]
