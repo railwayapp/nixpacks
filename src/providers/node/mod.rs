@@ -211,7 +211,11 @@ impl NodeProvider {
     }
 
     /// Parses the package.json engines field and returns a Nix package if available
-    pub fn get_nix_node_pkg(package_json: &PackageJson, environment: &Environment) -> Result<Pkg> {
+    pub fn get_nix_node_pkg(
+        package_json: &PackageJson,
+        app: &App,
+        environment: &Environment,
+    ) -> Result<Pkg> {
         let env_node_version = environment.get_config_variable("NODE_VERSION");
 
         let pkg_node_version = package_json
@@ -219,7 +223,14 @@ impl NodeProvider {
             .clone()
             .and_then(|engines| engines.get("node").cloned());
 
-        let node_version = env_node_version.or(pkg_node_version);
+        let nvmrc_node_version = if app.includes_file(".nvmrc") {
+            let nvmrc = app.read_file(".nvmrc")?;
+            Some(nvmrc.trim().replace('v', ""))
+        } else {
+            None
+        };
+
+        let node_version = env_node_version.or(pkg_node_version).or(nvmrc_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
@@ -327,7 +338,7 @@ impl NodeProvider {
         } else {
             PackageJson::default()
         };
-        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, env)?;
 
         let pm_pkg: Pkg;
         let mut pkgs = Vec::<Pkg>::new();
@@ -486,6 +497,7 @@ mod test {
                     name: Some(String::default()),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new(DEFAULT_NODE_PKG_NAME)
@@ -503,6 +515,7 @@ mod test {
                     engines: Some(engines_node("*")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new(DEFAULT_NODE_PKG_NAME)
@@ -520,6 +533,7 @@ mod test {
                     engines: Some(engines_node("14")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -537,6 +551,7 @@ mod test {
                     engines: Some(engines_node("18.x")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-18_x")
@@ -549,6 +564,7 @@ mod test {
                     engines: Some(engines_node("14.X")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -566,6 +582,7 @@ mod test {
                     engines: Some(engines_node("18.x.x")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-18_x")
@@ -578,6 +595,7 @@ mod test {
                     engines: Some(engines_node("14.X.x")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -595,6 +613,7 @@ mod test {
                     engines: Some(engines_node("18.4.2")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-18_x")
@@ -607,6 +626,7 @@ mod test {
                     engines: Some(engines_node("14.8.x")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -619,6 +639,7 @@ mod test {
                     engines: Some(engines_node("14.x.8")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -636,6 +657,7 @@ mod test {
                     engines: Some(engines_node(">=14.10.3 <16")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -652,10 +674,28 @@ mod test {
                     name: Some(String::default()),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::new(BTreeMap::from([(
                     "NIXPACKS_NODE_VERSION".to_string(),
                     "14".to_string()
                 )]))
+            )?,
+            Pkg::new("nodejs-14_x")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_from_nvmrc() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-nvmrc")?,
+                &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
         );
@@ -673,6 +713,7 @@ mod test {
                     engines: Some(engines_node("15")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?
             .name,
