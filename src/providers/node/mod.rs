@@ -225,7 +225,7 @@ impl NodeProvider {
 
         let nvmrc_node_version = if app.includes_file(".nvmrc") {
             let nvmrc = app.read_file(".nvmrc")?;
-            Some(nvmrc.trim().replace("v", "").to_string())
+            Some(nvmrc.trim().replace('v', ""))
         } else {
             None
         };
