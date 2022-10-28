@@ -94,6 +94,13 @@ impl NixpacksBuildPlanGenerator<'_> {
         let provider_names =
             fill_auto_in_vec(provider_names, Some(detected_providers)).unwrap_or_default();
 
+        if provider_names.len() > 1 {
+            println!(
+                "{}",
+                "\n Using multiple providers is experimental\n".bright_yellow()
+            );
+        }
+
         let mut plan = BuildPlan::default();
         let mut count = 0;
 
