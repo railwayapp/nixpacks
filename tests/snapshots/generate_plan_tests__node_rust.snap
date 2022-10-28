@@ -7,10 +7,10 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "CI": "true",
-    "NIXPACKS_METADATA": "node,rust",
+    "NIXPACKS_METADATA": "node,python",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false",
-    "ROCKET_ADDRESS": "0.0.0.0"
+    "PYTHONUNBUFFERED": "1"
   },
   "phases": {
     "build": {
@@ -37,26 +37,24 @@ expression: plan
         "/app/node_modules/.bin"
       ]
     },
-    "rust:build": {
-      "name": "rust:build",
+    "python:install": {
+      "name": "python:install",
       "dependsOn": [
-        "rust:install"
+        "python:setup"
       ]
     },
-    "rust:setup": {
-      "name": "rust:setup",
+    "python:setup": {
+      "name": "python:setup",
       "nixPkgs": [
-        "gcc",
-        "(rust-bin.stable.latest.default.override { targets = [\"aarch64-unknown-linux-musl\"]; })"
+        "python38",
+        "gcc"
       ],
-      "nixOverlays": [
-        "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
+      "nixLibs": [
+        "zlib",
+        "stdenv.cc.cc.lib"
       ],
-      "nixpkgsArchive": "[archive]",
-      "aptPkgs": [
-        "musl-tools",
-        "binutils"
-      ]
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
     },
     "setup": {
       "name": "setup",
