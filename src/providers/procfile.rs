@@ -47,8 +47,11 @@ impl ProcfileProvider {
             let mut procfile: HashMap<String, String> =
                 app.read_yaml("Procfile").context("Reading Procfile")?;
             procfile.remove("release");
+
             if procfile.is_empty() {
                 Ok(None)
+            } else if let Some(cmd) = procfile.get("web") {
+                Ok(Some(cmd.to_string()))
             } else {
                 let process = procfile.values().collect::<Vec<_>>()[0].to_string();
                 Ok(Some(process))

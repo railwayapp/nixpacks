@@ -17,7 +17,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.1
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
 
@@ -44,7 +44,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.1
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
           
@@ -85,7 +85,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:      
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.1
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
         
@@ -122,7 +122,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:      
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.1
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
         
@@ -153,18 +153,18 @@ jobs:
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.1
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
         
       - name: Checkout sources
         uses: actions/checkout@v3
 
-      - name: Install 1.57 rust toolchain
+      - name: Install 1.59 rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.57
+          toolchain: 1.59
           override: true
 
       - uses: Swatinem/rust-cache@v2

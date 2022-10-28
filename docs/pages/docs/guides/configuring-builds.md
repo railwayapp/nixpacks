@@ -19,19 +19,10 @@ aptPkgs = ["...", "wget"]   # Install the wget package with apt-get
 ```
 
 The `"..."` item in the array is important as it extends the packages that will
-be installed as opposed to overrides them. This means that packages from the
+be installed as opposed to overrideing them. This means that packages from the
 provider (e.g. Node, Cargo, Python) will also installed.
 
 It is recommended to install packages from Nix rather than Apt if they are available. You can search for Nix packages [here](https://search.nixos.org/packages?channel=unstable).
-
-## Custom start command
-
-Override the command that is run when your container starts by setting the `start.cmd` value.
-
-```toml
-[start]
-cmd = "./start.sh"
-```
 
 ## Custom build command
 
@@ -49,7 +40,16 @@ Or you can add commands that will be run before or after the commands set by the
 cmds = ["echo first", "...", "echo last"]
 ```
 
-The same can be done to custom the commands for other phases.
+The same can be done to customize the commands for other phases.
+
+## Custom start command
+
+Override the command that is run when your container starts by setting the `start.cmd` value.
+
+```toml
+[start]
+cmd = "./start.sh"
+```
 
 ## New phase
 

@@ -30,7 +30,7 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "yarn set version berry && yarn install --check-cache"
+        "yarn set version ./.yarn/releases/yarn-3.2.4.cjs && yarn install --check-cache"
       ],
       "cacheDirectories": [
         "/usr/local/share/.cache/yarn/v6"

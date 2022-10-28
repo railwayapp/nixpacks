@@ -1,4 +1,4 @@
-use self::nx::Nx;
+use self::{nx::Nx, turborepo::Turborepo};
 use super::Provider;
 use crate::nixpacks::{
     app::App,
@@ -13,9 +13,11 @@ use anyhow::Result;
 use path_slash::PathExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 
 mod nx;
+mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
@@ -29,6 +31,13 @@ const BUN_CACHE_DIR: &str = "/root/.bun";
 const CYPRESS_CACHE_DIR: &str = "/root/.cache/Cypress";
 const NODE_MODULES_CACHE_DIR: &str = "node_modules/.cache";
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+pub enum Workspaces {
+    Array(Vec<String>),
+    Unknown(Value),
+}
+
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PackageJson {
     pub name: Option<String>,
@@ -40,6 +49,14 @@ pub struct PackageJson {
     pub dev_dependencies: Option<HashMap<String, String>>,
     #[serde(rename = "type")]
     pub project_type: Option<String>,
+
+    pub workspaces: Option<Workspaces>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct Yarnrc {
+    #[serde(rename = "yarnPath")]
+    pub yarn_path: Option<String>,
 }
 
 #[derive(Default, Debug)]
@@ -142,6 +159,12 @@ impl NodeProvider {
             }
         }
 
+        if Turborepo::is_turborepo(app) {
+            if let Ok(Some(turbo_build_cmd)) = Turborepo::get_actual_build_cmd(app, env) {
+                return Ok(Some(turbo_build_cmd));
+            }
+        }
+
         if NodeProvider::has_script(app, "build")? {
             let pkg_manager = NodeProvider::get_package_manager(app);
             Ok(Some(format!("{} run build", pkg_manager)))
@@ -151,9 +174,19 @@ impl NodeProvider {
     }
 
     pub fn get_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
+        let executor = NodeProvider::get_executor(app);
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
+
         if Nx::is_nx_monorepo(app, env) {
             if let Some(nx_start_cmd) = Nx::get_nx_start_cmd(app, env)? {
                 return Ok(Some(nx_start_cmd));
+            }
+        }
+        if Turborepo::is_turborepo(app) {
+            if let Ok(Some(turbo_start_cmd)) =
+                Turborepo::get_actual_start_cmd(app, env, &package_json)
+            {
+                return Ok(Some(turbo_start_cmd));
             }
         }
 
@@ -162,21 +195,14 @@ impl NodeProvider {
             return Ok(Some(format!("{} run start", package_manager)));
         }
 
-        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         if let Some(main) = package_json.main {
             if app.includes_file(&main) {
-                if package_manager == "bun" {
-                    return Ok(Some(format!("bun {}", main)));
-                }
-                return Ok(Some(format!("node {}", main)));
+                return Ok(Some(format!("{} {}", executor, main)));
             }
         }
 
         if app.includes_file("index.js") {
-            if package_manager == "bun" {
-                return Ok(Some("bun index.js".to_string()));
-            }
-            return Ok(Some("node index.js".to_string()));
+            return Ok(Some(format!("{} index.js", executor)));
         } else if app.includes_file("index.ts") && package_manager == "bun" {
             return Ok(Some("bun index.ts".to_string()));
         }
@@ -185,7 +211,11 @@ impl NodeProvider {
     }
 
     /// Parses the package.json engines field and returns a Nix package if available
-    pub fn get_nix_node_pkg(package_json: &PackageJson, environment: &Environment) -> Result<Pkg> {
+    pub fn get_nix_node_pkg(
+        package_json: &PackageJson,
+        app: &App,
+        environment: &Environment,
+    ) -> Result<Pkg> {
         let env_node_version = environment.get_config_variable("NODE_VERSION");
 
         let pkg_node_version = package_json
@@ -193,7 +223,14 @@ impl NodeProvider {
             .clone()
             .and_then(|engines| engines.get("node").cloned());
 
-        let node_version = env_node_version.or(pkg_node_version);
+        let nvmrc_node_version = if app.includes_file(".nvmrc") {
+            let nvmrc = app.read_file(".nvmrc")?;
+            Some(nvmrc.trim().replace('v', ""))
+        } else {
+            None
+        };
+
+        let node_version = env_node_version.or(pkg_node_version).or(nvmrc_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
@@ -232,30 +269,43 @@ impl NodeProvider {
         pkg_manager.to_string()
     }
 
+    pub fn get_package_manager_dlx_command(app: &App) -> String {
+        let pkg_manager = NodeProvider::get_package_manager(app);
+        match pkg_manager.as_str() {
+            "pnpm" => "pnpx",
+            "yarn" => "yarn",
+            _ => "npx",
+        }
+        .to_string()
+    }
+
     pub fn get_install_command(app: &App) -> Option<String> {
         if !app.includes_file("package.json") {
             return None;
         }
 
+        let mut install_cmd = "npm i".to_string();
         let package_manager = NodeProvider::get_package_manager(app);
-
-        let cmd = if package_manager == "pnpm" {
-            "pnpm i --frozen-lockfile"
+        if package_manager == "pnpm" {
+            install_cmd = "pnpm i --frozen-lockfile".to_string();
         } else if package_manager == "yarn" {
             if app.includes_file(".yarnrc.yml") {
-                "yarn set version berry && yarn install --check-cache"
+                install_cmd = "yarn set version berry && yarn install --check-cache".to_string();
+                let yarnrc_yml: Yarnrc = app.read_yaml(".yarnrc.yml").unwrap_or_default();
+                if let Some(path) = yarnrc_yml.yarn_path {
+                    install_cmd =
+                        format!("yarn set version ./{} && yarn install --check-cache", path);
+                }
             } else {
-                "yarn install --frozen-lockfile"
+                install_cmd = "yarn install --frozen-lockfile".to_string();
             }
         } else if app.includes_file("package-lock.json") {
-            "npm ci"
+            install_cmd = "npm ci".to_string();
         } else if app.includes_file("bun.lockb") {
-            "bun i --no-save"
-        } else {
-            "npm i"
-        };
+            install_cmd = "bun i --no-save".to_string();
+        }
 
-        Some(cmd.to_string())
+        Some(install_cmd)
     }
 
     fn get_package_manager_cache_dir(app: &App) -> String {
@@ -271,6 +321,16 @@ impl NodeProvider {
         }
     }
 
+    fn get_executor(app: &App) -> String {
+        let package_manager = NodeProvider::get_package_manager(app);
+        if package_manager == *"bun" {
+            "bun"
+        } else {
+            "node"
+        }
+        .to_string()
+    }
+
     /// Returns the nodejs nix package and the appropriate package manager nix image.
     pub fn get_nix_packages(app: &App, env: &Environment) -> Result<Vec<Pkg>> {
         let package_json: PackageJson = if app.includes_file("package.json") {
@@ -278,7 +338,7 @@ impl NodeProvider {
         } else {
             PackageJson::default()
         };
-        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, env)?;
+        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, env)?;
 
         let pm_pkg: Pkg;
         let mut pkgs = Vec::<Pkg>::new();
@@ -437,6 +497,7 @@ mod test {
                     name: Some(String::default()),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new(DEFAULT_NODE_PKG_NAME)
@@ -454,6 +515,7 @@ mod test {
                     engines: Some(engines_node("*")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new(DEFAULT_NODE_PKG_NAME)
@@ -471,6 +533,7 @@ mod test {
                     engines: Some(engines_node("14")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -488,6 +551,7 @@ mod test {
                     engines: Some(engines_node("18.x")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-18_x")
@@ -500,6 +564,7 @@ mod test {
                     engines: Some(engines_node("14.X")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -517,6 +582,7 @@ mod test {
                     engines: Some(engines_node("18.x.x")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-18_x")
@@ -529,6 +595,7 @@ mod test {
                     engines: Some(engines_node("14.X.x")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -546,6 +613,7 @@ mod test {
                     engines: Some(engines_node("18.4.2")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-18_x")
@@ -558,6 +626,7 @@ mod test {
                     engines: Some(engines_node("14.8.x")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -570,6 +639,7 @@ mod test {
                     engines: Some(engines_node("14.x.8")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -587,6 +657,7 @@ mod test {
                     engines: Some(engines_node(">=14.10.3 <16")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
@@ -603,10 +674,28 @@ mod test {
                     name: Some(String::default()),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::new(BTreeMap::from([(
                     "NIXPACKS_NODE_VERSION".to_string(),
                     "14".to_string()
                 )]))
+            )?,
+            Pkg::new("nodejs-14_x")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_from_nvmrc() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-nvmrc")?,
+                &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
         );
@@ -624,6 +713,7 @@ mod test {
                     engines: Some(engines_node("15")),
                     ..Default::default()
                 },
+                &App::new("examples/node")?,
                 &Environment::default()
             )?
             .name,

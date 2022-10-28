@@ -38,7 +38,7 @@ impl Provider for JavaProvider {
 
             let gradle_exe = self.get_gradle_exe(app);
             let mut build = Phase::build(Some(format!("{} build -x check", gradle_exe)));
-            build.add_cache_directory(".gradle");
+            build.add_cache_directory("/root/.gradle");
             build
         } else {
             setup = Phase::setup(Some(vec![Pkg::new("jdk")]));
@@ -62,7 +62,7 @@ impl JavaProvider {
     fn get_maven_exe(&self, app: &App) -> String {
         // App has a maven wrapper
         if app.includes_file("mvnw") && app.includes_file(".mvn/wrapper/maven-wrapper.properties") {
-            "./mvnw".to_string()
+            "chmod +x ./mvnw && ./mvnw".to_string()
         } else {
             "mvn".to_string()
         }

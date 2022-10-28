@@ -2,6 +2,7 @@ use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
+    nix::pkg::Pkg,
     plan::{
         phase::{Phase, StartPhase},
         BuildPlan,
@@ -38,7 +39,7 @@ impl Provider for RubyProvider {
         );
 
         let node = NodeProvider::default();
-        if node.detect(app, env)? {
+        if node.detect(app, env)? || self.uses_gem_dep(app, "execjs") {
             let node_build_plan = node.get_build_plan(app, env)?;
             if let Some(node_build_plan) = node_build_plan {
                 // Include the install phase from the node provider
@@ -59,12 +60,24 @@ impl RubyProvider {
         let mut setup = Phase::setup(None);
         setup.add_apt_pkgs(vec!["procps".to_string()]);
 
+        // Don't re-install ruby if the code has changed
+        setup.only_include_files = Some(Vec::new());
+
         if self.uses_postgres(app)? {
             setup.add_apt_pkgs(vec!["libpq-dev".to_string()]);
         }
 
         if self.uses_mysql(app)? {
             setup.add_apt_pkgs(vec!["default-libmysqlclient-dev".to_string()]);
+        }
+
+        if self.uses_gem_dep(app, "rmagick") {
+            setup.add_apt_pkgs(vec![String::from("libmagickwand-dev")]);
+            setup.add_nix_pkgs(&[Pkg::new("imagemagick")]);
+        }
+
+        if self.uses_gem_dep(app, "charlock_holmes") {
+            setup.add_apt_pkgs(vec![String::from("libicu-dev")]);
         }
 
         setup.add_cmd(
@@ -90,10 +103,6 @@ impl RubyProvider {
         install.add_path(format!("/usr/local/rvm/rubies/{}/bin", ruby_version));
         install.add_path(format!("/usr/local/rvm/gems/{}/bin", ruby_version));
         install.add_path(format!("/usr/local/rvm/gems/{}@global/bin", ruby_version));
-
-        if self.uses_gem_dep(app, "charlock_holmes") {
-            install.add_apt_pkgs(vec![String::from("libicu-dev")]);
-        }
 
         Ok(Some(install))
     }
