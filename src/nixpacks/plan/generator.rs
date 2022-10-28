@@ -11,7 +11,7 @@ use crate::{
 use anyhow::{bail, Context, Ok, Result};
 use colored::Colorize;
 
-use super::merge::Mergeable;
+use super::{merge::Mergeable, utils::fill_auto_in_vec};
 
 const NIXPACKS_METADATA: &str = "NIXPACKS_METADATA";
 
@@ -69,8 +69,8 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(plan)
     }
 
-    fn get_auto_providers(&self, app: &App, env: &Environment) -> Result<Vec<String>> {
-        let mut providers = Vec::new();
+    fn get_detected_providers(&self, app: &App, env: &Environment) -> Result<Vec<String>> {
+        let mut providers = vec!["...".to_string()];
 
         for provider in self.providers {
             if provider.detect(app, env)? {
@@ -90,15 +90,9 @@ impl NixpacksBuildPlanGenerator<'_> {
         app: &App,
         env: &Environment,
     ) -> Result<BuildPlan> {
-        let provider_names = if let Some(provider_names) = provider_names {
-            provider_names
-        } else {
-            self.get_auto_providers(app, env)?
-        };
-
-        // if provider_names.len() > 1 {
-        //     bail!("Only a single provider is supported at this time");
-        // }
+        let detected_providers = self.get_detected_providers(app, env)?;
+        let provider_names =
+            fill_auto_in_vec(provider_names, Some(detected_providers)).unwrap_or_default();
 
         let mut plan = BuildPlan::default();
         let mut count = 0;
@@ -121,7 +115,7 @@ impl NixpacksBuildPlanGenerator<'_> {
 
                     plan = BuildPlan::merge(&plan, &provider_plan);
                 }
-            } else {
+            } else if name != "..." && name != "@auto" {
                 bail!("Provider {} not found", name);
             }
 

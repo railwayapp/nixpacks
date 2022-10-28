@@ -18,6 +18,7 @@ pub mod merge;
 pub mod phase;
 pub mod pretty_print;
 mod topological_sort;
+mod utils;
 
 pub trait PlanGenerator {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan>;
