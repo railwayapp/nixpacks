@@ -920,7 +920,7 @@ fn test_cobol_no_index() {
 fn test_multiple_providers() {
     let name = simple_build("./examples/multiple-providers");
     let output = run_image(&name, None);
-    assert!(output.contains("python"));
+    assert!(output.contains("Python"));
     assert!(output.contains("go"));
     assert!(output.contains("deno"));
 }
