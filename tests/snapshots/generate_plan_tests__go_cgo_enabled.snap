@@ -7,7 +7,7 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "CGO_ENABLED": "1",
-    "NIXPACKS_METADATA": "golang"
+    "NIXPACKS_METADATA": "go"
   },
   "phases": {
     "build": {

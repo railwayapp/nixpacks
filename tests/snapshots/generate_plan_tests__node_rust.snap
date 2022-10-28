@@ -1,0 +1,76 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "CI": "true",
+    "NIXPACKS_METADATA": "node,rust",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "ROCKET_ADDRESS": "0.0.0.0"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cacheDirectories": [
+        "node_modules/.cache"
+      ]
+    },
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "npm i"
+      ],
+      "cacheDirectories": [
+        "/root/.npm"
+      ],
+      "paths": [
+        "/app/node_modules/.bin"
+      ]
+    },
+    "rust:build": {
+      "name": "rust:build",
+      "dependsOn": [
+        "rust:install"
+      ]
+    },
+    "rust:setup": {
+      "name": "rust:setup",
+      "nixPkgs": [
+        "gcc",
+        "(rust-bin.stable.latest.default.override { targets = [\"aarch64-unknown-linux-musl\"]; })"
+      ],
+      "nixOverlays": [
+        "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
+      ],
+      "nixpkgsArchive": "[archive]",
+      "aptPkgs": [
+        "musl-tools",
+        "binutils"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "nodejs-16_x",
+        "npm-8_x"
+      ],
+      "nixOverlays": [
+        "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+      ],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "./start.sh"
+  }
+}

@@ -1,4 +1,4 @@
-providers = ["node", "rust"]
+providers = ["...", "rust"]
 
 [start]
 cmd = "./start.sh"

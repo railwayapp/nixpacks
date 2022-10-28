@@ -11,7 +11,10 @@ use crate::{
 use anyhow::{bail, Context, Ok, Result};
 use colored::Colorize;
 
-use super::{merge::Mergeable, utils::fill_auto_in_vec};
+use super::{
+    merge::Mergeable,
+    utils::{fill_auto_in_vec, remove_autos_from_vec},
+};
 
 const NIXPACKS_METADATA: &str = "NIXPACKS_METADATA";
 
@@ -70,7 +73,7 @@ impl NixpacksBuildPlanGenerator<'_> {
     }
 
     fn get_detected_providers(&self, app: &App, env: &Environment) -> Result<Vec<String>> {
-        let mut providers = vec!["...".to_string()];
+        let mut providers = Vec::new();
 
         for provider in self.providers {
             if provider.detect(app, env)? {
@@ -91,8 +94,13 @@ impl NixpacksBuildPlanGenerator<'_> {
         env: &Environment,
     ) -> Result<BuildPlan> {
         let detected_providers = self.get_detected_providers(app, env)?;
-        let provider_names =
-            fill_auto_in_vec(provider_names, Some(detected_providers)).unwrap_or_default();
+        let provider_names = remove_autos_from_vec(
+            fill_auto_in_vec(
+                Some(detected_providers),
+                Some(provider_names.unwrap_or_else(|| vec!["...".to_string()])),
+            )
+            .unwrap_or_default(),
+        );
 
         if provider_names.len() > 1 {
             println!(
