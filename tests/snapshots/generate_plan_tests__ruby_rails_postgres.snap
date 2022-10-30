@@ -30,6 +30,9 @@ expression: plan
       "cmds": [
         "bundle install"
       ],
+      "onlyIncludeFiles": [
+        "Gemfile*"
+      ],
       "cacheDirectories": [
         "/root/.bundle/cache"
       ],
