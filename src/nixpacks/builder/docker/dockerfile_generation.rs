@@ -320,6 +320,7 @@ impl DockerfileGenerator for StartPhase {
             None => {
                 formatdoc! {"
                   # start
+                  COPY . /app
                   {}
                 ",
                 start_cmd}
