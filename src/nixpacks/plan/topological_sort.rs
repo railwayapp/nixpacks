@@ -1,6 +1,5 @@
-use std::collections::{BTreeMap, BTreeSet};
-
 use anyhow::{bail, Result};
+use std::collections::{BTreeMap, BTreeSet};
 
 pub trait TopItem {
     fn get_name(&self) -> String;
@@ -11,8 +10,8 @@ pub fn topological_sort<T>(items: Vec<T>) -> Result<Vec<T>>
 where
     T: Clone + TopItem,
 {
-    let mut items = items.clone();
-    items.sort_by_cached_key(|item| item.get_name());
+    let mut items = items;
+    items.sort_by_cached_key(TopItem::get_name);
 
     let mut lookup = BTreeMap::<String, T>::new();
     for item in items.clone() {
