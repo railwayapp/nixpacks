@@ -113,13 +113,12 @@ impl RubyProvider {
     }
 
     fn get_build(&self, app: &App) -> Result<Option<Phase>> {
+        let mut build = Phase::build(None);
         if self.is_rails_app(app) {
-            Ok(Some(Phase::build(Some(
-                "bundle exec rake assets:precompile".to_string(),
-            ))))
-        } else {
-            Ok(None)
+            build.add_cmd("bundle exec rake assets:precompile".to_string());
         }
+
+        Ok(Some(build))
     }
 
     fn get_start(&self, app: &App) -> Result<Option<StartPhase>> {
