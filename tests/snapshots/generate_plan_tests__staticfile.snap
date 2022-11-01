@@ -13,22 +13,16 @@ expression: plan
     "nginx.conf": "daemon off;\nerror_log /dev/stdout info;\nworker_processes  auto;\nevents {\n    worker_connections  1024;\n}\n\nhttp {\n    include /nix/store/*-user-environment/conf/mime.types;\n    access_log /dev/stdout;\n    default_type  application/octet-stream;\n    sendfile       on;\n    keepalive_timeout  60;\n    types_hash_max_size 4096;\n    server {\n        listen    0.0.0.0:80;\n        gzip  \t  on;\n        root\t  /app/site;\n        location / {\n            auth_basic\t\"Password Required\";\nauth_basic_user_file\t/assets/.htpasswd;\n            autoindex off;\n        }\n\n    }\n}\n"
   },
   "phases": {
-    "build": {
-      "name": "build",
-      "dependsOn": [
-        "install"
-      ],
-      "cmds": [
-        "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/"
-      ]
-    },
     "setup": {
       "name": "setup",
       "nixPkgs": [
         "nginx"
       ],
       "nixOverlays": [],
-      "nixpkgsArchive": "[archive]"
+      "nixpkgsArchive": "[archive]",
+      "cmds": [
+        "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/"
+      ]
     }
   },
   "start": {
