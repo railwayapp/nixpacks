@@ -96,8 +96,10 @@ impl RubyProvider {
         let mut install = Phase::install(None);
         install.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
-        // Only run install if Gemfile or Gemfile.lock has changed
-        install.only_include_files = Some(vec!["Gemfile*".to_string()]);
+        if !self.uses_gem_dep(app, "local") {
+            // Only run install if Gemfile or Gemfile.lock has changed
+            install.only_include_files = Some(vec!["Gemfile*".to_string()]);
+        }
 
         install.add_cmd("bundle install".to_string());
 
