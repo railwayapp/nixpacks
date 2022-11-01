@@ -116,9 +116,16 @@ impl Phase {
         }
     }
 
+    /// Whether or not the phase uses Nix in any way
     pub fn uses_nix(&self) -> bool {
         !self.nix_pkgs.clone().unwrap_or_default().is_empty()
             || !self.nix_libs.clone().unwrap_or_default().is_empty()
+    }
+
+    /// Whether or not the phase runs any docker commands
+    pub fn runs_docker_commands(&self) -> bool {
+        !self.cmds.clone().unwrap_or_default().is_empty()
+            || !self.paths.clone().unwrap_or_default().is_empty()
     }
 
     pub fn depends_on_phase<S: Into<String>>(&mut self, name: S) {

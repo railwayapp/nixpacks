@@ -320,6 +320,7 @@ impl DockerfileGenerator for StartPhase {
             None => {
                 formatdoc! {"
                   # start
+                  COPY . /app
                   {}
                 ",
                 start_cmd}
@@ -338,6 +339,10 @@ impl DockerfileGenerator for Phase {
         _output: &OutputDir,
         file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
+        if !self.runs_docker_commands() {
+            return Ok(format!("# {} phase\n# noop\n", self.get_name()));
+        }
+
         let phase = self;
 
         let cache_key = if !options.no_cache && !env.is_config_variable_truthy("NO_CACHE") {
