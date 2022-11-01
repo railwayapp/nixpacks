@@ -147,6 +147,13 @@ fn main() -> Result<()> {
                 ),
         )
         .arg(
+            Arg::new("json-plan")
+                .long("json-plan")
+                .help("Specify an entire build plan in json format that should be used to configure the build")
+                .takes_value(true)
+                .global(true),
+        )
+        .arg(
             Arg::new("install_cmd")
                 .long("install-cmd")
                 .short('i')
@@ -206,6 +213,7 @@ fn main() -> Result<()> {
         .arg(
             Arg::new("config")
                 .short('c')
+                .long("config")
                 .help("Path to config file")
                 .takes_value(true)
                 .global(true),
@@ -255,6 +263,18 @@ fn main() -> Result<()> {
         let start = StartPhase::new(start_cmd);
         cli_plan.set_start_phase(start);
     }
+
+    let json_plan = match matches.value_of("json-plan") {
+        Some(json) => Some(BuildPlan::from_json(json)?),
+        None => None,
+    };
+
+    // Merge the CLI build plan with the json build plan
+    let cli_plan = if let Some(json_plan) = json_plan {
+        BuildPlan::merge_plans(&[json_plan, cli_plan])
+    } else {
+        cli_plan
+    };
 
     let config_file = matches.value_of("config").map(ToString::to_string);
     let options = GeneratePlanOptions {
