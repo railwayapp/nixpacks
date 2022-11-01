@@ -43,7 +43,7 @@ wait-timeout = "0.2.0"
 base64 = "0.13.0"
 console = { default-features = false, version = "0.15.1" }
 box_drawing = "0.1.2"
-textwrap = { default-features = false, version = "0.15.0" }
+textwrap = { default-features = false, version = "0.16.0" }
 cargo_toml = "0.11.6"
 rand = "0.8.5"
 path-slash = "0.2.1"
