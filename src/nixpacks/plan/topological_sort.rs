@@ -1,6 +1,5 @@
-use std::collections::{HashMap, HashSet};
-
 use anyhow::{bail, Result};
+use std::collections::{BTreeMap, BTreeSet};
 
 pub trait TopItem {
     fn get_name(&self) -> String;
@@ -11,7 +10,10 @@ pub fn topological_sort<T>(items: Vec<T>) -> Result<Vec<T>>
 where
     T: Clone + TopItem,
 {
-    let mut lookup = HashMap::<String, T>::new();
+    let mut items = items;
+    items.sort_by_cached_key(TopItem::get_name);
+
+    let mut lookup = BTreeMap::<String, T>::new();
     for item in items.clone() {
         if lookup.contains_key(&item.get_name()) {
             bail!("Multiple items with the same name: {}", item.get_name());
@@ -22,11 +24,11 @@ where
 
     // Reference of name -> dependent [items]
     let mut adj_list = items.iter().fold(
-        HashMap::<String, HashSet<String>>::new(),
+        BTreeMap::<String, BTreeSet<String>>::new(),
         |mut acc, item| {
             let n = item.get_name();
             if !acc.contains_key(&n) {
-                acc.insert(n.clone(), HashSet::new());
+                acc.insert(n.clone(), BTreeSet::new());
             }
 
             item.get_dependencies().iter().for_each(|dep| {
@@ -49,13 +51,13 @@ where
                     .count(),
             )
         })
-        .collect::<HashMap<String, usize>>();
+        .collect::<BTreeMap<String, usize>>();
 
     let mut result: Vec<T> = Vec::new();
 
     while !indegree.is_empty() {
         // Get the items with no dependencies
-        let (no_deps, new_indegree): (HashMap<String, usize>, HashMap<String, usize>) = indegree
+        let (no_deps, new_indegree): (BTreeMap<String, usize>, BTreeMap<String, usize>) = indegree
             .into_iter()
             .partition(|(_name, indgree)| *indgree == 0);
 
