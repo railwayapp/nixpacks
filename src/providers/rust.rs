@@ -56,9 +56,9 @@ impl RustProvider {
         }
 
         let mut setup = Phase::setup(Some(vec![
+            Pkg::new("binutils"),
             Pkg::new("gcc"),
             rust_pkg.from_overlay(RUST_OVERLAY),
-            Pkg::new("binutils"),
         ]));
 
         // Include the rust toolchain file so we can install that rust version with Nix
