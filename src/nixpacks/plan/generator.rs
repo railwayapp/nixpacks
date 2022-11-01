@@ -128,7 +128,7 @@ impl NixpacksBuildPlanGenerator<'_> {
                         .join_as_comma_separated(provider.name().to_owned());
                     metadata.push(metadata_string);
 
-                    plan = BuildPlan::merge(&plan, &provider_plan);
+                    plan = BuildPlan::merge(&provider_plan, &plan);
                 }
             } else if name != "..." && name != "@auto" {
                 bail!("Provider {} not found", name);
