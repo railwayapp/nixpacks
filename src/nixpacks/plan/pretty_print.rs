@@ -17,6 +17,7 @@ impl BuildPlan {
         let phase_contents = self
             .get_sorted_phases()?
             .iter()
+            .filter(|phase| phase.uses_nix() || phase.apt_pkgs.is_some() || phase.cmds.is_some())
             .map(|phase| (phase.get_name(), self.get_phase_content(phase).unwrap()))
             .collect::<Vec<_>>();
 

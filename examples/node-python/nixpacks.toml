@@ -1,0 +1,4 @@
+providers = ["...", "python"]
+
+[start]
+cmd = "./start.sh"

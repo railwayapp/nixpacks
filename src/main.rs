@@ -270,8 +270,8 @@ fn main() -> Result<()> {
             let plan = generate_build_plan(path, envs, &options)?;
 
             let plan_s = match format {
-                PlanFormat::Json => serde_json::to_string_pretty(&plan)?,
-                PlanFormat::Toml => toml::to_string_pretty(&plan)?,
+                PlanFormat::Json => plan.to_json()?,
+                PlanFormat::Toml => plan.to_toml()?,
             };
 
             println!("{}", plan_s);

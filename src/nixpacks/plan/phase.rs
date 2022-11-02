@@ -5,6 +5,8 @@ use crate::nixpacks::{
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+use super::utils::remove_autos_from_vec;
+
 pub type Phases = BTreeMap<String, Phase>;
 
 #[serde_with::skip_serializing_none]
@@ -240,14 +242,6 @@ fn pin_option_vec(vec: &Option<Vec<String>>) -> Option<Vec<String>> {
     }
 }
 
-/// Removes all the `"..."`'s or `"@auto"`'s from the `original`
-fn remove_autos_from_vec(original: Vec<String>) -> Vec<String> {
-    original
-        .into_iter()
-        .filter(|x| x != "@auto" && x != "...")
-        .collect::<Vec<_>>()
-}
-
 fn add_to_option_vec<T>(values: Option<Vec<T>>, v: T) -> Vec<T> {
     if let Some(mut values) = values {
         values.push(v);
@@ -262,32 +256,5 @@ fn add_multiple_to_option_vec<T: Clone>(values: Option<Vec<T>>, new_values: Vec<
         [values, new_values].concat()
     } else {
         new_values
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    fn vs(v: Vec<&str>) -> Vec<String> {
-        v.into_iter()
-            .map(std::string::ToString::to_string)
-            .collect()
-    }
-
-    #[test]
-    fn test_remove_autos_from_vec() {
-        assert_eq!(
-            vs(vec!["a", "b", "c"]),
-            remove_autos_from_vec(vs(vec!["a", "b", "c"]))
-        );
-        assert_eq!(
-            vs(vec!["a", "c"]),
-            remove_autos_from_vec(vs(vec!["a", "...", "c"]))
-        );
-        assert_eq!(
-            vs(vec!["a", "c"]),
-            remove_autos_from_vec(vs(vec!["@auto", "a", "...", "c", "@auto"]))
-        );
     }
 }
