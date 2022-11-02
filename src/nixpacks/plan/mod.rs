@@ -18,6 +18,7 @@ pub mod merge;
 pub mod phase;
 pub mod pretty_print;
 mod topological_sort;
+mod utils;
 
 pub trait PlanGenerator {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan>;
@@ -62,6 +63,18 @@ impl BuildPlan {
         let mut plan: BuildPlan = serde_json::from_str(&json.into())?;
         plan.resolve_phase_names();
         Ok(plan)
+    }
+
+    pub fn to_toml(&self) -> Result<String> {
+        let mut plan = self.clone();
+        plan.remove_phase_names();
+        Ok(toml::to_string_pretty(&plan)?)
+    }
+
+    pub fn to_json(&self) -> Result<String> {
+        let mut plan = self.clone();
+        plan.remove_phase_names();
+        Ok(serde_json::to_string_pretty(&plan)?)
     }
 
     pub fn add_phase(&mut self, phase: Phase) {
@@ -179,6 +192,13 @@ impl BuildPlan {
         let phases = self.phases.get_or_insert(BTreeMap::default());
         for (name, phase) in phases.iter_mut() {
             phase.set_name(name);
+        }
+    }
+
+    pub fn remove_phase_names(&mut self) {
+        let phases = self.phases.get_or_insert(BTreeMap::default());
+        for (_, phase) in phases.iter_mut() {
+            phase.name = None;
         }
     }
 

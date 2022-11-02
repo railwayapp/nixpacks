@@ -11,7 +11,10 @@ use crate::{
 use anyhow::{bail, Context, Ok, Result};
 use colored::Colorize;
 
-use super::merge::Mergeable;
+use super::{
+    merge::Mergeable,
+    utils::{fill_auto_in_vec, remove_autos_from_vec},
+};
 
 const NIXPACKS_METADATA: &str = "NIXPACKS_METADATA";
 
@@ -69,7 +72,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(plan)
     }
 
-    fn get_auto_providers(&self, app: &App, env: &Environment) -> Result<Vec<String>> {
+    fn get_detected_providers(&self, app: &App, env: &Environment) -> Result<Vec<String>> {
         let mut providers = Vec::new();
 
         for provider in self.providers {
@@ -90,14 +93,20 @@ impl NixpacksBuildPlanGenerator<'_> {
         app: &App,
         env: &Environment,
     ) -> Result<BuildPlan> {
-        let provider_names = if let Some(provider_names) = provider_names {
-            provider_names
-        } else {
-            self.get_auto_providers(app, env)?
-        };
+        let detected_providers = self.get_detected_providers(app, env)?;
+        let provider_names = remove_autos_from_vec(
+            fill_auto_in_vec(
+                Some(detected_providers),
+                Some(provider_names.unwrap_or_else(|| vec!["...".to_string()])),
+            )
+            .unwrap_or_default(),
+        );
 
         if provider_names.len() > 1 {
-            bail!("Only a single provider is supported at this time");
+            println!(
+                "{}",
+                "\n Using multiple providers is experimental\n".bright_yellow()
+            );
         }
 
         let mut plan = BuildPlan::default();
@@ -119,9 +128,9 @@ impl NixpacksBuildPlanGenerator<'_> {
                         .join_as_comma_separated(provider.name().to_owned());
                     metadata.push(metadata_string);
 
-                    plan = BuildPlan::merge(&plan, &provider_plan);
+                    plan = BuildPlan::merge(&provider_plan, &plan);
                 }
-            } else {
+            } else if name != "..." && name != "@auto" {
                 bail!("Provider {} not found", name);
             }
 

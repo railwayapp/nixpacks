@@ -87,8 +87,15 @@ fn nix_expression_for_group(group: &NixGroup) -> String {
         .archive
         .clone()
         .unwrap_or_else(|| NIXPKGS_ARCHIVE.to_string());
-    let pkgs = group.pkgs.clone().join(" ");
-    let libs = group.libs.clone().join(" ");
+
+    let mut pkgs = group.pkgs.clone();
+    pkgs.sort();
+    let pkgs = pkgs.join(" ");
+
+    let mut libs = group.libs.clone();
+    libs.sort();
+    let libs = libs.join(" ");
+
     let overlays_string = group
         .overlays
         .iter()

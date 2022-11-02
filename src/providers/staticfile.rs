@@ -38,10 +38,8 @@ impl Provider for StaticfileProvider {
     }
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
-        let setup = Phase::setup(Some(vec![Pkg::new("nginx")]));
-        let build = Phase::build(Some(
-            "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string(),
-        ));
+        let mut setup = Phase::setup(Some(vec![Pkg::new("nginx")]));
+        setup.add_cmd("mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/");
 
         // shell command to edit 0.0.0.0:80 to $PORT
         let shell_cmd = "[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\"";
@@ -53,7 +51,7 @@ impl Provider for StaticfileProvider {
 
         let static_assets = StaticfileProvider::get_static_assets(app, env)?;
 
-        let mut plan = BuildPlan::new(&vec![setup, build], Some(start));
+        let mut plan = BuildPlan::new(&vec![setup], Some(start));
         plan.add_static_assets(static_assets);
 
         Ok(Some(plan))

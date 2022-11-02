@@ -915,3 +915,12 @@ fn test_cobol_no_index() {
 
     assert_eq!(run_image(&name, None), "Hello from cobol! cobol-no-index");
 }
+
+#[test]
+fn test_multiple_providers() {
+    let name = simple_build("./examples/multiple-providers");
+    let output = run_image(&name, None);
+    assert!(output.contains("Python"));
+    assert!(output.contains("go"));
+    assert!(output.contains("deno"));
+}

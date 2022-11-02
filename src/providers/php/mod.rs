@@ -81,9 +81,10 @@ impl PhpProvider {
         if app.includes_file("composer.json") {
             install.add_cmd("composer install".to_string());
         };
-
-        if let Some(node_install_cmd) = NodeProvider::get_install_command(app) {
-            install.add_cmd(node_install_cmd);
+        if app.includes_file("package.json") {
+            if let Some(install_cmd) = NodeProvider::get_install_command(app) {
+                install.add_cmd(install_cmd);
+            }
         }
 
         install
