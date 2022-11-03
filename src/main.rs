@@ -53,6 +53,11 @@ fn main() -> Result<()> {
                 ),
         )
         .subcommand(
+            Command::new("detect")
+                .about("List all of the providers that will be used to build the app")
+                .arg(arg!([PATH] "App source")),
+        )
+        .subcommand(
             Command::new("build")
                 .about("Create a docker image for an app")
                 .arg(arg!([PATH] "App source"))
@@ -275,6 +280,9 @@ fn main() -> Result<()> {
             };
 
             println!("{}", plan_s);
+        }
+        Some(("detect", matches)) => {
+            println!("DETECT!")
         }
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").unwrap_or(".");
