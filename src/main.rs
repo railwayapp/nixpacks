@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use clap::{arg, Arg, Command};
 use nixpacks::{
-    create_docker_image, generate_build_plan,
+    create_docker_image, generate_build_plan, get_plan_providers,
     nixpacks::{
         builder::docker::DockerBuilderOptions,
         nix::pkg::Pkg,
@@ -282,7 +282,10 @@ fn main() -> Result<()> {
             println!("{}", plan_s);
         }
         Some(("detect", matches)) => {
-            println!("DETECT!")
+            let path = matches.value_of("PATH").unwrap_or(".");
+
+            let providers = get_plan_providers(path, envs, &options)?;
+            println!("{}", providers.join(", "));
         }
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").unwrap_or(".");
