@@ -22,6 +22,7 @@ mod utils;
 
 pub trait PlanGenerator {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan>;
+    fn get_plan_providers(&self, app: &App, environment: &Environment) -> Result<Vec<String>>;
 }
 
 #[serde_with::skip_serializing_none]

@@ -36,6 +36,13 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
 
         Ok(plan)
     }
+
+    fn get_plan_providers(&self, app: &App, env: &Environment) -> Result<Vec<String>> {
+        let plan_before_providers = self.get_plan_before_providers(app, env)?;
+        let providers = self.get_all_providers(app, env, plan_before_providers.providers)?;
+
+        Ok(providers)
+    }
 }
 
 impl NixpacksBuildPlanGenerator<'_> {
@@ -48,13 +55,10 @@ impl NixpacksBuildPlanGenerator<'_> {
 
     /// Get a build plan from the provider and by applying the config from the environment
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
-        let file_plan = self.read_file_plan(app, env)?;
-        let env_plan = BuildPlan::from_environment(env);
-        let cli_plan = self.config.plan.clone().unwrap_or_default();
-        let plan_before_providers = BuildPlan::merge_plans(&vec![file_plan, env_plan, cli_plan]);
+        let plan_before_providers = self.get_plan_before_providers(app, env)?;
 
         let provider_plan =
-            self.get_plan_from_providers(plan_before_providers.providers.clone(), app, env)?;
+            self.get_plan_from_providers(app, env, plan_before_providers.providers.clone())?;
 
         let procfile_plan = (ProcfileProvider {})
             .get_build_plan(app, env)?
@@ -72,6 +76,15 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(plan)
     }
 
+    fn get_plan_before_providers(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
+        let file_plan = self.read_file_plan(app, env)?;
+        let env_plan = BuildPlan::from_environment(env);
+        let cli_plan = self.config.plan.clone().unwrap_or_default();
+        let plan_before_providers = BuildPlan::merge_plans(&vec![file_plan, env_plan, cli_plan]);
+
+        Ok(plan_before_providers)
+    }
+
     fn get_detected_providers(&self, app: &App, env: &Environment) -> Result<Vec<String>> {
         let mut providers = Vec::new();
 
@@ -87,20 +100,32 @@ impl NixpacksBuildPlanGenerator<'_> {
         Ok(providers)
     }
 
-    fn get_plan_from_providers(
+    /// Get all the providers that will be used to create the plan
+    pub fn get_all_providers(
         &self,
-        provider_names: Option<Vec<String>>,
         app: &App,
         env: &Environment,
-    ) -> Result<BuildPlan> {
+        manually_providers: Option<Vec<String>>,
+    ) -> Result<Vec<String>> {
         let detected_providers = self.get_detected_providers(app, env)?;
         let provider_names = remove_autos_from_vec(
             fill_auto_in_vec(
                 Some(detected_providers),
-                Some(provider_names.unwrap_or_else(|| vec!["...".to_string()])),
+                Some(manually_providers.unwrap_or_else(|| vec!["...".to_string()])),
             )
             .unwrap_or_default(),
         );
+
+        Ok(provider_names)
+    }
+
+    fn get_plan_from_providers(
+        &self,
+        app: &App,
+        env: &Environment,
+        manual_providers: Option<Vec<String>>,
+    ) -> Result<BuildPlan> {
+        let provider_names = self.get_all_providers(app, env, manual_providers)?;
 
         if provider_names.len() > 1 {
             println!(

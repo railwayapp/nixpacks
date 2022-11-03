@@ -60,7 +60,7 @@ impl Provider for StaticfileProvider {
 
 impl StaticfileProvider {
     pub fn get_root(app: &App, env: &Environment, staticfile_root: String) -> String {
-        let mut root = "".to_string();
+        let mut root = String::new();
         if let Some(staticfile_root) = env.get_config_variable("STATICFILE_ROOT") {
             root = staticfile_root;
         } else if !staticfile_root.is_empty() {
@@ -85,7 +85,7 @@ impl StaticfileProvider {
             mime_types = "include\tmime.types;".to_string();
         }
 
-        let mut auth_basic = "".to_string();
+        let mut auth_basic = String::new();
         if app.includes_file("Staticfile.auth") {
             assets.insert(".htpasswd".to_string(), app.read_file("Staticfile.auth")?);
             auth_basic = format!(
@@ -95,15 +95,11 @@ impl StaticfileProvider {
         }
 
         let staticfile: Staticfile = app.read_yaml("Staticfile").unwrap_or_default();
-        let root = StaticfileProvider::get_root(
-            app,
-            env,
-            staticfile.root.unwrap_or_else(|| "".to_string()),
-        );
+        let root = StaticfileProvider::get_root(app, env, staticfile.root.unwrap_or_default());
         let gzip = staticfile.gzip.unwrap_or_else(|| "on".to_string());
         let directory = staticfile.directory.unwrap_or_else(|| "off".to_string());
         let status_code = staticfile.status_code.unwrap_or_default();
-        let mut error_page = "".to_string();
+        let mut error_page = String::new();
         for (key, value) in status_code {
             writeln!(error_page, "\terror_page {} {};", key, value)?;
         }
