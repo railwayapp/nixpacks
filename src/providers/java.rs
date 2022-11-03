@@ -106,7 +106,7 @@ impl JavaProvider {
         } else if app.includes_file("build.gradle.kts") {
             app.read_file("build.gradle.kts")?
         } else {
-            "".to_string()
+            String::new()
         };
 
         let is_spring_boot = file_content.contains("org.springframework.boot:spring-boot")
@@ -117,7 +117,7 @@ impl JavaProvider {
         let port_arg = if is_spring_boot {
             "-Dserver.port=$PORT".to_string()
         } else {
-            "".to_string()
+            String::new()
         };
 
         Ok(port_arg)
@@ -132,7 +132,7 @@ impl JavaProvider {
         {
             "-Dserver.port=$PORT".to_string()
         } else {
-            "".to_string()
+            String::new()
         }
     }
 
