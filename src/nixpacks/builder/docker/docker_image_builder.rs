@@ -5,13 +5,17 @@ use crate::nixpacks::{
         file_server::FileServer,
         incremental_cache::{IncrementalCache, IncrementalCacheDirs},
     },
+    clients::docker::Docker,
     environment::Environment,
     files,
     logger::Logger,
     plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
+use bollard::image::BuildImageOptions;
+use futures_util::stream::StreamExt;
 use std::{
+    collections::HashMap,
     fs::{self, remove_dir_all, File},
     process::Command,
 };
@@ -21,6 +25,7 @@ use uuid::Uuid;
 pub struct DockerImageBuilder {
     logger: Logger,
     options: DockerBuilderOptions,
+    docker: Docker,
 }
 
 fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<OutputDir> {
@@ -118,8 +123,16 @@ impl ImageBuilder for DockerImageBuilder {
 }
 
 impl DockerImageBuilder {
-    pub fn new(logger: Logger, options: DockerBuilderOptions) -> DockerImageBuilder {
-        DockerImageBuilder { logger, options }
+    pub fn new(
+        logger: Logger,
+        options: DockerBuilderOptions,
+        docker: Docker,
+    ) -> DockerImageBuilder {
+        DockerImageBuilder {
+            logger,
+            options,
+            docker,
+        }
     }
 
     fn get_docker_build_cmd(
@@ -186,6 +199,51 @@ impl DockerImageBuilder {
         }
 
         Ok(docker_build_cmd)
+    }
+
+    async fn execute_docker_build(
+        &self,
+        plan: &BuildPlan,
+        name: &str,
+        output: &OutputDir,
+    ) -> Result<()> {
+        // Add build environment variables
+        let vars: HashMap<_, _> = plan
+            .variables
+            .clone()
+            .unwrap_or_default()
+            .into_iter()
+            .collect();
+
+        // Generate label map
+        let labels: HashMap<_, _> = self
+            .options
+            .labels
+            .iter()
+            .map(|l| {
+                let mut parts = l.splitn(2, '=');
+                let key = parts.next().unwrap();
+                let value = parts.next().unwrap();
+                (key.to_string(), value.to_string())
+            })
+            .into_iter()
+            .collect();
+
+        let mut stream = self.docker.client.build_image(
+            BuildImageOptions {
+                buildargs: vars.into(),
+                labels,
+                nocache: self.options.no_cache,
+                ..Default::default()
+            },
+            None,
+            None,
+        );
+
+        while let Some(msg) = stream.next().await {
+            println!("Message: {:?}", msg);
+        }
+        return Ok(());
     }
 
     fn write_app(&self, app_src: &str, output: &OutputDir) -> Result<()> {

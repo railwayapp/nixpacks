@@ -1,5 +1,6 @@
 pub mod app;
 pub mod builder;
+pub mod clients;
 pub mod environment;
 mod files;
 pub mod images;
