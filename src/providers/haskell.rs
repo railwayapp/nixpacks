@@ -20,7 +20,7 @@ pub struct HaskellStackProvider {}
 
 impl Provider for HaskellStackProvider {
     fn name(&self) -> &str {
-        "haskell_stack"
+        "haskell"
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {

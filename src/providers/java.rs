@@ -15,7 +15,7 @@ pub struct JavaProvider {}
 
 impl Provider for JavaProvider {
     fn name(&self) -> &str {
-        "Java"
+        "java"
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {

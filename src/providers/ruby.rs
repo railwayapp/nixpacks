@@ -17,7 +17,7 @@ const BUNDLE_CACHE_DIR: &str = "/root/.bundle/cache";
 
 impl Provider for RubyProvider {
     fn name(&self) -> &str {
-        "Ruby"
+        "ruby"
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {

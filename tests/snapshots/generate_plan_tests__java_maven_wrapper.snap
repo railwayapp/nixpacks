@@ -6,7 +6,7 @@ expression: plan
   "providers": [],
   "buildImage": "[build_image]",
   "variables": {
-    "NIXPACKS_METADATA": "Java"
+    "NIXPACKS_METADATA": "java"
   },
   "phases": {
     "build": {
