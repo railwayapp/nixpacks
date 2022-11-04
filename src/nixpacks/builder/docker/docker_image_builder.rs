@@ -65,11 +65,17 @@ impl ImageBuilder for DockerImageBuilder {
             return Ok(());
         }
 
-        println!("{}", plan.get_build_string()?);
+        let phase_count = plan.phases.clone().map_or(0, |phases| phases.len());
+        if phase_count > 0 {
+            println!("{}", plan.get_build_string()?);
 
-        let start = plan.start_phase.clone().unwrap_or_default();
-        if start.cmd.is_none() && !self.options.no_error_without_start {
-            bail!("No start command could be found")
+            let start = plan.start_phase.clone().unwrap_or_default();
+            if start.cmd.is_none() && !self.options.no_error_without_start {
+                bail!("No start command could be found")
+            }
+        } else {
+            println!("\nNixpacks was unable to generate a build plan for this app.\nPlease check the documentation for supported languages: https://nixpacks.com");
+            std::process::exit(1);
         }
 
         self.write_app(app_src, &output).context("Writing app")?;
