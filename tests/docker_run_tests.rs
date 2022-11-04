@@ -16,7 +16,6 @@ use rand::thread_rng;
 use rand::{distributions::Alphanumeric, Rng};
 
 async fn get_container_ids_from_image(image: &str) -> String {
-    Docker::connect_with_local_defaults();
     let output = Command::new("docker")
         .arg("ps")
         .arg("-a")
