@@ -35,7 +35,7 @@ expression: plan
         "procps"
       ],
       "cmds": [
-        "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh && rvm install ruby-3.1.2 && rvm --default use ruby-3.1.2 && gem install bundler:2.3.7",
+        "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh && rvm install ruby-3.1.2 && rvm --default use ruby-3.1.2 && gem install bundler:2.3.7 && rm -rf /usr/local/rvm/src",
         "echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile"
       ],
       "onlyIncludeFiles": []
