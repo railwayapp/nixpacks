@@ -12,6 +12,7 @@ use crate::nixpacks::{
     plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
+use async_trait::async_trait;
 use bollard::image::BuildImageOptions;
 use futures_util::stream::StreamExt;
 use std::{
@@ -39,8 +40,9 @@ fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<Outpu
     }
 }
 
+#[async_trait]
 impl ImageBuilder for DockerImageBuilder {
-    fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
+    async fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
         let output = get_output_dir(app_src, &self.options)?;
@@ -91,11 +93,13 @@ impl ImageBuilder for DockerImageBuilder {
 
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
-            let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), &output)?;
+            self.logger.log_section("Building");
 
-            // Execute docker build
-            let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
-            if !build_result.success() {
+            let res = self
+                .execute_docker_build(plan, name.as_str(), &output)
+                .await;
+
+            if !res.is_ok() {
                 bail!("Docker build failed")
             }
 
@@ -207,13 +211,23 @@ impl DockerImageBuilder {
         name: &str,
         output: &OutputDir,
     ) -> Result<()> {
+        // Set default variables for the build
+        let mut vars = HashMap::from([("DOCKER_BUILDKIT".to_string(), "1".to_string())]);
+
+        if self.options.inline_cache {
+            vars.insert("BUILDKIT_INLINE_CACHE".to_string(), "1".to_string());
+        }
+
         // Add build environment variables
-        let vars: HashMap<_, _> = plan
+        let build_vars: HashMap<_, _> = plan
             .variables
             .clone()
             .unwrap_or_default()
             .into_iter()
             .collect();
+
+        // fold build_vars into vars
+        vars.extend(build_vars);
 
         // Generate label map
         let labels: HashMap<_, _> = self
@@ -232,6 +246,17 @@ impl DockerImageBuilder {
         let mut stream = self.docker.client.build_image(
             BuildImageOptions {
                 buildargs: vars.into(),
+                cachefrom: vec![self.options.cache_from.clone().unwrap_or_default()],
+                // Todo: need to support multiple tags?
+                t: name.to_string(),
+                dockerfile: output
+                    .get_absolute_path("Dockerfile")
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+                q: self.options.quiet,
+                // todo: need to support multiple platforms?
+                // platform: self.options.platform,
                 labels,
                 nocache: self.options.no_cache,
                 ..Default::default()

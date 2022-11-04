@@ -24,6 +24,7 @@ use crate::nixpacks::{
         docker::{docker_image_builder::DockerImageBuilder, DockerBuilderOptions},
         ImageBuilder,
     },
+    clients::docker::Docker,
     environment::Environment,
     logger::Logger,
     nix::pkg::Pkg,
@@ -105,13 +106,14 @@ pub fn create_docker_image(
     build_options: &DockerBuilderOptions,
 ) -> Result<()> {
     let app = App::new(path)?;
+    let docker = Docker::new();
     let environment = Environment::from_envs(envs)?;
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
     let plan = generator.generate_plan(&app, &environment)?;
 
     let logger = Logger::new();
-    let builder = DockerImageBuilder::new(logger, build_options.clone());
+    let builder = DockerImageBuilder::new(logger, build_options.clone(), docker);
     builder.create_image(app.source.to_str().unwrap(), &plan, &environment)?;
 
     Ok(())
