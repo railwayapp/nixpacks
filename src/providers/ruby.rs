@@ -85,7 +85,8 @@ impl RubyProvider {
             && . /etc/profile.d/rvm.sh \
             && rvm install {ruby_version} \
             && rvm --default use {ruby_version} \
-            && gem install {bundler_version}",
+            && gem install {bundler_version} \
+            && rm -rf /usr/local/rvm/src",
             ruby_version = self.get_ruby_version(app)?,
             bundler_version = self.get_bundler_version(app)
         ));
