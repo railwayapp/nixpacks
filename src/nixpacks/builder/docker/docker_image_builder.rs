@@ -74,7 +74,7 @@ impl ImageBuilder for DockerImageBuilder {
                 bail!("No start command could be found")
             }
         } else {
-            println!("\nNixpacks was unable to generate a build plan for this app.\nPlease check the documentation for supported languages and frameworks.");
+            println!("\nNixpacks was unable to generate a build plan for this app.\nPlease check the documentation for supported languages: https://nixpacks.com");
             std::process::exit(1);
         }
 
