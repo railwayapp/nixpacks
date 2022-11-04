@@ -65,7 +65,7 @@ impl ImageBuilder for DockerImageBuilder {
             return Ok(());
         }
 
-        let phase_count = plan.phases.clone().map(|phases| phases.len()).unwrap_or(0);
+        let phase_count = plan.phases.clone().map_or(0, |phases| phases.len());
         if phase_count > 0 {
             println!("{}", plan.get_build_string()?);
 
