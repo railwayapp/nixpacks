@@ -905,7 +905,8 @@ async fn test_cobol_src_my_app() {
     let name = build_with_build_time_env_vars(
         "./examples/cobol-src",
         vec!["NIXPACKS_COBOL_APP_NAME=my-app"],
-    );
+    )
+    .await;
 
     assert_eq!(run_image(&name, None), "Hello from cobol! src-my-app");
 }
