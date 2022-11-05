@@ -24,7 +24,6 @@ use crate::nixpacks::{
         docker::{docker_image_builder::DockerImageBuilder, DockerBuilderOptions},
         ImageBuilder,
     },
-    clients::docker::Docker,
     environment::Environment,
     logger::Logger,
     nix::pkg::Pkg,
@@ -42,6 +41,8 @@ use providers::{
     rust::RustProvider, staticfile::StaticfileProvider, swift::SwiftProvider, zig::ZigProvider,
     Provider,
 };
+
+use bollard::Docker;
 
 mod chain;
 #[macro_use]
@@ -106,14 +107,15 @@ pub async fn create_docker_image(
     build_options: &DockerBuilderOptions,
 ) -> Result<()> {
     let app = App::new(path)?;
-    let docker = Docker::new();
+    // Todo: Consume flag somehow. For now, chaos.
+    let docker_client = Docker::connect_with_local_defaults().unwrap();
     let environment = Environment::from_envs(envs)?;
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
     let plan = generator.generate_plan(&app, &environment)?;
 
     let logger = Logger::new();
-    let builder = DockerImageBuilder::new(logger, build_options.clone(), docker);
+    let builder = DockerImageBuilder::new(logger, build_options.clone(), docker_client);
     builder
         .create_image(app.source.to_str().unwrap(), &plan, &environment)
         .await?;

@@ -5,7 +5,6 @@ use crate::nixpacks::{
         file_server::FileServer,
         incremental_cache::{IncrementalCache, IncrementalCacheDirs},
     },
-    clients::docker::Docker,
     environment::Environment,
     files,
     logger::Logger,
@@ -14,18 +13,20 @@ use crate::nixpacks::{
 use anyhow::{bail, Context, Ok, Result};
 use async_trait::async_trait;
 use bollard::image::BuildImageOptions;
+use bollard::Docker as BollardDocker;
 use futures_util::stream::StreamExt;
 use std::{
     collections::HashMap,
     fs::{self, remove_dir_all, File},
 };
+
 use tempdir::TempDir;
 use uuid::Uuid;
 
 pub struct DockerImageBuilder {
     logger: Logger,
     options: DockerBuilderOptions,
-    docker: Docker,
+    client: BollardDocker,
 }
 
 fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<OutputDir> {
@@ -129,12 +130,12 @@ impl DockerImageBuilder {
     pub fn new(
         logger: Logger,
         options: DockerBuilderOptions,
-        docker: Docker,
+        client: BollardDocker,
     ) -> DockerImageBuilder {
         DockerImageBuilder {
             logger,
             options,
-            docker,
+            client,
         }
     }
 
@@ -172,7 +173,7 @@ impl DockerImageBuilder {
             .into_iter()
             .collect();
 
-        let mut stream = self.docker.client.build_image(
+        let mut stream = self.client.build_image(
             BuildImageOptions {
                 buildargs: vars,
                 cachefrom: vec![self.options.cache_from.clone().unwrap_or_default()],
