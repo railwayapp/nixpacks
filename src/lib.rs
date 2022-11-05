@@ -108,7 +108,7 @@ pub async fn create_docker_image(
 ) -> Result<()> {
     let app = App::new(path)?;
 
-    let docker_client = Docker::connect_with_http_defaults().unwrap();
+    let docker_client = Docker::connect_with_local_defaults().unwrap();
     let environment = Environment::from_envs(envs)?;
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
