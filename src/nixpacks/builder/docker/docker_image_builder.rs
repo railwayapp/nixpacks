@@ -266,7 +266,7 @@ impl DockerImageBuilder {
         );
 
         while let Some(msg) = stream.next().await {
-            println!("Message: {:?}", msg);
+            println!("{:?}", msg);
         }
         return Ok(());
     }
