@@ -18,7 +18,6 @@ use futures_util::stream::StreamExt;
 use std::{
     collections::HashMap,
     fs::{self, remove_dir_all, File},
-    process::Command,
 };
 use tempdir::TempDir;
 use uuid::Uuid;
@@ -153,7 +152,7 @@ impl DockerImageBuilder {
         }
 
         // Add build environment variables
-        let build_vars: HashMap<_, _> = plan
+        let build_vars: HashMap<String, String> = plan
             .variables
             .clone()
             .unwrap_or_default()
@@ -168,18 +167,14 @@ impl DockerImageBuilder {
             .options
             .labels
             .iter()
-            .map(|l| {
-                let mut parts = l.splitn(2, '=');
-                let key = parts.next().unwrap();
-                let value = parts.next().unwrap();
-                (key.to_string(), value.to_string())
-            })
+            .map(|l| l.split_once('=').unwrap())
+            .map(|(k, v)| (k.to_string(), v.to_string()))
             .into_iter()
             .collect();
 
         let mut stream = self.docker.client.build_image(
             BuildImageOptions {
-                buildargs: vars.into(),
+                buildargs: vars,
                 cachefrom: vec![self.options.cache_from.clone().unwrap_or_default()],
                 // Todo: need to support multiple tags?
                 t: name.to_string(),
@@ -202,7 +197,7 @@ impl DockerImageBuilder {
         while let Some(msg) = stream.next().await {
             println!("{:?}", msg);
         }
-        return Ok(());
+        Ok(())
     }
 
     fn write_app(&self, app_src: &str, output: &OutputDir) -> Result<()> {
