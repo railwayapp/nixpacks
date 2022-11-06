@@ -85,6 +85,19 @@ pub fn generate_build_plan(
     Ok(plan)
 }
 
+pub fn get_plan_providers(
+    path: &str,
+    envs: Vec<&str>,
+    options: &GeneratePlanOptions,
+) -> Result<Vec<String>> {
+    let app = App::new(path)?;
+    let environment = Environment::from_envs(envs)?;
+
+    let generator = NixpacksBuildPlanGenerator::new(get_providers(), options.clone());
+
+    generator.get_plan_providers(&app, &environment)
+}
+
 pub fn create_docker_image(
     path: &str,
     envs: Vec<&str>,

@@ -124,7 +124,7 @@ impl DockerfileGenerator for BuildPlan {
 
         let apt_pkgs = self.all_apt_packages();
         let apt_pkgs_str = if apt_pkgs.is_empty() {
-            "".to_string()
+            String::new()
         } else {
             format!(
                 "RUN apt-get update && apt-get install -y --no-install-recommends {}",
@@ -134,7 +134,7 @@ impl DockerfileGenerator for BuildPlan {
 
         let variables = plan.variables.clone().unwrap_or_default();
         let args_string = if variables.is_empty() {
-            "".to_string()
+            String::new()
         } else {
             format!(
                 "ARG {}\nENV {}",
@@ -155,7 +155,7 @@ impl DockerfileGenerator for BuildPlan {
 
         let static_assets = plan.static_assets.clone().unwrap_or_default();
         let assets_copy_cmd = if static_assets.is_empty() {
-            "".to_string()
+            String::new()
         } else {
             let rel_assets_path = output.get_relative_path("assets");
             let rel_assets_slash_path = rel_assets_path
@@ -291,7 +291,7 @@ impl DockerfileGenerator for StartPhase {
     ) -> Result<String> {
         let start_cmd = match &self.cmd {
             Some(cmd) => utils::get_exec_command(cmd),
-            None => "".to_string(),
+            None => String::new(),
         };
 
         let dockerfile: String = match &self.run_image {
@@ -320,6 +320,7 @@ impl DockerfileGenerator for StartPhase {
             None => {
                 formatdoc! {"
                   # start
+                  COPY . /app
                   {}
                 ",
                 start_cmd}
@@ -338,6 +339,10 @@ impl DockerfileGenerator for Phase {
         _output: &OutputDir,
         file_server_config: Option<FileServerConfig>,
     ) -> Result<String> {
+        if !self.runs_docker_commands() {
+            return Ok(format!("# {} phase\n# noop\n", self.get_name()));
+        }
+
         let phase = self;
 
         let cache_key = if !options.no_cache && !env.is_config_variable_truthy("NO_CACHE") {
@@ -357,7 +362,7 @@ impl DockerfileGenerator for Phase {
                 ),
             )
         } else {
-            ("".to_string(), "".to_string())
+            (String::new(), String::new())
         };
 
         // Copy over app files
@@ -374,7 +379,7 @@ impl DockerfileGenerator for Phase {
                 IncrementalCache::get_copy_to_image_command(&phase.cache_directories, image)
                     .join("\n")
             } else {
-                "".to_string()
+                String::new()
             };
 
             let cache_copy_out_command = IncrementalCache::get_copy_from_image_command(

@@ -1,0 +1,98 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "CGO_ENABLED": "0",
+    "CI": "true",
+    "NIXPACKS_METADATA": "node,python,go,deno",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cacheDirectories": [
+        "node_modules/.cache"
+      ]
+    },
+    "deno:setup": {
+      "name": "deno:setup",
+      "nixPkgs": [
+        "deno"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    },
+    "go:build": {
+      "name": "go:build",
+      "dependsOn": [
+        "go:install",
+        "go:setup"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/go-build"
+      ]
+    },
+    "go:setup": {
+      "name": "go:setup",
+      "nixPkgs": [
+        "go"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    },
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cacheDirectories": [
+        "/root/.npm"
+      ],
+      "paths": [
+        "/app/node_modules/.bin"
+      ]
+    },
+    "python:install": {
+      "name": "python:install",
+      "dependsOn": [
+        "python:setup"
+      ]
+    },
+    "python:setup": {
+      "name": "python:setup",
+      "nixPkgs": [
+        "python38",
+        "gcc"
+      ],
+      "nixLibs": [
+        "zlib",
+        "stdenv.cc.cc.lib"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "nodejs-16_x",
+        "npm-8_x"
+      ],
+      "nixOverlays": [
+        "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+      ],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "node --version && python --version && go version && deno --version"
+  }
+}

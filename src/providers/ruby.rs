@@ -17,7 +17,7 @@ const BUNDLE_CACHE_DIR: &str = "/root/.bundle/cache";
 
 impl Provider for RubyProvider {
     fn name(&self) -> &str {
-        "Ruby"
+        "ruby"
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
@@ -80,13 +80,17 @@ impl RubyProvider {
             setup.add_apt_pkgs(vec![String::from("libicu-dev")]);
         }
 
-        setup.add_cmd(
-            "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh".to_string(),
-        );
+        setup.add_cmd(format!(
+            "curl -sSL https://get.rvm.io | bash -s stable \
+            && . /etc/profile.d/rvm.sh \
+            && rvm install {ruby_version} \
+            && rvm --default use {ruby_version} \
+            && gem install {bundler_version} \
+            && rm -rf /usr/local/rvm/src",
+            ruby_version = self.get_ruby_version(app)?,
+            bundler_version = self.get_bundler_version(app)
+        ));
 
-        setup.add_cmd(format!("rvm install {}", self.get_ruby_version(app)?));
-        setup.add_cmd(format!("rvm --default use {}", self.get_ruby_version(app)?));
-        setup.add_cmd(format!("gem install {}", self.get_bundler_version(app)));
         setup.add_cmd("echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile".to_string());
 
         Ok(Some(setup))

@@ -20,13 +20,13 @@ pub fn get_cache_mount(
             })
             .collect::<Vec<String>>()
             .join(" "),
-        _ => "".to_string(),
+        _ => String::new(),
     }
 }
 
 pub fn get_copy_command(files: &[String], app_dir: &str) -> String {
     if files.is_empty() {
-        "".to_owned()
+        String::new()
     } else {
         format!("COPY {} {}", files.join(" "), app_dir)
     }
@@ -86,7 +86,7 @@ mod tests {
         let files = vec!["file1".to_string(), "file2".to_string()];
         let app_dir = "app";
 
-        assert_eq!("".to_owned(), get_copy_command(&[], app_dir));
+        assert_eq!(String::new(), get_copy_command(&[], app_dir));
         assert_eq!(
             format!("COPY {} {}", files.join(" "), app_dir),
             get_copy_command(&files, app_dir)

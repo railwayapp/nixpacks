@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use clap::{arg, Arg, Command};
 use nixpacks::{
-    create_docker_image, generate_build_plan,
+    create_docker_image, generate_build_plan, get_plan_providers,
     nixpacks::{
         builder::docker::DockerBuilderOptions,
         nix::pkg::Pkg,
@@ -51,6 +51,11 @@ fn main() -> Result<()> {
                         .takes_value(true)
                         .help("json|toml. Specify the output format of the plan"),
                 ),
+        )
+        .subcommand(
+            Command::new("detect")
+                .about("List all of the providers that will be used to build the app")
+                .arg(arg!([PATH] "App source")),
         )
         .subcommand(
             Command::new("build")
@@ -147,6 +152,13 @@ fn main() -> Result<()> {
                 ),
         )
         .arg(
+            Arg::new("json-plan")
+                .long("json-plan")
+                .help("Specify an entire build plan in json format that should be used to configure the build")
+                .takes_value(true)
+                .global(true),
+        )
+        .arg(
             Arg::new("install_cmd")
                 .long("install-cmd")
                 .short('i')
@@ -206,6 +218,7 @@ fn main() -> Result<()> {
         .arg(
             Arg::new("config")
                 .short('c')
+                .long("config")
                 .help("Path to config file")
                 .takes_value(true)
                 .global(true),
@@ -256,6 +269,18 @@ fn main() -> Result<()> {
         cli_plan.set_start_phase(start);
     }
 
+    let json_plan = match matches.value_of("json-plan") {
+        Some(json) => Some(BuildPlan::from_json(json)?),
+        None => None,
+    };
+
+    // Merge the CLI build plan with the json build plan
+    let cli_plan = if let Some(json_plan) = json_plan {
+        BuildPlan::merge_plans(&[json_plan, cli_plan])
+    } else {
+        cli_plan
+    };
+
     let config_file = matches.value_of("config").map(ToString::to_string);
     let options = GeneratePlanOptions {
         plan: Some(cli_plan),
@@ -270,11 +295,17 @@ fn main() -> Result<()> {
             let plan = generate_build_plan(path, envs, &options)?;
 
             let plan_s = match format {
-                PlanFormat::Json => serde_json::to_string_pretty(&plan)?,
-                PlanFormat::Toml => toml::to_string_pretty(&plan)?,
+                PlanFormat::Json => plan.to_json()?,
+                PlanFormat::Toml => plan.to_toml()?,
             };
 
             println!("{}", plan_s);
+        }
+        Some(("detect", matches)) => {
+            let path = matches.value_of("PATH").unwrap_or(".");
+
+            let providers = get_plan_providers(path, envs, &options)?;
+            println!("{}", providers.join(", "));
         }
         Some(("build", matches)) => {
             let path = matches.value_of("PATH").unwrap_or(".");
