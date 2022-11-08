@@ -860,7 +860,7 @@ async fn test_ruby_rails() {
     // Attach the postgres instance to the network
     attach_container_to_network(n.name, container_name.clone());
 
-    // Build the Django example
+    // Build the Rails example
     let name = simple_build("./examples/ruby-rails-postgres").await;
 
     // Run the Rails example on the attached network
