@@ -34,7 +34,6 @@ impl PlanFormat {
     }
 }
 
-// tokio async main
 #[tokio::main]
 async fn main() -> Result<()> {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
