@@ -34,8 +34,11 @@ fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<Outpu
     }
 }
 
+use async_trait::async_trait;
+
+#[async_trait]
 impl ImageBuilder for DockerImageBuilder {
-    fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
+    async fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
         let output = get_output_dir(app_src, &self.options)?;

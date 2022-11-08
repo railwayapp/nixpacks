@@ -98,7 +98,7 @@ pub fn get_plan_providers(
     generator.get_plan_providers(&app, &environment)
 }
 
-pub fn create_docker_image(
+pub async fn create_docker_image(
     path: &str,
     envs: Vec<&str>,
     plan_options: &GeneratePlanOptions,
