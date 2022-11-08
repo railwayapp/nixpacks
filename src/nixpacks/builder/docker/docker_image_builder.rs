@@ -18,6 +18,7 @@ use futures_util::stream::StreamExt;
 use std::{
     collections::HashMap,
     fs::{self, remove_dir_all, File},
+    process::Command,
 };
 
 use tempdir::TempDir;
@@ -93,13 +94,11 @@ impl ImageBuilder for DockerImageBuilder {
 
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
-            self.logger.log_section("Building");
+            let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), &output)?;
 
-            let res = self
-                .execute_docker_build(plan, name.as_str(), &output)
-                .await;
-
-            if res.is_err() {
+            // Execute docker build
+            let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
+            if !build_result.success() {
                 bail!("Docker build failed")
             }
 
@@ -137,6 +136,72 @@ impl DockerImageBuilder {
             options,
             client,
         }
+    }
+
+    fn get_docker_build_cmd(
+        &self,
+        plan: &BuildPlan,
+        name: &str,
+        output: &OutputDir,
+    ) -> Result<Command> {
+        let mut docker_build_cmd = Command::new("docker");
+
+        if docker_build_cmd.output().is_err() {
+            bail!("Please install Docker to build the app https://docs.docker.com/engine/install/")
+        }
+
+        // Enable BuildKit for all builds
+        docker_build_cmd.env("DOCKER_BUILDKIT", "1");
+
+        docker_build_cmd
+            .arg("build")
+            .arg(&output.root)
+            .arg("-f")
+            .arg(&output.get_absolute_path("Dockerfile"))
+            .arg("-t")
+            .arg(name);
+
+        if self.options.verbose {
+            docker_build_cmd.arg("--progress=plain");
+        }
+
+        if self.options.quiet {
+            docker_build_cmd.arg("--quiet");
+        }
+
+        if self.options.no_cache {
+            docker_build_cmd.arg("--no-cache");
+        }
+
+        if let Some(value) = &self.options.cache_from {
+            docker_build_cmd.arg("--cache-from").arg(value);
+        }
+
+        if self.options.inline_cache {
+            docker_build_cmd
+                .arg("--build-arg")
+                .arg("BUILDKIT_INLINE_CACHE=1");
+        }
+
+        // Add build environment variables
+        for (name, value) in &plan.variables.clone().unwrap_or_default() {
+            docker_build_cmd
+                .arg("--build-arg")
+                .arg(format!("{}={}", name, value));
+        }
+
+        // Add user defined tags and labels to the image
+        for t in self.options.tags.clone() {
+            docker_build_cmd.arg("-t").arg(t);
+        }
+        for l in self.options.labels.clone() {
+            docker_build_cmd.arg("--label").arg(l);
+        }
+        for l in self.options.platform.clone() {
+            docker_build_cmd.arg("--platform").arg(l);
+        }
+
+        Ok(docker_build_cmd)
     }
 
     async fn execute_docker_build(
