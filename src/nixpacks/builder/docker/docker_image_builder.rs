@@ -18,7 +18,6 @@ use futures_util::stream::StreamExt;
 use std::{
     collections::HashMap,
     fs::{self, remove_dir_all, File},
-    process::Command,
     thread,
 };
 
