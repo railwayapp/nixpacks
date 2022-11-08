@@ -870,13 +870,14 @@ async fn test_ruby_rails() {
             environment_variables: c.config.unwrap().environment_variables,
             network: Some(network_name.clone()),
         }),
-    );
+    )
+    .await;
 
     // Cleanup containers and networks
     stop_and_remove_container(container_name);
     remove_network(network_name);
 
-    assert!(output.await.contains("Rails 7"));
+    assert!(output.contains("Rails 7"));
 }
 
 #[tokio::test]

@@ -92,7 +92,6 @@ impl ImageBuilder for DockerImageBuilder {
         self.write_dockerfile(dockerfile.clone(), &output)
             .context("Writing Dockerfile")?;
 
-        println!("Wrote Dockerfile to {:?}", output);
         plan.write_supporting_files(&self.options, env, &output)
             .context("Writing supporting files")?;
 
@@ -164,16 +163,6 @@ impl DockerImageBuilder {
         if self.options.inline_cache {
             vars.insert("BUILDKIT_INLINE_CACHE".to_string(), "1".to_string());
         }
-
-        println!(
-            "Docker location is {:?}",
-            &output
-                .get_absolute_path("Dockerfile")
-                .to_str()
-                .unwrap()
-                .to_string(),
-        );
-        println!("Docker root is {:?}", output.root);
 
         // Add build environment variables
         let build_vars: HashMap<String, String> = plan
