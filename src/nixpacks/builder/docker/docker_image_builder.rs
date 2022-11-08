@@ -21,12 +21,8 @@ use std::{
     process::Command,
     thread,
 };
-use tar::Archive;
 
 use std::io::Write;
-
-use flate2::write::GzEncoder;
-use flate2::Compression;
 
 use tempdir::TempDir;
 use uuid::Uuid;
