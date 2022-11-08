@@ -227,7 +227,6 @@ impl DockerImageBuilder {
         let mut tar = tar::Builder::new(Vec::new());
         tar.append_dir_all(".", output.root.clone())?;
         let uncompressed = tar.into_inner()?;
-        println!("Uncompressed size: {}", uncompressed.len());
         let mut c = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
         c.write_all(&uncompressed)?;
         let compressed = c.finish()?;
