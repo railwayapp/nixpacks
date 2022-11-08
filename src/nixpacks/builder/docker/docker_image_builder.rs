@@ -18,7 +18,15 @@ use futures_util::stream::StreamExt;
 use std::{
     collections::HashMap,
     fs::{self, remove_dir_all, File},
+    process::Command,
+    thread,
 };
+use tar::Archive;
+
+use std::io::Write;
+
+use flate2::write::GzEncoder;
+use flate2::Compression;
 
 use tempdir::TempDir;
 use uuid::Uuid;
@@ -86,8 +94,10 @@ impl ImageBuilder for DockerImageBuilder {
         }
 
         self.write_app(app_src, &output).context("Writing app")?;
-        self.write_dockerfile(dockerfile, &output)
+        self.write_dockerfile(dockerfile.clone(), &output)
             .context("Writing Dockerfile")?;
+
+        println!("Wrote Dockerfile to {:?}", output);
         plan.write_supporting_files(&self.options, env, &output)
             .context("Writing supporting files")?;
 
@@ -137,6 +147,93 @@ impl DockerImageBuilder {
         }
     }
 
+    fn get_docker_build_cmd(
+        &self,
+        plan: &BuildPlan,
+        name: &str,
+        output: &OutputDir,
+    ) -> Result<Command> {
+        let mut docker_build_cmd = Command::new("docker");
+
+        if docker_build_cmd.output().is_err() {
+            bail!("Please install Docker to build the app https://docs.docker.com/engine/install/")
+        }
+
+        // Enable BuildKit for all builds
+        docker_build_cmd.env("DOCKER_BUILDKIT", "1");
+
+        println!(
+            "Docker location is {:?}",
+            &output
+                .get_absolute_path("Dockerfile")
+                .to_str()
+                .unwrap()
+                .to_string(),
+        );
+        println!("Docker root is {:?}", output.root);
+
+        docker_build_cmd
+            .arg("build")
+            .arg(&output.root)
+            .arg("-f")
+            .arg(&output.get_absolute_path("Dockerfile"))
+            .arg("-t")
+            .arg(name);
+
+        if self.options.verbose {
+            docker_build_cmd.arg("--progress=plain");
+        }
+
+        if self.options.quiet {
+            docker_build_cmd.arg("--quiet");
+        }
+
+        if self.options.no_cache {
+            docker_build_cmd.arg("--no-cache");
+        }
+
+        if let Some(value) = &self.options.cache_from {
+            docker_build_cmd.arg("--cache-from").arg(value);
+        }
+
+        if self.options.inline_cache {
+            docker_build_cmd
+                .arg("--build-arg")
+                .arg("BUILDKIT_INLINE_CACHE=1");
+        }
+
+        // Add build environment variables
+        for (name, value) in &plan.variables.clone().unwrap_or_default() {
+            docker_build_cmd
+                .arg("--build-arg")
+                .arg(format!("{}={}", name, value));
+        }
+
+        // Add user defined tags and labels to the image
+        for t in self.options.tags.clone() {
+            docker_build_cmd.arg("-t").arg(t);
+        }
+        for l in self.options.labels.clone() {
+            docker_build_cmd.arg("--label").arg(l);
+        }
+        for l in self.options.platform.clone() {
+            docker_build_cmd.arg("--platform").arg(l);
+        }
+
+        Ok(docker_build_cmd)
+    }
+
+    fn compress_directory(&self, output: &OutputDir) -> Result<Vec<u8>> {
+        let mut tar = tar::Builder::new(Vec::new());
+        tar.append_dir_all(".", output.root.clone())?;
+        let uncompressed = tar.into_inner()?;
+        println!("Uncompressed size: {}", uncompressed.len());
+        let mut c = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        c.write_all(&uncompressed)?;
+        let compressed = c.finish()?;
+        Ok(compressed)
+    }
+
     async fn execute_docker_build(
         &self,
         plan: &BuildPlan,
@@ -149,6 +246,16 @@ impl DockerImageBuilder {
         if self.options.inline_cache {
             vars.insert("BUILDKIT_INLINE_CACHE".to_string(), "1".to_string());
         }
+
+        println!(
+            "Docker location is {:?}",
+            &output
+                .get_absolute_path("Dockerfile")
+                .to_str()
+                .unwrap()
+                .to_string(),
+        );
+        println!("Docker root is {:?}", output.root);
 
         // Add build environment variables
         let build_vars: HashMap<String, String> = plan
@@ -171,6 +278,8 @@ impl DockerImageBuilder {
             .into_iter()
             .collect();
 
+        let compressed = self.compress_directory(output)?;
+
         let mut stream = self.client.build_image(
             BuildImageOptions {
                 buildargs: vars,
@@ -178,7 +287,7 @@ impl DockerImageBuilder {
                 // Todo: need to support multiple tags?
                 t: name.to_string(),
                 dockerfile: output
-                    .get_absolute_path("Dockerfile")
+                    .get_relative_path("Dockerfile")
                     .to_str()
                     .unwrap()
                     .to_string(),
@@ -190,12 +299,13 @@ impl DockerImageBuilder {
                 ..Default::default()
             },
             None,
-            None,
+            Some(compressed.into()),
         );
 
         while let Some(msg) = stream.next().await {
             println!("{:?}", msg);
         }
+        thread::sleep(std::time::Duration::from_millis(5000));
         Ok(())
     }
 

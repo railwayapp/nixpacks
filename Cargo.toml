@@ -56,6 +56,9 @@ portpicker =  "0.1.1"
 bollard = "0.12.0"
 tokio = { version = "1.21.2", features = ["full"] }
 async-trait = "0.1.58"
+tokio-util = "0.7.4"
+tar = "0.4.38"
+flate2 = "1.0.24"
 
 [dev-dependencies]
 dotenv-parser = "0.1.3"
