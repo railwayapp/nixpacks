@@ -9,6 +9,7 @@ expression: plan
     "BUNDLE_GEMFILE": "/app/Gemfile",
     "GEM_HOME": "/usr/local/rvm/gems/3.1.2",
     "GEM_PATH": "/usr/local/rvm/gems/3.1.2:/usr/local/rvm/gems/3.1.2@global",
+    "MALLOC_ARENA_MAX": "2",
     "NIXPACKS_METADATA": "ruby",
     "RAILS_LOG_TO_STDOUT": "enabled"
   },
