@@ -34,7 +34,8 @@ impl PlanFormat {
     }
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
 
     let matches = Command::new("nixpacks")
@@ -368,7 +369,7 @@ fn main() -> Result<()> {
                 verbose,
             };
 
-            create_docker_image(path, envs, &options, build_options)?;
+            create_docker_image(path, envs, &options, build_options).await?;
         }
         _ => eprintln!("Invalid command"),
     }

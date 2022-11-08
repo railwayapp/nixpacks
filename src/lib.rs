@@ -112,7 +112,9 @@ pub async fn create_docker_image(
 
     let logger = Logger::new();
     let builder = DockerImageBuilder::new(logger, build_options.clone());
-    builder.create_image(app.source.to_str().unwrap(), &plan, &environment)?;
+    builder
+        .create_image(app.source.to_str().unwrap(), &plan, &environment)
+        .await?;
 
     Ok(())
 }

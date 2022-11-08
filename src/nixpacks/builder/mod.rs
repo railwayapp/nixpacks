@@ -6,5 +6,10 @@ pub mod docker;
 
 #[async_trait]
 pub trait ImageBuilder {
-    fn create_image(&self, app_source: &str, plan: &BuildPlan, env: &Environment) -> Result<()>;
+    async fn create_image(
+        &self,
+        app_source: &str,
+        plan: &BuildPlan,
+        env: &Environment,
+    ) -> Result<()>;
 }
