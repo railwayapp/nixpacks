@@ -9,7 +9,6 @@ use crate::nixpacks::{
     },
 };
 use anyhow::{bail, Ok, Result};
-use colored::Colorize;
 use regex::Regex;
 
 pub struct RubyProvider {}
@@ -100,17 +99,6 @@ impl RubyProvider {
     fn get_install(&self, app: &App) -> Result<Option<Phase>> {
         let mut install = Phase::install(None);
         install.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
-
-        // If built on Windows, remove the Gemfile.lock and rebuild everything
-        // https://devcenter.heroku.com/articles/bundler-windows-gemfile
-        if self.built_on_windows(app) {
-            println!(
-                "{}",
-                "Gemfile.lock was built on Windows, removing it and installing all gems"
-                    .bright_yellow()
-            );
-            install.add_cmd("rm -rf Gemfile.lock".to_string())
-        }
 
         install.add_cmd("bundle install".to_string());
 
@@ -246,12 +234,6 @@ impl RubyProvider {
         ["Gemfile", "Gemfile.lock"]
             .iter()
             .any(|file| app.read_file(file).unwrap_or_default().contains(dependency))
-    }
-
-    fn built_on_windows(&self, app: &App) -> bool {
-        app.read_file("Gemfile.lock")
-            .unwrap_or_default()
-            .contains("x64-mingw")
     }
 }
 
