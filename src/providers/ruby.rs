@@ -71,7 +71,7 @@ impl RubyProvider {
             setup.add_apt_pkgs(vec!["default-libmysqlclient-dev".to_string()]);
         }
 
-        if self.uses_gem_dep(app, "rmagick") {
+        if self.uses_gem_dep(app, "magick") {
             setup.add_apt_pkgs(vec![String::from("libmagickwand-dev")]);
             setup.add_nix_pkgs(&[Pkg::new("imagemagick")]);
         }
