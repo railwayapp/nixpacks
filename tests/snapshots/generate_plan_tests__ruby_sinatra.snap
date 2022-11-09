@@ -13,6 +13,12 @@ expression: plan
     "NIXPACKS_METADATA": "ruby"
   },
   "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ]
+    },
     "install": {
       "name": "install",
       "dependsOn": [
@@ -20,6 +26,9 @@ expression: plan
       ],
       "cmds": [
         "bundle install"
+      ],
+      "onlyIncludeFiles": [
+        "Gemfile*"
       ],
       "cacheDirectories": [
         "/root/.bundle/cache"

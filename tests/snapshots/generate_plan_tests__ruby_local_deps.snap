@@ -13,6 +13,12 @@ expression: plan
     "NIXPACKS_METADATA": "ruby"
   },
   "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ]
+    },
     "install": {
       "name": "install",
       "dependsOn": [

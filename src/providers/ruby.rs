@@ -100,6 +100,11 @@ impl RubyProvider {
         let mut install = Phase::install(None);
         install.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
+        if !self.uses_gem_dep(app, "local") {
+            // Only run install if Gemfile or Gemfile.lock has changed
+            install.only_include_files = Some(vec!["Gemfile*".to_string()]);
+        }
+
         install.add_cmd("bundle install".to_string());
 
         // Ensure that the ruby executable is in the PATH
@@ -112,13 +117,12 @@ impl RubyProvider {
     }
 
     fn get_build(&self, app: &App) -> Result<Option<Phase>> {
+        let mut build = Phase::build(None);
         if self.is_rails_app(app) {
-            Ok(Some(Phase::build(Some(
-                "bundle exec rake assets:precompile".to_string(),
-            ))))
-        } else {
-            Ok(None)
+            build.add_cmd("bundle exec rake assets:precompile".to_string());
         }
+
+        Ok(Some(build))
     }
 
     fn get_start(&self, app: &App) -> Result<Option<StartPhase>> {
