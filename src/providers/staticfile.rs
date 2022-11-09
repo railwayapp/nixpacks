@@ -38,10 +38,8 @@ impl Provider for StaticfileProvider {
     }
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
-        let setup = Phase::setup(Some(vec![Pkg::new("nginx")]));
-        let build = Phase::build(Some(
-            "mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/".to_string(),
-        ));
+        let mut setup = Phase::setup(Some(vec![Pkg::new("nginx")]));
+        setup.add_cmd("mkdir /etc/nginx/ /var/log/nginx/ /var/cache/nginx/");
 
         // shell command to edit 0.0.0.0:80 to $PORT
         let shell_cmd = "[[ -z \"${PORT}\" ]] && echo \"Environment variable PORT not found. Using PORT 80\" || sed -i \"s/0.0.0.0:80/$PORT/g\"";
@@ -53,7 +51,7 @@ impl Provider for StaticfileProvider {
 
         let static_assets = StaticfileProvider::get_static_assets(app, env)?;
 
-        let mut plan = BuildPlan::new(&vec![setup, build], Some(start));
+        let mut plan = BuildPlan::new(&vec![setup], Some(start));
         plan.add_static_assets(static_assets);
 
         Ok(Some(plan))
@@ -62,7 +60,7 @@ impl Provider for StaticfileProvider {
 
 impl StaticfileProvider {
     pub fn get_root(app: &App, env: &Environment, staticfile_root: String) -> String {
-        let mut root = "".to_string();
+        let mut root = String::new();
         if let Some(staticfile_root) = env.get_config_variable("STATICFILE_ROOT") {
             root = staticfile_root;
         } else if !staticfile_root.is_empty() {
@@ -87,7 +85,7 @@ impl StaticfileProvider {
             mime_types = "include\tmime.types;".to_string();
         }
 
-        let mut auth_basic = "".to_string();
+        let mut auth_basic = String::new();
         if app.includes_file("Staticfile.auth") {
             assets.insert(".htpasswd".to_string(), app.read_file("Staticfile.auth")?);
             auth_basic = format!(
@@ -97,15 +95,11 @@ impl StaticfileProvider {
         }
 
         let staticfile: Staticfile = app.read_yaml("Staticfile").unwrap_or_default();
-        let root = StaticfileProvider::get_root(
-            app,
-            env,
-            staticfile.root.unwrap_or_else(|| "".to_string()),
-        );
+        let root = StaticfileProvider::get_root(app, env, staticfile.root.unwrap_or_default());
         let gzip = staticfile.gzip.unwrap_or_else(|| "on".to_string());
         let directory = staticfile.directory.unwrap_or_else(|| "off".to_string());
         let status_code = staticfile.status_code.unwrap_or_default();
-        let mut error_page = "".to_string();
+        let mut error_page = String::new();
         for (key, value) in status_code {
             writeln!(error_page, "\terror_page {} {};", key, value)?;
         }

@@ -17,7 +17,7 @@ const BUNDLE_CACHE_DIR: &str = "/root/.bundle/cache";
 
 impl Provider for RubyProvider {
     fn name(&self) -> &str {
-        "Ruby"
+        "ruby"
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
@@ -71,7 +71,7 @@ impl RubyProvider {
             setup.add_apt_pkgs(vec!["default-libmysqlclient-dev".to_string()]);
         }
 
-        if self.uses_gem_dep(app, "rmagick") {
+        if self.uses_gem_dep(app, "magick") {
             setup.add_apt_pkgs(vec![String::from("libmagickwand-dev")]);
             setup.add_nix_pkgs(&[Pkg::new("imagemagick")]);
         }
@@ -85,7 +85,8 @@ impl RubyProvider {
             && . /etc/profile.d/rvm.sh \
             && rvm install {ruby_version} \
             && rvm --default use {ruby_version} \
-            && gem install {bundler_version}",
+            && gem install {bundler_version} \
+            && rm -rf /usr/local/rvm/src",
             ruby_version = self.get_ruby_version(app)?,
             bundler_version = self.get_bundler_version(app)
         ));
@@ -99,6 +100,11 @@ impl RubyProvider {
         let mut install = Phase::install(None);
         install.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
+        if !self.uses_gem_dep(app, "local") {
+            // Only run install if Gemfile or Gemfile.lock has changed
+            install.only_include_files = Some(vec!["Gemfile*".to_string()]);
+        }
+
         install.add_cmd("bundle install".to_string());
 
         // Ensure that the ruby executable is in the PATH
@@ -111,13 +117,12 @@ impl RubyProvider {
     }
 
     fn get_build(&self, app: &App) -> Result<Option<Phase>> {
+        let mut build = Phase::build(None);
         if self.is_rails_app(app) {
-            Ok(Some(Phase::build(Some(
-                "bundle exec rake assets:precompile".to_string(),
-            ))))
-        } else {
-            Ok(None)
+            build.add_cmd("bundle exec rake assets:precompile".to_string());
         }
+
+        Ok(Some(build))
     }
 
     fn get_start(&self, app: &App) -> Result<Option<StartPhase>> {
@@ -143,6 +148,7 @@ impl RubyProvider {
                 "GEM_HOME".to_string(),
                 format!("/usr/local/rvm/gems/{}", ruby_version),
             ),
+            ("MALLOC_ARENA_MAX".to_string(), "2".to_string()),
         ]);
         if self.is_rails_app(app) {
             env_vars.insert("RAILS_LOG_TO_STDOUT".to_string(), "enabled".to_string());

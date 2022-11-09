@@ -733,7 +733,7 @@ mod test {
             NodeProvider::find_next_packages(&App::new(
                 "./examples/node-monorepo/packages/client"
             )?)?,
-            vec!["".to_string()]
+            vec![String::new()]
         );
 
         Ok(())

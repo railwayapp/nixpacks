@@ -1,0 +1,4 @@
+providers = ["node", "python", "go", "deno"]
+
+[start]
+cmd = "node --version && python --version && go version && deno --version"
