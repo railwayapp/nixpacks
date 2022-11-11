@@ -153,7 +153,6 @@ impl RubyProvider {
 
         if self.is_rails_app(app) {
             env_vars.insert("RAILS_LOG_TO_STDOUT".to_string(), "enabled".to_string());
-            env_vars.insert("RAILS_ENV".to_string(), "production".to_string());
             env_vars.insert("RAILS_SERVE_STATIC_FILES".to_string(), "1".to_string());
         }
 
