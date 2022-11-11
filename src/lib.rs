@@ -18,8 +18,6 @@
     clippy::missing_panics_doc,
 )]
 
-
-
 use crate::nixpacks::{
     app::App,
     builder::{
@@ -125,7 +123,7 @@ pub async fn create_docker_image(
         }
     } else {
         println!("\nNixpacks was unable to generate a build plan for this app.\nPlease check the documentation for supported languages: https://nixpacks.com");
-        println!("\nThe file contents of the app directory are:\n");
+        println!("\nThe contents of the app directory are:\n");
 
         for file in &app.paths {
             let path = app.strip_source_path(file.as_path())?;
