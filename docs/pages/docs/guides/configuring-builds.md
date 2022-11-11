@@ -8,6 +8,21 @@ This guide goes over a few common configuration scenarios so you can quickly get
 up and running. For a complete reference of what is possible, please see the
 [read the file configuration docs](/docs/configuration/file).
 
+## Change what providers are run
+
+You can have more than just the auto-detected provider contribute to the build by adding a `"providers"` key to the `nixpacks.toml` file. `"..."` matches the auto-detected providers.
+
+```toml
+providers = ["...", "python"]
+```
+
+You can also override the the auto-detected providers by leaving `"..."` out of the array.
+
+```toml
+# Only the go provider will be run
+providers = ["go"]
+```
+
 ## Install additional packages
 
 You can easily install additional Nix or Apt packages so that they are available during the the build or at runtime. Packages are typically installed in the setup phase.

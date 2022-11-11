@@ -50,6 +50,14 @@ The `"..."` represents a hole that will be populated by the values from plan tha
 
 ---
 
+## Providers
+
+Specify the providers that you want to run on the build.
+
+```toml
+providers = ['...', 'python']
+```
+
 ## Build image
 
 The image to use as the base when building the application.
