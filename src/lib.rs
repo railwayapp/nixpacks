@@ -32,7 +32,7 @@ use crate::nixpacks::{
         BuildPlan, PlanGenerator,
     },
 };
-use anyhow::Result;
+use anyhow::{bail, Result};
 use providers::{
     clojure::ClojureProvider, cobol::CobolProvider, crystal::CrystalProvider,
     csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider, elixir::ElixirProvider,
@@ -112,6 +112,31 @@ pub async fn create_docker_image(
 
     let logger = Logger::new();
     let builder = DockerImageBuilder::new(logger, build_options.clone());
+
+    let phase_count = plan.phases.clone().map_or(0, |phases| phases.len());
+    if phase_count > 0 {
+        println!("{}", plan.get_build_string()?);
+
+        let start = plan.start_phase.clone().unwrap_or_default();
+        if start.cmd.is_none() && !build_options.no_error_without_start {
+            bail!("No start command could be found")
+        }
+    } else {
+        println!("\nNixpacks was unable to generate a build plan for this app.\nPlease check the documentation for supported languages: https://nixpacks.com");
+        println!("\nThe contents of the app directory are:\n");
+
+        for file in &app.paths {
+            let path = app.strip_source_path(file.as_path())?;
+            println!(
+                "  {}{}",
+                path.display(),
+                if file.is_dir() { "/" } else { "" }
+            );
+        }
+
+        std::process::exit(1);
+    }
+
     builder
         .create_image(app.source.to_str().unwrap(), &plan, &environment)
         .await?;
