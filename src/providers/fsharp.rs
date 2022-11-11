@@ -16,7 +16,7 @@ pub const ARTIFACT_DIR: &str = "out";
 
 impl Provider for FSharpProvider {
     fn name(&self) -> &str {
-        "fsharp"
+        "f#"
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
