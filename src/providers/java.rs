@@ -38,6 +38,8 @@ impl Provider for JavaProvider {
 
             let mut build = Phase::build(None);
             let gradle_exe = self.get_gradle_exe(app);
+
+            // Ensure the gradlew file is executable
             if app.includes_file("./gradlew") && !app.is_file_executable("gradlew") {
                 build.add_cmd("chmod +x gradlew");
             }

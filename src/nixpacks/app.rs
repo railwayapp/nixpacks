@@ -1,7 +1,7 @@
 use path_slash::PathBufExt;
-use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::path::Path;
+use std::{collections::BTreeMap, os::unix::prelude::PermissionsExt};
 use std::{env, fs, path::PathBuf};
 
 use anyhow::{bail, Context, Result};
@@ -236,6 +236,14 @@ mod tests {
             app.read_file("index.ts")?.trim_end(),
             "console.log(\"Hello from NPM\");"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_file_executable() -> Result<()> {
+        let app = App::new("./examples/java-gradle-hello-world")?;
+        assert!(app.is_file_executable("gradlew"));
+        assert!(!app.is_file_executable("build.gradle"));
         Ok(())
     }
 
