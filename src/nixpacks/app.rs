@@ -141,6 +141,25 @@ impl App {
         self.source.join(name).is_dir()
     }
 
+    #[cfg(target_os = "windows")]
+    pub fn is_file_executable(&self, name: &str) -> bool {
+        true
+    }
+
+    /// Check if a path is an executable file
+    #[cfg(not(target_os = "windows"))]
+    pub fn is_file_executable(&self, name: &str) -> bool {
+        use std::os::unix::prelude::PermissionsExt;
+
+        let path = self.source.join(name);
+        if path.is_file() {
+            let metadata = path.metadata().unwrap();
+            metadata.permissions().mode() & 0o111 != 0
+        } else {
+            false
+        }
+    }
+
     pub fn read_json<T>(&self, name: &str) -> Result<T>
     where
         T: DeserializeOwned,
@@ -225,6 +244,15 @@ mod tests {
             app.read_file("index.ts")?.trim_end(),
             "console.log(\"Hello from NPM\");"
         );
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn test_is_file_executable() -> Result<()> {
+        let app = App::new("./examples/java-gradle-hello-world")?;
+        assert!(app.is_file_executable("gradlew"));
+        assert!(!app.is_file_executable("build.gradle"));
         Ok(())
     }
 

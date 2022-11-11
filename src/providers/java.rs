@@ -36,8 +36,15 @@ impl Provider for JavaProvider {
             let pkgs = self.get_jdk_and_gradle_pkgs(app)?;
             setup = Phase::setup(Some(pkgs));
 
+            let mut build = Phase::build(None);
             let gradle_exe = self.get_gradle_exe(app);
-            let mut build = Phase::build(Some(format!("{} build -x check", gradle_exe)));
+
+            // Ensure the gradlew file is executable
+            if app.includes_file("./gradlew") && !app.is_file_executable("gradlew") {
+                build.add_cmd("chmod +x gradlew");
+            }
+
+            build.add_cmd(format!("{} build -x check", gradle_exe));
             build.add_cache_directory("/root/.gradle");
             build
         } else {
