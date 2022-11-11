@@ -1,7 +1,7 @@
 use path_slash::PathBufExt;
+use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::path::Path;
-use std::{collections::BTreeMap, os::unix::prelude::PermissionsExt};
 use std::{env, fs, path::PathBuf};
 
 use anyhow::{bail, Context, Result};
@@ -141,8 +141,16 @@ impl App {
         self.source.join(name).is_dir()
     }
 
-    /// Check if a path is an executable file
+    #[cfg(target_os = "windows")]
     pub fn is_file_executable(&self, name: &str) -> bool {
+        true
+    }
+
+    /// Check if a path is an executable file
+    #[cfg(not(target_os = "windows"))]
+    pub fn is_file_executable(&self, name: &str) -> bool {
+        use std::os::unix::prelude::PermissionsExt;
+
         let path = self.source.join(name);
         if path.is_file() {
             let metadata = path.metadata().unwrap();
@@ -240,6 +248,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "windows"))]
     fn test_is_file_executable() -> Result<()> {
         let app = App::new("./examples/java-gradle-hello-world")?;
         assert!(app.is_file_executable("gradlew"));
