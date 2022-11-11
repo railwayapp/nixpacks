@@ -11,7 +11,8 @@ expression: plan
     "GEM_PATH": "/usr/local/rvm/gems/3.1.2:/usr/local/rvm/gems/3.1.2@global",
     "MALLOC_ARENA_MAX": "2",
     "NIXPACKS_METADATA": "ruby",
-    "RAILS_LOG_TO_STDOUT": "enabled"
+    "RAILS_LOG_TO_STDOUT": "enabled",
+    "RAILS_SERVE_STATIC_FILES": "1"
   },
   "phases": {
     "build": {

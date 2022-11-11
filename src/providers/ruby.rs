@@ -150,9 +150,12 @@ impl RubyProvider {
             ),
             ("MALLOC_ARENA_MAX".to_string(), "2".to_string()),
         ]);
+
         if self.is_rails_app(app) {
             env_vars.insert("RAILS_LOG_TO_STDOUT".to_string(), "enabled".to_string());
+            env_vars.insert("RAILS_SERVE_STATIC_FILES".to_string(), "1".to_string());
         }
+
         Ok(env_vars)
     }
 
