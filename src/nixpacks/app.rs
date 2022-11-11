@@ -141,6 +141,17 @@ impl App {
         self.source.join(name).is_dir()
     }
 
+    /// Check if a path is an executable file
+    pub fn is_file_executable(&self, name: &str) -> bool {
+        let path = self.source.join(name);
+        if path.is_file() {
+            let metadata = path.metadata().unwrap();
+            metadata.permissions().mode() & 0o111 != 0
+        } else {
+            false
+        }
+    }
+
     pub fn read_json<T>(&self, name: &str) -> Result<T>
     where
         T: DeserializeOwned,
