@@ -72,7 +72,7 @@ impl RustProvider {
         }
 
         if RustProvider::should_use_musl(app, env)? {
-            setup.add_nix_pkgs(&[Pkg::new("musl")]);
+            setup.add_nix_pkgs(&[Pkg::new("musl"), Pkg::new("musl.dev")]);
         }
 
         Ok(setup)
