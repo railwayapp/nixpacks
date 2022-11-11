@@ -30,16 +30,14 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
+        "binutils",
         "gcc",
         "rust-bin.stable.latest.default"
       ],
       "nixOverlays": [
         "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
       ],
-      "nixpkgsArchive": "[archive]",
-      "aptPkgs": [
-        "binutils"
-      ]
+      "nixpkgsArchive": "[archive]"
     }
   },
   "start": {

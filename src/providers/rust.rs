@@ -56,6 +56,7 @@ impl RustProvider {
         }
 
         let mut setup = Phase::setup(Some(vec![
+            Pkg::new("binutils"),
             Pkg::new("gcc"),
             rust_pkg.from_overlay(RUST_OVERLAY),
         ]));
@@ -71,10 +72,8 @@ impl RustProvider {
         }
 
         if RustProvider::should_use_musl(app, env)? {
-            setup.add_apt_pkgs(vec!["musl-tools".to_string()]);
+            setup.add_nix_pkgs(&[Pkg::new("musl"), Pkg::new("musl.dev")]);
         }
-
-        setup.add_apt_pkgs(vec!["binutils".to_string()]);
 
         Ok(setup)
     }
