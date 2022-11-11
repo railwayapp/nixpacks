@@ -9,7 +9,7 @@ expression: plan
     "ASPNETCORE_ENVIRONMENT": "Production",
     "ASPNETCORE_URLS": "http://0.0.0.0:3000",
     "DOTNET_ROOT": "/nix/var/nix/profiles/default/",
-    "NIXPACKS_METADATA": "csharp"
+    "NIXPACKS_METADATA": "c#"
   },
   "phases": {
     "build": {
