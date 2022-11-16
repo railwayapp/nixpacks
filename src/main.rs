@@ -58,7 +58,7 @@ struct Args {
     apt: Vec<String>,
 
     /// Provide additional nix libraries to install in the environment
-    #[arg(long, short, global = true)]
+    #[arg(long, global = true)]
     libs: Vec<String>,
 
     /// Provide environment variables to your build
