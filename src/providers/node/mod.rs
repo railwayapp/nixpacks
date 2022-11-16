@@ -162,12 +162,10 @@ impl NodeProvider {
     pub fn uses_corepack(app: &App) -> Result<bool> {
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
 
-        if package_json.package_manager.is_some() {
-            if package_json
-                .package_manager
-                .expect("Already non-null validated")
-                .starts_with("npm")
-            {
+        if let Some(package_manager) = package_json.package_manager {
+            // The field is not null.
+
+            if package_manager.starts_with("npm") {
                 // Fall back to just using the system npm version.
                 return Ok(false);
             }
