@@ -1,12 +1,12 @@
 on:
   push:
     branches:
-    - main
+      - main
     paths-ignore:
-    - 'docs/**'
+      - "docs/**"
   pull_request:
     paths-ignore:
-    - 'docs/**'
+      - "docs/**"
 
 name: CI
 
@@ -47,7 +47,7 @@ jobs:
         uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
-          
+
       - name: Checkout sources
         uses: actions/checkout@v3
 
@@ -58,7 +58,7 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt, clippy
-          
+
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo fmt
@@ -72,7 +72,7 @@ jobs:
         with:
           command: clippy
           # Set linting rules for clippy
-          args: --all-targets --all-features -- -D warnings 
+          args: --all-targets --all-features -- -D warnings
 
   test-plan:
     name: Test Suite
@@ -83,12 +83,12 @@ jobs:
     outputs:
       matrix: ${{ steps.docker-prep.outputs.matrix }}
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
-    steps:      
+    steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
-        
+
       - name: Checkout sources
         uses: actions/checkout@v3
 
@@ -100,7 +100,7 @@ jobs:
           override: true
 
       - uses: Swatinem/rust-cache@v2
-      
+
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
@@ -120,12 +120,12 @@ jobs:
     strategy:
       matrix: ${{fromJson(needs.test-plan.outputs.matrix)}}
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
-    steps:      
+    steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
-        
+
       - name: Checkout sources
         uses: actions/checkout@v3
 
@@ -156,19 +156,19 @@ jobs:
         uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
-        
+
       - name: Checkout sources
         uses: actions/checkout@v3
 
-      - name: Install 1.59 rust toolchain
+      - name: Install 1.60 rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.59
+          toolchain: 1.60.0
           override: true
 
       - uses: Swatinem/rust-cache@v2
-      
+
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
