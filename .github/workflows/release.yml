@@ -159,7 +159,7 @@ jobs:
         echo ::set-output name=sha::"$(shasum -a 256 ./release/gitui-mac.tar.gz | awk '{printf $1}')"
 
     - name: Update homebrew tap
-      uses: mislav/bump-homebrew-formula-action@v1
+      uses: mislav/bump-homebrew-formula-action@v2
       if: "matrix.target == 'x86_64-apple-darwin' && !contains(github.ref, '-')"
       with:
         formula-name: nixpacks
