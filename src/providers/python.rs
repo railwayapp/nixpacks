@@ -32,7 +32,8 @@ impl Provider for PythonProvider {
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
         let has_python = app.includes_file("main.py")
             || app.includes_file("requirements.txt")
-            || app.includes_file("pyproject.toml");
+            || app.includes_file("pyproject.toml")
+            || app.includes_file("Pipfile");
         Ok(has_python)
     }
 
@@ -122,6 +123,10 @@ impl PythonProvider {
             pkgs.append(&mut vec![Pkg::new("libmysqlclient.dev")]);
         }
 
+        if app.includes_file("Pipfile") {
+            pkgs.append(&mut vec![Pkg::new("pipenv")])
+        }
+
         let mut setup = Phase::setup(Some(pkgs));
 
         // Many Python packages need some C headers to be available
@@ -172,6 +177,23 @@ impl PythonProvider {
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
             return Ok(Some(install_phase));
+        } else if app.includes_file("Pipfile") {
+            let cmd = if app.includes_file("Pipfile.lock") {
+                "pipenv install --system --deploy"
+            } else {
+                "pipenv install --system --skip-lock"
+            };
+
+            let cmd = format!(
+                "{} && {} && pip install --upgrade build setuptools && {}",
+                create_env, activate_env, cmd
+            );
+
+            let mut install_phase = Phase::install(Some(cmd.to_string()));
+            install_phase.add_path(format!("{}/bin", env_loc));
+            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+
+            return Ok(Some(install_phase));
         }
 
         Ok(Some(Phase::install(None)))
@@ -207,12 +229,14 @@ impl PythonProvider {
 
     fn is_django(app: &App, _env: &Environment) -> Result<bool> {
         let has_manage = app.includes_file("manage.py");
-        let imports_django = vec!["requirements.txt", "pyproject.toml"].iter().any(|f| {
-            app.read_file(f)
-                .unwrap_or_default()
-                .to_lowercase()
-                .contains("django")
-        });
+        let imports_django = vec!["requirements.txt", "pyproject.toml", "Pipfile"]
+            .iter()
+            .any(|f| {
+                app.read_file(f)
+                    .unwrap_or_default()
+                    .to_lowercase()
+                    .contains("django")
+            });
         Ok(has_manage && imports_django)
     }
 
@@ -254,6 +278,15 @@ impl PythonProvider {
         bail!("Failed to find django application name!")
     }
 
+    fn parse_pipfile_python_version(file_content: &str) -> Result<Option<String>> {
+        let matches = Regex::new("(python_version|python_full_version) = ['|\"]([0-9|.]*)")?
+            .captures(&file_content);
+
+        Ok(matches
+            .filter(|m| m.len() > 2)
+            .map(|m| m.get(2).unwrap().as_str().to_string()))
+    }
+
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
         // Fetch python versions into tuples with defaults
         fn as_default(v: Option<Match>) -> &str {
@@ -271,6 +304,9 @@ impl PythonProvider {
             custom_version = Some(app.read_file(".python-version")?);
         } else if app.includes_file("runtime.txt") {
             custom_version = Some(app.read_file("runtime.txt")?);
+        } else if app.includes_file("Pipfile") {
+            let file_content = &app.read_file("Pipfile")?;
+            custom_version = PythonProvider::parse_pipfile_python_version(file_content)?;
         }
 
         // If it's still none, return default
@@ -384,6 +420,26 @@ mod test {
             )?,
             Pkg::new(DEFAULT_PYTHON_PKG_NAME)
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_pipfile_python_version() -> Result<()> {
+        let file_content = "\npython_version = '3.11'\n";
+        let custom_version = PythonProvider::parse_pipfile_python_version(file_content)?.unwrap();
+
+        assert_eq!(custom_version, "3.11");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_pipfile_python_full_version() -> Result<()> {
+        let file_content = "\npython_full_version = '3.11.0'\n";
+        let custom_version = PythonProvider::parse_pipfile_python_version(file_content)?.unwrap();
+
+        assert_eq!(custom_version, "3.11.0");
 
         Ok(())
     }
