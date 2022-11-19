@@ -135,6 +135,7 @@ impl Phase {
     }
 
     pub fn add_nix_pkgs(&mut self, new_pkgs: &[Pkg]) {
+        // TODO: Push ... onto the overlays
         self.nix_overlays = Some(add_multiple_to_option_vec(
             self.nix_overlays.clone(),
             new_pkgs
