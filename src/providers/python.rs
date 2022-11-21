@@ -179,9 +179,9 @@ impl PythonProvider {
             return Ok(Some(install_phase));
         } else if app.includes_file("Pipfile") {
             let cmd = if app.includes_file("Pipfile.lock") {
-                "pipenv install --system --deploy"
+                "PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy"
             } else {
-                "pipenv install --system --skip-lock"
+                "PIPENV_VENV_IN_PROJECT=1 pipenv install --skip-lock"
             };
 
             let cmd = format!(
