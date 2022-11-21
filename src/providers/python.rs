@@ -184,10 +184,7 @@ impl PythonProvider {
                 "PIPENV_VENV_IN_PROJECT=1 pipenv install --skip-lock"
             };
 
-            let cmd = format!(
-                "{} && {} && pip install --upgrade build setuptools && {}",
-                create_env, activate_env, cmd
-            );
+            let cmd = format!("{} && {} && {}", create_env, activate_env, cmd);
 
             let mut install_phase = Phase::install(Some(cmd.to_string()));
             install_phase.add_path(format!("{}/bin", env_loc));
