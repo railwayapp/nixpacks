@@ -124,7 +124,7 @@ impl PythonProvider {
         }
 
         if app.includes_file("Pipfile") {
-            pkgs.append(&mut vec![Pkg::new("pipenv")])
+            pkgs.append(&mut vec![Pkg::new("pipenv")]);
         }
 
         let mut setup = Phase::setup(Some(pkgs));
@@ -185,8 +185,8 @@ impl PythonProvider {
             };
 
             let cmd = format!("{} && {} && {}", create_env, activate_env, cmd);
+            let mut install_phase = Phase::install(Some(cmd));
 
-            let mut install_phase = Phase::install(Some(cmd.to_string()));
             install_phase.add_path(format!("{}/bin", env_loc));
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
@@ -277,7 +277,7 @@ impl PythonProvider {
 
     fn parse_pipfile_python_version(file_content: &str) -> Result<Option<String>> {
         let matches = Regex::new("(python_version|python_full_version) = ['|\"]([0-9|.]*)")?
-            .captures(&file_content);
+            .captures(file_content);
 
         Ok(matches
             .filter(|m| m.len() > 2)
