@@ -178,6 +178,9 @@ impl PythonProvider {
 
             return Ok(Some(install_phase));
         } else if app.includes_file("Pipfile") {
+            // By default Pipenv creates an environment directory in some random location (for example `/root/.local/share/virtualenvs/app-4PlAip0Q`).
+            // `PIPENV_VENV_IN_PROJECT` tells it that there is an already activated `venv` environment, So Pipenv will use the same directory instead of creating new one (in our case it's `/app/.venv`)
+
             let cmd = if app.includes_file("Pipfile.lock") {
                 "PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy"
             } else {
@@ -226,14 +229,8 @@ impl PythonProvider {
 
     fn is_django(app: &App, _env: &Environment) -> Result<bool> {
         let has_manage = app.includes_file("manage.py");
-        let imports_django = vec!["requirements.txt", "pyproject.toml", "Pipfile"]
-            .iter()
-            .any(|f| {
-                app.read_file(f)
-                    .unwrap_or_default()
-                    .to_lowercase()
-                    .contains("django")
-            });
+        let imports_django = PythonProvider::uses_dep(app, "django")?;
+
         Ok(has_manage && imports_django)
     }
 
@@ -398,7 +395,10 @@ impl PythonProvider {
                 .to_lowercase()
                 .contains(dep);
 
-        Ok(requirements_usage || pyproject_usage)
+        let pipfile_usage =
+            app.includes_file("Pipfile") && app.read_file("Pipfile")?.to_lowercase().contains(dep);
+
+        Ok(requirements_usage || pyproject_usage || pipfile_usage)
     }
 }
 
