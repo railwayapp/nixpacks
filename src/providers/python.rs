@@ -383,7 +383,7 @@ impl PythonProvider {
     }
 
     fn uses_dep(app: &App, dep: &str) -> Result<bool> {
-        let imports_django = vec!["requirements.txt", "pyproject.toml", "Pipfile"]
+        let is_used = vec!["requirements.txt", "pyproject.toml", "Pipfile"]
             .iter()
             .any(|f| {
                 app.includes_file(f)
@@ -394,7 +394,7 @@ impl PythonProvider {
                         .contains(dep)
             });
 
-        Ok(imports_django)
+        Ok(is_used)
     }
 }
 
