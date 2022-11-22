@@ -383,22 +383,18 @@ impl PythonProvider {
     }
 
     fn uses_dep(app: &App, dep: &str) -> Result<bool> {
-        let requirements_usage = app.includes_file("requirements.txt")
-            && app
-                .read_file("requirements.txt")?
-                .to_lowercase()
-                .contains(dep);
+        let imports_django = vec!["requirements.txt", "pyproject.toml", "Pipfile"]
+            .iter()
+            .any(|f| {
+                app.includes_file(f)
+                    && app
+                        .read_file(f)
+                        .unwrap_or_default()
+                        .to_lowercase()
+                        .contains(dep)
+            });
 
-        let pyproject_usage = app.includes_file("pyproject.toml")
-            && app
-                .read_file("pyproject.toml")?
-                .to_lowercase()
-                .contains(dep);
-
-        let pipfile_usage =
-            app.includes_file("Pipfile") && app.read_file("Pipfile")?.to_lowercase().contains(dep);
-
-        Ok(requirements_usage || pyproject_usage || pipfile_usage)
+        Ok(imports_django)
     }
 }
 
