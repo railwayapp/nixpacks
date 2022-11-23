@@ -24,28 +24,44 @@ pub fn get_cache_mount(
     }
 }
 
-pub fn get_copy_command(files: &[String], app_dir: &str) -> String {
+pub fn get_copy_commands(files: &[String], app_dir: &str) -> Vec<String> {
     if files.is_empty() {
-        String::new()
+        Vec::with_capacity(0)
     } else {
-        format!("COPY {} {}", files.join(" "), app_dir)
+        files
+            .iter()
+            .map(|file| {
+                let mut file_in_app_dir = app_dir.to_string();
+                if !file_in_app_dir.ends_with('/') {
+                    file_in_app_dir.push('/');
+                }
+                file_in_app_dir.push_str(file.strip_prefix("./").unwrap_or(file));
+                format!("COPY {file} {file_in_app_dir}")
+            })
+            .collect()
     }
 }
 
-pub fn get_copy_from_command(from: &str, files: &[String], app_dir: &str) -> String {
+pub fn get_copy_from_commands(from: &str, files: &[String], app_dir: &str) -> Vec<String> {
     if files.is_empty() {
-        format!("COPY --from=0 {} {}", app_dir, app_dir)
+        vec![format!("COPY --from=0 {} {}", app_dir, app_dir)]
     } else {
-        format!(
-            "COPY --from={} {} {}",
-            from,
-            files
-                .iter()
-                .map(|f| f.replace("./", app_dir))
-                .collect::<Vec<_>>()
-                .join(" "),
-            app_dir
-        )
+        files
+            .iter()
+            .map(|file| {
+                let mut file_in_app_dir = app_dir.to_string();
+                if !file_in_app_dir.ends_with('/') {
+                    file_in_app_dir.push('/');
+                }
+                file_in_app_dir.push_str(file.strip_prefix("./").unwrap_or(file));
+                let file = if file.starts_with("./") {
+                    &file_in_app_dir
+                } else {
+                    file
+                };
+                format!("COPY --from={from} {file} {file_in_app_dir}")
+            })
+            .collect()
     }
 }
 
@@ -82,15 +98,17 @@ mod tests {
     }
 
     #[test]
-    fn test_get_copy_command() {
+    fn test_get_copy_commands() {
         let files = vec!["file1".to_string(), "file2".to_string()];
         let app_dir = "app";
 
-        assert_eq!(String::new(), get_copy_command(&[], app_dir));
-        assert_eq!(
-            format!("COPY {} {}", files.join(" "), app_dir),
-            get_copy_command(&files, app_dir)
-        );
+        assert_eq!(0, get_copy_commands(&[], app_dir).len());
+        for (index, copy_command) in get_copy_commands(&files, app_dir).iter().enumerate() {
+            assert_eq!(
+                format!("COPY {} {}/{}", files[index], app_dir, files[index]),
+                *copy_command
+            );
+        }
     }
 
     #[test]
@@ -100,13 +118,21 @@ mod tests {
         let app_dir = "app";
 
         assert_eq!(
-            format!("COPY --from=0 {} {}", app_dir, app_dir),
-            get_copy_from_command(from, &[], app_dir)
+            format!("COPY --from={from} {app_dir} {app_dir}"),
+            get_copy_from_commands(from, &[], app_dir)[0]
         );
-        assert_eq!(
-            format!("COPY --from={} {} {}", from, files.join(" "), app_dir),
-            get_copy_from_command(from, &files, app_dir)
-        );
+        for (index, copy_command) in get_copy_from_commands(from, &files, app_dir)
+            .iter()
+            .enumerate()
+        {
+            assert_eq!(
+                format!(
+                    "COPY --from={from} {} {}/{}",
+                    files[index], app_dir, files[index]
+                ),
+                *copy_command
+            );
+        }
     }
 
     #[test]
