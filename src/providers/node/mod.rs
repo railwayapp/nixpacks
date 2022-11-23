@@ -100,7 +100,11 @@ impl Provider for NodeProvider {
         });
 
         if corepack {
-            install.add_cmd(NodeProvider::get_install_command(app).unwrap());
+            let install_cmd = NodeProvider::get_install_command(app);
+
+            if let Some(..) = install_cmd {
+                install.add_cmd(install_cmd.unwrap_or_default());
+            }
         }
 
         install.add_cache_directory(NodeProvider::get_package_manager_cache_dir(app));
