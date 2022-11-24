@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use super::Provider;
 use crate::nixpacks::{
     app::App,
@@ -22,7 +20,7 @@ impl Provider for NimProvider {
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.find_files("*.nimble")?.len() > 0)
+        Ok(!app.find_files("*.nimble")?.is_empty())
     }
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
