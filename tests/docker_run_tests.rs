@@ -552,6 +552,20 @@ async fn test_puppeteer() {
 }
 
 #[tokio::test]
+async fn test_nim() {
+    let name = simple_build("./examples/nim").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Hello world from Nim!"));
+}
+
+#[tokio::test]
+async fn test_nim_prologue() {
+    let name = simple_build("./examples/nim_prologue").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Prologue is serving"));
+}
+
+#[tokio::test]
 async fn test_csharp() {
     let name = simple_build("./examples/csharp-cli").await;
     let output = run_image(&name, None).await;
