@@ -50,13 +50,10 @@ pub struct PackageJson {
     #[serde(rename = "type")]
     pub project_type: Option<String>,
 
-    pub workspaces: Option<Workspaces>,
-}
+    #[serde(rename = "packageManager")]
+    pub package_manager: Option<String>,
 
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct Yarnrc {
-    #[serde(rename = "yarnPath")]
-    pub yarn_path: Option<String>,
+    pub workspaces: Option<Workspaces>,
 }
 
 #[derive(Default, Debug)]
@@ -95,7 +92,21 @@ impl Provider for NodeProvider {
         }
 
         // Install
-        let mut install = Phase::install(NodeProvider::get_install_command(app));
+        let corepack = NodeProvider::uses_corepack(app)?;
+        let mut install = Phase::install(if corepack {
+            Some("npm install -g corepack && corepack enable".to_string())
+        } else {
+            NodeProvider::get_install_command(app)
+        });
+
+        if corepack {
+            let install_cmd = NodeProvider::get_install_command(app);
+
+            if let Some(..) = install_cmd {
+                install.add_cmd(install_cmd.unwrap_or_default());
+            }
+        }
+
         install.add_cache_directory(NodeProvider::get_package_manager_cache_dir(app));
         install.add_path("/app/node_modules/.bin".to_string());
 
@@ -147,6 +158,23 @@ impl NodeProvider {
             if scripts.get(script).is_some() {
                 return Ok(true);
             }
+        }
+
+        Ok(false)
+    }
+
+    pub fn uses_corepack(app: &App) -> Result<bool> {
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
+
+        if let Some(package_manager) = package_json.package_manager {
+            // The field is not null.
+
+            if package_manager.starts_with("npm") {
+                // Fall back to just using the system npm version.
+                return Ok(false);
+            }
+
+            return Ok(true);
         }
 
         Ok(false)
@@ -289,13 +317,10 @@ impl NodeProvider {
         if package_manager == "pnpm" {
             install_cmd = "pnpm i --frozen-lockfile".to_string();
         } else if package_manager == "yarn" {
+            // TODO: When using Corepack and modern Yarn, we may not have a .yarnrc.yml - need to
+            //       read the Yarn version from stdout after enabling Corepack.
             if app.includes_file(".yarnrc.yml") {
-                install_cmd = "yarn set version berry && yarn install --check-cache".to_string();
-                let yarnrc_yml: Yarnrc = app.read_yaml(".yarnrc.yml").unwrap_or_default();
-                if let Some(path) = yarnrc_yml.yarn_path {
-                    install_cmd =
-                        format!("yarn set version ./{} && yarn install --check-cache", path);
-                }
+                install_cmd = "yarn install --check-cache".to_string();
             } else {
                 install_cmd = "yarn install --frozen-lockfile".to_string();
             }
