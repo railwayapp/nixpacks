@@ -42,6 +42,12 @@ If `pyproject.toml` (w/ `poetry.lock`)
 poetry install --no-dev --no-interactive --no-ansi
 ```
 
+If `Pipfile` (w/ `Pipfile.lock`)
+
+```
+PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
+```
+
 ## Start
 
 if Django Application
