@@ -10,7 +10,6 @@ Php is detected if a `composer.json` OR `index.php` file is found.
 
 The following PHP versions are available
 
-- `7.4`
 - `8.0`
 - `8.1` (Default)
 
