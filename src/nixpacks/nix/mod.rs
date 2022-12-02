@@ -124,7 +124,7 @@ fn nix_expression_for_group(group: &NixGroup) -> String {
             {{ }}:
 
             let pkgs = {} {{ overlays = [ {} ]; }};
-            in with pkgs;
+            in with pkgs // {{ openssl = pkgs.openssl_1_1; }};
               let
                 APPEND_LIBRARY_PATH = \"${{lib.makeLibraryPath [ {} ] }}\";
                 myLibraries = writeText \"libraries\" ''

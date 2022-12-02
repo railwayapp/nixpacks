@@ -363,8 +363,7 @@ impl NodeProvider {
         } else {
             PackageJson::default()
         };
-        let mut node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, env)?;
-        node_pkg = node_pkg.set_override("openssl", "openssl_1_1");
+        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, env)?;
 
         let pm_pkg: Pkg;
         let mut pkgs = Vec::<Pkg>::new();
