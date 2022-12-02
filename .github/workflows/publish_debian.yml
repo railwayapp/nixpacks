@@ -70,3 +70,18 @@ jobs:
           delete-branch: true
           title: Bump base image to `debian-${{ steps.date.outputs.date }}`
           labels: release/patch
+          
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+           
+      - name: Build and push to Docker Hub
+        uses: docker/build-push-action@v3
+        with:
+          context: base/debian
+          platforms: linux/arm64, linux/amd64, linux/386
+          push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+          tags: railwayapp/nixpacks:debian, railwayapp/nixpacks:latest, railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
+
