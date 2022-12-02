@@ -55,7 +55,7 @@ expression: plan
     "node:setup": {
       "name": "node:setup",
       "nixPkgs": [
-        "nodejs-16_x",
+        "(nodejs-16_x.override { openssl = openssl_1_1; })",
         "npm-8_x"
       ],
       "nixOverlays": [
