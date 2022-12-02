@@ -39,7 +39,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "(nodejs-14_x.override { openssl = openssl_1_1; })",
+        "nodejs-14_x",
         "npm-8_x"
       ],
       "nixOverlays": [

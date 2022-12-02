@@ -43,7 +43,7 @@ expression: plan
         "perl",
         "nginx",
         "php81Packages.composer",
-        "(nodejs-16_x.override { openssl = openssl_1_1; })",
+        "nodejs-16_x",
         "npm-8_x"
       ],
       "nixOverlays": [
