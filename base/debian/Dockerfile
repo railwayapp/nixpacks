@@ -13,9 +13,9 @@ RUN apt-get update && apt-get -y upgrade \
 
 SHELL ["/bin/bash", "-ol", "pipefail", "-c"]
 RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash \
-    && /nix/var/nix/profiles/default/bin/nix-channel --remove nixpkgs \
-    && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old \
-    && printf 'if [ -d $HOME/.nix-profile/etc/profile.d ]; then\n for i in $HOME/.nix-profile/etc/profile.d/*.sh; do\n if [ -r $i ]; then\n . $i\n fi\n done\n fi\n' >> /root/.profile
+  && /nix/var/nix/profiles/default/bin/nix-channel --remove nixpkgs \
+  && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old \
+  && printf 'if [ -d $HOME/.nix-profile/etc/profile.d ]; then\n for i in $HOME/.nix-profile/etc/profile.d/*.sh; do\n if [ -r $i ]; then\n . $i\n fi\n done\n fi\n' >> /root/.profile
 
 ENV \
   ENV=/etc/profile \
@@ -30,3 +30,4 @@ ENV \
   CPATH=~/.nix-profile/include:$CPATH \
   LIBRARY_PATH=~/.nix-profile/lib:$LIBRARY_PATH \
   QTDIR=~/.nix-profile:$QTDIR
+# trigger github action
