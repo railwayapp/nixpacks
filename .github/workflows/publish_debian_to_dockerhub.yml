@@ -52,6 +52,7 @@ jobs:
           platforms: linux/arm64, linux/amd64, linux/386
           # push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           # tags: railwayapp/nixpacks:debian, railwayapp/nixpacks:latest, railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
+          push: true
           tags: railwayapp/test:debian, railwayapp/test:latest, railwayapp/test:debian-${{ steps.date.outputs.date }}
 
       - name: Bump base image
