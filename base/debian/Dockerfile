@@ -30,4 +30,3 @@ ENV \
   CPATH=~/.nix-profile/include:$CPATH \
   LIBRARY_PATH=~/.nix-profile/lib:$LIBRARY_PATH \
   QTDIR=~/.nix-profile:$QTDIR
-# trigger github action
