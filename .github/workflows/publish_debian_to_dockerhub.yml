@@ -50,7 +50,7 @@ jobs:
         with:
           context: base/debian
           platforms: linux/arm64, linux/amd64, linux/386
-          push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+          # push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           # tags: railwayapp/nixpacks:debian, railwayapp/nixpacks:latest, railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
           tags: railwayapp/test:debian, railwayapp/test:latest, railwayapp/test:debian-${{ steps.date.outputs.date }}
 
