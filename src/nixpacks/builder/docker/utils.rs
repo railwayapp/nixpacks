@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use super::cache::sanitize_cache_key;
 
 pub fn get_cache_mount(
@@ -31,11 +33,11 @@ pub fn get_copy_commands(files: &[String], app_dir: &str) -> Vec<String> {
         files
             .iter()
             .map(|file| {
-                let mut file_in_app_dir = app_dir.to_string();
-                if !file_in_app_dir.ends_with('/') {
-                    file_in_app_dir.push('/');
-                }
-                file_in_app_dir.push_str(file.strip_prefix("./").unwrap_or(file));
+                let file_in_app_dir = Path::new(app_dir)
+                    .join(file.strip_prefix("./").unwrap_or_default())
+                    .display()
+                    .to_string();
+
                 format!("COPY {file} {file_in_app_dir}")
             })
             .collect()
@@ -49,11 +51,11 @@ pub fn get_copy_from_commands(from: &str, files: &[String], app_dir: &str) -> Ve
         files
             .iter()
             .map(|file| {
-                let mut file_in_app_dir = app_dir.to_string();
-                if !file_in_app_dir.ends_with('/') {
-                    file_in_app_dir.push('/');
-                }
-                file_in_app_dir.push_str(file.strip_prefix("./").unwrap_or(file));
+                let file_in_app_dir = Path::new(app_dir)
+                    .join(file.strip_prefix("./").unwrap_or_default())
+                    .display()
+                    .to_string();
+
                 let file = if file.starts_with("./") {
                     &file_in_app_dir
                 } else {
