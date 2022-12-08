@@ -109,7 +109,11 @@ mod tests {
         assert_eq!(0, get_copy_commands(&[], app_dir).len());
         for (index, copy_command) in get_copy_commands(&files, app_dir).iter().enumerate() {
             assert_eq!(
-                format!("COPY {} {}/{}", files[index], app_dir, files[index]),
+                format!(
+                    "COPY {} {}",
+                    files[index],
+                    Path::new(app_dir).join(files[index].clone()).display()
+                ),
                 *copy_command
             );
         }
@@ -131,8 +135,9 @@ mod tests {
         {
             assert_eq!(
                 format!(
-                    "COPY --from={from} {} {}/{}",
-                    files[index], app_dir, files[index]
+                    "COPY --from={from} {} {}",
+                    files[index],
+                    Path::new(app_dir).join(files[index].clone()).display()
                 ),
                 *copy_command
             );
