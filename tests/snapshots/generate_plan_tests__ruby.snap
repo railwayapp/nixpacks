@@ -28,7 +28,8 @@ expression: plan
         "bundle install"
       ],
       "onlyIncludeFiles": [
-        "Gemfile*"
+        "Gemfile",
+        "Gemfile.lock"
       ],
       "cacheDirectories": [
         "/root/.bundle/cache"
