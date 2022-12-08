@@ -28,14 +28,13 @@ pub fn get_cache_mount(
 
 pub fn get_copy_commands(files: &[String], app_dir: &str) -> Vec<String> {
     if files.is_empty() {
-        Vec::with_capacity(0)
+        Vec::new()
     } else {
         files
             .iter()
             .map(|file| {
                 let file_in_app_dir = Path::new(app_dir)
-                    .join(file.strip_prefix("./").unwrap_or_default())
-                    .join(file)
+                    .join(file.trim_start_matches("./"))
                     .display()
                     .to_string();
 
@@ -53,17 +52,11 @@ pub fn get_copy_from_commands(from: &str, files: &[String], app_dir: &str) -> Ve
             .iter()
             .map(|file| {
                 let file_in_app_dir = Path::new(app_dir)
-                    .join(file.strip_prefix("./").unwrap_or_default())
-                    .join(file)
+                    .join(file.trim_start_matches("./"))
                     .display()
                     .to_string();
 
-                let file = if file.starts_with("./") {
-                    &file_in_app_dir
-                } else {
-                    file
-                };
-                format!("COPY --from={from} {file} {file_in_app_dir}")
+                format!("COPY --from={from} {file_in_app_dir} {file_in_app_dir}")
             })
             .collect()
     }
@@ -101,47 +94,55 @@ mod tests {
         assert_eq!(expected, actual);
     }
 
+    #[cfg(not(target_os = "windows"))]
     #[test]
     fn test_get_copy_commands() {
-        let files = vec!["file1".to_string(), "file2".to_string()];
         let app_dir = "app";
 
         assert_eq!(0, get_copy_commands(&[], app_dir).len());
-        for (index, copy_command) in get_copy_commands(&files, app_dir).iter().enumerate() {
-            assert_eq!(
-                format!(
-                    "COPY {} {}",
-                    files[index],
-                    Path::new(app_dir).join(files[index].clone()).display()
-                ),
-                *copy_command
-            );
-        }
+        assert_eq!(
+            vec![
+                "COPY file1 app/file1",
+                "COPY ./nested/file app/nested/file",
+                "COPY /from/root /from/root"
+            ],
+            get_copy_commands(
+                &[
+                    "file1".to_string(),
+                    "./nested/file".to_string(),
+                    "/from/root".to_string()
+                ],
+                app_dir
+            ),
+        );
     }
 
+    #[cfg(not(target_os = "windows"))]
     #[test]
     fn test_get_copy_from_command() {
         let from = "0";
-        let files = vec!["file1".to_string(), "file2".to_string()];
         let app_dir = "app";
 
         assert_eq!(
             format!("COPY --from={from} {app_dir} {app_dir}"),
             get_copy_from_commands(from, &[], app_dir)[0]
         );
-        for (index, copy_command) in get_copy_from_commands(from, &files, app_dir)
-            .iter()
-            .enumerate()
-        {
-            assert_eq!(
-                format!(
-                    "COPY --from={from} {} {}",
-                    files[index],
-                    Path::new(app_dir).join(files[index].clone()).display()
-                ),
-                *copy_command
-            );
-        }
+        assert_eq!(
+            vec![
+                "COPY --from=0 app/file1 app/file1",
+                "COPY --from=0 app/nested/file app/nested/file",
+                "COPY --from=0 /from/root /from/root"
+            ],
+            get_copy_from_commands(
+                from,
+                &[
+                    "file1".to_string(),
+                    "./nested/file".to_string(),
+                    "/from/root".to_string()
+                ],
+                app_dir
+            ),
+        );
     }
 
     #[test]
