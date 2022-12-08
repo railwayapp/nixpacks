@@ -35,6 +35,7 @@ pub fn get_copy_commands(files: &[String], app_dir: &str) -> Vec<String> {
             .map(|file| {
                 let file_in_app_dir = Path::new(app_dir)
                     .join(file.strip_prefix("./").unwrap_or_default())
+                    .join(file)
                     .display()
                     .to_string();
 
@@ -53,6 +54,7 @@ pub fn get_copy_from_commands(from: &str, files: &[String], app_dir: &str) -> Ve
             .map(|file| {
                 let file_in_app_dir = Path::new(app_dir)
                     .join(file.strip_prefix("./").unwrap_or_default())
+                    .join(file)
                     .display()
                     .to_string();
 
