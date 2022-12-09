@@ -61,7 +61,7 @@ fn test_rust_rocket() {
         ])
     );
     assert!(start.cmd.is_some());
-    assert_eq!(start.clone().cmd.unwrap(), "./rocket".to_string());
+    assert_eq!(start.clone().cmd.unwrap(), "./bin/rocket".to_string());
     assert!(start.run_image.is_some());
 }
 
