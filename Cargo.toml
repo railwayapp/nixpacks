@@ -1,6 +1,6 @@
 [package]
 name = "nixpacks"
-version = "0.15.0"
+version = "0.16.0"
 edition = "2021"
 license = "MIT"
 authors = ["Railway <contact@railway.app>"]

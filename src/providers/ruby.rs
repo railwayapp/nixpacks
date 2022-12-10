@@ -102,7 +102,8 @@ impl RubyProvider {
 
         if !self.uses_gem_dep(app, "local") {
             // Only run install if Gemfile or Gemfile.lock has changed
-            install.only_include_files = Some(vec!["Gemfile*".to_string()]);
+            install.only_include_files =
+                Some(vec!["Gemfile".to_string(), "Gemfile.lock".to_string()]);
         }
 
         install.add_cmd("bundle install".to_string());
