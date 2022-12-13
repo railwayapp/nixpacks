@@ -11,11 +11,13 @@ use crate::nixpacks::{
     plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
-use bollard::{image::BuildImageOptions, Docker as BollardDocker};
+use bollard::{
+    image::{BuildImageOptions, BuilderVersion},
+    Docker as BollardDocker,
+};
 use std::{
     collections::HashMap,
     fs::{self, remove_dir_all, File},
-    process::Command,
 };
 use tempdir::TempDir;
 use uuid::Uuid;
@@ -81,18 +83,17 @@ impl ImageBuilder for DockerImageBuilder {
 
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
-            let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), &output)?;
+            let res = self
+                .execute_docker_build(plan, name.as_str(), &output)
+                .await;
 
-            // Execute docker build
-            let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
-            if !build_result.success() {
+            if res.is_err() {
                 bail!("Docker build failed")
             }
 
             self.logger.log_section("Successfully Built!");
             println!("\nRun:");
             println!("  docker run -it {}", name);
-
             if self.options.incremental_cache_image.is_some() {
                 incremental_cache.create_image(
                     &incremental_cache_dirs,
@@ -111,6 +112,8 @@ impl ImageBuilder for DockerImageBuilder {
         Ok(())
     }
 }
+
+use futures_util::stream::StreamExt;
 
 impl DockerImageBuilder {
     pub fn new(
@@ -187,16 +190,24 @@ impl DockerImageBuilder {
                 // platform: self.options.platform,
                 labels,
                 nocache: self.options.no_cache,
+                version: BuilderVersion::BuilderBuildKit,
+                pull: true,
+                #[cfg(feature = "buildkit")]
+                session: Some(String::from(id)),
                 ..Default::default()
             },
             None,
             Some(compressed.into()),
         );
 
-        while let Some(msg) = stream.next().await {
-            println!("{:?}", msg);
+        while let Some(core::result::Result::Ok(bollard::models::BuildInfo {
+            aux: Some(aux),
+            ..
+        })) = stream.next().await
+        {
+            println!("Response: {:?}", aux);
         }
-        thread::sleep(std::time::Duration::from_millis(5000));
+
         Ok(())
     }
 
