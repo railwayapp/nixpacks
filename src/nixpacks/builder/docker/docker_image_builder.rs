@@ -11,8 +11,9 @@ use crate::nixpacks::{
     plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
-use bollard::Docker as BollardDocker;
+use bollard::{image::BuildImageOptions, Docker as BollardDocker};
 use std::{
+    collections::HashMap,
     fs::{self, remove_dir_all, File},
     process::Command,
 };
@@ -134,70 +135,69 @@ impl DockerImageBuilder {
         Ok(compressed)
     }
 
-    fn get_docker_build_cmd(
+    async fn execute_docker_build(
         &self,
         plan: &BuildPlan,
         name: &str,
         output: &OutputDir,
-    ) -> Result<Command> {
-        let mut docker_build_cmd = Command::new("docker");
-
-        if docker_build_cmd.output().is_err() {
-            bail!("Please install Docker to build the app https://docs.docker.com/engine/install/")
-        }
-
-        // Enable BuildKit for all builds
-        docker_build_cmd.env("DOCKER_BUILDKIT", "1");
-
-        docker_build_cmd
-            .arg("build")
-            .arg(&output.root)
-            .arg("-f")
-            .arg(&output.get_absolute_path("Dockerfile"))
-            .arg("-t")
-            .arg(name);
-
-        if self.options.verbose {
-            docker_build_cmd.arg("--progress=plain");
-        }
-
-        if self.options.quiet {
-            docker_build_cmd.arg("--quiet");
-        }
-
-        if self.options.no_cache {
-            docker_build_cmd.arg("--no-cache");
-        }
-
-        if let Some(value) = &self.options.cache_from {
-            docker_build_cmd.arg("--cache-from").arg(value);
-        }
+    ) -> Result<()> {
+        // Set default variables for the build
+        let mut vars = HashMap::from([("DOCKER_BUILDKIT".to_string(), "1".to_string())]);
 
         if self.options.inline_cache {
-            docker_build_cmd
-                .arg("--build-arg")
-                .arg("BUILDKIT_INLINE_CACHE=1");
+            vars.insert("BUILDKIT_INLINE_CACHE".to_string(), "1".to_string());
         }
 
         // Add build environment variables
-        for (name, value) in &plan.variables.clone().unwrap_or_default() {
-            docker_build_cmd
-                .arg("--build-arg")
-                .arg(format!("{}={}", name, value));
-        }
+        let build_vars: HashMap<String, String> = plan
+            .variables
+            .clone()
+            .unwrap_or_default()
+            .into_iter()
+            .collect();
 
-        // Add user defined tags and labels to the image
-        for t in self.options.tags.clone() {
-            docker_build_cmd.arg("-t").arg(t);
-        }
-        for l in self.options.labels.clone() {
-            docker_build_cmd.arg("--label").arg(l);
-        }
-        for l in self.options.platform.clone() {
-            docker_build_cmd.arg("--platform").arg(l);
-        }
+        // fold build_vars into vars
+        vars.extend(build_vars);
 
-        Ok(docker_build_cmd)
+        // Generate label map
+        let labels: HashMap<_, _> = self
+            .options
+            .labels
+            .iter()
+            .map(|l| l.split_once('=').unwrap())
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .into_iter()
+            .collect();
+
+        let compressed = self.compress_directory(output)?;
+
+        let mut stream = self.client.build_image(
+            BuildImageOptions {
+                buildargs: vars,
+                cachefrom: vec![self.options.cache_from.clone().unwrap_or_default()],
+                // Todo: need to support multiple tags?
+                t: name.to_string(),
+                dockerfile: output
+                    .get_relative_path("Dockerfile")
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+                q: self.options.quiet,
+                // todo: need to support multiple platforms?
+                // platform: self.options.platform,
+                labels,
+                nocache: self.options.no_cache,
+                ..Default::default()
+            },
+            None,
+            Some(compressed.into()),
+        );
+
+        while let Some(msg) = stream.next().await {
+            println!("{:?}", msg);
+        }
+        thread::sleep(std::time::Duration::from_millis(5000));
+        Ok(())
     }
 
     fn write_app(&self, app_src: &str, output: &OutputDir) -> Result<()> {
