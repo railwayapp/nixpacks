@@ -52,5 +52,5 @@ java $JAVA_OPTS -jar build/libs/*.jar
 
 If Gradle and Spring Boot is found:
 ```
-java $JAVA_OPTS -jar -Dserver.port=$PORT" build/libs/*.jar
+java $JAVA_OPTS -jar -Dserver.port=$PORT build/libs/*.jar
 ```
