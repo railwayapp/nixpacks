@@ -296,7 +296,7 @@ impl DockerfileGenerator for StartPhase {
 
         let dockerfile: String = match &self.run_image {
             Some(run_image) => {
-                let copy_cmd = utils::get_copy_from_command(
+                let copy_cmds = utils::get_copy_from_commands(
                     "0",
                     &self.only_include_files.clone().unwrap_or_default(),
                     APP_DIR,
@@ -309,12 +309,12 @@ impl DockerfileGenerator for StartPhase {
                   WORKDIR {APP_DIR}
                   COPY --from=0 /etc/ssl/certs /etc/ssl/certs
                   RUN true
-                  {copy_cmd}
+                  {copy_cmds}
                   {start_cmd}
                 ",
                 run_image=run_image,
                 APP_DIR=APP_DIR,
-                copy_cmd=copy_cmd,
+                copy_cmds=copy_cmds.join("\n"),
                 start_cmd=start_cmd,}
             }
             None => {
@@ -370,7 +370,7 @@ impl DockerfileGenerator for Phase {
             (_, Some(files)) => files.clone(),
             _ => vec![".".to_string()],
         };
-        let phase_copy_cmd = utils::get_copy_command(&phase_files, APP_DIR);
+        let phase_copy_cmds = utils::get_copy_commands(&phase_files, APP_DIR);
 
         let cache_mount = utils::get_cache_mount(&cache_key, &phase.cache_directories);
         let cmds_str = if options.incremental_cache_image.is_some() {
@@ -409,7 +409,7 @@ impl DockerfileGenerator for Phase {
                 .join("\n")
         };
 
-        let dockerfile_stmts = vec![build_path, run_path, phase_copy_cmd, cmds_str]
+        let dockerfile_stmts = vec![build_path, run_path, phase_copy_cmds.join("\n"), cmds_str]
             .into_iter()
             .filter(|stmt| !stmt.is_empty())
             .collect::<Vec<_>>()

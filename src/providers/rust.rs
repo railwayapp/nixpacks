@@ -134,13 +134,13 @@ impl RustProvider {
     fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if (RustProvider::get_target(app, env)?).is_some() {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-                let mut start = StartPhase::new(format!("./{}", workspace));
+                let mut start = StartPhase::new(format!("./bin/{}", workspace));
                 start.run_in_slim_image();
                 start.add_file_dependency(format!("./bin/{}", workspace));
 
                 Ok(Some(start))
             } else if let Some(name) = RustProvider::get_app_name(app)? {
-                let mut start = StartPhase::new(format!("./{}", name));
+                let mut start = StartPhase::new(format!("./bin/{}", name));
                 start.run_in_slim_image();
                 start.add_file_dependency(format!("./bin/{}", name));
 
