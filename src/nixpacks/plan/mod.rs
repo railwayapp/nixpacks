@@ -3,7 +3,7 @@ use self::{
     phase::{Phase, Phases, StartPhase},
     topological_sort::topological_sort,
 };
-use super::images::{DEBIAN_BASE_IMAGE, DEFAULT_BASE_IMAGE, UBUNTU_BASE_IMAGE};
+use super::images::{DEBIAN_BASE_IMAGE, UBUNTU_BASE_IMAGE};
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
