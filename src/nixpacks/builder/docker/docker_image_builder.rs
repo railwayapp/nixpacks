@@ -11,6 +11,7 @@ use crate::nixpacks::{
     plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
+use bollard::Docker as BollardDocker;
 use std::{
     fs::{self, remove_dir_all, File},
     process::Command,
@@ -21,7 +22,10 @@ use uuid::Uuid;
 pub struct DockerImageBuilder {
     logger: Logger,
     options: DockerBuilderOptions,
+    client: BollardDocker,
 }
+
+use std::io::Write;
 
 fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<OutputDir> {
     if let Some(value) = &options.out_dir {
@@ -108,8 +112,26 @@ impl ImageBuilder for DockerImageBuilder {
 }
 
 impl DockerImageBuilder {
-    pub fn new(logger: Logger, options: DockerBuilderOptions) -> DockerImageBuilder {
-        DockerImageBuilder { logger, options }
+    pub fn new(
+        logger: Logger,
+        options: DockerBuilderOptions,
+        client: BollardDocker,
+    ) -> DockerImageBuilder {
+        DockerImageBuilder {
+            logger,
+            options,
+            client,
+        }
+    }
+
+    fn compress_directory(&self, output: &OutputDir) -> Result<Vec<u8>> {
+        let mut tar = tar::Builder::new(Vec::new());
+        tar.append_dir_all(".", output.root.clone())?;
+        let uncompressed = tar.into_inner()?;
+        let mut c = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        c.write_all(&uncompressed)?;
+        let compressed = c.finish()?;
+        Ok(compressed)
     }
 
     fn get_docker_build_cmd(

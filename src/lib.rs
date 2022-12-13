@@ -33,6 +33,7 @@ use crate::nixpacks::{
     },
 };
 use anyhow::{bail, Result};
+use bollard::Docker;
 use providers::{
     clojure::ClojureProvider, cobol::CobolProvider, crystal::CrystalProvider,
     csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider, elixir::ElixirProvider,
@@ -109,9 +110,10 @@ pub async fn create_docker_image(
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
     let plan = generator.generate_plan(&app, &environment)?;
+    let docker_client = Docker::connect_with_local_defaults().unwrap();
 
     let logger = Logger::new();
-    let builder = DockerImageBuilder::new(logger, build_options.clone());
+    let builder = DockerImageBuilder::new(logger, build_options.clone(), docker_client);
 
     let phase_count = plan.phases.clone().map_or(0, |phases| phases.len());
     if phase_count > 0 {
