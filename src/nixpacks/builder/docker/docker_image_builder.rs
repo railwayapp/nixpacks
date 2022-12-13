@@ -191,9 +191,9 @@ impl DockerImageBuilder {
                 labels,
                 nocache: self.options.no_cache,
                 version: BuilderVersion::BuilderBuildKit,
-                pull: true,
                 #[cfg(feature = "buildkit")]
-                session: Some(String::from(id)),
+                pull: true,
+                session: Some(String::from(name)),
                 ..Default::default()
             },
             None,
