@@ -193,6 +193,7 @@ impl DockerImageBuilder {
                 version: BuilderVersion::BuilderBuildKit,
                 #[cfg(feature = "buildkit")]
                 pull: true,
+                pull: true,
                 session: Some(String::from(name)),
                 ..Default::default()
             },
@@ -200,12 +201,8 @@ impl DockerImageBuilder {
             Some(compressed.into()),
         );
 
-        while let Some(core::result::Result::Ok(bollard::models::BuildInfo {
-            aux: Some(aux),
-            ..
-        })) = stream.next().await
-        {
-            println!("Response: {:?}", aux);
+        while let Some(core::result::Result::Ok(val)) = stream.next().await {
+            println!("Response: {:?}", val);
         }
 
         Ok(())
