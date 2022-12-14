@@ -207,7 +207,7 @@ impl RustProvider {
 
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
             return Ok(Pkg::new(&format!(
-                "(rust-bin.fromRustupToolchainFile ./{})",
+                "(rust-bin.fromRustupToolchainFile ../{})",
                 toolchain_file
             )));
         }

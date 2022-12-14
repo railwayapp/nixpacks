@@ -688,6 +688,13 @@ async fn test_rust_custom_version() {
 }
 
 #[tokio::test]
+async fn test_rust_toolchain_file() {
+    let name = simple_build("./examples/rust-custom-toolchain").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("cargo 1.60.0-nightly"));
+}
+
+#[tokio::test]
 async fn test_rust_ring() {
     let name = simple_build("./examples/rust-ring").await;
     let output = run_image(&name, None).await;
