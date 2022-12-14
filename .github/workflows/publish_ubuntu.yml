@@ -3,20 +3,20 @@ on:
     branches:
       - main
     paths:
-      - 'base/debian/*'
+      - 'base/ubuntu/*'
   pull_request:
     branches:
       - main
     paths:
-      - 'base/debian/*'
+      - 'base/ubuntu/*'
   schedule:
     - cron:  '0 0 * * 2'
   workflow_dispatch:
 
-name: Publish Debian Base Images
+name: Publish Ubuntu Base Images
 
 jobs:
-  debian:
+  ubuntu:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -49,15 +49,10 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          context: base/debian
-          platforms: linux/arm64, linux/amd64, linux/386
+          context: base/ubuntu
+          platforms: linux/arm64, linux/amd64
           push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-          tags: ghcr.io/railwayapp/nixpacks:debian, ghcr.io/railwayapp/nixpacks:latest, ghcr.io/railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
-      
-      - name: Bump base image
-        if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-        run: |
-          sed -i 's/nixpacks:debian-.*/nixpacks:debian-${{ steps.date.outputs.date }}";/g' src/nixpacks/images.rs
+          tags: ghcr.io/railwayapp/nixpacks:ubuntu, ghcr.io/railwayapp/nixpacks:ubuntu-${{ steps.date.outputs.date }}
       
       - name: Create Pull Request
         if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
@@ -80,7 +75,7 @@ jobs:
       - name: Build and push to Docker Hub
         uses: docker/build-push-action@v3
         with:
-          context: base/debian
-          platforms: linux/arm64, linux/amd64, linux/386
+          context: base/ubuntu
+          platforms: linux/arm64, linux/amd64
           push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-          tags: railwayapp/nixpacks:debian, railwayapp/nixpacks:latest, railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
+          tags: railwayapp/nixpacks:ubuntu, railwayapp/nixpacks:ubuntu-${{ steps.date.outputs.date }}
