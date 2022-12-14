@@ -73,7 +73,7 @@ impl Provider for NodeProvider {
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
 
         if Nx::is_nx_monorepo(app, env) {
-            // Todo: Call provider instead
+            // Todo: Call python provider instead
             setup.add_nix_pkgs(&[Pkg::new("gcc"), Pkg::new("python38")]);
         }
 
