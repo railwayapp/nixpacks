@@ -373,7 +373,7 @@ mod test {
                 &App::new("./examples/rust-custom-toolchain")?,
                 &Environment::default()
             )?,
-            Pkg::new("(rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)")
+            Pkg::new("(rust-bin.fromRustupToolchainFile ../rust-toolchain.toml)")
         );
 
         Ok(())
