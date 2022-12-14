@@ -72,6 +72,11 @@ impl Provider for NodeProvider {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
 
+        if Nx::is_nx_monorepo(app, env) {
+            // Todo: Call provider instead
+            setup.add_nix_pkgs(&[Pkg::new("gcc"), Pkg::new("python38")]);
+        }
+
         if NodeProvider::uses_node_dependency(app, "puppeteer") {
             // https://gist.github.com/winuxue/cfef08e2f5fe9dfc16a1d67a4ad38a01
             setup.add_apt_pkgs(vec![
