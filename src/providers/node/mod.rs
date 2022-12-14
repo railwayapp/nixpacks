@@ -72,6 +72,10 @@ impl Provider for NodeProvider {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
 
+        if NodeProvider::uses_node_dependency(app, "prisma") {
+            setup.add_nix_pkgs(&[Pkg::new("openssl")]);
+        }
+
         if NodeProvider::uses_node_dependency(app, "puppeteer") {
             // https://gist.github.com/winuxue/cfef08e2f5fe9dfc16a1d67a4ad38a01
             setup.add_apt_pkgs(vec![
