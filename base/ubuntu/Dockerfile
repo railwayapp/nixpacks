@@ -1,7 +1,9 @@
 FROM ubuntu:jammy-20221130
 
+ARG DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
+
 RUN apt-get update && apt-get -y upgrade \
-  && apt-get install --no-install-recommends -y sudo locales curl xz-utils ca-certificates openssl make git pkg-config \
+  && apt-get install --no-install-recommends -y sudo locales curl tzdata xz-utils ca-certificates openssl make git pkg-config \
   && apt-get clean && rm -rf /var/lib/apt/lists/* \
   && rm -rf /usr/share/doc/* \
   && mkdir -m 0755 /nix && mkdir -m 0755 /etc/nix && groupadd -r nixbld && chown root /nix \
