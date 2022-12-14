@@ -45,8 +45,7 @@ expression: plan
       "name": "setup",
       "nixPkgs": [
         "nodejs-18_x",
-        "npm-8_x",
-        "openssl"
+        "npm-8_x"
       ],
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"

@@ -44,7 +44,6 @@ expression: plan
       "nixPkgs": [
         "nodejs-18_x",
         "npm-6_x",
-        "openssl",
         "openssl"
       ],
       "nixOverlays": [
