@@ -39,7 +39,8 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "bun"
+        "bun",
+        "openssl"
       ],
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
