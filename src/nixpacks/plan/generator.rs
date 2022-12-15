@@ -195,7 +195,7 @@ impl NixpacksBuildPlanGenerator<'_> {
                 let ext = filename.extension().unwrap_or_default();
 
                 let contents = app.read_file(file_path.as_str()).with_context(|| {
-                    format!("Failed to read Nixpacks config file `{}`", file_path)
+                    format!("Failed to read Nixpacks config file `{file_path}`")
                 })?;
                 let plan = if ext == "toml" {
                     BuildPlan::from_toml(&contents)
@@ -206,7 +206,7 @@ impl NixpacksBuildPlanGenerator<'_> {
                 };
 
                 Some(plan.with_context(|| {
-                    format!("Failed to parse Nixpacks config file `{}`", file_path)
+                    format!("Failed to parse Nixpacks config file `{file_path}`")
                 })?)
             } else {
                 None

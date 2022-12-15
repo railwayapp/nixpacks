@@ -77,7 +77,7 @@ pub fn nix_file_names_for_phases(phases: &Phases) -> Vec<String> {
 
 fn nix_file_name(archive: &Option<String>) -> String {
     match archive {
-        Some(archive) => format!("nixpkgs-{}.nix", archive),
+        Some(archive) => format!("nixpkgs-{archive}.nix"),
         None => "nixpkgs.nix".to_string(),
     }
 }
@@ -99,7 +99,7 @@ fn nix_expression_for_group(group: &NixGroup) -> String {
     let overlays_string = group
         .overlays
         .iter()
-        .map(|url| format!("(import (builtins.fetchTarball \"{}\"))", url))
+        .map(|url| format!("(import (builtins.fetchTarball \"{url}\"))"))
         .collect::<Vec<String>>()
         .join("\n");
 
@@ -119,7 +119,7 @@ fn nix_expression_for_group(group: &NixGroup) -> String {
         String::new()
     };
 
-    let name = format!("{}-env", archive);
+    let name = format!("{archive}-env");
     let nix_expression = formatdoc! {"
             {{ }}:
 

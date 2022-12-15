@@ -96,7 +96,7 @@ impl Provider for NodeProvider {
         }
 
         // Install
-        let corepack = NodeProvider::uses_corepack(app)?;
+        let corepack = NodeProvider::uses_corepack(app, env)?;
         let mut install = Phase::install(if corepack {
             Some("npm install -g corepack && corepack enable".to_string())
         } else {
@@ -130,7 +130,7 @@ impl Provider for NodeProvider {
             build.add_cache_directory(if dir.is_empty() {
                 next_cache_dir.to_string()
             } else {
-                format!("{}/{}", dir, next_cache_dir)
+                format!("{dir}/{next_cache_dir}")
             });
         }
 
@@ -167,12 +167,16 @@ impl NodeProvider {
         Ok(false)
     }
 
-    pub fn uses_corepack(app: &App) -> Result<bool> {
+    pub fn uses_corepack(app: &App, env: &Environment) -> Result<bool> {
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
+        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, env)?;
+
+        // Corepack is not supported for Node 14
+        if node_pkg.name.contains("14") {
+            return Ok(false);
+        }
 
         if let Some(package_manager) = package_json.package_manager {
-            // The field is not null.
-
             if package_manager.starts_with("npm") {
                 // Fall back to just using the system npm version.
                 return Ok(false);
@@ -199,7 +203,7 @@ impl NodeProvider {
 
         if NodeProvider::has_script(app, "build")? {
             let pkg_manager = NodeProvider::get_package_manager(app);
-            Ok(Some(format!("{} run build", pkg_manager)))
+            Ok(Some(format!("{pkg_manager} run build")))
         } else {
             Ok(None)
         }
@@ -224,17 +228,17 @@ impl NodeProvider {
 
         let package_manager = NodeProvider::get_package_manager(app);
         if NodeProvider::has_script(app, "start")? {
-            return Ok(Some(format!("{} run start", package_manager)));
+            return Ok(Some(format!("{package_manager} run start")));
         }
 
         if let Some(main) = package_json.main {
             if app.includes_file(&main) {
-                return Ok(Some(format!("{} {}", executor, main)));
+                return Ok(Some(format!("{executor} {main}")));
             }
         }
 
         if app.includes_file("index.js") {
-            return Ok(Some(format!("{} index.js", executor)));
+            return Ok(Some(format!("{executor} index.js")));
         } else if app.includes_file("index.ts") && package_manager == "bun" {
             return Ok(Some("bun index.ts".to_string()));
         }
@@ -490,7 +494,7 @@ impl NodeProvider {
 
 fn version_number_to_pkg(version: u32) -> String {
     if AVAILABLE_NODE_VERSIONS.contains(&version) {
-        format!("nodejs-{}_x", version)
+        format!("nodejs-{version}_x")
     } else {
         DEFAULT_NODE_PKG_NAME.to_string()
     }

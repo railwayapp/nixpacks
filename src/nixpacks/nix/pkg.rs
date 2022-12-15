@@ -23,10 +23,10 @@ impl Pkg {
             Some(overrides) => {
                 let override_string = overrides
                     .iter()
-                    .map(|(name, value)| format!("{} = {};", name, value))
+                    .map(|(name, value)| format!("{name} = {value};"))
                     .collect::<Vec<_>>()
                     .join(" ");
-                format!("({}.override {{ {} }})", self.name, override_string)
+                format!("({}.override {{ {override_string} }})", self.name)
             }
             None => self.name.clone(),
         }
@@ -55,10 +55,10 @@ impl Pkg {
             Some(overrides) => {
                 let override_string = overrides
                     .iter()
-                    .map(|(name, value)| format!("{} = {}", name, value))
+                    .map(|(name, value)| format!("{name} = {value}"))
                     .collect::<Vec<_>>()
                     .join(", ");
-                format!("{} {{ {} }}", self.name, override_string)
+                format!("{} {{ {override_string} }}", self.name)
             }
             None => self.name.clone(),
         }

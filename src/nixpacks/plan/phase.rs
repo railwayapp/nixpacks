@@ -66,7 +66,7 @@ impl Phase {
     }
 
     pub fn prefix_name(&mut self, prefix: &str) {
-        self.name = Some(format!("{}:{}", prefix, self.get_name()));
+        self.name = Some(format!("{prefix}:{}", self.get_name()));
     }
 
     pub fn prefix_dependencies(&mut self, prefix: &str) {
@@ -75,7 +75,7 @@ impl Phase {
                 depends_on
                     .clone()
                     .iter()
-                    .map(|name| format!("{}:{}", prefix, name))
+                    .map(|name| format!("{prefix}:{name}"))
                     .collect::<Vec<_>>(),
             );
         }
