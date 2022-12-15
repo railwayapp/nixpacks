@@ -72,7 +72,7 @@ impl Nx {
     }
 
     pub fn get_nx_project_json_for_app(app: &App, nx_app_name: &String) -> Result<ProjectJson> {
-        let project_path = format!("./apps/{}/project.json", nx_app_name);
+        let project_path = format!("./apps/{nx_app_name}/project.json");
         app.read_json::<ProjectJson>(&project_path)
     }
 
@@ -86,12 +86,12 @@ impl Nx {
             }
         }
 
-        Ok(format!("dist/apps/{}", nx_app_name))
+        Ok(format!("dist/apps/{nx_app_name}"))
     }
 
     pub fn get_nx_build_cmd(app: &App, env: &Environment) -> Option<String> {
         Nx::get_nx_app_name(app, env)
-            .map(|nx_app_name| format!("npx nx run {}:build:production", nx_app_name))
+            .map(|nx_app_name| format!("npx nx run {nx_app_name}:build:production"))
     }
 
     pub fn get_nx_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
@@ -106,14 +106,14 @@ impl Nx {
             if let Some(start_target) = project_json.targets.start {
                 if let Some(configurations) = start_target.configurations {
                     if configurations.production.is_some() {
-                        return Ok(Some(format!("npx nx run {}:start:production", nx_app_name)));
+                        return Ok(Some(format!("npx nx run {nx_app_name}:start:production")));
                     }
                 }
-                return Ok(Some(format!("npx nx run {}:start", nx_app_name)));
+                return Ok(Some(format!("npx nx run {nx_app_name}:start")));
             }
 
             if project_json.targets.build.executor == "@nrwl/next:build" {
-                return Ok(Some(format!("cd {} && npm run start", output_path)));
+                return Ok(Some(format!("cd {output_path} && npm run start")));
             }
 
             if let Some(options) = project_json.targets.build.options {
@@ -121,10 +121,10 @@ impl Nx {
                     let current_path = PathBuf::from(main_path);
                     let file_name = current_path.file_stem().unwrap().to_str().unwrap();
 
-                    return Ok(Some(format!("node {}/{}.js", output_path, file_name)));
+                    return Ok(Some(format!("node {output_path}/{file_name}.js")));
                 }
             }
-            return Ok(Some(format!("node {}/index.js", output_path)));
+            return Ok(Some(format!("node {output_path}/index.js")));
         }
 
         Ok(None)

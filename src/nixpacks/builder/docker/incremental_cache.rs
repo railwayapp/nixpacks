@@ -130,7 +130,7 @@ impl IncrementalCache {
                     .split('/')
                     .into_iter()
                     .filter(|c| !c.is_empty())
-                    .map(|c| format!("{}?", c))
+                    .map(|c| format!("{c}?"))
                     .collect::<Vec<_>>()
                     .join("/");
 
@@ -163,7 +163,7 @@ impl IncrementalCache {
                         "if [ -d \"{sanitized_dir}\" ]; then curl -v -T {} {} --header \"t:{}\" --retry 3 --retry-all-errors; fi;",
                         compressed_file_name, server_config.upload_url, server_config.access_token,
                     ),
-                    format!("if [ -d \"{sanitized_dir}\" ]; then rm -rf {}; fi", sanitized_dir),
+                    format!("if [ -d \"{sanitized_dir}\" ]; then rm -rf {sanitized_dir}; fi"),
                 ]
             })
             .collect::<Vec<String>>()

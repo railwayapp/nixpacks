@@ -11,7 +11,7 @@ const MAX_BOX_WIDTH: usize = 80;
 
 impl BuildPlan {
     pub fn get_build_string(&self) -> Result<String> {
-        let title_str = format!(" Nixpacks v{} ", NIX_PACKS_VERSION);
+        let title_str = format!(" Nixpacks v{NIX_PACKS_VERSION} ");
         let title_width = console::measure_text_width(title_str.as_str());
 
         let phase_contents = self
@@ -123,7 +123,7 @@ impl BuildPlan {
                 )
             })
             .collect::<Vec<_>>()
-            .join(format!("\n{}\n", hor_sep).as_str());
+            .join(format!("\n{hor_sep}\n").as_str());
 
         let start_row = print_row(
             "start",

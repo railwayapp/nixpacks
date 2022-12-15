@@ -44,7 +44,7 @@ impl Environment {
     }
 
     pub fn get_config_variable(&self, name: &str) -> Option<String> {
-        self.get_variable(format!("NIXPACKS_{}", name).as_str())
+        self.get_variable(format!("NIXPACKS_{name}").as_str())
             .map(|var| var.replace('\n', ""))
     }
 

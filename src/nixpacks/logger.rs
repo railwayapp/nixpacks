@@ -12,7 +12,7 @@ impl Logger {
     }
 
     pub fn log_step(&self, msg: &str) {
-        println!("=> {}", msg);
+        println!("=> {msg}");
     }
 }
 
