@@ -59,13 +59,9 @@ impl BuildPlan {
         let middle_padding_width = console::measure_text_width(middle_padding.as_str());
         let middle_padding = middle_padding.cyan().dimmed().to_string();
 
-        let box_width = std::cmp::min(
-            MAX_BOX_WIDTH,
-            std::cmp::max(
-                MIN_BOX_WIDTH,
-                (edge_width * 2) + first_column_width + middle_padding_width + max_right_content,
-            ),
-        );
+        let box_width =
+            ((edge_width * 2) + first_column_width + middle_padding_width + max_right_content)
+                .clamp(MIN_BOX_WIDTH, MAX_BOX_WIDTH);
 
         let second_column_width =
             box_width - (edge_width * 2) - first_column_width - middle_padding_width;
