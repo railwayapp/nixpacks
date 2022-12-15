@@ -96,7 +96,7 @@ impl Provider for NodeProvider {
         }
 
         // Install
-        let corepack = NodeProvider::uses_corepack(app)?;
+        let corepack = NodeProvider::uses_corepack(app, env)?;
         let mut install = Phase::install(if corepack {
             Some("npm install -g corepack && corepack enable".to_string())
         } else {
@@ -167,12 +167,16 @@ impl NodeProvider {
         Ok(false)
     }
 
-    pub fn uses_corepack(app: &App) -> Result<bool> {
+    pub fn uses_corepack(app: &App, env: &Environment) -> Result<bool> {
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
+        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, env)?;
+
+        // Corepack is not supported for Node 14
+        if node_pkg.name.contains("14") {
+            return Ok(false);
+        }
 
         if let Some(package_manager) = package_json.package_manager {
-            // The field is not null.
-
             if package_manager.starts_with("npm") {
                 // Fall back to just using the system npm version.
                 return Ok(false);
