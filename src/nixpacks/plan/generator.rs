@@ -57,6 +57,12 @@ impl NixpacksBuildPlanGenerator<'_> {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
         let plan_before_providers = self.get_plan_before_providers(app, env)?;
 
+        // Add the variables from the nixpacks.toml to environment
+        let env = &Environment::append_variables(
+            env,
+            plan_before_providers.variables.clone().unwrap_or_default(),
+        );
+
         let provider_plan =
             self.get_plan_from_providers(app, env, plan_before_providers.providers.clone())?;
 
