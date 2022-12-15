@@ -63,7 +63,7 @@ impl PhpProvider {
         ];
         if let Ok(php_extensions) = PhpProvider::get_php_extensions(app) {
             for extension in php_extensions {
-                pkgs.push(Pkg::new(&format!("{}Extensions.{}", &php_pkg, extension)));
+                pkgs.push(Pkg::new(&format!("{}Extensions.{extension}", &php_pkg)));
             }
         }
 
@@ -154,7 +154,7 @@ impl PhpProvider {
                 DEFAULT_PHP_VERSION.to_string()
             }
         } else {
-            println!("Warning: No PHP version specified, using PHP {}; see https://getcomposer.org/doc/04-schema.md#package-links for how to specify a PHP version.", DEFAULT_PHP_VERSION);
+            println!("Warning: No PHP version specified, using PHP {DEFAULT_PHP_VERSION}; see https://getcomposer.org/doc/04-schema.md#package-links for how to specify a PHP version.");
             DEFAULT_PHP_VERSION.to_string()
         };
 

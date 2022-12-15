@@ -37,13 +37,13 @@ impl Provider for ZigProvider {
             install.add_cmd("git submodule update --init".to_string());
         }
         if app.includes_file("gyro.zzz") {
-            let gyro_exe_path = format!("/gyro/gyro-{}-linux-{}/bin/gyro", GYRO_VERSION, ARCH);
+            let gyro_exe_path = format!("/gyro/gyro-{GYRO_VERSION}-linux-{ARCH}/bin/gyro");
             install.add_cmd(format!(
                 "mkdir /gyro && (wget -O- {} | tar -C /gyro -xzf -)",
                 ZigProvider::get_gyro_download_url()
             ));
-            install.add_cmd(format!("chmod +x {}", gyro_exe_path));
-            install.add_cmd(format!("{} fetch", gyro_exe_path));
+            install.add_cmd(format!("chmod +x {gyro_exe_path}"));
+            install.add_cmd(format!("{gyro_exe_path} fetch"));
         }
 
         let build = Phase::build(Some("zig build -Drelease-safe=true".to_string()));
@@ -70,7 +70,7 @@ impl ZigProvider {
                 GYRO_VERSION, GYRO_VERSION, ARCH
             )
         } else {
-            panic!("Gyro is not supported on your architecture ({}).", ARCH)
+            panic!("Gyro is not supported on your architecture ({ARCH}).")
         }
     }
 }

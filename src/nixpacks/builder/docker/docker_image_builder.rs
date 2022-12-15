@@ -64,7 +64,7 @@ impl ImageBuilder for DockerImageBuilder {
 
         // If printing the Dockerfile, don't write anything to disk
         if self.options.print_dockerfile {
-            println!("{}", dockerfile);
+            println!("{dockerfile}");
             return Ok(());
         }
 
@@ -86,7 +86,7 @@ impl ImageBuilder for DockerImageBuilder {
 
             self.logger.log_section("Successfully Built!");
             println!("\nRun:");
-            println!("  docker run -it {}", name);
+            println!("  docker run -it {name}");
 
             if self.options.incremental_cache_image.is_some() {
                 incremental_cache.create_image(
@@ -161,7 +161,7 @@ impl DockerImageBuilder {
         for (name, value) in &plan.variables.clone().unwrap_or_default() {
             docker_build_cmd
                 .arg("--build-arg")
-                .arg(format!("{}={}", name, value));
+                .arg(format!("{name}={value}"));
         }
 
         // Add user defined tags and labels to the image
