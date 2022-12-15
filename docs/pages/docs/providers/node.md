@@ -72,6 +72,18 @@ These directories are cached between builds
 - Build (if NextJS detected): `.next/cache`
 - Build (if its an NX Monorepo): `<outputPathForApp>`
 
+## Corepack
+
+Nixpacks has first class support for [Corepack](https://nodejs.org/api/corepack.html), an experimental tool that enables installing specific versions of Node based package managers.
+
+For example, To install a specific version of PNPM, add a `packageManager` key to your `package.json` file
+
+```json
+{
+  "packageManager": "pnpm@7.7.0"
+}
+```
+
 ## Bun Support
 
 We support Bun, but due to Bun being in alpha, it is unstable and very experimental.
