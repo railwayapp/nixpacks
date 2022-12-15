@@ -54,7 +54,7 @@ impl Provider for CobolProvider {
         )));
         build.depends_on_phase("setup");
 
-        let start = StartPhase::new(format!("./{}", file_name));
+        let start = StartPhase::new(format!("./{file_name}"));
 
         let plan = BuildPlan::new(&vec![setup, build], Some(start));
         Ok(Some(plan))

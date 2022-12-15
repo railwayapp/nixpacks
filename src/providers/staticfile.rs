@@ -101,7 +101,7 @@ impl StaticfileProvider {
         let status_code = staticfile.status_code.unwrap_or_default();
         let mut error_page = String::new();
         for (key, value) in status_code {
-            writeln!(error_page, "\terror_page {} {};", key, value)?;
+            writeln!(error_page, "\terror_page {key} {value};")?;
         }
 
         let nginx_conf = formatdoc! {"

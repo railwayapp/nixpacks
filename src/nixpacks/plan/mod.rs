@@ -180,7 +180,7 @@ impl BuildPlan {
             self.add_phase(phase);
         }
 
-        format!("{}:{}", prefix, phase_name)
+        format!("{prefix}:{phase_name}")
     }
 
     pub fn add_dependency_between_phases(&mut self, dependant: &str, dependency: &str) {

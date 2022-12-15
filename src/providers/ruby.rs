@@ -110,9 +110,9 @@ impl RubyProvider {
 
         // Ensure that the ruby executable is in the PATH
         let ruby_version = self.get_ruby_version(app)?;
-        install.add_path(format!("/usr/local/rvm/rubies/{}/bin", ruby_version));
-        install.add_path(format!("/usr/local/rvm/gems/{}/bin", ruby_version));
-        install.add_path(format!("/usr/local/rvm/gems/{}@global/bin", ruby_version));
+        install.add_path(format!("/usr/local/rvm/rubies/{ruby_version}/bin"));
+        install.add_path(format!("/usr/local/rvm/gems/{ruby_version}/bin"));
+        install.add_path(format!("/usr/local/rvm/gems/{ruby_version}@global/bin"));
 
         Ok(Some(install))
     }
@@ -147,7 +147,7 @@ impl RubyProvider {
             ),
             (
                 "GEM_HOME".to_string(),
-                format!("/usr/local/rvm/gems/{}", ruby_version),
+                format!("/usr/local/rvm/gems/{ruby_version}"),
             ),
             ("MALLOC_ARENA_MAX".to_string(), "2".to_string()),
         ]);
