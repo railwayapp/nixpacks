@@ -207,7 +207,7 @@ impl RustProvider {
 
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
             return Ok(Pkg::new(&format!(
-                "(rust-bin.fromRustupToolchainFile ./{})",
+                "(rust-bin.fromRustupToolchainFile ../{})",
                 toolchain_file
             )));
         }
@@ -373,7 +373,7 @@ mod test {
                 &App::new("./examples/rust-custom-toolchain")?,
                 &Environment::default()
             )?,
-            Pkg::new("(rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)")
+            Pkg::new("(rust-bin.fromRustupToolchainFile ../rust-toolchain.toml)")
         );
 
         Ok(())
