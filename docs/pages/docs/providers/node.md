@@ -84,6 +84,8 @@ For example, To install a specific version of PNPM, add a `packageManager` key t
 }
 ```
 
+Corepack will only be used on Node 16 and above.
+
 ## Bun Support
 
 We support Bun, but due to Bun being in alpha, it is unstable and very experimental.
