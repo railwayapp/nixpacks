@@ -161,7 +161,7 @@ impl DockerfileGenerator for BuildPlan {
             let rel_assets_slash_path = rel_assets_path
                 .to_slash()
                 .context("Failed to convert nix file path to slash path.")?;
-            format!("COPY {} {}", rel_assets_slash_path, app::ASSETS_DIR)
+            format!("COPY {rel_assets_slash_path} {}", app::ASSETS_DIR)
         };
 
         let phases = plan.get_sorted_phases()?;
@@ -259,11 +259,11 @@ impl BuildPlan {
                     let path = Path::new(&static_assets_path).join(name);
                     let parent = path.parent().unwrap();
                     fs::create_dir_all(parent)
-                        .context(format!("Creating parent directory for {}", name))?;
+                        .context(format!("Creating parent directory for {name}"))?;
                     let mut file =
-                        File::create(path).context(format!("Creating asset file for {}", name))?;
+                        File::create(path).context(format!("Creating asset file for {name}"))?;
                     file.write_all(content.as_bytes())
-                        .context(format!("Writing asset {}", name))?;
+                        .context(format!("Writing asset {name}"))?;
                 }
             }
         }
@@ -355,7 +355,7 @@ impl DockerfileGenerator for Phase {
         let (build_path, run_path) = if let Some(paths) = &phase.paths {
             let joined_paths = paths.join(":");
             (
-                format!("ENV PATH {}:$PATH", joined_paths),
+                format!("ENV PATH {joined_paths}:$PATH"),
                 format!(
                     "RUN printf '\\nPATH={}:$PATH' >> /root/.profile",
                     joined_paths
@@ -393,18 +393,18 @@ impl DockerfileGenerator for Phase {
             ]
             .concat()
             .iter()
-            .map(|s| format!("RUN {}", s))
+            .map(|s| format!("RUN {s}"))
             .collect::<Vec<_>>()
             .join("\n");
 
-            format!("{}\n{}", cache_copy_in_command, run_commands)
+            format!("{cache_copy_in_command}\n{run_commands}")
         } else {
             phase
                 .cmds
                 .clone()
                 .unwrap_or_default()
                 .iter()
-                .map(|s| format!("RUN {} {}", cache_mount, s))
+                .map(|s| format!("RUN {cache_mount} {s}"))
                 .collect::<Vec<_>>()
                 .join("\n")
         };

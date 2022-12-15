@@ -11,9 +11,9 @@ pub fn get_cache_mount(
             .iter()
             .map(|dir| {
                 let mut sanitized_dir = dir.replace('~', "/root");
-                let sanitized_key = sanitize_cache_key(&format!("{}-{}", cache_key, sanitized_dir));
+                let sanitized_key = sanitize_cache_key(&format!("{cache_key}-{sanitized_dir}"));
                 if !sanitized_dir.starts_with('/') {
-                    sanitized_dir = format!("/app/{}", sanitized_dir);
+                    sanitized_dir = format!("/app/{sanitized_dir}");
                 }
                 format!(
                     "--mount=type=cache,id={},target={}",
@@ -46,7 +46,7 @@ pub fn get_copy_commands(files: &[String], app_dir: &str) -> Vec<String> {
 
 pub fn get_copy_from_commands(from: &str, files: &[String], app_dir: &str) -> Vec<String> {
     if files.is_empty() {
-        vec![format!("COPY --from=0 {} {}", app_dir, app_dir)]
+        vec![format!("COPY --from=0 {app_dir} {app_dir}")]
     } else {
         files
             .iter()
@@ -65,7 +65,7 @@ pub fn get_copy_from_commands(from: &str, files: &[String], app_dir: &str) -> Ve
 pub fn get_exec_command(command: &str) -> String {
     let params = command.replace('\"', "\\\"");
 
-    format!("CMD [\"{}\"]", params)
+    format!("CMD [\"{params}\"]")
 }
 
 #[cfg(test)]

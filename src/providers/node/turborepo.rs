@@ -40,7 +40,7 @@ impl Turborepo {
 
     fn get_pipeline_cmd(cfg: &TurboJson, name: &str) -> Option<String> {
         if cfg.pipeline.contains_key(name) {
-            Some(format!("npx turbo run {}", name))
+            Some(format!("npx turbo run {name}"))
         } else {
             None
         }
@@ -59,7 +59,7 @@ impl Turborepo {
         if let Some(build_cmd) = Turborepo::get_build_cmd(&turbo_cfg) {
             return Ok(Some(build_cmd));
         } else if let Some(app_name) = Turborepo::get_app_name(env) {
-            return Ok(Some(format!("{} turbo run {}:build", dlx, app_name)));
+            return Ok(Some(format!("{dlx} turbo run {app_name}:build")));
         };
         Ok(None)
     }
@@ -94,7 +94,7 @@ impl Turborepo {
                     pkg_manager, name
                 )));
             }
-            println!("Warning: Turborepo app `{}` not found", name);
+            println!("Warning: Turborepo app `{name}` not found");
         }
         if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
             return Ok(Some(start_pipeline));

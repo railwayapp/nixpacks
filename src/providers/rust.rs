@@ -52,7 +52,7 @@ impl RustProvider {
         let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
 
         if let Some(target) = RustProvider::get_target(app, env)? {
-            rust_pkg = rust_pkg.set_override("targets", &format!("[\"{}\"]", target));
+            rust_pkg = rust_pkg.set_override("targets", &format!("[\"{target}\"]"));
         }
 
         let mut setup = Phase::setup(Some(vec![
@@ -91,7 +91,7 @@ impl RustProvider {
 
         if let Some(target) = RustProvider::get_target(app, env)? {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-                write!(build_cmd, " --package {} --target {}", workspace, target)?;
+                write!(build_cmd, " --package {workspace} --target {target}")?;
 
                 build.add_cmd(build_cmd);
                 build.add_cmd(format!(
@@ -100,7 +100,7 @@ impl RustProvider {
                     name = workspace
                 ));
             } else {
-                write!(build_cmd, " --target {}", target)?;
+                write!(build_cmd, " --target {target}")?;
 
                 if let Some(name) = RustProvider::get_app_name(app)? {
                     build.add_cmd(build_cmd);
@@ -112,12 +112,12 @@ impl RustProvider {
                 }
             }
         } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-            write!(build_cmd, " --package {}", workspace)?;
+            write!(build_cmd, " --package {workspace}")?;
             build.add_cmd(build_cmd);
-            build.add_cmd(format!("cp target/release/{name} bin", name = workspace));
+            build.add_cmd(format!("cp target/release/{workspace} bin"));
         } else if let Some(name) = RustProvider::get_app_name(app)? {
             build.add_cmd(build_cmd);
-            build.add_cmd(format!("cp target/release/{name} bin", name = name));
+            build.add_cmd(format!("cp target/release/{name} bin"));
         }
 
         build.add_cache_directory(CARGO_GIT_CACHE_DIR.to_string());
@@ -134,24 +134,24 @@ impl RustProvider {
     fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if (RustProvider::get_target(app, env)?).is_some() {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-                let mut start = StartPhase::new(format!("./bin/{}", workspace));
+                let mut start = StartPhase::new(format!("./bin/{workspace}"));
                 start.run_in_slim_image();
-                start.add_file_dependency(format!("./bin/{}", workspace));
+                start.add_file_dependency(format!("./bin/{workspace}"));
 
                 Ok(Some(start))
             } else if let Some(name) = RustProvider::get_app_name(app)? {
-                let mut start = StartPhase::new(format!("./bin/{}", name));
+                let mut start = StartPhase::new(format!("./bin/{name}"));
                 start.run_in_slim_image();
-                start.add_file_dependency(format!("./bin/{}", name));
+                start.add_file_dependency(format!("./bin/{name}"));
 
                 Ok(Some(start))
             } else {
                 Ok(None)
             }
         } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
-            Ok(Some(StartPhase::new(format!("./bin/{}", workspace))))
+            Ok(Some(StartPhase::new(format!("./bin/{workspace}"))))
         } else if let Some(name) = RustProvider::get_app_name(app)? {
-            Ok(Some(StartPhase::new(format!("./bin/{}", name))))
+            Ok(Some(StartPhase::new(format!("./bin/{name}"))))
         } else {
             Ok(None)
         }
@@ -170,7 +170,7 @@ impl RustProvider {
 
     fn get_target(app: &App, env: &Environment) -> Result<Option<String>> {
         if RustProvider::should_use_musl(app, env)? {
-            Ok(Some(format!("{}-unknown-linux-musl", ARCH)))
+            Ok(Some(format!("{ARCH}-unknown-linux-musl")))
         } else {
             Ok(None)
         }
@@ -219,7 +219,7 @@ impl RustProvider {
                     package.rust_version.map_or_else(
                         || Pkg::new(DEFAULT_RUST_PACKAGE),
                         |version| {
-                            Pkg::new(format!("rust-bin.stable.\"{}\".default", version).as_str())
+                            Pkg::new(format!("rust-bin.stable.\"{version}\".default").as_str())
                         },
                     )
                 },
@@ -284,9 +284,9 @@ impl RustProvider {
 
     fn find_binary_in_workspace(app: &App, workspace: &Workspace) -> Result<Option<String>> {
         let find_binary = |member: &str| -> Result<Option<String>> {
-            let mut manifest = app.read_toml::<Manifest>(&format!("{}/Cargo.toml", member))?;
+            let mut manifest = app.read_toml::<Manifest>(&format!("{member}/Cargo.toml"))?;
 
-            manifest.complete_from_path(&app.source.join(format!("{}/Cargo.toml", member)))?;
+            manifest.complete_from_path(&app.source.join(format!("{member}/Cargo.toml")))?;
 
             if let Some(package) = manifest.package {
                 if !manifest.bin.is_empty() || manifest.lib.is_none() {

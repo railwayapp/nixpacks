@@ -37,7 +37,7 @@ impl Provider for CSharpProvider {
             .context("Invalid file_name")?
             .to_str()
             .context("Invalid project_name")?;
-        let start = StartPhase::new(format!("./{}/{}", ARTIFACT_DIR, project_name));
+        let start = StartPhase::new(format!("./{ARTIFACT_DIR}/{project_name}"));
 
         let mut plan = BuildPlan::new(&vec![setup, install, build], Some(start));
         plan.add_variables(EnvironmentVariables::from([

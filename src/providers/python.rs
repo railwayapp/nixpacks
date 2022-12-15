@@ -139,8 +139,8 @@ impl PythonProvider {
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<Phase>> {
         let env_loc = "/opt/venv";
-        let create_env = format!("python -m venv {}", env_loc);
-        let activate_env = format!(". {}/bin/activate", env_loc);
+        let create_env = format!("python -m venv {env_loc}");
+        let activate_env = format!(". {env_loc}/bin/activate");
 
         if app.includes_file("requirements.txt") {
             let mut install_phase = Phase::install(Some(format!(
@@ -148,7 +148,7 @@ impl PythonProvider {
                 create_env, activate_env
             )));
 
-            install_phase.add_path(format!("{}/bin", env_loc));
+            install_phase.add_path(format!("{env_loc}/bin"));
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
             return Ok(Some(install_phase));
@@ -160,7 +160,7 @@ impl PythonProvider {
                     create_env, activate_env, install_poetry
                 )));
 
-                install_phase.add_path(format!("{}/bin", env_loc));
+                install_phase.add_path(format!("{env_loc}/bin"));
 
                 install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
@@ -172,7 +172,7 @@ impl PythonProvider {
             )));
 
             install_phase.add_file_dependency("pyproject.toml".to_string());
-            install_phase.add_path(format!("{}/bin", env_loc));
+            install_phase.add_path(format!("{env_loc}/bin"));
 
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
@@ -187,10 +187,10 @@ impl PythonProvider {
                 "PIPENV_VENV_IN_PROJECT=1 pipenv install --skip-lock"
             };
 
-            let cmd = format!("{} && {} && {}", create_env, activate_env, cmd);
+            let cmd = format!("{create_env} && {activate_env} && {cmd}");
             let mut install_phase = Phase::install(Some(cmd));
 
-            install_phase.add_path(format!("{}/bin", env_loc));
+            install_phase.add_path(format!("{env_loc}/bin"));
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
             return Ok(Some(install_phase));
@@ -214,7 +214,7 @@ impl PythonProvider {
                 if let Some(entry_point) = meta.entry_point {
                     return Ok(Some(StartPhase::new(match entry_point {
                         EntryPoint::Command(cmd) => cmd,
-                        EntryPoint::Module(module) => format!("python -m {}", module),
+                        EntryPoint::Module(module) => format!("python -m {module}"),
                     })));
                 }
             }

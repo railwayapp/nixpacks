@@ -44,7 +44,7 @@ impl Provider for JavaProvider {
                 build.add_cmd("chmod +x gradlew");
             }
 
-            build.add_cmd(format!("{} build -x check", gradle_exe));
+            build.add_cmd(format!("{gradle_exe} build -x check"));
             build.add_cache_directory("/root/.gradle");
             build
         } else {
