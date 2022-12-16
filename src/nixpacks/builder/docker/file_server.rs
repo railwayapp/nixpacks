@@ -39,14 +39,14 @@ impl FileServer {
             access_token: Uuid::new_v4().to_string(),
             listen_to_ip: NIXPACKS_SERVER_LISTEN_TO_IP.to_string(),
             port,
-            upload_url: format!("http://{}:{}/upload/", NIXPACKS_SERVER_HOST, port),
+            upload_url: format!("http://{NIXPACKS_SERVER_HOST}:{port}/upload/"),
         };
 
         let server_config = config.clone();
         thread::spawn(move || {
             let server_future = FileServer::run_app(server_config);
             if let Err(e) = rt::System::new().block_on(server_future) {
-                println!("File server error: {}", e);
+                println!("File server error: {e}");
             }
         });
 

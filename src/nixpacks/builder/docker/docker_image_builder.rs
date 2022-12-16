@@ -11,8 +11,11 @@ use crate::nixpacks::{
     plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
+use bollard::{image::BuildImageOptions, service::BuildInfoAux};
+#[cfg(feature = "buildkit")]
 use bollard::{
     image::{BuildImageOptions, BuilderVersion},
+    service::BuildInfoAux,
     Docker as BollardDocker,
 };
 use std::{
@@ -25,7 +28,7 @@ use uuid::Uuid;
 pub struct DockerImageBuilder {
     logger: Logger,
     options: DockerBuilderOptions,
-    client: BollardDocker,
+    client: bollard::Docker,
 }
 
 use std::io::Write;
@@ -71,7 +74,7 @@ impl ImageBuilder for DockerImageBuilder {
 
         // If printing the Dockerfile, don't write anything to disk
         if self.options.print_dockerfile {
-            println!("{}", dockerfile);
+            println!("{dockerfile}");
             return Ok(());
         }
 
@@ -93,7 +96,8 @@ impl ImageBuilder for DockerImageBuilder {
 
             self.logger.log_section("Successfully Built!");
             println!("\nRun:");
-            println!("  docker run -it {}", name);
+            println!("  docker run -it {name}");
+
             if self.options.incremental_cache_image.is_some() {
                 incremental_cache.create_image(
                     &incremental_cache_dirs,
@@ -113,13 +117,14 @@ impl ImageBuilder for DockerImageBuilder {
     }
 }
 
+// #[cfg(feature = "buildkit")]
 use futures_util::stream::StreamExt;
 
 impl DockerImageBuilder {
     pub fn new(
         logger: Logger,
         options: DockerBuilderOptions,
-        client: BollardDocker,
+        client: bollard::Docker,
     ) -> DockerImageBuilder {
         DockerImageBuilder {
             logger,
@@ -190,7 +195,7 @@ impl DockerImageBuilder {
                 // platform: self.options.platform,
                 labels,
                 nocache: self.options.no_cache,
-                version: BuilderVersion::BuilderBuildKit,
+                version: bollard::image::BuilderVersion::BuilderBuildKit,
                 #[cfg(feature = "buildkit")]
                 pull: true,
                 pull: true,
@@ -201,8 +206,13 @@ impl DockerImageBuilder {
             Some(compressed.into()),
         );
 
-        while let Some(core::result::Result::Ok(val)) = stream.next().await {
-            println!("Response: {:?}", val);
+        while let Some(core::result::Result::Ok(bollard::models::BuildInfo {
+            aux: Some(BuildInfoAux::BuildKit(inner)),
+            ..
+        })) = stream.next().await
+        {
+            // utf8 encode the val
+            println!("Response: {:?}", inner);
         }
 
         Ok(())

@@ -356,7 +356,7 @@ dependencies = [
 [[package]]
 name = "bollard"
 version = "0.13.0"
-source = "git+https://github.com/fussybeaver/bollard?rev=ab395e9#ab395e921e619353a4624721485f682a9847fbab"
+source = "git+https://github.com/fussybeaver/bollard?rev=0dba373#0dba373cd4e5b0574cd541b59f1e3681e47e6cbb"
 dependencies = [
  "base64",
  "bollard-buildkit-proto",
@@ -390,7 +390,7 @@ dependencies = [
 [[package]]
 name = "bollard-buildkit-proto"
 version = "0.1.0"
-source = "git+https://github.com/fussybeaver/bollard?rev=ab395e9#ab395e921e619353a4624721485f682a9847fbab"
+source = "git+https://github.com/fussybeaver/bollard?rev=0dba373#0dba373cd4e5b0574cd541b59f1e3681e47e6cbb"
 dependencies = [
  "prost",
  "prost-types",
@@ -400,7 +400,7 @@ dependencies = [
 [[package]]
 name = "bollard-stubs"
 version = "1.42.0-rc.7"
-source = "git+https://github.com/fussybeaver/bollard?rev=ab395e9#ab395e921e619353a4624721485f682a9847fbab"
+source = "git+https://github.com/fussybeaver/bollard?rev=0dba373#0dba373cd4e5b0574cd541b59f1e3681e47e6cbb"
 dependencies = [
  "base64",
  "bollard-buildkit-proto",
@@ -1307,7 +1307,7 @@ dependencies = [
 
 [[package]]
 name = "nixpacks"
-version = "0.16.0"
+version = "0.16.2"
 dependencies = [
  "actix-web",
  "anyhow",
