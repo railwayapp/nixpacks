@@ -116,7 +116,6 @@ impl ImageBuilder for DockerImageBuilder {
     }
 }
 
-// #[cfg(feature = "buildkit")]
 use futures_util::stream::StreamExt;
 
 impl DockerImageBuilder {
@@ -195,7 +194,6 @@ impl DockerImageBuilder {
                 labels,
                 nocache: self.options.no_cache,
                 version: BuilderVersion::BuilderBuildKit,
-                // #[cfg(feature = "buildkit")]
                 pull: true,
                 session: Some(String::from(name)),
                 ..Default::default()
