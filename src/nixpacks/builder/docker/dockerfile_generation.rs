@@ -5,7 +5,7 @@ use crate::nixpacks::{
     app,
     environment::Environment,
     images::DEFAULT_BASE_IMAGE,
-    nix::{create_nix_expressions_for_phases, nix_file_names_for_phases},
+    nix::{create_nix_expressions_for_phases, nix_file_names_for_phases, setup_files_for_phases},
     plan::{
         phase::{Phase, StartPhase},
         BuildPlan,
@@ -105,6 +105,9 @@ impl DockerfileGenerator for BuildPlan {
     ) -> Result<String> {
         let plan = self;
 
+        let setup_files = setup_files_for_phases(&plan.phases.clone().unwrap_or_default());
+        let setup_copy_cmds = utils::get_copy_commands(&setup_files, APP_DIR).join("\n");
+
         let nix_file_names = nix_file_names_for_phases(&plan.phases.clone().unwrap_or_default());
 
         let mut nix_install_cmds: Vec<String> = Vec::new();
@@ -198,6 +201,7 @@ impl DockerfileGenerator for BuildPlan {
             ENTRYPOINT [\"/bin/bash\", \"-l\", \"-c\"]
             WORKDIR {APP_DIR}
 
+            {setup_copy_cmds}
             {nix_install_cmds}
             {apt_pkgs_str}
             {assets_copy_cmd}
@@ -209,6 +213,7 @@ impl DockerfileGenerator for BuildPlan {
         ", 
         base_image=base_image,
         APP_DIR=APP_DIR,
+        setup_copy_cmds=setup_copy_cmds,
         nix_install_cmds=nix_install_cmds,
         apt_pkgs_str=apt_pkgs_str,
         assets_copy_cmd=assets_copy_cmd,

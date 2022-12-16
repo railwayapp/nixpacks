@@ -16,6 +16,7 @@ struct NixGroup {
     pkgs: Vec<String>,
     libs: Vec<String>,
     overlays: Vec<String>,
+    files: Vec<String>,
 }
 
 fn group_nix_packages_by_archive(phases: &[Phase]) -> Vec<NixGroup> {
@@ -29,6 +30,7 @@ fn group_nix_packages_by_archive(phases: &[Phase]) -> Vec<NixGroup> {
             pkgs: phase.nix_pkgs.clone().unwrap_or_default(),
             libs: phase.nix_libs.clone().unwrap_or_default(),
             overlays: phase.nix_overlays.clone().unwrap_or_default(),
+            files: phase.only_include_files.clone().unwrap_or_default(),
         });
 
     for g in groups {
@@ -37,6 +39,7 @@ fn group_nix_packages_by_archive(phases: &[Phase]) -> Vec<NixGroup> {
                 group.pkgs.extend(g.pkgs);
                 group.libs.extend(g.libs);
                 group.overlays.extend(g.overlays);
+                group.files.extend(g.files);
             }
             None => {
                 archive_to_packages.insert(g.archive.clone(), g);
@@ -73,6 +76,20 @@ pub fn nix_file_names_for_phases(phases: &Phases) -> Vec<String> {
         .map(|p| p.nixpkgs_archive.clone())
         .collect::<BTreeSet<_>>();
     archives.iter().map(nix_file_name).collect()
+}
+
+pub fn setup_files_for_phases(phases: &Phases) -> Vec<String> {
+    let groups = group_nix_packages_by_archive(
+        &phases
+            .values()
+            .map(std::clone::Clone::clone)
+            .collect::<Vec<_>>(),
+    );
+
+    groups.iter().fold(Vec::new(), |mut acc, g| {
+        acc.extend(g.files.clone());
+        acc
+    })
 }
 
 fn nix_file_name(archive: &Option<String>) -> String {
@@ -162,6 +179,7 @@ mod tests {
     fn test_group_nix_packages_by_archive() {
         let mut setup1 = Phase::setup(Some(vec![Pkg::new("foo"), Pkg::new("bar")]));
         setup1.add_pkgs_libs(vec!["lib1".to_string()]);
+        setup1.add_file_dependency("test-file".to_string());
 
         let mut setup2 = Phase::setup(Some(vec![Pkg::new("hello"), Pkg::new("world")]));
         setup2.nixpkgs_archive = Some("archive2".to_string());
@@ -176,7 +194,8 @@ mod tests {
                 archive: None,
                 pkgs: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
                 libs: vec!["lib1".to_string()],
-                overlays: vec![]
+                overlays: vec![],
+                files: vec!["test-file".to_string()]
             }
         );
         assert_eq!(
@@ -185,7 +204,8 @@ mod tests {
                 archive: Some("archive2".to_string()),
                 pkgs: vec!["hello".to_string(), "world".to_string()],
                 libs: vec![],
-                overlays: vec![]
+                overlays: vec![],
+                files: vec![]
             }
         );
     }
