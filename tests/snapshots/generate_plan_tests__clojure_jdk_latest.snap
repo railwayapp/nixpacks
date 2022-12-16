@@ -16,7 +16,7 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "lein uberjar; if [ -f /app/target/uberjar/*standalone.jar ]; then  mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi"
+        "lein uberjar; if [ -f /app/target/default+uberjar/*standalone.jar ]; then mv /app/target/default+uberjar/*standalone.jar /app/target/*standalone.jar; fi"
       ]
     },
     "setup": {

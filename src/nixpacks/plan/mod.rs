@@ -3,7 +3,7 @@ use self::{
     phase::{Phase, Phases, StartPhase},
     topological_sort::topological_sort,
 };
-use super::images::DEFAULT_BASE_IMAGE;
+use super::images::{DEBIAN_BASE_IMAGE, UBUNTU_BASE_IMAGE};
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
@@ -268,10 +268,15 @@ impl BuildPlan {
         BuildPlan::new(&phases, start)
     }
 
-    pub fn pin(&mut self) {
+    pub fn pin(&mut self, use_debian: bool) {
         self.providers = Some(Vec::new());
         if self.build_image.is_none() {
-            self.build_image = Some(DEFAULT_BASE_IMAGE.to_string());
+            let base_image = if use_debian {
+                DEBIAN_BASE_IMAGE
+            } else {
+                UBUNTU_BASE_IMAGE
+            };
+            self.build_image = Some(base_image.to_string());
         }
 
         self.resolve_phase_names();
@@ -410,7 +415,7 @@ mod test {
         )
         .unwrap();
 
-        plan.pin();
+        plan.pin(false);
         assert_eq!(
             plan.get_phase("setup").unwrap().nix_pkgs,
             Some(vec!["nodejs".to_string(), "yarn".to_string()])

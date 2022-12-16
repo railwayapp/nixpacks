@@ -77,7 +77,7 @@ impl NixpacksBuildPlanGenerator<'_> {
             plan.add_variables(Environment::clone_variables(env));
         }
 
-        plan.pin();
+        plan.pin(env.is_config_variable_truthy("DEBIAN"));
 
         Ok(plan)
     }

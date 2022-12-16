@@ -1,5 +1,5 @@
 use crate::nixpacks::{
-    images::{DEBIAN_SLIM_IMAGE, DEFAULT_BASE_IMAGE},
+    images::{DEFAULT_BASE_IMAGE, STANDALONE_IMAGE},
     nix::{pkg::Pkg, NIXPKGS_ARCHIVE},
 };
 use serde::{Deserialize, Serialize};
@@ -219,7 +219,7 @@ impl StartPhase {
     }
 
     pub fn run_in_slim_image(&mut self) {
-        self.run_image = Some(DEBIAN_SLIM_IMAGE.to_string());
+        self.run_image = Some(STANDALONE_IMAGE.to_string());
     }
 
     pub fn add_file_dependency<S: Into<String>>(&mut self, file: S) {
