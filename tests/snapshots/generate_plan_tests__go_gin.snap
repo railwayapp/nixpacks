@@ -46,6 +46,6 @@ expression: plan
   },
   "start": {
     "cmd": "./out",
-    "runImage": "debian:bullseye-slim"
+    "runImage": "ubuntu:jammy"
   }
 }

@@ -7,8 +7,8 @@ pub mod pkg;
 
 // This line is automatically updated.
 // Last Modified: 2022-09-12 17:11:54 UTC+0000
-// https://github.com/NixOS/nixpkgs/commit/a0b7e70db7a55088d3de0cc370a59f9fbcc906c3
-pub const NIXPKGS_ARCHIVE: &str = "a0b7e70db7a55088d3de0cc370a59f9fbcc906c3";
+// https://github.com/NixOS/nixpkgs/commit/ffca9ffaaafb38c8979068cee98b2644bd3f14cb
+pub const NIXPKGS_ARCHIVE: &str = "ffca9ffaaafb38c8979068cee98b2644bd3f14cb";
 
 #[derive(Eq, PartialEq, Default, Debug, Clone)]
 struct NixGroup {
