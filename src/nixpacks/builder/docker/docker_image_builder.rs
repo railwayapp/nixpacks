@@ -11,8 +11,7 @@ use crate::nixpacks::{
     plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
-use bollard::{image::BuildImageOptions, service::BuildInfoAux};
-#[cfg(feature = "buildkit")]
+
 use bollard::{
     image::{BuildImageOptions, BuilderVersion},
     service::BuildInfoAux,
@@ -28,7 +27,7 @@ use uuid::Uuid;
 pub struct DockerImageBuilder {
     logger: Logger,
     options: DockerBuilderOptions,
-    client: bollard::Docker,
+    client: BollardDocker,
 }
 
 use std::io::Write;
@@ -124,7 +123,7 @@ impl DockerImageBuilder {
     pub fn new(
         logger: Logger,
         options: DockerBuilderOptions,
-        client: bollard::Docker,
+        client: BollardDocker,
     ) -> DockerImageBuilder {
         DockerImageBuilder {
             logger,
@@ -195,9 +194,8 @@ impl DockerImageBuilder {
                 // platform: self.options.platform,
                 labels,
                 nocache: self.options.no_cache,
-                version: bollard::image::BuilderVersion::BuilderBuildKit,
-                #[cfg(feature = "buildkit")]
-                pull: true,
+                version: BuilderVersion::BuilderBuildKit,
+                // #[cfg(feature = "buildkit")]
                 pull: true,
                 session: Some(String::from(name)),
                 ..Default::default()
@@ -212,7 +210,7 @@ impl DockerImageBuilder {
         })) = stream.next().await
         {
             // utf8 encode the val
-            println!("Response: {:?}", inner);
+            println!("Response: {}", inner);
         }
 
         Ok(())
