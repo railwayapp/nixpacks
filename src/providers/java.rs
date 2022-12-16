@@ -9,27 +9,12 @@ use crate::nixpacks::{
     },
 };
 use anyhow::{bail, Result};
-use regex::{Match, Regex};
+use regex::Regex;
 
 pub struct JavaProvider {}
 
-// const SUPPORTED_JDK_VERSIONS: &[u32] = &[8, 11, 17, 19];
-// const DEFAULT_JDK_PKG_NAME: &str = "jdk";
-
-// const SUPPORTED_GRADLE_VERSIONS: &[u32] = &[4, 5, 6, 7];
-// const DEFAULT_GRADLE_PKG_NAME: &str = "gradle";
-
 const DEFAULT_JDK_VERSION: u32 = 17;
-// const AVAILABLE_JDK_VERSIONS: &[(u32, &str)] =
-//     &[(8, "jdk8"), (11, "jdk11"), (17, "jdk17"), (19, "jdk")];
-
 const DEFAULT_GRADLE_VERSION: u32 = 7;
-// const AVAILABLE_GRADLE_VERSIONS: &[(u32, &str)] = &[
-//     (4, "gradle_4"),
-//     (5, "gradle_5"),
-//     (6, "gradle_6"),
-//     (7, "gradle"),
-// ];
 
 impl Provider for JavaProvider {
     fn name(&self) -> &str {
@@ -178,61 +163,6 @@ impl JavaProvider {
         Ok(pkgs)
     }
 
-    // pub fn get_jdk_and_gradle_pkgs(&self, app: &App) -> Result<Vec<Pkg>> {
-    //     fn as_default(v: Option<Match>) -> &str {
-    //         match v {
-    //             Some(m) => m.as_str(),
-    //             None => "_",
-    //         }
-    //     }
-
-    //     let default_pkgs = vec![Pkg::new("jdk"), Pkg::new("gradle")];
-
-    //     if !app.includes_file("gradle/wrapper/gradle-wrapper.properties") {
-    //         return Ok(default_pkgs);
-    //     }
-
-    //     let file_content = app.read_file("gradle/wrapper/gradle-wrapper.properties")?;
-    //     let custom_version = Regex::new(r#"(distributionUrl[\S].*[gradle])(-)([0-9|\.]*)"#)?
-    //         .captures(&file_content)
-    //         .map(|c| c.get(3).unwrap().as_str().to_owned());
-
-    //     // If it's still none, return default
-    //     if custom_version.is_none() {
-    //         return Ok(default_pkgs);
-    //     }
-
-    //     let custom_version = custom_version.unwrap();
-    //     let matches = Regex::new(r#"^(?:[\sa-zA-Z-"']*)(\d*)(?:\.*)(\d*)(?:\.*\d*)(?:["']?)$"#)?
-    //         .captures(custom_version.as_str().trim());
-
-    //     // If no matches, just use default
-    //     if matches.is_none() {
-    //         return Ok(default_pkgs);
-    //     }
-    //     let matches = matches.unwrap();
-    //     let parsed_version = as_default(matches.get(1));
-
-    //     if parsed_version == "_" {
-    //         return Ok(default_pkgs);
-    //     }
-
-    //     let int_version = parsed_version.parse::<i32>().unwrap_or_default();
-
-    //     let jdk_version = self.get_jdk_version(app, env)?;
-    //     let pkgs = if int_version == 6 {
-    //         vec![Pkg::new("jdk11"), Pkg::new("gradle_6")]
-    //     } else if int_version == 5 {
-    //         vec![Pkg::new("jdk8"), Pkg::new("gradle_5")]
-    //     } else if int_version < 5 {
-    //         vec![Pkg::new("jdk8"), Pkg::new("gradle_4")]
-    //     } else {
-    //         default_pkgs
-    //     };
-
-    //     Ok(pkgs)
-    // }
-
     fn get_jdk_pkg(&self, jdk_version: u32) -> Result<Pkg> {
         let pkg = match jdk_version {
             19 => Pkg::new("jdk"),
@@ -271,8 +201,6 @@ impl JavaProvider {
                 return Ok(11);
             } else if gradle_version <= 5 {
                 return Ok(8);
-            } else {
-                return Ok(DEFAULT_JDK_VERSION);
             }
         }
 
@@ -359,15 +287,6 @@ mod tests {
             )
             .unwrap()
         );
-
-        // assert_eq!(
-        //     19,
-        //     java.get_jdk_version(
-        //         &App::new("examples/java-gradle-custom-version").unwrap(),
-        //         &Environment::from_envs(vec![]).unwrap(),
-        //     )
-        //     .unwrap()
-        // );
     }
 
     #[test]
