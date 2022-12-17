@@ -53,7 +53,7 @@ impl Provider for RubyProvider {
 
         plan.add_variables(self.get_environment_variables(app)?);
 
-        if self.requires_openssl_1(&app)? {
+        if self.requires_openssl_1(app)? {
             plan.build_image = Some(DEBIAN_BASE_IMAGE.to_string());
         }
 
@@ -91,8 +91,7 @@ impl RubyProvider {
         setup.add_cmd(format!(
             "curl -sSL https://get.rvm.io | bash -s stable \
             && . /etc/profile.d/rvm.sh \
-            && rvm pkg install openssl \
-            && rvm install {ruby_version} --with-openssl-dir=/usr/share/rvm/usr \
+            && rvm install {ruby_version} \
             && rvm --default use {ruby_version} \
             && gem install {bundler_version} \
             && rm -rf /usr/local/rvm/src",
@@ -230,7 +229,7 @@ impl RubyProvider {
             std::result::Result::Ok(v) => {
                 // Version 3.1.0 and above work with openssl 3.0
                 if v.major >= 3 && v.minor >= 1 {
-                    return Ok(false);
+                    Ok(false)
                 } else {
                     Ok(true)
                 }
