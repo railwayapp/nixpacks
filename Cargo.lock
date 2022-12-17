@@ -970,6 +970,7 @@ dependencies = [
  "rand 0.8.5",
  "regex",
  "sanitize-filename",
+ "semver",
  "serde",
  "serde_json",
  "serde_with",

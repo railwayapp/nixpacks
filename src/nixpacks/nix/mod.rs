@@ -127,14 +127,15 @@ fn nix_expression_for_group(group: &NixGroup) -> String {
 
     // If the openssl library is added, set the OPENSSL_DIR and OPENSSL_LIB_DIR environment variables
     // In the future, we will probably want a generic way for providers to set variables based off Nix package locations
-    let openssl_dirs = if libs.contains("openssl") {
-        formatdoc! {"
-          export OPENSSL_DIR=\"${{openssl.dev}}\"
-          export OPENSSL_LIB_DIR=\"${{openssl.out}}/lib\"
+    let openssl_dirs =
+        if let Some(openssl_lib) = group.libs.iter().find(|lib| lib.contains("openssl")) {
+            formatdoc! {"
+          export OPENSSL_DIR=\"${{{openssl_lib}.dev}}\"
+          export OPENSSL_LIB_DIR=\"${{{openssl_lib}.out}}/lib\"
         "}
-    } else {
-        String::new()
-    };
+        } else {
+            String::new()
+        };
 
     let name = format!("{archive}-env");
     let nix_expression = formatdoc! {"
