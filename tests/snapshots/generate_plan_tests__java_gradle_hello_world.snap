@@ -12,6 +12,7 @@ expression: plan
     "build": {
       "name": "build",
       "dependsOn": [
+        "install",
         "setup"
       ],
       "cmds": [
@@ -24,7 +25,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "jdk",
+        "jdk17",
         "gradle"
       ],
       "nixOverlays": [],
