@@ -11,7 +11,8 @@ Php is detected if a `composer.json` OR `index.php` file is found.
 The following PHP versions are available
 
 - `8.0`
-- `8.1` (Default)
+- `8.1`
+- `8.2` (Default)
 
 The version is automatically detected by parsing your `composer.json` file.
 
