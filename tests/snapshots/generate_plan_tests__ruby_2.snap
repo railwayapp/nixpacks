@@ -1,0 +1,58 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "BUNDLE_GEMFILE": "/app/Gemfile",
+    "GEM_HOME": "/usr/local/rvm/gems/2.6.6",
+    "GEM_PATH": "/usr/local/rvm/gems/2.6.6:/usr/local/rvm/gems/2.6.6@global",
+    "MALLOC_ARENA_MAX": "2",
+    "NIXPACKS_METADATA": "ruby"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ]
+    },
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "bundle install"
+      ],
+      "onlyIncludeFiles": [
+        "Gemfile",
+        "Gemfile.lock"
+      ],
+      "cacheDirectories": [
+        "/root/.bundle/cache"
+      ],
+      "paths": [
+        "/usr/local/rvm/rubies/2.6.6/bin",
+        "/usr/local/rvm/gems/2.6.6/bin",
+        "/usr/local/rvm/gems/2.6.6@global/bin"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "aptPkgs": [
+        "procps"
+      ],
+      "cmds": [
+        "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh && rvm install 2.6.6 && rvm --default use 2.6.6 && gem install bundler:2.3.7 && rm -rf /usr/local/rvm/src",
+        "echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile"
+      ],
+      "onlyIncludeFiles": []
+    }
+  },
+  "start": {
+    "cmd": "ruby app.rb"
+  }
+}
