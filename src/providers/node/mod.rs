@@ -172,31 +172,7 @@ impl Provider for NodeProvider {
         // Node modules cache directory
         build.add_cache_directory((*NODE_MODULES_CACHE_DIR).to_string());
 
-        let mut ts_config: TsConfigJson = app.read_json("tsconfig.json").unwrap_or_default();
-        if let Some(ref extends) = ts_config.extends {
-            let ex: TsConfigJson = app.read_json(extends.as_str()).unwrap_or_default();
-            ts_config.compiler_options = Some(TsConfigCompilerOptions::merge(
-                &ex.compiler_options.unwrap_or_default(),
-                &ts_config.compiler_options.unwrap_or_default(),
-            ));
-        }
-        if let Some(compiler_options) = ts_config.compiler_options {
-            if let Some(incremental) = compiler_options.incremental {
-                // if incremental is enabled
-                if incremental {
-                    if let Some(ts_build_info_file) = compiler_options.ts_build_info_file {
-                        // if config file is explicitly provided
-                        build.add_cache_directory(ts_build_info_file);
-                    } else if let Some(out_dir) = compiler_options.out_dir {
-                        // if it is not provided but outdir is, use that
-                        build.add_cache_directory(format!("{out_dir}/tsconfig.tsbuildinfo"));
-                    } else {
-                        // if not out dir is set
-                        build.add_cache_directory("tsconfig.tsbuildinfo");
-                    }
-                }
-            }
-        }
+        NodeProvider::cache_tsbuildinfo_file(app, &mut build);
 
         // Start
         let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
@@ -550,6 +526,34 @@ impl NodeProvider {
         all_deps.extend(dev_deps.into_iter());
 
         all_deps
+    }
+
+    pub fn cache_tsbuildinfo_file(app: &App, build: &mut Phase) {
+        let mut ts_config: TsConfigJson = app.read_json("tsconfig.json").unwrap_or_default();
+        if let Some(ref extends) = ts_config.extends {
+            let ex: TsConfigJson = app.read_json(extends.as_str()).unwrap_or_default();
+            ts_config.compiler_options = Some(TsConfigCompilerOptions::merge(
+                &ex.compiler_options.unwrap_or_default(),
+                &ts_config.compiler_options.unwrap_or_default(),
+            ));
+        }
+        if let Some(compiler_options) = ts_config.compiler_options {
+            if let Some(incremental) = compiler_options.incremental {
+                // if incremental is enabled
+                if incremental {
+                    if let Some(ts_build_info_file) = compiler_options.ts_build_info_file {
+                        // if config file is explicitly provided
+                        build.add_cache_directory(ts_build_info_file);
+                    } else if let Some(out_dir) = compiler_options.out_dir {
+                        // if it is not provided but outdir is, use that
+                        build.add_cache_directory(format!("{out_dir}/tsconfig.tsbuildinfo"));
+                    } else {
+                        // if not out dir is set
+                        build.add_cache_directory("tsconfig.tsbuildinfo");
+                    }
+                }
+            }
+        }
     }
 }
 
