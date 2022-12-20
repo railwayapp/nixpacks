@@ -827,6 +827,13 @@ async fn test_zig_gyro() {
 }
 
 #[tokio::test]
+async fn test_ruby_2() {
+    let name = simple_build("./examples/ruby-2").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Hello from Ruby 2"));
+}
+
+#[tokio::test]
 async fn test_ruby_sinatra() {
     let name = simple_build("./examples/ruby-sinatra/").await;
     let output = run_image(&name, None).await;
