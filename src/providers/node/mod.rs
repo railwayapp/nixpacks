@@ -25,7 +25,7 @@ const DEFAULT_NODE_PKG_NAME: &str = "nodejs-16_x";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 
 const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
-const PNPM_CACHE_DIR: &str = "/root/.cache/pnpm";
+const PNPM_CACHE_DIR: &str = "/root/.local/share/pnpm/store/v3";
 const NPM_CACHE_DIR: &str = "/root/.npm";
 const BUN_CACHE_DIR: &str = "/root/.bun";
 const CYPRESS_CACHE_DIR: &str = "/root/.cache/Cypress";
