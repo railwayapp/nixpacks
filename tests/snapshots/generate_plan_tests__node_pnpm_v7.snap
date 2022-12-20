@@ -33,7 +33,7 @@ expression: plan
         "pnpm i --frozen-lockfile"
       ],
       "cacheDirectories": [
-        "root/.local/share/pnpm/store/v3"
+        "/root/.local/share/pnpm/store/v3"
       ],
       "paths": [
         "/app/node_modules/.bin"

@@ -92,7 +92,7 @@ impl Turborepo {
                 return Ok(Some(if pkg_manager == "pnpm" {
                     format!("pnpm --filter {name} run start")
                 } else {
-                    format!("{} --workspace {} run start", pkg_manager, name)
+                    format!("{pkg_manager} --workspace {name} run start")
                 }));
             }
             println!("Warning: Turborepo app `{name}` not found");
