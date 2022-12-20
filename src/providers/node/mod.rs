@@ -1,5 +1,6 @@
 use self::{nx::Nx, turborepo::Turborepo};
 use super::Provider;
+use crate::nixpacks::plan::merge::Mergeable;
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
@@ -30,6 +31,40 @@ const NPM_CACHE_DIR: &str = "/root/.npm";
 const BUN_CACHE_DIR: &str = "/root/.bun";
 const CYPRESS_CACHE_DIR: &str = "/root/.cache/Cypress";
 const NODE_MODULES_CACHE_DIR: &str = "node_modules/.cache";
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+struct TsConfigJson {
+    #[serde(rename = "compilerOptions")]
+    compiler_options: Option<TsConfigCompilerOptions>,
+    extends: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+struct TsConfigCompilerOptions {
+    incremental: Option<bool>,
+    #[serde(rename = "tsBuildInfoFile")]
+    ts_build_info_file: Option<String>,
+    #[serde(rename = "outDir")]
+    out_dir: Option<String>,
+}
+
+impl Mergeable for TsConfigCompilerOptions {
+    fn merge(
+        c1: &TsConfigCompilerOptions,
+        c2: &TsConfigCompilerOptions,
+    ) -> TsConfigCompilerOptions {
+        let mut new_compileroptions = c1.clone();
+        let compileroptions2 = c2.clone();
+        new_compileroptions.incremental = compileroptions2
+            .incremental
+            .or(new_compileroptions.incremental);
+        new_compileroptions.out_dir = compileroptions2.out_dir.or(new_compileroptions.out_dir);
+        new_compileroptions.ts_build_info_file = compileroptions2
+            .ts_build_info_file
+            .or(new_compileroptions.ts_build_info_file);
+        new_compileroptions
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
@@ -136,6 +171,8 @@ impl Provider for NodeProvider {
 
         // Node modules cache directory
         build.add_cache_directory((*NODE_MODULES_CACHE_DIR).to_string());
+
+        NodeProvider::cache_tsbuildinfo_file(app, &mut build);
 
         // Start
         let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
@@ -489,6 +526,34 @@ impl NodeProvider {
         all_deps.extend(dev_deps.into_iter());
 
         all_deps
+    }
+
+    pub fn cache_tsbuildinfo_file(app: &App, build: &mut Phase) {
+        let mut ts_config: TsConfigJson = app.read_json("tsconfig.json").unwrap_or_default();
+        if let Some(ref extends) = ts_config.extends {
+            let ex: TsConfigJson = app.read_json(extends.as_str()).unwrap_or_default();
+            ts_config.compiler_options = Some(TsConfigCompilerOptions::merge(
+                &ex.compiler_options.unwrap_or_default(),
+                &ts_config.compiler_options.unwrap_or_default(),
+            ));
+        }
+        if let Some(compiler_options) = ts_config.compiler_options {
+            if let Some(incremental) = compiler_options.incremental {
+                // if incremental is enabled
+                if incremental {
+                    if let Some(ts_build_info_file) = compiler_options.ts_build_info_file {
+                        // if config file is explicitly provided
+                        build.add_cache_directory(ts_build_info_file);
+                    } else if let Some(out_dir) = compiler_options.out_dir {
+                        // if it is not provided but outdir is, use that
+                        build.add_cache_directory(format!("{out_dir}/tsconfig.tsbuildinfo"));
+                    } else {
+                        // if not out dir is set
+                        build.add_cache_directory("tsconfig.tsbuildinfo");
+                    }
+                }
+            }
+        }
     }
 }
 

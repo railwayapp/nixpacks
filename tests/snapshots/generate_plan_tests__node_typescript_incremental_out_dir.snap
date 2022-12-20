@@ -17,9 +17,6 @@ expression: plan
       "dependsOn": [
         "install"
       ],
-      "cmds": [
-        "yarn run build"
-      ],
       "cacheDirectories": [
         "node_modules/.cache",
         "dist/tsconfig.tsbuildinfo"
@@ -31,11 +28,10 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "npm install -g corepack && corepack enable",
-        "yarn install --check-cache"
+        "npm ci"
       ],
       "cacheDirectories": [
-        "/usr/local/share/.cache/yarn/v6"
+        "/root/.npm"
       ],
       "paths": [
         "/app/node_modules/.bin"
@@ -45,15 +41,12 @@ expression: plan
       "name": "setup",
       "nixPkgs": [
         "nodejs-16_x",
-        "yarn-1_x"
+        "npm-8_x"
       ],
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
       ],
       "nixpkgsArchive": "[archive]"
     }
-  },
-  "start": {
-    "cmd": "yarn run start"
   }
 }
