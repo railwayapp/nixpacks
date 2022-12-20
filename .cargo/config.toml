@@ -1,0 +1,2 @@
+[alias]
+generate_plan_tests = "test --package nixpacks --lib --test generate_plan_tests"

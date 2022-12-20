@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::nixpacks::{app::App, environment::Environment};
+use crate::providers::node::NodeProvider;
 
 #[derive(Debug, Serialize, PartialEq, Eq, Deserialize)]
 pub struct NxJson {
@@ -90,8 +91,12 @@ impl Nx {
     }
 
     pub fn get_nx_build_cmd(app: &App, env: &Environment) -> Option<String> {
-        Nx::get_nx_app_name(app, env)
-            .map(|nx_app_name| format!("npx nx run {nx_app_name}:build:production"))
+        Nx::get_nx_app_name(app, env).map(|nx_app_name| {
+            format!(
+                "{} nx run {nx_app_name}:build:production",
+                NodeProvider::get_package_manager_dlx_command(app)
+            )
+        })
     }
 
     pub fn get_nx_start_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
@@ -106,10 +111,16 @@ impl Nx {
             if let Some(start_target) = project_json.targets.start {
                 if let Some(configurations) = start_target.configurations {
                     if configurations.production.is_some() {
-                        return Ok(Some(format!("npx nx run {nx_app_name}:start:production")));
+                        return Ok(Some(format!(
+                            "{} nx run {nx_app_name}:start:production",
+                            NodeProvider::get_package_manager_dlx_command(app)
+                        )));
                     }
                 }
-                return Ok(Some(format!("npx nx run {nx_app_name}:start")));
+                return Ok(Some(format!(
+                    "{} nx run {nx_app_name}:start",
+                    NodeProvider::get_package_manager_dlx_command(app)
+                )));
             }
 
             if project_json.targets.build.executor == "@nrwl/next:build" {
