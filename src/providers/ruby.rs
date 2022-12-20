@@ -2,6 +2,7 @@ use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
+    images::DEBIAN_BASE_IMAGE,
     nix::pkg::Pkg,
     plan::{
         phase::{Phase, StartPhase},
@@ -10,6 +11,7 @@ use crate::nixpacks::{
 };
 use anyhow::{bail, Ok, Result};
 use regex::Regex;
+use semver::Version;
 
 pub struct RubyProvider {}
 
@@ -50,6 +52,11 @@ impl Provider for RubyProvider {
         }
 
         plan.add_variables(self.get_environment_variables(app)?);
+
+        // Temporary fix to allow using older versions of ruby
+        if self.requires_openssl_1(app)? {
+            plan.build_image = Some(DEBIAN_BASE_IMAGE.to_string());
+        }
 
         Ok(Some(plan))
     }
@@ -239,6 +246,21 @@ impl RubyProvider {
             "bundler".to_string()
         } else {
             "bundler".to_string()
+        }
+    }
+
+    fn requires_openssl_1(&self, app: &App) -> Result<bool> {
+        let ruby_version = self.get_ruby_version(app)?;
+        match Version::parse(ruby_version.trim_start_matches("ruby-")) {
+            std::result::Result::Ok(v) => {
+                // Version 3.1.0 and above work with openssl 3.0
+                if v.major >= 3 && v.minor >= 1 {
+                    Ok(false)
+                } else {
+                    Ok(true)
+                }
+            }
+            std::result::Result::Err(_) => Ok(false),
         }
     }
 

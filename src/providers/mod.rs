@@ -22,7 +22,7 @@ pub mod staticfile;
 pub mod swift;
 pub mod zig;
 
-pub trait Provider {
+pub trait Provider: Send + Sync {
     fn name(&self) -> &str;
     fn detect(&self, _app: &App, _env: &Environment) -> Result<bool> {
         Ok(false)
