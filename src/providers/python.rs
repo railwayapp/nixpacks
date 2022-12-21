@@ -19,7 +19,7 @@ use std::{collections::HashMap, fs};
 use super::{Provider, ProviderMetadata};
 
 const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
-const POETRY_VERSION: &str = "1.1.13";
+const POETRY_VERSION: &str = "1.3.1";
 const PIP_CACHE_DIR: &str = "/root/.cache/pip";
 
 pub struct PythonProvider {}
