@@ -1,5 +1,6 @@
 ---
 source: tests/generate_plan_tests.rs
+assertion_line: 76
 expression: plan
 ---
 {
@@ -22,9 +23,9 @@ expression: plan
         "cp target/release/rocket bin"
       ],
       "cacheDirectories": [
+        "/root/.cargo/registry",
         "/root/.cargo/git",
-        "target",
-        "/root/.cargo/registry"
+        "target"
       ]
     },
     "setup": {

@@ -1,5 +1,6 @@
 ---
 source: tests/generate_plan_tests.rs
+assertion_line: 4
 expression: plan
 ---
 {
@@ -18,8 +19,8 @@ expression: plan
         "install"
       ],
       "cacheDirectories": [
-        "dist/tsconfig.tsbuildinfo",
-        "node_modules/.cache"
+        "node_modules/.cache",
+        "dist/tsconfig.tsbuildinfo"
       ]
     },
     "install": {

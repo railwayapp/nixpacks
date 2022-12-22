@@ -1,5 +1,6 @@
 ---
 source: tests/generate_plan_tests.rs
+assertion_line: 4
 expression: plan
 ---
 {
@@ -17,9 +18,13 @@ expression: plan
       "dependsOn": [
         "install"
       ],
+      "cmds": [
+        "npx turbo run build"
+      ],
       "cacheDirectories": [
-        "dist/tsconfig.tsbuildinfo",
-        "node_modules/.cache"
+        "node_modules/.cache",
+        "apps/docs/.next/cache",
+        "apps/web/.next/cache"
       ]
     },
     "install": {
@@ -40,7 +45,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "nodejs-16_x",
+        "nodejs-18_x",
         "npm-8_x"
       ],
       "nixOverlays": [
@@ -48,5 +53,8 @@ expression: plan
       ],
       "nixpkgsArchive": "[archive]"
     }
+  },
+  "start": {
+    "cmd": "npx turbo run start"
   }
 }

@@ -34,8 +34,8 @@ expression: plan
         "npm ci"
       ],
       "cacheDirectories": [
-        "/root/.npm",
-        "/root/.cache/Cypress"
+        "/root/.cache/Cypress",
+        "/root/.npm"
       ],
       "paths": [
         "/app/node_modules/.bin"
