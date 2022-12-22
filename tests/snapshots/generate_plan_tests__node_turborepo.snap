@@ -21,8 +21,8 @@ expression: plan
         "npx turbo run build"
       ],
       "cacheDirectories": [
-        "apps/docs/.next/cache",
         "apps/web/.next/cache",
+        "apps/docs/.next/cache",
         "node_modules/.cache"
       ]
     },
