@@ -219,7 +219,10 @@ impl RustProvider {
                     package.rust_version.map_or_else(
                         || Pkg::new(DEFAULT_RUST_PACKAGE),
                         |version| {
-                            Pkg::new(format!("rust-bin.stable.\"{version}\".default").as_str())
+                            Pkg::new(
+                                format!("rust-bin.stable.\"{}\".default", version.get().unwrap())
+                                    .as_str(),
+                            )
                         },
                     )
                 },

@@ -61,9 +61,9 @@ jobs:
           base: main
           token: ${{ secrets.COMMITTER_TOKEN }}
           commit-message: Bump base image
-          branch: debian-${{ steps.date.outputs.date }}
+          branch: ubuntu-${{ steps.date.outputs.date }}
           delete-branch: true
-          title: Bump base image to `debian-${{ steps.date.outputs.date }}`
+          title: Bump Ubuntu base image to `ubuntu-${{ steps.date.outputs.date }}`
           labels: release/patch
           
       - name: Login to Docker Hub

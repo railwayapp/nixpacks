@@ -48,7 +48,7 @@ mod chain;
 pub mod nixpacks;
 pub mod providers;
 
-pub fn get_providers() -> &'static [&'static dyn Provider] {
+pub fn get_providers() -> &'static [&'static (dyn Provider)] {
     &[
         &CrystalProvider {},
         &CSharpProvider {},

@@ -25,7 +25,7 @@ pub struct GeneratePlanOptions {
 }
 
 pub struct NixpacksBuildPlanGenerator<'a> {
-    providers: &'a [&'a dyn Provider],
+    providers: &'a [&'a (dyn Provider)],
     config: GeneratePlanOptions,
 }
 
@@ -47,7 +47,7 @@ impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
 
 impl NixpacksBuildPlanGenerator<'_> {
     pub fn new<'a>(
-        providers: &'a [&'a dyn Provider],
+        providers: &'a [&'a (dyn Provider)],
         config: GeneratePlanOptions,
     ) -> NixpacksBuildPlanGenerator<'a> {
         NixpacksBuildPlanGenerator { providers, config }

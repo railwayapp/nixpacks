@@ -1,0 +1,6 @@
+{
+    "extends": "./extendme.json",
+    "compilerOptions": {
+        "incremental": true
+    }
+}

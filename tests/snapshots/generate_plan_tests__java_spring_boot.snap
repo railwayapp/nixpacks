@@ -12,6 +12,7 @@ expression: plan
     "build": {
       "name": "build",
       "dependsOn": [
+        "install",
         "setup"
       ],
       "cmds": [
