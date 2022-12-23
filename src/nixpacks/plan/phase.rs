@@ -172,10 +172,12 @@ impl Phase {
     }
 
     pub fn add_cache_directory<S: Into<String>>(&mut self, dir: S) {
-        self.cache_directories = Some(prevent_duplicates_vec(add_to_option_vec(
+        let mut new_directories = prevent_duplicates_vec(add_to_option_vec(
             self.cache_directories.clone(),
             dir.into(),
-        )));
+        ));
+        new_directories.sort();
+        self.cache_directories = Some(new_directories);
     }
 
     pub fn add_path(&mut self, path: String) {

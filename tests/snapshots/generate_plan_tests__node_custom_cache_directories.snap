@@ -18,8 +18,8 @@ expression: plan
         "install"
       ],
       "cacheDirectories": [
-        "node_modules/.cache",
-        "hello"
+        "hello",
+        "node_modules/.cache"
       ]
     },
     "install": {

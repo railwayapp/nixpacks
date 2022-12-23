@@ -19,8 +19,8 @@ expression: plan
         "install"
       ],
       "cacheDirectories": [
-        "packages/client/.next/cache",
-        "node_modules/.cache"
+        "node_modules/.cache",
+        "packages/client/.next/cache"
       ]
     },
     "install": {

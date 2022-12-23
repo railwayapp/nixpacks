@@ -22,9 +22,9 @@ expression: plan
         "cp target/release/rocket bin"
       ],
       "cacheDirectories": [
+        "/root/.cargo/git",
         "/root/.cargo/registry",
-        "target",
-        "/root/.cargo/git"
+        "target"
       ]
     },
     "setup": {

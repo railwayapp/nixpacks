@@ -21,8 +21,8 @@ expression: plan
         "npx nx run express-app:build:production"
       ],
       "cacheDirectories": [
-        "node_modules/.cache",
-        ".next/cache"
+        ".next/cache",
+        "node_modules/.cache"
       ]
     },
     "install": {
@@ -34,8 +34,8 @@ expression: plan
         "npm ci"
       ],
       "cacheDirectories": [
-        "/root/.npm",
-        "/root/.cache/Cypress"
+        "/root/.cache/Cypress",
+        "/root/.npm"
       ],
       "paths": [
         "/app/node_modules/.bin"
