@@ -156,7 +156,7 @@ impl PythonProvider {
             if app.includes_file("poetry.lock") {
                 let install_poetry = "pip install poetry==$NIXPACKS_POETRY_VERSION".to_string();
                 let mut install_phase = Phase::install(Some(format!(
-                    "{} && {} && {} && poetry install --no-dev --no-interaction --no-ansi",
+                    "{} && {} && {} && poetry env use && poetry install --no-dev --no-interaction --no-ansi",
                     create_env, activate_env, install_poetry
                 )));
 
