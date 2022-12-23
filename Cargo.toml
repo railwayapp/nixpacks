@@ -55,7 +55,6 @@ sanitize-filename = "0.4.0"
 futures-util = "0.3.25"
 futures = "0.3.25"
 portpicker = "0.1.1"
-async-trait = "0.1.58"
 bollard = { git = "https://github.com/fussybeaver/bollard", rev = "0dba373", "features" = ["buildkit"] }
 tar = "0.4"
 flate2 = "1.0"
