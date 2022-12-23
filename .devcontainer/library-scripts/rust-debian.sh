@@ -206,8 +206,8 @@ if [ "${UPDATE_RUST}" = "true" ]; then
 fi
 echo "Installing common Rust dependencies..."
 rustup component add rls rust-analysis rust-src rustfmt clippy 2>&1
-cargo install cargo-binstall 2>&1
-cargo binstall cargo-release cargo-deb cargo-insta -y 2>&1
+cargo install cargo-quickinstall 2>&1
+cargo quickinstall cargo-release cargo-deb cargo-insta 2>&1
 
 # Add CARGO_HOME, RUSTUP_HOME and bin directory into bashrc/zshrc files (unless disabled)
 updaterc "$(cat << EOF
