@@ -19,8 +19,9 @@ use std::{collections::HashMap, fs};
 use super::{Provider, ProviderMetadata};
 
 const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
-const POETRY_VERSION: &str = "1.1.13";
+const POETRY_VERSION: &str = "1.3.1";
 const PIP_CACHE_DIR: &str = "/root/.cache/pip";
+const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python310";
 
 pub struct PythonProvider {}
 
@@ -305,6 +306,9 @@ impl PythonProvider {
 
         // If it's still none, return default
         if custom_version.is_none() {
+            if app.includes_file("poetry.lock") {
+                return Ok(Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME));
+            }
             return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
         }
         let custom_version = custom_version.unwrap();
@@ -318,6 +322,9 @@ impl PythonProvider {
 
         // If no matches, just use default
         if matches.is_none() {
+            if app.includes_file("poetry.lock") {
+                return Ok(Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME));
+            }
             return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
         }
         let matches = matches.unwrap();
@@ -331,7 +338,12 @@ impl PythonProvider {
             ("3", "8") => Ok(Pkg::new("python38")),
             ("3", "7") => Ok(Pkg::new("python37")),
             ("2", "7" | "_") => Ok(Pkg::new("python27")),
-            _ => Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME)),
+            _ => {
+                if app.includes_file("poetry.lock") {
+                    return Ok(Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME));
+                }
+                Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME))
+            }
         }
     }
 
