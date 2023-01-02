@@ -6,9 +6,9 @@ use crate::nixpacks::plan::phase::{Phase, Phases};
 pub mod pkg;
 
 // This line is automatically updated.
-// Last Modified: 2022-12-26 17:04:25 UTC+0000
-// https://github.com/NixOS/nixpkgs/commit/b139e44d78c36c69bcbb825b20dbfa51e7738347
-pub const NIXPKGS_ARCHIVE: &str = "b139e44d78c36c69bcbb825b20dbfa51e7738347";
+// Last Modified: 2023-01-02 17:04:24 UTC+0000
+// https://github.com/NixOS/nixpkgs/commit/293a28df6d7ff3dec1e61e37cc4ee6e6c0fb0847
+pub const NIXPKGS_ARCHIVE: &str = "293a28df6d7ff3dec1e61e37cc4ee6e6c0fb0847";
 
 #[derive(Eq, PartialEq, Default, Debug, Clone)]
 struct NixGroup {
