@@ -546,23 +546,29 @@ impl NodeProvider {
                 &ts_config.compiler_options.unwrap_or_default(),
             ));
         }
+
         if let Some(compiler_options) = ts_config.compiler_options {
             if let Some(incremental) = compiler_options.incremental {
                 // if incremental is enabled
                 if incremental {
-                    if let Some(ts_build_info_file) = compiler_options.ts_build_info_file {
-                        // if config file is explicitly provided
-                        build.add_cache_directory(ts_build_info_file);
-                    } else if let Some(out_dir) = compiler_options.out_dir {
-                        // if it is not provided but outdir is, use that
-                        build.add_cache_directory(format!("{out_dir}/tsconfig.tsbuildinfo"));
-                    } else {
-                        // if not out dir is set
-                        build.add_cache_directory("tsconfig.tsbuildinfo");
+                    let tsbuildinfo =
+                        if let Some(ts_build_info_file) = compiler_options.ts_build_info_file {
+                            // if config file is explicitly provided
+                            ts_build_info_file
+                        } else if let Some(out_dir) = compiler_options.out_dir {
+                            // if it is not provided but outdir is, use that
+                            format!("{out_dir}/tsconfig.tsbuildinfo")
+                        } else {
+                            // if not out dir is set
+                            "tsconfig.tsbuildinfo".to_string()
+                        };
+
+                    if app.includes_file(tsbuildinfo.as_str()) {
+                        build.add_cache_directory(tsbuildinfo);
                     }
                 }
             }
-        }
+        };
     }
 }
 

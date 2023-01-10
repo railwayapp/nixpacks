@@ -18,8 +18,7 @@ expression: plan
         "install"
       ],
       "cacheDirectories": [
-        "node_modules/.cache",
-        "typescriptbuildinfo"
+        "node_modules/.cache"
       ]
     },
     "install": {
