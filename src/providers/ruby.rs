@@ -28,7 +28,7 @@ impl Provider for RubyProvider {
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         let setup = self.get_setup(app, env)?;
-        let install = self.get_install(app)?;
+        let install = self.get_install(app, env)?;
         let build = self.get_build(app)?;
         let start = self.get_start(app)?;
 
@@ -63,7 +63,7 @@ impl Provider for RubyProvider {
 }
 
 impl RubyProvider {
-    fn get_setup(&self, app: &App, _env: &Environment) -> Result<Option<Phase>> {
+    fn get_setup(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
         let mut setup = Phase::setup(None);
         setup.add_apt_pkgs(vec!["procps".to_string()]);
 
@@ -90,22 +90,26 @@ impl RubyProvider {
         let ruby_version = self.get_ruby_version(app)?;
 
         setup.add_cmd(format!(
-            "curl -sSL https://get.rvm.io | bash -s stable \
-            && . /etc/profile.d/rvm.sh \
-            && rvm install {ruby_version} \
-            && rvm --default use {ruby_version} \
-            && gem install {bundler_version} \
-            && rm -rf /usr/local/rvm/src",
-            ruby_version = ruby_version,
-            bundler_version = self.get_bundler_version(app)
-        ));
+                    "curl -sSL https://get.rvm.io | bash -s stable \
+                    && . /etc/profile.d/rvm.sh \
+                    && rvm install {ruby_version} \
+                    && rvm --default use {ruby_version} \
+                    && gem install {bundler_version} \
+                    && rm -rf /usr/local/rvm/src",
+        <<<<<<< Updated upstream
+                    ruby_version = ruby_version,
+        =======
+                    ruby_version = self.get_ruby_version(app, env)?,
+        >>>>>>> Stashed changes
+                    bundler_version = self.get_bundler_version(app)
+                ));
 
         setup.add_cmd("echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile".to_string());
 
         Ok(Some(setup))
     }
 
-    fn get_install(&self, app: &App) -> Result<Option<Phase>> {
+    fn get_install(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
         let mut install = Phase::install(None);
         install.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
 
@@ -118,7 +122,7 @@ impl RubyProvider {
         install.add_cmd("bundle install".to_string());
 
         // Ensure that the ruby executable is in the PATH
-        let ruby_version = self.get_ruby_version(app)?;
+        let ruby_version = self.get_ruby_version(app, env)?;
         install.add_path(format!("/usr/local/rvm/rubies/{ruby_version}/bin"));
         install.add_path(format!("/usr/local/rvm/gems/{ruby_version}/bin"));
         install.add_path(format!("/usr/local/rvm/gems/{ruby_version}@global/bin"));
@@ -143,8 +147,12 @@ impl RubyProvider {
         }
     }
 
-    fn get_environment_variables(&self, app: &App) -> Result<EnvironmentVariables> {
-        let ruby_version = self.get_ruby_version(app)?;
+    fn get_environment_variables(
+        &self,
+        app: &App,
+        env: &Environment,
+    ) -> Result<EnvironmentVariables> {
+        let ruby_version = self.get_ruby_version(app, env)?;
         let mut env_vars = EnvironmentVariables::from([
             ("BUNDLE_GEMFILE".to_string(), "/app/Gemfile".to_string()),
             (
@@ -190,7 +198,11 @@ impl RubyProvider {
         }
     }
 
-    fn get_ruby_version(&self, app: &App) -> Result<String> {
+    fn get_ruby_version(&self, app: &App, env: &Environment) -> Result<String> {
+        if env.get_variable("RUBY_VERSION").is_some() {
+            return Ok(env.get_variable("RUBY_VERSION").unwrap().into());
+        }
+
         if app.includes_file(".ruby-version") {
             return Ok(app.read_file(".ruby-version")?.trim().to_string());
         }
@@ -271,12 +283,18 @@ impl RubyProvider {
 
 #[cfg(test)]
 mod test {
+    use std::collections::BTreeMap;
+
     use super::*;
 
     #[test]
     fn test_gemfile_lock_version() -> Result<()> {
         assert_eq!(
-            RubyProvider::get_ruby_version(&RubyProvider {}, &App::new("./examples/ruby")?)?,
+            RubyProvider::get_ruby_version(
+                &RubyProvider {},
+                &App::new("./examples/ruby")?,
+                &Environment::default()
+            )?,
             "ruby-3.1.2"
         );
 
@@ -288,6 +306,7 @@ mod test {
         assert!(RubyProvider::get_ruby_version(
             &RubyProvider {},
             &App::new("./examples/ruby-no-version")?,
+            &Environment::default(),
         )
         .is_err());
         Ok(())
@@ -298,7 +317,24 @@ mod test {
         assert_eq!(
             RubyProvider::get_ruby_version(
                 &RubyProvider {},
-                &App::new("./examples/ruby-rails-postgres")?
+                &App::new("./examples/ruby-rails-postgres")?,
+                &Environment::default(),
+            )?,
+            "3.1.2"
+        );
+
+        Ok(())
+    }
+
+    fn test_version_arg() -> Result<()> {
+        assert_eq!(
+            RubyProvider::get_ruby_version(
+                &RubyProvider {},
+                &App::new("./examples/ruby")?,
+                &Environment::new(BTreeMap::from([(
+                    "NIXPACKS_RUBY_VERSION".to_string(),
+                    "3.1.2".to_string()
+                )]))
             )?,
             "3.1.2"
         );
