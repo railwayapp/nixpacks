@@ -87,22 +87,18 @@ impl RubyProvider {
             setup.add_apt_pkgs(vec![String::from("libicu-dev")]);
         }
 
-        let ruby_version = self.get_ruby_version(app)?;
+        let ruby_version = self.get_ruby_version(app, env)?;
 
         setup.add_cmd(format!(
-                    "curl -sSL https://get.rvm.io | bash -s stable \
+            "curl -sSL https://get.rvm.io | bash -s stable \
                     && . /etc/profile.d/rvm.sh \
                     && rvm install {ruby_version} \
                     && rvm --default use {ruby_version} \
                     && gem install {bundler_version} \
                     && rm -rf /usr/local/rvm/src",
-        <<<<<<< Updated upstream
-                    ruby_version = ruby_version,
-        =======
-                    ruby_version = self.get_ruby_version(app, env)?,
-        >>>>>>> Stashed changes
-                    bundler_version = self.get_bundler_version(app)
-                ));
+            ruby_version = ruby_version,
+            bundler_version = self.get_bundler_version(app)
+        ));
 
         setup.add_cmd("echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile".to_string());
 
