@@ -18,8 +18,8 @@ expression: plan
         "install"
       ],
       "cacheDirectories": [
-        "node_modules/.cache",
-        "dist/tsconfig.tsbuildinfo"
+        "dist/tsconfig.tsbuildinfo",
+        "node_modules/.cache"
       ]
     },
     "install": {
