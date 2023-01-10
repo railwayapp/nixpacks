@@ -21,7 +21,6 @@ expression: plan
         "npm run build"
       ],
       "cacheDirectories": [
-        "dist/tsconfig.tsbuildinfo",
         "node_modules/.cache"
       ]
     },

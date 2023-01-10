@@ -21,7 +21,6 @@ expression: plan
         "pnpm run build"
       ],
       "cacheDirectories": [
-        "dist/tsconfig.tsbuildinfo",
         "node_modules/.cache"
       ]
     },
