@@ -195,10 +195,9 @@ impl RubyProvider {
     }
 
     fn get_ruby_version(&self, app: &App, env: &Environment) -> Result<String> {
-        if env.get_variable("RUBY_VERSION").is_some() {
-            return Ok(env.get_variable("RUBY_VERSION").unwrap().into());
+        if let Some(version) = env.get_config_variable("RUBY_VERSION") {
+            return Ok(version);
         }
-
         if app.includes_file(".ruby-version") {
             return Ok(app.read_file(".ruby-version")?.trim().to_string());
         }
@@ -322,6 +321,7 @@ mod test {
         Ok(())
     }
 
+    #[test]
     fn test_version_arg() -> Result<()> {
         assert_eq!(
             RubyProvider::get_ruby_version(
