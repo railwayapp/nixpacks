@@ -72,6 +72,10 @@ These directories are cached between builds
 - Build (if NextJS detected): `.next/cache`
 - Build (if its an NX Monorepo): `<outputPathForApp>`
 
+### Custom cache directories
+
+You can specify `cacheDirectories` in `package.json`. Each directory that is provided in that field will be added to the build-time cache.
+
 ## Corepack
 
 Nixpacks has first class support for [Corepack](https://nodejs.org/api/corepack.html), an experimental tool that enables installing specific versions of Node based package managers.

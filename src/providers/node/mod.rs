@@ -89,6 +89,9 @@ pub struct PackageJson {
     pub package_manager: Option<String>,
 
     pub workspaces: Option<Workspaces>,
+
+    #[serde(rename = "cacheDirectories")]
+    pub cache_directories: Option<Vec<String>>,
 }
 
 #[derive(Default, Debug)]
@@ -171,6 +174,12 @@ impl Provider for NodeProvider {
 
         // Node modules cache directory
         build.add_cache_directory((*NODE_MODULES_CACHE_DIR).to_string());
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
+        if let Some(cache_directories) = package_json.cache_directories {
+            for dir in cache_directories {
+                build.add_cache_directory(dir);
+            }
+        }
 
         NodeProvider::cache_tsbuildinfo_file(app, &mut build);
 
