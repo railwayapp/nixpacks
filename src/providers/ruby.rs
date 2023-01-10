@@ -51,7 +51,7 @@ impl Provider for RubyProvider {
             }
         }
 
-        plan.add_variables(self.get_environment_variables(app)?);
+        plan.add_variables(self.get_environment_variables(app, env)?);
 
         // Temporary fix to allow using older versions of ruby
         if self.requires_openssl_1(app)? {
