@@ -1,4 +1,4 @@
-FROM ubuntu:jammy-20221130
+FROM ubuntu:jammy
 
 ARG DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
 
