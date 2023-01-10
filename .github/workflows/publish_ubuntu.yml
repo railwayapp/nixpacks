@@ -53,6 +53,11 @@ jobs:
           platforms: linux/arm64, linux/amd64
           push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           tags: ghcr.io/railwayapp/nixpacks:ubuntu, ghcr.io/railwayapp/nixpacks:ubuntu-${{ steps.date.outputs.date }}
+
+      - name: Bump base image
+        if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          sed -i 's/nixpacks:ubuntu-.*/nixpacks:ubuntu-${{ steps.date.outputs.date }}";/g' src/nixpacks/images.rs
       
       - name: Create Pull Request
         if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
