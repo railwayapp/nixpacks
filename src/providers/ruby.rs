@@ -88,19 +88,44 @@ impl RubyProvider {
         }
 
         let ruby_version = self.get_ruby_version(app)?;
+        let ruby_version = ruby_version.trim_start_matches("ruby-");
+
+        // Packages necessary for rbenv
+        // https://github.com/rbenv/ruby-build/wiki#ubuntudebianmint
+        setup.add_apt_pkgs(
+            vec![
+                "git",
+                "curl",
+                "autoconf",
+                "bison",
+                "build-essential",
+                "libssl-dev",
+                "libyaml-dev",
+                "libreadline6-dev",
+                "zlib1g-dev",
+                "libncurses5-dev",
+                "libffi-dev",
+                "libgdbm6",
+                "libgdbm-dev",
+                "libdb-dev",
+            ]
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect(),
+        );
+
+        let bundler_version = self.get_bundler_version(app);
 
         setup.add_cmd(format!(
-            "curl -sSL https://get.rvm.io | bash -s stable \
-            && . /etc/profile.d/rvm.sh \
-            && rvm install {ruby_version} \
-            && rvm --default use {ruby_version} \
-            && gem install {bundler_version} \
-            && rm -rf /usr/local/rvm/src",
-            ruby_version = ruby_version,
-            bundler_version = self.get_bundler_version(app)
+            "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash -s stable \
+            && printf '\\neval \"$(rbenv init -)\"' >> /root/.profile \
+            && . /root/.profile \
+            && rbenv install {ruby_version} \
+            && rbenv global {ruby_version} \
+            && gem install {bundler_version}"
         ));
 
-        setup.add_cmd("echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile".to_string());
+        setup.add_path("$HOME/.rbenv/bin".to_string());
 
         Ok(Some(setup))
     }
