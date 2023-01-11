@@ -10,7 +10,7 @@ use crate::nixpacks::{
 };
 use anyhow::{bail, Ok, Result};
 use regex::Regex;
-use semver::Version;
+
 
 pub struct RubyProvider {}
 
@@ -240,21 +240,6 @@ impl RubyProvider {
             "bundler".to_string()
         } else {
             "bundler".to_string()
-        }
-    }
-
-    fn requires_openssl_1(&self, app: &App) -> Result<bool> {
-        let ruby_version = self.get_ruby_version(app)?;
-        match Version::parse(ruby_version.trim_start_matches("ruby-")) {
-            std::result::Result::Ok(v) => {
-                // Version 3.1.0 and above work with openssl 3.0
-                if v.major >= 3 && v.minor >= 1 {
-                    Ok(false)
-                } else {
-                    Ok(true)
-                }
-            }
-            std::result::Result::Err(_) => Ok(false),
         }
     }
 
