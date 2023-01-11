@@ -2,7 +2,6 @@ use super::{node::NodeProvider, Provider};
 use crate::nixpacks::{
     app::App,
     environment::{Environment, EnvironmentVariables},
-    images::DEBIAN_BASE_IMAGE,
     nix::pkg::Pkg,
     plan::{
         phase::{Phase, StartPhase},
