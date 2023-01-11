@@ -11,7 +11,6 @@ use crate::nixpacks::{
 use anyhow::{bail, Ok, Result};
 use regex::Regex;
 
-
 pub struct RubyProvider {}
 
 const BUNDLE_CACHE_DIR: &str = "/root/.bundle/cache";
