@@ -43,13 +43,29 @@ expression: plan
     "setup": {
       "name": "setup",
       "aptPkgs": [
-        "procps"
+        "procps",
+        "git",
+        "curl",
+        "autoconf",
+        "bison",
+        "build-essential",
+        "libssl-dev",
+        "libyaml-dev",
+        "libreadline6-dev",
+        "zlib1g-dev",
+        "libncurses5-dev",
+        "libffi-dev",
+        "libgdbm6",
+        "libgdbm-dev",
+        "libdb-dev"
       ],
       "cmds": [
-        "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh && rvm install 2.6.6 && rvm --default use 2.6.6 && gem install bundler:2.3.7 && rm -rf /usr/local/rvm/src",
-        "echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile"
+        "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash -s stable && printf '\\neval \"$(rbenv init -)\"' >> /root/.profile && . /root/.profile && rbenv install 2.6.6 && rbenv global 2.6.6 && gem install bundler:2.3.7"
       ],
-      "onlyIncludeFiles": []
+      "onlyIncludeFiles": [],
+      "paths": [
+        "$HOME/.rbenv/bin"
+      ]
     }
   },
   "start": {
