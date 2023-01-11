@@ -53,11 +53,6 @@ impl Provider for RubyProvider {
 
         plan.add_variables(self.get_environment_variables(app)?);
 
-        // Temporary fix to allow using older versions of ruby
-        if self.requires_openssl_1(app)? {
-            plan.build_image = Some(DEBIAN_BASE_IMAGE.to_string());
-        }
-
         Ok(Some(plan))
     }
 }
