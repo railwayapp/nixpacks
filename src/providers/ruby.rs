@@ -329,10 +329,10 @@ mod test {
                 &App::new("./examples/ruby")?,
                 &Environment::new(BTreeMap::from([(
                     "NIXPACKS_RUBY_VERSION".to_string(),
-                    "3.1.2".to_string()
+                    "3.1.1".to_string()
                 )]))
             )?,
-            "3.1.2"
+            "3.1.1"
         );
 
         Ok(())
