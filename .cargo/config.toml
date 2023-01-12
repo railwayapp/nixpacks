@@ -1,2 +1,3 @@
 [alias]
 generate_plan_tests = "test --package nixpacks --lib --test generate_plan_tests"
+snapshot = "insta test --review -- --test generate_plan_tests"
