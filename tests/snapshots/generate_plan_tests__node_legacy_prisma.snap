@@ -1,0 +1,59 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "CI": "true",
+    "NIXPACKS_DEBIAN": "1",
+    "NIXPACKS_METADATA": "node",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cmds": [
+        "yarn run build"
+      ],
+      "cacheDirectories": [
+        "node_modules/.cache"
+      ]
+    },
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "yarn install --frozen-lockfile"
+      ],
+      "cacheDirectories": [
+        "/usr/local/share/.cache/yarn/v6"
+      ],
+      "paths": [
+        "/app/node_modules/.bin"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "nodejs-14_x",
+        "yarn-1_x",
+        "openssl"
+      ],
+      "nixOverlays": [
+        "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+      ],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "yarn run start"
+  }
+}

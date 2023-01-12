@@ -1,6 +1,6 @@
 use crate::nixpacks::{
     images::{DEFAULT_BASE_IMAGE, STANDALONE_IMAGE},
-    nix::{pkg::Pkg, NIXPKGS_ARCHIVE},
+    nix::{pkg::Pkg, NIXPACKS_ARCHIVE_LEGACY_OPENSSL, NIXPKGS_ARCHIVE},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashSet};
@@ -188,9 +188,13 @@ impl Phase {
         self.nixpkgs_archive = Some(archive);
     }
 
-    pub fn pin(&mut self) {
+    pub fn pin(&mut self, use_legacy_openssl: bool) {
         if self.uses_nix() && self.nixpkgs_archive.is_none() {
-            self.nixpkgs_archive = Some(NIXPKGS_ARCHIVE.to_string());
+            self.nixpkgs_archive = if use_legacy_openssl {
+                Some(NIXPACKS_ARCHIVE_LEGACY_OPENSSL.to_string())
+            } else {
+                Some(NIXPKGS_ARCHIVE.to_string())
+            }
         }
 
         self.cmds = pin_option_vec(&self.cmds);
