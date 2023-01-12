@@ -41,6 +41,8 @@ Test and review the generate plan tests.
 
 ```
 cargo insta test --review -- --test generate_plan_tests
+# or
+cargo snapshot
 ```
 
 The snapshots are checked into CI and are reviewed as part of the PR. They ensure that a change to one part of Nixpacks does not unexpectedly change an unrelated part.
