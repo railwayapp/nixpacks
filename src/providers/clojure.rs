@@ -59,7 +59,7 @@ impl ClojureProvider {
         self.is_using_lein(app)
             && app
                 .read_file("project.clj")
-                .unwrap()
+                .unwrap_or_default()
                 .to_lowercase()
                 .contains("[lein-ring ")
     }
