@@ -34,10 +34,10 @@ impl Provider for ClojureProvider {
             ClojureProvider::get_nix_jdk_package(app, env)?,
         ]));
 
-        let build_cmd = if self.has_lein_ring_plugin(app) {
-            "lein ring uberjar"
-        } else if self.is_using_tools_build(app) {
+        let build_cmd = if self.is_using_tools_build(app) {
             "clojure -T:build uber"
+        } else if self.has_lein_ring_plugin(app) {
+            "lein ring uberjar"
         } else {
             "lein uberjar"
         };
