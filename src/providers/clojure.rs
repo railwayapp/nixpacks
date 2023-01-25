@@ -56,8 +56,9 @@ impl Provider for ClojureProvider {
 
 impl ClojureProvider {
     fn has_lein_ring_plugin(&self, app: &App) -> bool {
-        self.is_using_lein(app) &&
-            app.read_file("project.clj")
+        self.is_using_lein(app)
+            && app
+                .read_file("project.clj")
                 .unwrap()
                 .to_lowercase()
                 .contains("[lein-ring ")
