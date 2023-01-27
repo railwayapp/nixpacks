@@ -360,9 +360,7 @@ impl DockerfileGenerator for Phase {
             let joined_paths = paths.join(":");
             (
                 format!("ENV PATH {joined_paths}:$PATH"),
-                format!(
-                    "RUN printf '\\nPATH={joined_paths}:$PATH' >> /root/.profile"
-                ),
+                format!("RUN printf '\\nPATH={joined_paths}:$PATH' >> /root/.profile"),
             )
         } else {
             (String::new(), String::new())
