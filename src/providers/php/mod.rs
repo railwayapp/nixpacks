@@ -150,8 +150,7 @@ impl PhpProvider {
                 "7.4".to_string()
             } else {
                 println!(
-                    "Warning: PHP version {} is not available, using PHP {}",
-                    v, DEFAULT_PHP_VERSION
+                    "Warning: PHP version {v} is not available, using PHP {DEFAULT_PHP_VERSION}"
                 );
                 DEFAULT_PHP_VERSION.to_string()
             }

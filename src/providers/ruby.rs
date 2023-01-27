@@ -172,8 +172,7 @@ impl RubyProvider {
             (
                 "GEM_PATH".to_string(),
                 format!(
-                    "/usr/local/rvm/gems/{ruby_version}:/usr/local/rvm/gems/{ruby_version}@global",
-                    ruby_version = ruby_version
+                    "/usr/local/rvm/gems/{ruby_version}:/usr/local/rvm/gems/{ruby_version}@global"
                 ),
             ),
             (

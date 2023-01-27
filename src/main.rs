@@ -211,7 +211,7 @@ async fn main() -> Result<()> {
                 PlanFormat::Toml => plan.to_toml()?,
             };
 
-            println!("{}", plan_s);
+            println!("{plan_s}");
         }
         Commands::Detect { path } => {
             let providers = get_plan_providers(&path, env, &options)?;

@@ -145,8 +145,7 @@ impl PythonProvider {
 
         if app.includes_file("requirements.txt") {
             let mut install_phase = Phase::install(Some(format!(
-                "{} && {} && pip install -r requirements.txt",
-                create_env, activate_env
+                "{create_env} && {activate_env} && pip install -r requirements.txt"
             )));
 
             install_phase.add_path(format!("{env_loc}/bin"));
@@ -157,8 +156,7 @@ impl PythonProvider {
             if app.includes_file("poetry.lock") {
                 let install_poetry = "pip install poetry==$NIXPACKS_POETRY_VERSION".to_string();
                 let mut install_phase = Phase::install(Some(format!(
-                    "{} && {} && {} && poetry install --no-dev --no-interaction --no-ansi",
-                    create_env, activate_env, install_poetry
+                    "{create_env} && {activate_env} && {install_poetry} && poetry install --no-dev --no-interaction --no-ansi"
                 )));
 
                 install_phase.add_path(format!("{env_loc}/bin"));
@@ -168,8 +166,7 @@ impl PythonProvider {
                 return Ok(Some(install_phase));
             }
             let mut install_phase = Phase::install(Some(format!(
-                "{} && {} && pip install --upgrade build setuptools && pip install .",
-                create_env, activate_env
+                "{create_env} && {activate_env} && pip install --upgrade build setuptools && pip install ."
             )));
 
             install_phase.add_file_dependency("pyproject.toml".to_string());
@@ -205,8 +202,7 @@ impl PythonProvider {
             let app_name = PythonProvider::get_django_app_name(app, env)?;
 
             return Ok(Some(StartPhase::new(format!(
-                "python manage.py migrate && gunicorn {}",
-                app_name
+                "python manage.py migrate && gunicorn {app_name}"
             ))));
         }
 
