@@ -239,9 +239,7 @@ fn run_postgres() -> Container {
                 ("PGHOST".to_string(), container_name.clone()),
                 (
                     "DATABASE_URL".to_string(),
-                    format!(
-                        "postgresql://postgres:{password}@{container_name}:{port}/postgres"
-                    ),
+                    format!("postgresql://postgres:{password}@{container_name}:{port}/postgres"),
                 ),
             ]),
             network: None,

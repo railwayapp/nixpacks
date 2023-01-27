@@ -29,9 +29,7 @@ fn test_custom_rust_version() {
         Some(vec![
             format!("mkdir -p bin"),
             format!("cargo build --release --target {ARCH}-unknown-linux-musl"),
-            format!(
-                "cp target/{ARCH}-unknown-linux-musl/release/rust-custom-version bin"
-            )
+            format!("cp target/{ARCH}-unknown-linux-musl/release/rust-custom-version bin")
         ])
     );
     assert_eq!(
@@ -82,9 +80,7 @@ fn test_rust_cargo_workspaces() {
 
     assert_eq!(
         build.clone().cmds.unwrap()[1],
-        format!(
-            "cargo build --release --package binary --target {ARCH}-unknown-linux-musl"
-        )
+        format!("cargo build --release --package binary --target {ARCH}-unknown-linux-musl")
     );
 }
 
