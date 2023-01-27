@@ -16,8 +16,7 @@ pub fn get_cache_mount(
                     sanitized_dir = format!("/app/{sanitized_dir}");
                 }
                 format!(
-                    "--mount=type=cache,id={},target={}",
-                    sanitized_key, sanitized_dir
+                    "--mount=type=cache,id={sanitized_key},target={sanitized_dir}"
                 )
             })
             .collect::<Vec<String>>()

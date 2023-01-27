@@ -79,8 +79,7 @@ impl Provider for SwiftProvider {
             "CC=clang++ swift build -c release --static-swift-stdlib".to_string(),
         ));
         build.add_cmd(format!(
-            "cp ./.build/release/{name} ./{name} && rm -rf ./.build",
-            name = name
+            "cp ./.build/release/{name} ./{name} && rm -rf ./.build"
         ));
 
         let name = SwiftProvider::get_executable_name(app)?;

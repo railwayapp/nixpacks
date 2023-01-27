@@ -27,8 +27,7 @@ impl Provider for CSharpProvider {
         let setup = Phase::setup(Some(vec![Pkg::new("dotnet-sdk")]));
         let install = Phase::install(Some("dotnet restore".to_string()));
         let build = Phase::build(Some(format!(
-            "dotnet publish --no-restore -c Release -o {}",
-            ARTIFACT_DIR
+            "dotnet publish --no-restore -c Release -o {ARTIFACT_DIR}"
         )));
 
         let csproj = &app.find_files("*.csproj")?[0].with_extension("");

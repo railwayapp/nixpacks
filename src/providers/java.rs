@@ -58,8 +58,7 @@ impl Provider for JavaProvider {
             let setup = Phase::setup(Some(vec![jdk_pkg, Pkg::new("maven")]));
 
             let mvn_exe = self.get_maven_exe(app);
-            let mut build = Phase::build(Some(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", 
-                mvn_exe=mvn_exe
+            let mut build = Phase::build(Some(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install"
             )));
             build.add_cache_directory(".m2/repository");
             build.depends_on_phase("setup");

@@ -95,9 +95,7 @@ impl RustProvider {
 
                 build.add_cmd(build_cmd);
                 build.add_cmd(format!(
-                    "cp target/{}/release/{name} bin",
-                    target,
-                    name = workspace
+                    "cp target/{target}/release/{workspace} bin"
                 ));
             } else {
                 write!(build_cmd, " --target {target}")?;
@@ -105,9 +103,7 @@ impl RustProvider {
                 if let Some(name) = RustProvider::get_app_name(app)? {
                     build.add_cmd(build_cmd);
                     build.add_cmd(format!(
-                        "cp target/{}/release/{name} bin",
-                        target,
-                        name = name
+                        "cp target/{target}/release/{name} bin"
                     ));
                 }
             }
@@ -200,15 +196,13 @@ impl RustProvider {
     fn get_rust_pkg(app: &App, env: &Environment) -> Result<Pkg> {
         if let Some(version) = env.get_config_variable("RUST_VERSION") {
             return Ok(Pkg::new(&format!(
-                "rust-bin.stable.\"{}\".default",
-                version
+                "rust-bin.stable.\"{version}\".default"
             )));
         }
 
         if let Some(toolchain_file) = RustProvider::get_rust_toolchain_file(app) {
             return Ok(Pkg::new(&format!(
-                "(rust-bin.fromRustupToolchainFile ../{})",
-                toolchain_file
+                "(rust-bin.fromRustupToolchainFile ../{toolchain_file})"
             )));
         }
 
