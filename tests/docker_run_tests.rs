@@ -21,7 +21,7 @@ async fn get_container_ids_from_image(image: &str) -> String {
         .arg("-a")
         .arg("-q")
         .arg("--filter")
-        .arg(format!("ancestor={}", image))
+        .arg(format!("ancestor={image}"))
         .output()
         .expect("failed to execute docker ps");
 
@@ -76,7 +76,7 @@ async fn run_image(name: &str, cfg: Option<Config>) -> String {
     if let Some(config) = cfg {
         for (key, value) in config.environment_variables {
             // arg must be processed as str or else we get extra quotes
-            let arg = format!("{}={}", key, value);
+            let arg = format!("{key}={value}");
             cmd.arg("-e").arg(arg);
         }
         if let Some(network) = config.network {
@@ -200,7 +200,7 @@ fn run_postgres() -> Container {
     let mut docker_cmd = Command::new("docker");
 
     let hash = Uuid::new_v4().to_string();
-    let container_name = format!("postgres-{}", hash);
+    let container_name = format!("postgres-{hash}");
     let password = hash;
     let port = "5432";
     // run
@@ -239,10 +239,7 @@ fn run_postgres() -> Container {
                 ("PGHOST".to_string(), container_name.clone()),
                 (
                     "DATABASE_URL".to_string(),
-                    format!(
-                        "postgresql://postgres:{}@{}:{}/postgres",
-                        password, container_name, port
-                    ),
+                    format!("postgresql://postgres:{password}@{container_name}:{port}/postgres"),
                 ),
             ]),
             network: None,
@@ -254,7 +251,7 @@ fn run_mysql() -> Container {
     let mut docker_cmd = Command::new("docker");
 
     let hash = Uuid::new_v4().to_string();
-    let container_name = format!("mysql-{}", hash);
+    let container_name = format!("mysql-{hash}");
     let password = hash;
     // run
     docker_cmd.arg("run");
@@ -338,7 +335,7 @@ async fn test_elixir_no_ecto() {
         .take(64)
         .map(char::from)
         .collect();
-    let secret_env = format!("SECRET_KEY_BASE={}", rand_64_str);
+    let secret_env = format!("SECRET_KEY_BASE={rand_64_str}");
     let name = build_with_build_time_env_vars(
         "./examples/elixir_no_ecto",
         vec![&*secret_env, "MIX_ENV=prod"],

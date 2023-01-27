@@ -124,8 +124,7 @@ fn nix_expression_for_group(group: &NixGroup) -> String {
         .join("\n");
 
     let pkg_import = format!(
-        "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{}.tar.gz\")",
-        archive
+        "import (fetchTarball \"https://github.com/NixOS/nixpkgs/archive/{archive}.tar.gz\")"
     );
 
     // If the openssl library is added, set the OPENSSL_DIR and OPENSSL_LIB_DIR environment variables

@@ -66,8 +66,7 @@ impl ZigProvider {
         let gyro_supported_archs: Vec<&str> = vec!["x86_64", "aarch64", "i386"];
         if gyro_supported_archs.contains(&ARCH) {
             format!(
-                "https://github.com/mattnite/gyro/releases/download/{}/gyro-{}-linux-{}.tar.gz",
-                GYRO_VERSION, GYRO_VERSION, ARCH
+                "https://github.com/mattnite/gyro/releases/download/{GYRO_VERSION}/gyro-{GYRO_VERSION}-linux-{ARCH}.tar.gz"
             )
         } else {
             panic!("Gyro is not supported on your architecture ({ARCH}).")
