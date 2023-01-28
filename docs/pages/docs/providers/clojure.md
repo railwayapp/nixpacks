@@ -4,7 +4,7 @@ title: Clojure
 
 # {% $markdoc.frontmatter.title %}
 
-Clojure is detected if a `project.clj` file is found.
+Clojure is detected if a `project.clj` or `build.clj` file is found.
 
 ## Setup
 
@@ -21,7 +21,12 @@ The version can be overriden by
 
 ## Build
 
-If `lein-ring` plugin detected
+If a `build.clj` file for [`tools.build`](https://clojure.org/guides/tools_build) is found:
+```
+clojure -T:build uber; if [ -f /app/target/uberjar/*standalone.jar ]; then mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi
+```
+
+If the `lein-ring` plugin is found:
 
 ```
 lein ring uberjar; if [ -f /app/target/uberjar/*standalone.jar ]; then mv /app/target/uberjar/standalone.jar /app/target/*standalone.jar; fi

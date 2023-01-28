@@ -906,6 +906,13 @@ async fn test_clojure_ring_app() {
 }
 
 #[tokio::test]
+async fn test_clojure_tools_build() {
+    let name = simple_build("./examples/clojure-tools-build").await;
+    let output = run_image(&name, None).await;
+    assert_eq!(output, "Hello, World From Clojure!");
+}
+
+#[tokio::test]
 async fn test_cobol() {
     let name = simple_build("./examples/cobol").await;
     let output = run_image(&name, None).await;

@@ -1,0 +1,7 @@
+{:paths ["src"] ;; project paths
+ :deps {}       ;; project deps
+
+ :aliases
+ {;; Run with clj -T:build function-in-build
+  :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.2" :git/sha "fe6b140"}}
+          :ns-default build}}}
