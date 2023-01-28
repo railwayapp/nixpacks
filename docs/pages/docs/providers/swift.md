@@ -21,7 +21,7 @@ The following Swift versions are available
 - `3.1`
 - `3.1.1`
 
-The version can be overriden by
+The version can be overridden by
 
 - Setting the version in a `.swift-version` file
 - Specifying a `swift-tools-version` field in `Package.swift`

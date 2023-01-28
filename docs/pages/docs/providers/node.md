@@ -24,7 +24,7 @@ The following major versions are available
 - `16` (Default)
 - `18`
 
-The version can be overriden by
+The version can be overridden by
 
 - Setting the `NIXPACKS_NODE_VERSION` environment variable
 - Specifying the `engines.node` field in `package.json`

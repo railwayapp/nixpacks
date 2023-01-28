@@ -14,7 +14,7 @@ The following JDK versions are available
 - `11`
 - `latest`
 
-The version can be overriden by
+The version can be overridden by
 
 - Setting the `NIXPACKS_JDK_VERSION` environment variable
 - Setting the version in a `.jdk-version` file
