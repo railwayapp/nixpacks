@@ -17,18 +17,18 @@ The following major JDK versions are available
 - `11`
 - `8`
 
-The version can be overriden by setting the `NIXPACKS_JDK_VERSION` environment variable.
+The version can be overridden by setting the `NIXPACKS_JDK_VERSION` environment variable.
 
 ### Gradle
 
-The following major Gradle verions are available
+The following major Gradle versions are available
 
 - `7` (Default)
 - `6`
 - `5`
 - `4`
 
-The version can be overriden by setting the `NIXPACKS_GRADLE_VERSION` environment variable.
+The version can be overridden by setting the `NIXPACKS_GRADLE_VERSION` environment variable.
 
 ## Build
 

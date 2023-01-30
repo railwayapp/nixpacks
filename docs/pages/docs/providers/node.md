@@ -24,7 +24,7 @@ The following major versions are available
 - `16` (Default)
 - `18`
 
-The version can be overriden by
+The version can be overridden by
 
 - Setting the `NIXPACKS_NODE_VERSION` environment variable
 - Specifying the `engines.node` field in `package.json`
@@ -37,7 +37,7 @@ If [node-canvas](https://www.npmjs.com/package/canvas) is found in the `package.
 
 ## Install
 
-All dependencies found in `packages.json` are installed with either NPM, Yarn, PNPM, or Bun (depending on the lockfile detected).
+All dependencies found in `package.json` are installed with either NPM, Yarn, PNPM, or Bun (depending on the lockfile detected).
 
 ## Build
 

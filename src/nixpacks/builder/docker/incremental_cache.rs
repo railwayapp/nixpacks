@@ -135,8 +135,7 @@ impl IncrementalCache {
                     .join("/");
 
                 vec![format!(
-                    "COPY --from={} {} {}",
-                    incremental_cahge_image, target_cache_dir_optional, target_cache_dir
+                    "COPY --from={incremental_cahge_image} {target_cache_dir_optional} {target_cache_dir}"
                 )]
             })
             .collect::<Vec<String>>()

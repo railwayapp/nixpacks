@@ -21,21 +21,22 @@ impl Provider for ClojureProvider {
     }
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
-        Ok(app.includes_file("project.clj"))
+        Ok(self.is_using_lein(app) || self.is_using_tools_build(app))
     }
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         let setup = Phase::setup(Some(vec![
-            Pkg::new("leiningen"),
+            if self.is_using_tools_build(app) {
+                Pkg::new("clojure")
+            } else {
+                Pkg::new("leiningen")
+            },
             ClojureProvider::get_nix_jdk_package(app, env)?,
         ]));
 
-        let has_lein_ring_plugin = app
-            .read_file("project.clj")?
-            .to_lowercase()
-            .contains("[lein-ring ");
-
-        let build_cmd = if has_lein_ring_plugin {
+        let build_cmd = if self.is_using_tools_build(app) {
+            "clojure -T:build uber"
+        } else if self.has_lein_ring_plugin(app) {
             "lein ring uberjar"
         } else {
             "lein uberjar"
@@ -54,6 +55,23 @@ impl Provider for ClojureProvider {
 }
 
 impl ClojureProvider {
+    fn has_lein_ring_plugin(&self, app: &App) -> bool {
+        self.is_using_lein(app)
+            && app
+                .read_file("project.clj")
+                .unwrap_or_default()
+                .to_lowercase()
+                .contains("[lein-ring ")
+    }
+
+    fn is_using_lein(&self, app: &App) -> bool {
+        app.includes_file("project.clj")
+    }
+
+    fn is_using_tools_build(&self, app: &App) -> bool {
+        app.includes_file("build.clj")
+    }
+
     fn get_custom_version(app: &App, env: &Environment) -> Result<String> {
         // Fetch version from configs
         let mut custom_version = env.get_config_variable("JDK_VERSION");

@@ -17,7 +17,7 @@ The following Python versions are available
 - `3.7`
 - `2.7`
 
-The version can be overriden by
+The version can be overridden by
 
 - Setting the `NIXPACKS_PYTHON_VERSION` environment variable
 - Setting the version in a `.python-version` file

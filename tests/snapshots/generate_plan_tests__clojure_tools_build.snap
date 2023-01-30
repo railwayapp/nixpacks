@@ -1,0 +1,35 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "clojure"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install",
+        "setup"
+      ],
+      "cmds": [
+        "clojure -T:build uber; if [ -f /app/target/default+uberjar/*standalone.jar ]; then mv /app/target/default+uberjar/*standalone.jar /app/target/*standalone.jar; fi"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "clojure",
+        "jdk8"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "bash -c \"java $JAVA_OPTS -jar /app/target/*standalone.jar\""
+  }
+}
