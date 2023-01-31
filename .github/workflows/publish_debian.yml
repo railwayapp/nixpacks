@@ -47,7 +47,7 @@ jobs:
         run: echo "::set-output name=date::$(date +%s)"
       
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: base/debian
           platforms: linux/arm64, linux/amd64, linux/386
@@ -78,7 +78,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
            
       - name: Build and push to Docker Hub
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: base/debian
           platforms: linux/arm64, linux/amd64, linux/386
