@@ -35,6 +35,9 @@ cargo build --release
 
 ## Start
 
+If your project has multiple binaries, you can specify which one to run with the `NIXPACKS_RUST_BIN` environment variable.
+Optionally, it can override with the `default_run` property in `Cargo.toml` under the `[package]` section.
+
 ```
 ./target/release/{name}
 ```
