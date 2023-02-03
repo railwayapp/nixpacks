@@ -94,32 +94,14 @@ impl RustProvider {
                 write!(build_cmd, " --package {workspace} --target {target}")?;
 
                 build.add_cmd(build_cmd);
-<<<<<<< HEAD
                 build.add_cmd(format!("cp target/{target}/release/{workspace} bin"));
-            } else {
-                write!(build_cmd, " --target {target}")?;
-
-                if let Some(name) = RustProvider::get_app_name(app)? {
-                    build.add_cmd(build_cmd);
-                    build.add_cmd(format!("cp target/{target}/release/{name} bin"));
-=======
-                build.add_cmd(format!(
-                    "cp target/{}/release/{name} bin",
-                    target,
-                    name = workspace
-                ));
             } else if let Some(bins) = RustProvider::get_bins(app)? {
                 write!(build_cmd, " --target {target}")?;
 
                 build.add_cmd(build_cmd);
 
                 for bin in bins {
-                    build.add_cmd(format!(
-                        "cp target/{}/release/{name} bin",
-                        target,
-                        name = bin
-                    ));
->>>>>>> ed46036 (feat: add support for multiple rust binaries)
+                    build.add_cmd(format!("cp target/{target}/release/{bin} bin"));
                 }
             }
         } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
@@ -130,7 +112,7 @@ impl RustProvider {
             build.add_cmd(build_cmd);
 
             for bin in bins {
-                build.add_cmd(format!("cp target/release/{name} bin", name = bin));
+                build.add_cmd(format!("cp target/release/{bin} bin"));
             }
         }
 
@@ -221,7 +203,7 @@ impl RustProvider {
                 let found_bin = bins
                     .into_iter()
                     .find(|bin| bin == &env_bin_name)
-                    .context(format!("Could not find binary named {}", env_bin_name))?;
+                    .context(format!("Could not find binary named {env_bin_name}"))?;
 
                 bin = Some(found_bin);
             } else if let Some(found_bin) = RustProvider::parse_cargo_toml(app)?
@@ -232,7 +214,7 @@ impl RustProvider {
             }
 
             if let Some(bin) = bin {
-                Ok(Some(format!("./bin/{}", bin)))
+                Ok(Some(format!("./bin/{bin}")))
             } else {
                 Ok(None)
             }
