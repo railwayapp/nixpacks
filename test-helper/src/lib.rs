@@ -13,6 +13,7 @@ const IGNORE: &[&str] = &[
     "rust-custom-toolchain",
     "rust-cargo-workspaces",
     "rust-cargo-workspaces-glob",
+    "rust-multiple-bins",
     "ruby-no-version",
 ];
 
