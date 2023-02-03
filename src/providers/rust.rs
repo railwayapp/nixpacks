@@ -95,21 +95,25 @@ impl RustProvider {
 
                 build.add_cmd(build_cmd);
                 build.add_cmd(format!("cp target/{target}/release/{workspace} bin"));
-            } else {
+            } else if let Some(bins) = RustProvider::get_bins(app)? {
                 write!(build_cmd, " --target {target}")?;
 
-                if let Some(name) = RustProvider::get_app_name(app)? {
-                    build.add_cmd(build_cmd);
-                    build.add_cmd(format!("cp target/{target}/release/{name} bin"));
+                build.add_cmd(build_cmd);
+
+                for bin in bins {
+                    build.add_cmd(format!("cp target/{target}/release/{bin} bin"));
                 }
             }
         } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
             write!(build_cmd, " --package {workspace}")?;
             build.add_cmd(build_cmd);
             build.add_cmd(format!("cp target/release/{workspace} bin"));
-        } else if let Some(name) = RustProvider::get_app_name(app)? {
+        } else if let Some(bins) = RustProvider::get_bins(app)? {
             build.add_cmd(build_cmd);
-            build.add_cmd(format!("cp target/release/{name} bin"));
+
+            for bin in bins {
+                build.add_cmd(format!("cp target/release/{bin} bin"));
+            }
         }
 
         build.add_cache_directory(CARGO_GIT_CACHE_DIR.to_string());
@@ -123,6 +127,36 @@ impl RustProvider {
         Ok(build)
     }
 
+    fn get_bins(app: &App) -> Result<Option<Vec<String>>> {
+        let mut bins = vec![];
+
+        if app.includes_directory("src/bin") {
+            let find_bins = app.find_files("src/bin/*")?;
+
+            for bin in find_bins {
+                let bin_name = bin
+                    .file_name()
+                    .context("Could not get file name for bin")?
+                    .to_str()
+                    .context("Could not convert bin name to string")?
+                    .split('.')
+                    .collect::<Vec<_>>();
+
+                let bin_name = bin_name[0..bin_name.len() - 1].join(".");
+
+                bins.push(bin_name);
+            }
+
+            return Ok(Some(bins));
+        } else if let Some(name) = RustProvider::get_app_name(app)? {
+            bins.push(name);
+
+            return Ok(Some(bins));
+        }
+
+        Ok(None)
+    }
+
     fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if (RustProvider::get_target(app, env)?).is_some() {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
@@ -131,19 +165,18 @@ impl RustProvider {
                 start.add_file_dependency(format!("./bin/{workspace}"));
 
                 Ok(Some(start))
-            } else if let Some(name) = RustProvider::get_app_name(app)? {
-                let mut start = StartPhase::new(format!("./bin/{name}"));
+            } else if let Some(bin) = RustProvider::get_start_bin(app, env)? {
+                let mut start = StartPhase::new(bin.clone());
                 start.run_in_slim_image();
-                start.add_file_dependency(format!("./bin/{name}"));
-
+                start.add_file_dependency(bin);
                 Ok(Some(start))
             } else {
                 Ok(None)
             }
         } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
             Ok(Some(StartPhase::new(format!("./bin/{workspace}"))))
-        } else if let Some(name) = RustProvider::get_app_name(app)? {
-            Ok(Some(StartPhase::new(format!("./bin/{name}"))))
+        } else if let Some(bin) = RustProvider::get_start_bin(app, env)? {
+            Ok(Some(StartPhase::new(bin)))
         } else {
             Ok(None)
         }
@@ -158,6 +191,36 @@ impl RustProvider {
         }
 
         Ok(None)
+    }
+
+    fn get_start_bin(app: &App, env: &Environment) -> Result<Option<String>> {
+        if let Some(bins) = RustProvider::get_bins(app)? {
+            let mut bin: Option<String> = None;
+
+            if bins.len() == 1 {
+                bin = Some(bins[0].clone());
+            } else if let Some(env_bin_name) = env.get_config_variable("RUST_BIN") {
+                let found_bin = bins
+                    .into_iter()
+                    .find(|bin| bin == &env_bin_name)
+                    .context(format!("Could not find binary named {env_bin_name}"))?;
+
+                bin = Some(found_bin);
+            } else if let Some(found_bin) = RustProvider::parse_cargo_toml(app)?
+                .and_then(|manifest| manifest.package)
+                .and_then(|package| package.default_run)
+            {
+                bin = Some(found_bin);
+            }
+
+            if let Some(bin) = bin {
+                Ok(Some(format!("./bin/{bin}")))
+            } else {
+                Ok(None)
+            }
+        } else {
+            Ok(None)
+        }
     }
 
     fn get_target(app: &App, env: &Environment) -> Result<Option<String>> {
