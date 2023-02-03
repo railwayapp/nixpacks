@@ -721,7 +721,7 @@ async fn test_rust_cargo_workspaces_glob() {
 
 #[tokio::test]
 async fn test_rust_multiple_bins() {
-    let name = simple_build("./examples/rust-test-multiple-bins").await;
+    let name = simple_build("./examples/rust-multiple-bins").await;
     let output = run_image(&name, None).await;
     assert!(output.contains("Bin 1"));
 }
