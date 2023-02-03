@@ -12,6 +12,7 @@ pub mod fsharp;
 pub mod go;
 pub mod haskell;
 pub mod java;
+pub mod scala;
 pub mod node;
 pub mod php;
 pub mod procfile;

@@ -39,7 +39,7 @@ use providers::{
     fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
     node::NodeProvider, php::PhpProvider, python::PythonProvider, ruby::RubyProvider,
     rust::RustProvider, staticfile::StaticfileProvider, swift::SwiftProvider, zig::ZigProvider,
-    Provider,
+    Provider, scala::ScalaProvider,
 };
 
 mod chain;
@@ -59,6 +59,7 @@ pub fn get_providers() -> &'static [&'static (dyn Provider)] {
         &GolangProvider {},
         &HaskellStackProvider {},
         &JavaProvider {},
+        &ScalaProvider {},
         &PhpProvider {},
         &RubyProvider {},
         &NodeProvider {},
