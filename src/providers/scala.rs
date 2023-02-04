@@ -15,7 +15,7 @@ pub struct ScalaProvider {}
 /**
  * Scala provider currently supports sbt.
  * - The sbt project requires sbt-native-packager, a popular packaging
- *   tool used by the community to package the. Setting executableScriptName and
+ *   tool used by the community to package apps. Setting executableScriptName and
  *   enabling the JavaAppPackaging plugin are required. Please check examples/scala-sbt
  *   for an example.
  *
