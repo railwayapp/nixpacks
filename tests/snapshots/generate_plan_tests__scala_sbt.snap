@@ -1,0 +1,40 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "scala"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install",
+        "setup"
+      ],
+      "cmds": [
+        "sbt stage"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/coursier",
+        "/root/.ivy2/cache",
+        "/root/.sbt"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "sbt",
+        "jdk"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "./target/universal/stage/bin/main"
+  }
+}

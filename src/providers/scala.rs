@@ -96,9 +96,6 @@ mod tests {
     fn test_sbt_package() {
         let scala = ScalaProvider {};
 
-        assert_eq!(
-            scala.is_using_sbt(&App::new("examples/scala-sbt").unwrap()),
-            false
-        );
+        assert!(!scala.is_using_sbt(&App::new("examples/scala-sbt").unwrap()),);
     }
 }
