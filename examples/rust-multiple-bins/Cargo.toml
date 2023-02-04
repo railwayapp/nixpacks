@@ -1,0 +1,9 @@
+[package]
+name = "rust-multiple-bins"
+version = "0.1.0"
+edition = "2021"
+default-run = "bin1"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
