@@ -816,6 +816,13 @@ async fn test_java_maven() {
 }
 
 #[tokio::test]
+async fn test_scala_sbt() {
+    let name = simple_build("./examples/scala-sbt").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("I was compiled by Scala 3"));
+}
+
+#[tokio::test]
 async fn test_zig() {
     let name = simple_build("./examples/zig").await;
     let output = run_image(&name, None).await;
