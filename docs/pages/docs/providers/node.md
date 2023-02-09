@@ -41,7 +41,9 @@ All dependencies found in `package.json` are installed with either NPM, Yarn, PN
 
 ## Build
 
-The build script found in `package.json` if it exists or if its an NX Monorepo `(npm|pnpm|yarn|bun) run build <NxAppName> --configuration=production`.
+The build script found in `package.json` if it exists.
+
+Or, if it's an NX Monorepo (detected if `nx.json` existis), the `build` pipeline for the `NIXPACKS_NX_APP_NAME` app will be called. Otherwise, it will run build for the `default_project` in `nx.json`. The build command is `(npm|pnpm|yarn|bun) run build <NxAppName>:build:production`.
 
 Or, if it's a Turborepo monorepo (detected if `turbo.json` exists), the `build` pipeline will be called (if it exists). Otherwise, the `build` script of the `package.json` referenced by `NIXPACKS_TURBO_APP_NAME` will be called, if `NIXPACKS_TURBO_APP_NAME` is provided. Otherwise, it will fall back to the build script found in `package.json` at the monorepos root.
 
@@ -50,6 +52,7 @@ Or, if it's a Turborepo monorepo (detected if `turbo.json` exists), the `build` 
 The start command priority is
 
 - If its an NX Monorepo
+  - It will use `NIXPACKS_NX_APP_NAME` for the app name if provided, otherwise it will use the `default_project` from `nx.json`
   - If the app has a `start` target `npx nx run <appName>:start:production` or just `npx nx run <appName>:start` if no production configuration is present
   - If the app is a NextJS project: `npm run start`
   - If `targets.build.options.main` exists in the apps `Project.json`: `node <outputPath>/<mainFileName>.js` (e.g `node dist/apps/my-app/main.js`)
