@@ -130,6 +130,13 @@ impl RustProvider {
     fn get_bins(app: &App) -> Result<Option<Vec<String>>> {
         let mut bins = vec![];
 
+        // Support the main bin
+        if let Some(name) = RustProvider::get_app_name(app)? {
+            if app.includes_file("src/main.rs") {
+                bins.push(name);
+            }
+        }
+
         if app.includes_directory("src/bin") {
             let find_bins = app.find_files("src/bin/*")?;
 
@@ -146,11 +153,9 @@ impl RustProvider {
 
                 bins.push(bin_name);
             }
+        }
 
-            return Ok(Some(bins));
-        } else if let Some(name) = RustProvider::get_app_name(app)? {
-            bins.push(name);
-
+        if bins.len() > 0 {
             return Ok(Some(bins));
         }
 
