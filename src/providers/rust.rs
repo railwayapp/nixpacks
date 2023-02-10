@@ -155,11 +155,11 @@ impl RustProvider {
             }
         }
 
-        if bins.len() > 0 {
-            return Ok(Some(bins));
+        if bins.is_empty() {
+            return Ok(None);
         }
 
-        Ok(None)
+        Ok(Some(bins))
     }
 
     fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
