@@ -44,9 +44,14 @@ impl Provider for ScalaProvider {
             build.add_cache_directory("/root/.cache/coursier");
             build.depends_on_phase("setup");
 
-            let start_cmd = self.get_start_cmd(app).map(StartPhase::new);
+            let start_phase = self.get_start_cmd(app).map(StartPhase::new).map(|phase| {
+                let mut updated_phase = phase;
+                updated_phase.run_in_image("eclipse-temurin:17.0.5_8-jre-jammy".to_string());
+                updated_phase.add_file_dependency("./target/universal");
+                updated_phase
+            });
 
-            let plan = BuildPlan::new(&vec![setup, build], start_cmd);
+            let plan = BuildPlan::new(&vec![setup, build], start_phase);
             Ok(Some(plan))
         } else {
             Ok(None)
