@@ -84,7 +84,7 @@ jobs:
       matrix: ${{ steps.docker-prep.outputs.matrix }}
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
-      - name: Cancel Previous Runs
+      - name: Cancel FPrevious Runs
         uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
@@ -99,7 +99,7 @@ jobs:
           toolchain: stable
           override: true
 
-      - uses: Swatinem/rust-cache@2
+      - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
