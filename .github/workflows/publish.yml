@@ -3,17 +3,17 @@ on:
     branches:
       - main
     paths:
-      - 'base/debian/*'
+      - 'base/publish/*'
   pull_request:
     branches:
       - main
     paths:
-      - 'base/debian/*'
+      - 'base/publish/*'
   schedule:
     - cron:  '0 0 * * 2'
   workflow_dispatch:
 
-name: Publish Debian Base Images
+name: Publish Debian & Ubuntu Base Images
 
 jobs:
   debian:
@@ -46,7 +46,7 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +%s)"
       
-      - name: Build and push
+      - name: Build and push [Debian]
         uses: docker/build-push-action@v4
         with:
           context: base/debian
@@ -54,10 +54,19 @@ jobs:
           push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           tags: ghcr.io/railwayapp/nixpacks:debian, ghcr.io/railwayapp/nixpacks:latest, ghcr.io/railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
       
+      - name: Build and push [Ubuntu]
+        uses: docker/build-push-action@v4
+        with:
+          context: base/ubuntu
+          platforms: linux/arm64, linux/amd64
+          push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+          tags: ghcr.io/railwayapp/nixpacks:ubuntu, ghcr.io/railwayapp/nixpacks:ubuntu-${{ steps.date.outputs.date }}
+      
       - name: Bump base image
         if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         run: |
           sed -i 's/nixpacks:debian-.*/nixpacks:debian-${{ steps.date.outputs.date }}";/g' src/nixpacks/images.rs
+          sed -i 's/nixpacks:ubuntu-.*/nixpacks:ubuntu-${{ steps.date.outputs.date }}";/g' src/nixpacks/images.rs
       
       - name: Create Pull Request
         if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
@@ -66,9 +75,9 @@ jobs:
           base: main
           token: ${{ secrets.COMMITTER_TOKEN }}
           commit-message: Bump base image
-          branch: debian-${{ steps.date.outputs.date }}
+          branch: publish-${{ steps.date.outputs.date }}
           delete-branch: true
-          title: Bump Debian base image to `debian-${{ steps.date.outputs.date }}`
+          title: Bump base images to `debian-${{ steps.date.outputs.date }}`
           labels: release/patch
           
       - name: Login to Docker Hub
@@ -77,10 +86,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
            
-      - name: Build and push to Docker Hub
+      - name: Build and push to Docker Hub [Debian]
         uses: docker/build-push-action@v4
         with:
           context: base/debian
           platforms: linux/arm64, linux/amd64, linux/386
           push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           tags: railwayapp/nixpacks:debian, railwayapp/nixpacks:latest, railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
+
+      - name: Build and push to Docker Hub [Ubuntu]
+        uses: docker/build-push-action@v4
+        with:
+          context: base/ubuntu
+          platforms: linux/arm64, linux/amd64
+          push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+          tags: railwayapp/nixpacks:ubuntu, railwayapp/nixpacks:ubuntu-${{ steps.date.outputs.date }}
