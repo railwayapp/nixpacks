@@ -85,7 +85,8 @@ impl NixpacksBuildPlanGenerator<'_> {
                 // there is 1 sub dir, try and generate a plan from that
                 let paths = app.paths.clone();
                 let new_dir = paths.iter().find(|p| p.is_dir()).unwrap();
-                return self.get_build_plan(&App::new(new_dir.display().to_string().as_str())?, env);
+                return self
+                    .get_build_plan(&App::new(new_dir.display().to_string().as_str())?, env);
             }
         }
         Ok(plan)
