@@ -4,7 +4,6 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
-    nix::pkg::Pkg,
     plan::{
         phase::{Phase, StartPhase},
         BuildPlan,
@@ -33,7 +32,8 @@ impl Provider for CobolProvider {
         app: &App,
         environment: &Environment,
     ) -> anyhow::Result<Option<crate::nixpacks::plan::BuildPlan>> {
-        let setup = Phase::setup(Some(vec![Pkg::new("gnu-cobol"), Pkg::new("gcc")]));
+        let mut setup = Phase::setup(None);
+        setup.add_apt_pkgs(vec!["gnucobol".to_string(), "gcc".to_string()]);
 
         let compile_args = environment
             .get_config_variable(COBOL_COMPILE_ARGS)
