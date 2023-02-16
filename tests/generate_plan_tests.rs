@@ -85,6 +85,14 @@ fn test_rust_cargo_workspaces() {
 }
 
 #[test]
+fn test_rust_multiple_bins() {
+    let plan = simple_gen_plan("./examples/rust-multiple-bins");
+    let build = plan.get_phase("build").unwrap();
+
+    assert_eq!(build.clone().cmds.unwrap().len(), 5);
+}
+
+#[test]
 fn test_haskell_stack() {
     let plan = simple_gen_plan("./examples/haskell-stack");
     let install = plan.get_phase("install").unwrap();
