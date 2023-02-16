@@ -21,12 +21,10 @@ expression: plan
     },
     "setup": {
       "name": "setup",
-      "nixPkgs": [
-        "gnu-cobol",
+      "aptPkgs": [
+        "gnucobol",
         "gcc"
-      ],
-      "nixOverlays": [],
-      "nixpkgsArchive": "[archive]"
+      ]
     }
   },
   "start": {
