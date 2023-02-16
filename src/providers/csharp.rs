@@ -134,7 +134,7 @@ mod test {
 
     #[test]
     fn test_version_from_environment_variable() -> Result<()> {
-        let expected_sdk_name = "dotnet-sdk_6_0";
+        let expected_sdk_name = "dotnet-sdk";
         assert_eq!(
             CSharpProvider::get_sdk_version(
                 &App::new("./examples/csharp-cli")?,
