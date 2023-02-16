@@ -93,7 +93,7 @@ impl CSharpProvider {
             .unwrap_or(6); // split by '.', get first item, attempt to parse to u8, if not default to 6
         match version_number {
             6 => Ok("dotnet-sdk".to_string()),
-            _ => Ok(format!("dotnet-sdk-{version_number}")),
+            _ => Ok(format!("dotnet-sdk_{version_number}")),
         }
     }
 }
