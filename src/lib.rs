@@ -105,25 +105,17 @@ pub async fn create_docker_image(
     plan_options: &GeneratePlanOptions,
     build_options: &DockerBuilderOptions,
 ) -> Result<()> {
-    let mut app = App::new(path)?;
+    let app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
+    let orig_path = app.source.clone();
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
-    let planned = generator.generate_plan(&app, &environment)?;
-    let plan = planned.0;
-    app = planned.1;
+    let (plan, app) = generator.generate_plan(&app, &environment)?;
 
-    let input_path = std::fs::canonicalize(path)?;
-    let len = input_path.display().to_string().len();
-    let sub = &app.paths.get(0).unwrap().display().to_string()[len..];
-    if sub.split(std::path::MAIN_SEPARATOR).count() > 1 {
-        let mut path = sub.split(std::path::MAIN_SEPARATOR).collect::<Vec<&str>>();
-        path.remove(path.len() - 1);
-        path.remove(0);
-        println!(
-            "Using subdirectory \"{}\"",
-            path.join(std::path::MAIN_SEPARATOR.to_string().as_str())
-        );
+    if let Ok(subdir) = app.source.strip_prefix(orig_path) {
+        if subdir != std::path::Path::new("") {
+            println!("Using subdirectory \"{}\"", subdir.to_str().unwrap());
+        }
     }
 
     let logger = Logger::new();
