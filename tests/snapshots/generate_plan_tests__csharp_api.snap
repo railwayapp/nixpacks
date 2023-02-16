@@ -33,7 +33,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "dotnet-sdk_7_0"
+        "dotnet-sdk_7"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]"
