@@ -99,16 +99,7 @@ jobs:
           toolchain: stable
           override: true
 
-      # Use stupid caching in this instance
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: Swatinem/rust-cache@2
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
@@ -145,7 +136,16 @@ jobs:
           toolchain: stable
           override: true
 
-      - uses: Swatinem/rust-cache@v2
+      # Use stupid caching in this instance
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
