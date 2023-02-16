@@ -1028,6 +1028,6 @@ async fn test_django_pipfile() {
 
 #[tokio::test]
 async fn test_nested_directory() {
-    let name = simple_build("./examples/node").await;
+    let name = simple_build("./examples/nested").await;
     assert!(run_image(&name, None).await.contains("Nested directories!"));
 }
