@@ -30,7 +30,7 @@ pub struct NixpacksBuildPlanGenerator<'a> {
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
-    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan> {
+    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<(BuildPlan, App)> {
         // If the provider defines a build plan in the new format, use that
         let plan = self.get_build_plan(app, environment)?;
 
@@ -54,7 +54,7 @@ impl NixpacksBuildPlanGenerator<'_> {
     }
 
     /// Get a build plan from the provider and by applying the config from the environment
-    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<(BuildPlan, App)> {
         let plan_before_providers = self.get_plan_before_providers(app, env)?;
 
         // Add the variables from the nixpacks.toml to environment
@@ -89,7 +89,7 @@ impl NixpacksBuildPlanGenerator<'_> {
                     .get_build_plan(&App::new(new_dir.display().to_string().as_str())?, env);
             }
         }
-        Ok(plan)
+        Ok((plan, app.clone()))
     }
 
     fn get_plan_before_providers(&self, app: &App, env: &Environment) -> Result<BuildPlan> {

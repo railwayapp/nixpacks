@@ -83,7 +83,7 @@ pub fn generate_build_plan(
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), options.clone());
     let plan = generator.generate_plan(&app, &environment)?;
 
-    Ok(plan)
+    Ok(plan.0)
 }
 
 pub fn get_plan_providers(
@@ -105,11 +105,13 @@ pub async fn create_docker_image(
     plan_options: &GeneratePlanOptions,
     build_options: &DockerBuilderOptions,
 ) -> Result<()> {
-    let app = App::new(path)?;
+    let mut app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
-    let plan = generator.generate_plan(&app, &environment)?;
+    let planned = generator.generate_plan(&app, &environment)?;
+    let plan = planned.0;
+    app = planned.1;
 
     let logger = Logger::new();
     let builder = DockerImageBuilder::new(logger, build_options.clone());
