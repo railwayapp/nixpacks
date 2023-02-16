@@ -35,6 +35,10 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "./target/universal/stage/bin/main"
+    "cmd": "./target/universal/stage/bin/main",
+    "runImage": "eclipse-temurin:17.0.5_8-jre-jammy",
+    "onlyIncludeFiles": [
+      "./target/universal"
+    ]
   }
 }
