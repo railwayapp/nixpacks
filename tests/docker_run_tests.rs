@@ -1025,3 +1025,9 @@ async fn test_django_pipfile() {
 
     assert!(output.contains("Running migrations"));
 }
+
+#[tokio::test]
+async fn test_nested_directory() {
+    let name = simple_build("./examples/nested").await;
+    assert!(run_image(&name, None).await.contains("Nested directories!"));
+}
