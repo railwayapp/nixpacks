@@ -113,6 +113,19 @@ pub async fn create_docker_image(
     let plan = planned.0;
     app = planned.1;
 
+    let input_path = std::fs::canonicalize(path)?;
+    let len = input_path.display().to_string().len();
+    let sub = &app.paths.get(0).unwrap().display().to_string()[len..];
+    if sub.split(std::path::MAIN_SEPARATOR).count() > 1 {
+        let mut path = sub.split(std::path::MAIN_SEPARATOR).collect::<Vec<&str>>();
+        path.remove(path.len() - 1);
+        path.remove(0);
+        println!(
+            "Using subdirectory \"{}\"",
+            path.join(std::path::MAIN_SEPARATOR.to_string().as_str())
+        );
+    }
+
     let logger = Logger::new();
     let builder = DockerImageBuilder::new(logger, build_options.clone());
 
