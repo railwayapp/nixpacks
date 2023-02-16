@@ -120,7 +120,7 @@ mod test {
 
     #[test]
     fn test_global_json() -> Result<()> {
-        let expected_sdk_name = "dotnet-sdk_7_0";
+        let expected_sdk_name = "dotnet-sdk_7";
         assert_eq!(
             CSharpProvider::get_sdk_version(
                 &App::new("./examples/csharp-api")?,
