@@ -136,7 +136,6 @@ jobs:
           toolchain: stable
           override: true
 
-      # Use stupid caching in this instance
       - uses: actions/cache@v3
         with:
           path: |
