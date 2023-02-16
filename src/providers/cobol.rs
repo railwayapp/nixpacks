@@ -4,7 +4,6 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
-    nix::pkg::Pkg,
     plan::{
         phase::{Phase, StartPhase},
         BuildPlan,
