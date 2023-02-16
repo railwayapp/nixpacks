@@ -7,7 +7,7 @@ pub mod pkg;
 
 // This line is automatically updated.
 // Last Modified: 2023-02-13 17:04:24 UTC+0000
-// null
+// https://github.com/NixOS/nixpkgs/commit/63b5955814db30d2e2ff7157aaa5665b502ed2f4
 pub const NIXPKGS_ARCHIVE: &str = "63b5955814db30d2e2ff7157aaa5665b502ed2f4";
 
 // Version of the Nix archive that uses OpenSSL 1.1
