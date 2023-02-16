@@ -4,7 +4,8 @@ on:
   schedule:
     # Every Monday at 5 PM (UTC)
     - cron: '0 17 * * 1'
-
+  workflow_dispatch:
+  
 env:
   BRANCH_NAME: auto-update/nixpkgs-archive
   GIT_AUTHOR_NAME: ${{ github.repository_owner }}
