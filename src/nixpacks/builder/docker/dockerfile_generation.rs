@@ -197,7 +197,6 @@ impl DockerfileGenerator for BuildPlan {
         let dockerfile = formatdoc! {"
             FROM {base_image}
 
-            ENTRYPOINT [\"/bin/bash\", \"-l\", \"-c\"]
             WORKDIR {APP_DIR}
 
             {setup_copy_cmds}

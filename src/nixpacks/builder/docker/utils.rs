@@ -58,11 +58,9 @@ pub fn get_copy_from_commands(from: &str, files: &[String], app_dir: &str) -> Ve
             .collect()
     }
 }
-
+    
 pub fn get_exec_command(command: &str) -> String {
-    let params = command.replace('\"', "\\\"");
-
-    format!("CMD [\"{params}\"]")
+    format!("CMD {command}")
 }
 
 #[cfg(test)]
@@ -145,18 +143,23 @@ mod tests {
     #[test]
     fn test_get_exec_cmd() {
         assert_eq!(
-            "CMD [\"command1\"]".to_string(),
+            "CMD command1".to_string(),
             get_exec_command("command1")
         );
 
         assert_eq!(
-            "CMD [\"command1 command2\"]".to_string(),
+            "CMD command1 command2".to_string(),
             get_exec_command("command1 command2")
         );
 
         assert_eq!(
-            "CMD [\"command1 command2 -l \\\"asdf\\\"\"]".to_string(),
+            "CMD command1 command2 -l \"asdf\"".to_string(),
             get_exec_command("command1 command2 -l \"asdf\"")
+        );
+
+        assert_eq!(
+            "CMD command1 command2 \"command 3\"".to_string(),
+            get_exec_command("command1 command2 \"command 3\"")
         );
     }
 }
