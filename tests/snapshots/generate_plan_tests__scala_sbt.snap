@@ -27,8 +27,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "sbt",
-        "jdk"
+        "(sbt.override { jre = jdk17; })"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]"
