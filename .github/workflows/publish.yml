@@ -77,7 +77,7 @@ jobs:
           commit-message: Bump base image
           branch: publish-${{ steps.date.outputs.date }}
           delete-branch: true
-          title: Bump base images to `debian-${{ steps.date.outputs.date }}`
+          title: Bump base images to `${{ steps.date.outputs.date }}`
           labels: release/patch
           
       - name: Login to Docker Hub
