@@ -310,6 +310,7 @@ impl DockerfileGenerator for StartPhase {
                 formatdoc! {"
                   # start
                   FROM {run_image}
+                  ENTRYPOINT [\"/bin/bash\", \"-l\", \"-c\"]
                   WORKDIR {APP_DIR}
                   COPY --from=0 /etc/ssl/certs /etc/ssl/certs
                   RUN true
