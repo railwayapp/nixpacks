@@ -26,6 +26,7 @@ expression: plan
       ]
     },
     "install": {
+      "name": "install",
       "dependsOn": [
         "setup"
       ],
@@ -36,7 +37,7 @@ expression: plan
       ]
     },
     "setup": {
-      "name: "setup",
+      "name": "setup",
       "nixPkgs": [
         "php81",
         "perl",
