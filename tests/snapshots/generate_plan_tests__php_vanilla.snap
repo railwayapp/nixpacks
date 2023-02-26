@@ -16,7 +16,6 @@ expression: plan
   },
   "phases": {
     "install": {
-      "name": "install",
       "dependsOn": [
         "setup"
       ],
@@ -25,7 +24,6 @@ expression: plan
       ]
     },
     "setup": {
-      "name": "setup",
       "nixPkgs": [
         "php",
         "perl",
