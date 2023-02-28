@@ -56,7 +56,7 @@ impl PhpProvider {
             _ => "php".to_string(),
         };
         let mut pkgs = vec![
-            Pkg::new(&php_pkg),
+            Pkg::new(format!("({}.withExtensions ({{ enabled, all }}:\nenabled ++ (map (key: builtins.getAttr key all) (builtins.attrNames all))))", &php_pkg).as_str()),
             Pkg::new("perl"),
             Pkg::new("nginx"),
             Pkg::new(&format!("{}Packages.composer", &php_pkg)),

@@ -39,7 +39,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "php81",
+        "(php81.withExtensions ({ enabled, all }:\nenabled ++ (map (key: builtins.getAttr key all) (builtins.attrNames all))))",
         "perl",
         "nginx",
         "php81Packages.composer",
