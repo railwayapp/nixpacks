@@ -119,6 +119,7 @@ impl RubyProvider {
         ));
 
         setup.add_path("$HOME/.rbenv/bin".to_string());
+        setup.add_path("/app/bin".to_string());
 
         Ok(Some(setup))
     }
@@ -169,6 +170,9 @@ impl RubyProvider {
         let ruby_version = self.get_ruby_version(app, env)?;
         let mut env_vars = EnvironmentVariables::from([
             ("BUNDLE_GEMFILE".to_string(), "/app/Gemfile".to_string()),
+            ("BUNDLE_WITHOUT".to_string(), "test:development".to_string()),
+            ("BUNDLE_CLEAN".to_string(), "1".to_string()),
+            ("BUNDLE_DEPLOYMENT".to_string(), "1".to_string()),
             (
                 "GEM_PATH".to_string(),
                 format!(
@@ -183,6 +187,8 @@ impl RubyProvider {
         ]);
 
         if self.is_rails_app(app) {
+            env_vars.insert("RAILS_ENV".to_string(), "production".to_string());
+            env_vars.insert("SECRET_KEY_BASE".to_string(), "1".to_string());
             env_vars.insert("RAILS_LOG_TO_STDOUT".to_string(), "enabled".to_string());
             env_vars.insert("RAILS_SERVE_STATIC_FILES".to_string(), "1".to_string());
         }
