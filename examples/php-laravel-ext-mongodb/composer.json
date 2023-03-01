@@ -7,6 +7,7 @@
     "require": {
         "php": "^8.1",
         "ext-mongodb": "*",
+        "jenssegers/mongodb": "^3.9",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^9.11",
         "laravel/sanctum": "^2.14.1",

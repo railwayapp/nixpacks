@@ -56,7 +56,22 @@ impl PhpProvider {
             _ => "php".to_string(),
         };
         let mut pkgs = vec![
-            Pkg::new(format!("({}.withExtensions ({{ enabled, all }}:\nenabled ++ (map (key: builtins.getAttr key all) (builtins.attrNames all))))", &php_pkg).as_str()),
+            Pkg::new(
+                format!(
+                    "({}.withExtensions ({{ enabled, all }}:\nenabled ++ [ {} ]))",
+                    &php_pkg,
+                    if let Ok(extensions) = PhpProvider::get_php_extensions(app) {
+                        extensions
+                            .iter()
+                            .map(|name| format!("all.{name}"))
+                            .collect::<Vec<String>>()
+                            .join(" ")
+                    } else {
+                        String::new()
+                    }
+                )
+                .as_str(),
+            ),
             Pkg::new("perl"),
             Pkg::new("nginx"),
             Pkg::new(&format!("{}Packages.composer", &php_pkg)),
@@ -79,7 +94,7 @@ impl PhpProvider {
             "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx".to_string(),
         ));
         if app.includes_file("composer.json") {
-            install.add_cmd("composer install".to_string());
+            install.add_cmd("COMPOSER_ALLOW_SUPERUSER=1 composer install".to_string());
         };
         if app.includes_file("package.json") {
             if let Some(install_cmd) = NodeProvider::get_install_command(app) {
