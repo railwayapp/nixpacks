@@ -3,9 +3,7 @@
 undef $/;
 
 sub if_stmt {
-    my $condition = $_[0];
-    my $value = $_[1];
-    my $else = $_[2];
+    my ($condition, $value, $else) = $_;
 
     if($ENV{$condition} eq "yes") {
         return $value;
@@ -15,7 +13,8 @@ sub if_stmt {
 }
 
 sub get_nix_path {
-    my $exe = $_[0];
+    my ($exe) = $_;
+    
     my $path = `which $exe`;
     $path =~ s/\n//;
     my $storePath = `nix-store -q $path`;
