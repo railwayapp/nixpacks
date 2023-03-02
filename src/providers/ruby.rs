@@ -130,8 +130,12 @@ impl RubyProvider {
 
         if !self.uses_gem_dep(app, "local") {
             // Only run install if Gemfile or Gemfile.lock has changed
-            install.only_include_files =
-                Some(vec!["Gemfile".to_string(), "Gemfile.lock".to_string(), "vendor/cache".to_string()]);
+            install.add_file_dependency("Gemfile".to_string());
+            install.add_file_dependency("Gemfile.lock".to_string());
+
+            if app.includes_file("vendor/cache") {
+              install.add_file_dependency("vendor/cache".to_string())
+            }
         }
 
         install.add_cmd("bundle install".to_string());
