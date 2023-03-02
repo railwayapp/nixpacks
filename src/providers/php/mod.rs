@@ -58,12 +58,12 @@ impl PhpProvider {
         let mut pkgs = vec![
             Pkg::new(
                 format!(
-                    "({}.withExtensions ({{ enabled, all }}:\nenabled ++ [ {} ]))",
+                    "({}.withExtensions (pe: pe.enabled ++ [{}]))",
                     &php_pkg,
                     if let Ok(extensions) = PhpProvider::get_php_extensions(app) {
                         extensions
                             .iter()
-                            .map(|name| format!("all.{name}"))
+                            .map(|name| format!("pe.all.{name}"))
                             .collect::<Vec<String>>()
                             .join(" ")
                     } else {
@@ -76,11 +76,11 @@ impl PhpProvider {
             Pkg::new("nginx"),
             Pkg::new(&format!("{}Packages.composer", &php_pkg)),
         ];
-        if let Ok(php_extensions) = PhpProvider::get_php_extensions(app) {
-            for extension in php_extensions {
-                pkgs.push(Pkg::new(&format!("{}Extensions.{extension}", &php_pkg)));
-            }
-        }
+        // if let Ok(php_extensions) = PhpProvider::get_php_extensions(app) {
+        //     for extension in php_extensions {
+        //         pkgs.push(Pkg::new(&format!("{}Extensions.{extension}", &php_pkg)));
+        //     }
+        // }
 
         if app.includes_file("package.json") {
             pkgs.append(&mut NodeProvider::get_nix_packages(app, env)?);
