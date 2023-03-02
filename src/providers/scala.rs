@@ -12,6 +12,8 @@ use anyhow::Result;
 
 pub struct ScalaProvider {}
 
+const DEFAULT_JDK_VERSION: u32 = 17;
+
 /**
  * Scala provider currently supports sbt.
  * - The sbt project requires sbt-native-packager, a popular packaging
@@ -30,9 +32,11 @@ impl Provider for ScalaProvider {
         Ok(app.includes_file("build.sbt"))
     }
 
-    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         if self.is_using_sbt(app) {
-            let pkgs = self.get_sbt_dep_pkgs();
+            let jdk_version: u32 = self.get_jdk_version(env);
+
+            let pkgs = self.get_sbt_dep_pkgs(jdk_version);
             let setup = Phase::setup(Some(pkgs));
 
             let mut build = Phase::build(None);
@@ -46,7 +50,7 @@ impl Provider for ScalaProvider {
 
             let start_phase = self.get_start_cmd(app).map(StartPhase::new).map(|phase| {
                 let mut updated_phase = phase;
-                updated_phase.run_in_image("eclipse-temurin:17.0.5_8-jre-jammy".to_string());
+                updated_phase.run_in_image(self.get_jdk_run_image(jdk_version).to_string());
                 updated_phase.add_file_dependency("./target/universal");
                 updated_phase
             });
@@ -72,24 +76,46 @@ impl ScalaProvider {
         }
     }
 
+    fn get_jdk_pkg_name(&self, jdk_version: u32) -> &str {
+        match jdk_version {
+            19 => "jdk",
+            11 => "jdk11",
+            8 => "jdk8",
+
+            // Using 17 as default because its the latest LTS
+            _ => "jdk17",
+        }
+    }
+
+    fn get_jdk_run_image(&self, jdk_version: u32) -> &str {
+        match jdk_version {
+            19 => "eclipse-temurin:19.0.2_7-jre-jammy",
+            11 => "eclipse-temurin:11.0.18_10-jre-jammy",
+            8 => "eclipse-temurin:8u362-b09-jre-jammy",
+
+            // Using 17 as default because its the latest LTS
+            _ => "eclipse-temurin:17.0.5_8-jre-jammy",
+        }
+    }
+
     fn is_using_sbt(&self, app: &App) -> bool {
         app.includes_file("build.sbt")
     }
 
-    pub fn get_sbt_dep_pkgs(&self) -> Vec<Pkg> {
-        let pkgs = vec![self.get_sbt_pkg(), self.get_jdk_pkg()];
+    pub fn get_sbt_dep_pkgs(&self, jdk_version: u32) -> Vec<Pkg> {
+        let pkgs = vec![self.get_sbt_pkg(jdk_version)];
         pkgs
     }
 
-    fn get_sbt_pkg(&self) -> Pkg {
-        Pkg::new("sbt")
+    pub fn get_jdk_version(&self, env: &Environment) -> u32 {
+        env.get_config_variable("JDK_VERSION")
+            .map_or(DEFAULT_JDK_VERSION, |env_string| {
+                env_string.parse::<u32>().unwrap()
+            })
     }
 
-    fn get_jdk_pkg(&self) -> Pkg {
-        // sbt uses jdk pkg to compile and package the project
-        // already so we should use the same package for the start phase
-        // to prevent conflict.
-        Pkg::new("jdk")
+    fn get_sbt_pkg(&self, jdk_version: u32) -> Pkg {
+        Pkg::new("sbt").set_override("jre", self.get_jdk_pkg_name(jdk_version))
     }
 }
 
@@ -103,5 +129,13 @@ mod tests {
 
         assert!(scala.is_using_sbt(&App::new("examples/scala-sbt").unwrap()));
         assert!(!scala.is_using_sbt(&App::new("examples/node").unwrap()));
+        assert_eq!(
+            Pkg::new("sbt").set_override("jre", "jdk8"),
+            scala.get_sbt_pkg(
+                scala.get_jdk_version(
+                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=8"]).unwrap(),
+                )
+            )
+        );
     }
 }
