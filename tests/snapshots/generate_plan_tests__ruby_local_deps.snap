@@ -28,6 +28,7 @@ expression: plan
         "bundle install"
       ],
       "cacheDirectories": [
+        "/.rbenv",
         "/root/.bundle/cache"
       ],
       "paths": [

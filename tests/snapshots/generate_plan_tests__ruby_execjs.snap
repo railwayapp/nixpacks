@@ -33,6 +33,7 @@ expression: plan
         "Gemfile.lock"
       ],
       "cacheDirectories": [
+        "/.rbenv",
         "/root/.bundle/cache"
       ],
       "paths": [

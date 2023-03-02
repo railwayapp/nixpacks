@@ -14,6 +14,7 @@ use regex::Regex;
 pub struct RubyProvider {}
 
 const BUNDLE_CACHE_DIR: &str = "/root/.bundle/cache";
+const RBENV_CACHE_DIR: &str = "/.rbenv";
 
 impl Provider for RubyProvider {
     fn name(&self) -> &str {
@@ -126,6 +127,7 @@ impl RubyProvider {
     fn get_install(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
         let mut install = Phase::install(None);
         install.add_cache_directory(BUNDLE_CACHE_DIR.to_string());
+        install.add_cache_directory(RBENV_CACHE_DIR.to_string());
 
         if !self.uses_gem_dep(app, "local") {
             // Only run install if Gemfile or Gemfile.lock has changed
