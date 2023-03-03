@@ -143,7 +143,7 @@ impl RubyProvider {
         install.add_path(format!("/usr/local/rvm/gems/{ruby_version}/bin"));
         install.add_path(format!("/usr/local/rvm/gems/{ruby_version}@global/bin"));
         install.add_cmd("bundle clean --force".to_string());
-        
+
         Ok(Some(install))
     }
 
