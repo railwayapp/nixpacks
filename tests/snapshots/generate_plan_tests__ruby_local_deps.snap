@@ -29,8 +29,8 @@ expression: plan
         "bundle clean --force"
       ],
       "cacheDirectories": [
-        "/.rbenv",
-        "/root/.bundle/cache"
+        "/root/.bundle/cache",
+        "/root/.rbenv"
       ],
       "paths": [
         "/usr/local/rvm/rubies/ruby-3.1.2/bin",

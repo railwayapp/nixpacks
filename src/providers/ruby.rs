@@ -14,7 +14,7 @@ use regex::Regex;
 pub struct RubyProvider {}
 
 const BUNDLE_CACHE_DIR: &str = "/root/.bundle/cache";
-const RBENV_CACHE_DIR: &str = "/.rbenv";
+const RBENV_CACHE_DIR: &str = "/root/.rbenv";
 
 impl Provider for RubyProvider {
     fn name(&self) -> &str {
