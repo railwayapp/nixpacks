@@ -134,7 +134,7 @@ impl RubyProvider {
             install.add_file_dependency("Gemfile.lock".to_string());
 
             if app.includes_file("vendor/cache") {
-              install.add_file_dependency("vendor/cache".to_string())
+                install.add_file_dependency("vendor/cache".to_string())
             }
         }
 
