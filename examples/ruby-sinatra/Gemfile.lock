@@ -19,6 +19,7 @@ GEM
 
 PLATFORMS
   arm64-darwin-21
+  aarch64-linux
 
 DEPENDENCIES
   puma (~> 5.6.4)
