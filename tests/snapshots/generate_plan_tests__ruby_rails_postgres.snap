@@ -30,7 +30,8 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "bundle install"
+        "bundle install",
+        "bundle clean --force"
       ],
       "onlyIncludeFiles": [
         "Gemfile",
