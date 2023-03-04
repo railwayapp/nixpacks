@@ -13,7 +13,7 @@ sub if_stmt {
 }
 
 sub get_nix_path {
-    my ($exe) = $_;
+    my ($exe) = $_[0];
     
     my $path = `which $exe`;
     $path =~ s/\n//;
