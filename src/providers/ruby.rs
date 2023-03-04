@@ -112,8 +112,14 @@ impl RubyProvider {
 
         setup.add_cmd(format!(
             "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash -s stable \
-            && printf '\\neval \"$(rbenv init -)\"' >> /root/.profile \
-            && . /root/.profile \
+            && printf '\\neval \"$(rbenv init -)\"' >> $HOME/.profile \
+            && sed -i 's_PATH=$HOME/.rbenv/bin:$PATH_PATH=$HOME/keep/rbenv/bin:$PATH_' $HOME/.profile \
+            && sed -i 's_rbenv init_$HOME/keep/rbenv/bin/rbenv init_' $HOME/.profile \
+            && mkdir $HOME/keep \
+            && mkdir $HOME/keep/rbenv \
+            && cd $HOME/.rbenv \
+            && cp . $HOME/keep/rbenv -R \
+            && . $HOME/.profile \
             && rbenv install {ruby_version} \
             && rbenv global {ruby_version} \
             && gem install {bundler_version}"
@@ -134,7 +140,6 @@ impl RubyProvider {
             install.only_include_files =
                 Some(vec!["Gemfile".to_string(), "Gemfile.lock".to_string()]);
         }
-
         install.add_cmd("bundle install".to_string());
 
         // Ensure that the ruby executable is in the PATH
