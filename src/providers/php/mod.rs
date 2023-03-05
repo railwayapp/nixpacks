@@ -106,8 +106,8 @@ impl PhpProvider {
 
     fn get_start(app: &App) -> StartPhase {
         StartPhase::new(format!(
-            "([ -e /app/storage ] && chmod -R ugo+w /app/storage); perl {} {} /nginx.conf && echo \"Server starting on port $PORT\" && (php-fpm -y {} & nginx -c /nginx.conf)",
-            app.asset_path("transform-config.pl"),
+            "perl {} {} /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
+            app.asset_path("prestart.pl"),
             app.asset_path("nginx.template.conf"),
             app.asset_path("php-fpm.conf"),
         ))
@@ -116,8 +116,11 @@ impl PhpProvider {
     fn static_assets() -> StaticAssets {
         static_asset_list! {
             "nginx.template.conf" => include_str!("nginx.template.conf"),
-            "transform-config.pl" => include_str!("transform-config.pl"),
-            "php-fpm.conf" => include_str!("php-fpm.conf")
+            "prestart.pl" => include_str!("prestart.pl"),
+            "php-fpm.conf" => include_str!("php-fpm.conf"),
+            "Nixpacks/Nix.pm" => include_str!("Nixpacks/Nix.pm"),
+            "Nixpacks/Config/Template.pm" => include_str!("Nixpacks/Config/Template.pm"),
+            "Nixpacks/Util/ChmodRecursive.pm" => include_str!("Nixpacks/Util/ChmodRecursive.pm")
         }
     }
 
