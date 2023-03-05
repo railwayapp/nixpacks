@@ -6,6 +6,8 @@ title: PHP
 
 Php is detected if a `composer.json` OR `index.php` file is found.
 
+Note that Laravel apps need an `APP_KEY` environment variable in order to work.
+
 ## Setup
 
 The following PHP versions are available
@@ -40,6 +42,7 @@ if package.json
 
 ## Start
 
+This provider runs a Perl script to correct permissions and manage the Nginx configuration, and then starts Nginx.
 ```
 {nginx_start_serving_cmd}
 ```
