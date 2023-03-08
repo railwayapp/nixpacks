@@ -62,7 +62,10 @@ impl PhpProvider {
             Pkg::new(&format!("{}Packages.composer", &php_pkg)),
         ];
         let ext_pkgs = if let Ok(php_extensions) = PhpProvider::get_php_extensions(app) {
-            php_extensions.iter().map(|extension| format!("{}Extensions.{extension}", &php_pkg)).collect()
+            php_extensions
+                .iter()
+                .map(|extension| format!("{}Extensions.{extension}", &php_pkg))
+                .collect()
         } else {
             vec![]
         };
