@@ -61,17 +61,26 @@ impl PhpProvider {
             Pkg::new("nginx"),
             Pkg::new(&format!("{}Packages.composer", &php_pkg)),
         ];
-        if let Ok(php_extensions) = PhpProvider::get_php_extensions(app) {
-            for extension in php_extensions {
-                pkgs.push(Pkg::new(&format!("{}Extensions.{extension}", &php_pkg)));
-            }
-        }
+        let ext_pkgs = if let Ok(php_extensions) = PhpProvider::get_php_extensions(app) {
+            php_extensions.iter().map(|extension| format!("{}Extensions.{extension}", &php_pkg)).collect()
+        } else {
+            vec![]
+        };
 
         if app.includes_file("package.json") {
             pkgs.append(&mut NodeProvider::get_nix_packages(app, env)?);
         }
 
-        Ok(Phase::setup(Some(pkgs)))
+        {
+            let mut tmp_ext_pkgs = ext_pkgs.iter().map(|pkg| Pkg::new(pkg)).collect();
+            pkgs.append(&mut tmp_ext_pkgs);
+        }
+
+        let mut phase = Phase::setup(Some(pkgs));
+
+        phase.add_pkgs_libs(ext_pkgs);
+
+        Ok(phase)
     }
 
     fn get_install(app: &App) -> Phase {
