@@ -38,7 +38,10 @@ expression: plan
       ],
       "nixLibs": [],
       "nixOverlays": [],
-      "nixpkgsArchive": "[archive]"
+      "nixpkgsArchive": "[archive]",
+      "aptPkgs": [
+        "default-mysql-client"
+      ]
     }
   },
   "start": {
