@@ -83,6 +83,8 @@ impl PhpProvider {
 
         phase.add_pkgs_libs(ext_pkgs);
 
+        phase.add_apt_pkgs(vec!["default-mysql-client".into()]);
+
         Ok(phase)
     }
 
