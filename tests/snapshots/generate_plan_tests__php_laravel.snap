@@ -1,5 +1,6 @@
 ---
 source: tests/generate_plan_tests.rs
+assertion_line: 4
 expression: plan
 ---
 {
@@ -49,6 +50,7 @@ expression: plan
         "nodejs-16_x",
         "npm-8_x"
       ],
+      "nixLibs": [],
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
       ],

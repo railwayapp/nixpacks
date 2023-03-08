@@ -7,6 +7,7 @@ expression: plan
   "providers": [],
   "buildImage": "[build_image]",
   "variables": {
+    "IS_LARAVEL": "yes",
     "NIXPACKS_METADATA": "php",
     "PORT": "80"
   },
@@ -19,25 +20,43 @@ expression: plan
     "prestart.pl": "#!/usr/bin/env perl\n\nundef $/;\n\nuse FindBin;\nuse lib (\"$FindBin::RealBin\");\n\nuse File::Find;\nuse Nixpacks::Config::Template;\nuse Nixpacks::Util::ChmodRecursive;\n\n\nNixpacks::Util::ChmodRecursive::chmod_recursive(\"/app/storage\") if -e \"/app/storage\";\n\nif ($#ARGV != 1) {\n    print STDERR \"Usage: $0 <config-file> <output-file>\\n\";\n    exit 1;\n}\n\nNixpacks::Config::Template::compile_template($ARGV[0], $ARGV[1]);\nmy $port = $ENV{\"PORT\"};\nprint \"Server starting on port $port\\n\";"
   },
   "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cmds": [
+        "npm run prod"
+      ]
+    },
     "install": {
       "name": "install",
       "dependsOn": [
         "setup"
       ],
       "cmds": [
-        "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx"
+        "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx",
+        "composer install",
+        "npm i"
       ]
     },
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "php",
+        "php81",
         "perl",
         "nginx",
-        "phpPackages.composer"
+        "php81Packages.composer",
+        "nodejs-16_x",
+        "npm-8_x",
+        "php81Extensions.mongodb"
       ],
-      "nixLibs": [],
-      "nixOverlays": [],
+      "nixLibs": [
+        "php81Extensions.mongodb"
+      ],
+      "nixOverlays": [
+        "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+      ],
       "nixpkgsArchive": "[archive]"
     }
   },
