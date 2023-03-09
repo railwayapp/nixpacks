@@ -156,7 +156,10 @@ impl PhpProvider {
         vars.insert("PORT".to_string(), "80".to_string());
         if app.includes_file("artisan") {
             vars.insert("IS_LARAVEL".to_string(), "yes".to_string());
-            vars.insert("NIXPACKS_PHP_ROOT_DIR".to_string(), "/app/public".to_string());
+            vars.insert(
+                "NIXPACKS_PHP_ROOT_DIR".to_string(),
+                "/app/public".to_string(),
+            );
         }
         vars
     }
