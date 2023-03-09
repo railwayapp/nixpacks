@@ -83,7 +83,7 @@ impl CSharpProvider {
         let version_string = env
             .get_config_variable("CSHARP_SDK_VERSION")
             .or(global_json)
-            .or(Some(String::from("6")));
+            .or_else(|| Some(String::from("6")));
         let version_number: u8 = version_string
             .unwrap()
             .split('.')
