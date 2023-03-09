@@ -3,7 +3,7 @@
 	<head>
 		<title>Hello World!</title>
 		<style>
-			@import url('https://fonts.googleapis.com/css2?family=Nunito&display=swap');
+			@import url('https://fonts.bunny.net/css2?family=Nunito&display=swap');
 			body {
 			  background-color: rgb(245, 234, 214);
 			  font-family: Nunito;
