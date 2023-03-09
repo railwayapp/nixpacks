@@ -119,12 +119,19 @@ impl PhpProvider {
     }
 
     fn get_start(app: &App) -> StartPhase {
-        StartPhase::new(format!(
-            "perl {} {} /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
-            app.asset_path("prestart.pl"),
-            app.asset_path("nginx.template.conf"),
-            app.asset_path("php-fpm.conf"),
-        ))
+        if app.includes_file("nginx.conf") {
+            StartPhase::new(format!(
+                "php-fpm -y {} & nginx -c /app/nginx.conf",
+                app.asset_path("php-fpm.conf")
+            ))
+        } else {
+            StartPhase::new(format!(
+                "perl {} {} /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
+                app.asset_path("prestart.pl"),
+                app.asset_path("nginx.template.conf"),
+                app.asset_path("php-fpm.conf"),
+            ))
+        }
     }
 
     fn static_assets() -> StaticAssets {
