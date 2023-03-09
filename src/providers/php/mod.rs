@@ -124,6 +124,12 @@ impl PhpProvider {
                 "php-fpm -y {} & nginx -c /app/nginx.conf",
                 app.asset_path("php-fpm.conf")
             ))
+        } else if app.includes_file("nginx.template.conf") {
+            StartPhase::new(format!(
+                "perl {} /app/nginx.template.conf /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
+                app.asset_path("prestart.pl"),
+                app.asset_path("php-fpm.conf"),
+            ))
         } else {
             StartPhase::new(format!(
                 "perl {} {} /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
@@ -150,6 +156,7 @@ impl PhpProvider {
         vars.insert("PORT".to_string(), "80".to_string());
         if app.includes_file("artisan") {
             vars.insert("IS_LARAVEL".to_string(), "yes".to_string());
+            vars.insert("NIXPACKS_PHP_ROOT_DIR".to_string(), "/app/public".to_string());
         }
         vars
     }
