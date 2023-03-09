@@ -59,6 +59,7 @@ impl PhpProvider {
             Pkg::new(&php_pkg),
             Pkg::new("perl"),
             Pkg::new("nginx"),
+            Pkg::new("libmysqlclient"),
             Pkg::new(&format!("{}Packages.composer", &php_pkg)),
         ];
         let ext_pkgs = if let Ok(php_extensions) = PhpProvider::get_php_extensions(app) {
@@ -82,8 +83,7 @@ impl PhpProvider {
         let mut phase = Phase::setup(Some(pkgs));
 
         phase.add_pkgs_libs(ext_pkgs);
-
-        phase.add_apt_pkgs(vec!["default-mysql-client".into()]);
+        phase.add_pkgs_libs(vec!["libmysqlclient".into()]);
 
         Ok(phase)
     }
