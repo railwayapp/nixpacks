@@ -6,10 +6,10 @@ expression: plan
   "providers": [],
   "buildImage": "[build_image]",
   "variables": {
-    "ASPNETCORE_ENVIRONMENT": "Production",
-    "ASPNETCORE_URLS": "http://0.0.0.0:3000",
-    "DOTNET_ROOT": "/nix/var/nix/profiles/default/",
-    "NIXPACKS_METADATA": "c#"
+    "CI": "true",
+    "NIXPACKS_METADATA": "node",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false"
   },
   "phases": {
     "build": {
@@ -17,8 +17,8 @@ expression: plan
       "dependsOn": [
         "install"
       ],
-      "cmds": [
-        "dotnet publish --no-restore -c Release -o out"
+      "cacheDirectories": [
+        "node_modules/.cache"
       ]
     },
     "install": {
@@ -27,19 +27,28 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "dotnet restore"
+        "npm i"
+      ],
+      "cacheDirectories": [
+        "/root/.npm"
+      ],
+      "paths": [
+        "/app/node_modules/.bin"
       ]
     },
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "dotnet-sdk_7"
+        "nodejs-16_x",
+        "npm-8_x"
       ],
-      "nixOverlays": [],
+      "nixOverlays": [
+        "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+      ],
       "nixpkgsArchive": "[archive]"
     }
   },
   "start": {
-    "cmd": "./out/csharp-api"
+    "cmd": "node index.js"
   }
 }

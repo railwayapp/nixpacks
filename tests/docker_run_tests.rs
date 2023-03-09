@@ -816,6 +816,13 @@ async fn test_java_maven() {
 }
 
 #[tokio::test]
+async fn test_php_vanilla() {
+    let name = simple_build("./examples/php-vanilla").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Server starting on port 80"));
+}
+
+#[tokio::test]
 async fn test_scala_sbt() {
     let name = simple_build("./examples/scala-sbt").await;
     let output = run_image(&name, None).await;
@@ -1024,4 +1031,10 @@ async fn test_django_pipfile() {
     remove_network(network_name);
 
     assert!(output.contains("Running migrations"));
+}
+
+#[tokio::test]
+async fn test_nested_directory() {
+    let name = simple_build("./examples/nested").await;
+    assert!(run_image(&name, None).await.contains("Nested directories!"));
 }

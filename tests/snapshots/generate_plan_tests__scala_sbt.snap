@@ -27,14 +27,17 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "sbt",
-        "jdk"
+        "(sbt.override { jre = jdk17; })"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]"
     }
   },
   "start": {
-    "cmd": "./target/universal/stage/bin/main"
+    "cmd": "./target/universal/stage/bin/main",
+    "runImage": "eclipse-temurin:17.0.5_8-jre-jammy",
+    "onlyIncludeFiles": [
+      "./target/universal"
+    ]
   }
 }

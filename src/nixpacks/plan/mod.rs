@@ -21,7 +21,7 @@ mod topological_sort;
 mod utils;
 
 pub trait PlanGenerator {
-    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan>;
+    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<(BuildPlan, App)>;
     fn get_plan_providers(&self, app: &App, environment: &Environment) -> Result<Vec<String>>;
 }
 

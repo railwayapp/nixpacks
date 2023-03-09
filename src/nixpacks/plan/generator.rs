@@ -30,7 +30,7 @@ pub struct NixpacksBuildPlanGenerator<'a> {
 }
 
 impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
-    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<BuildPlan> {
+    fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<(BuildPlan, App)> {
         // If the provider defines a build plan in the new format, use that
         let plan = self.get_build_plan(app, environment)?;
 
@@ -54,32 +54,42 @@ impl NixpacksBuildPlanGenerator<'_> {
     }
 
     /// Get a build plan from the provider and by applying the config from the environment
-    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<BuildPlan> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<(BuildPlan, App)> {
         let plan_before_providers = self.get_plan_before_providers(app, env)?;
 
         // Add the variables from the nixpacks.toml to environment
-        let env = &Environment::append_variables(
+        let new_env = &Environment::append_variables(
             env,
             plan_before_providers.variables.clone().unwrap_or_default(),
         );
 
         let provider_plan =
-            self.get_plan_from_providers(app, env, plan_before_providers.providers.clone())?;
+            self.get_plan_from_providers(app, new_env, plan_before_providers.providers.clone())?;
 
         let procfile_plan = (ProcfileProvider {})
-            .get_build_plan(app, env)?
+            .get_build_plan(app, new_env)?
             .unwrap_or_default();
 
         let mut plan =
             BuildPlan::merge_plans(&vec![provider_plan, procfile_plan, plan_before_providers]);
 
-        if !env.get_variable_names().is_empty() {
-            plan.add_variables(Environment::clone_variables(env));
+        if !new_env.get_variable_names().is_empty() {
+            plan.add_variables(Environment::clone_variables(new_env));
         }
 
-        plan.pin(env.is_config_variable_truthy("DEBIAN"));
-
-        Ok(plan)
+        plan.pin(new_env.is_config_variable_truthy("DEBIAN"));
+        if plan.clone().phases.unwrap_or_default().is_empty() {
+            // try again in a subdir
+            let dir_count = app.paths.clone().iter().filter(|p| p.is_dir()).count();
+            if dir_count == 1 {
+                // there is 1 sub dir, try and generate a plan from that
+                let paths = app.paths.clone();
+                let new_dir = paths.iter().find(|p| p.is_dir()).unwrap();
+                return self
+                    .get_build_plan(&App::new(new_dir.display().to_string().as_str())?, env);
+            }
+        }
+        Ok((plan, app.clone()))
     }
 
     fn get_plan_before_providers(&self, app: &App, env: &Environment) -> Result<BuildPlan> {

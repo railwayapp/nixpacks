@@ -9,6 +9,17 @@ at Java. Scala is detected by `build.sbt` in project root.
 
 ## SBT Setup
 
+### JDK
+
+The following major JDK versions are available
+
+- `19`
+- `17` (Default)
+- `11`
+- `8`
+
+The version can be overridden by setting the `NIXPACKS_JDK_VERSION` environment variable.
+
 ### Requirements
 
 The project should contain the `sbt-native-packager` sbt plugin. This can be done

@@ -72,28 +72,29 @@ impl Provider for CSharpProvider {
 
 impl CSharpProvider {
     fn get_sdk_version(app: &App, env: &Environment) -> Result<String> {
-        // First check for an SDK version environment variable
-        if let Some(version) = env.get_config_variable("CSHARP_SDK_VERSION") {
-            if let Some((major, minor)) = &version[0..3].split_once('.') {
-                return Ok(format!("dotnet-sdk_{major}_{minor}"));
-            }
-        }
-
-        // Then check for a global.json and see if we can get the sdk version from there
-        if app.includes_file("global.json") {
+        // Check if a version is specified in global.json
+        let global_json = if app.includes_file("global.json") {
             let global_json: CSharpGlobalJson = app.read_json("global.json")?;
-
-            if let Some(sdk) = global_json.sdk {
-                if let Some(version) = sdk.version {
-                    if let Some((major, minor)) = &version[0..3].split_once('.') {
-                        return Ok(format!("dotnet-sdk_{major}_{minor}"));
-                    }
-                }
-            }
+            global_json.sdk.and_then(|sdk| sdk.version)
+        } else {
+            None
+        };
+        // Use environment variable then global_json then default to 6
+        let version_string = env
+            .get_config_variable("CSHARP_SDK_VERSION")
+            .or(global_json)
+            .or(Some(String::from("6")));
+        let version_number: u8 = version_string
+            .unwrap()
+            .split('.')
+            .next()
+            .unwrap()
+            .parse()
+            .unwrap_or(6); // split by '.', get first item, attempt to parse to u8, if not default to 6
+        match version_number {
+            6 => Ok("dotnet-sdk".to_string()),
+            _ => Ok(format!("dotnet-sdk_{version_number}")),
         }
-
-        // Fall back to default sdk
-        Ok("dotnet-sdk".to_string())
     }
 }
 
@@ -119,7 +120,7 @@ mod test {
 
     #[test]
     fn test_global_json() -> Result<()> {
-        let expected_sdk_name = "dotnet-sdk_7_0";
+        let expected_sdk_name = "dotnet-sdk_7";
         assert_eq!(
             CSharpProvider::get_sdk_version(
                 &App::new("./examples/csharp-api")?,
@@ -133,7 +134,7 @@ mod test {
 
     #[test]
     fn test_version_from_environment_variable() -> Result<()> {
-        let expected_sdk_name = "dotnet-sdk_6_0";
+        let expected_sdk_name = "dotnet-sdk";
         assert_eq!(
             CSharpProvider::get_sdk_version(
                 &App::new("./examples/csharp-cli")?,

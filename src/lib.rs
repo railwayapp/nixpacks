@@ -83,7 +83,7 @@ pub fn generate_build_plan(
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), options.clone());
     let plan = generator.generate_plan(&app, &environment)?;
 
-    Ok(plan)
+    Ok(plan.0)
 }
 
 pub fn get_plan_providers(
@@ -107,9 +107,16 @@ pub async fn create_docker_image(
 ) -> Result<()> {
     let app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
+    let orig_path = app.source.clone();
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
-    let plan = generator.generate_plan(&app, &environment)?;
+    let (plan, app) = generator.generate_plan(&app, &environment)?;
+
+    if let Ok(subdir) = app.source.strip_prefix(orig_path) {
+        if subdir != std::path::Path::new("") {
+            println!("Using subdirectory \"{}\"", subdir.to_str().unwrap());
+        }
+    }
 
     let logger = Logger::new();
     let builder = DockerImageBuilder::new(logger, build_options.clone());
