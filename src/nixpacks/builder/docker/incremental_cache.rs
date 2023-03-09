@@ -128,7 +128,6 @@ impl IncrementalCache {
                 let target_cache_dir = dir.replace('~', "/root");
                 let target_cache_dir_optional = target_cache_dir
                     .split('/')
-                    .into_iter()
                     .filter(|c| !c.is_empty())
                     .map(|c| format!("{c}?"))
                     .collect::<Vec<_>>()
