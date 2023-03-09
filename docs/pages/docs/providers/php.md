@@ -4,7 +4,13 @@ title: PHP
 
 # {% $markdoc.frontmatter.title %}
 
-Php is detected if a `composer.json` OR `index.php` file is found.
+PHP is detected if a `composer.json` OR `index.php` file is found.
+
+Note that Laravel apps need an `APP_KEY` environment variable in order to work.
+
+If an `nginx.conf` or `nginx.template.conf` (see [this file](https://github.com/railwayapp/nixpacks/blob/main/src/providers/php/nginx.template.conf) for an example of template syntax) file is found in the project root directory, that configuration will be used.
+
+If a `NIXPACKS_PHP_ROOT_DIR` variable is passed, that will be used as the server root.
 
 ## Setup
 
@@ -40,6 +46,7 @@ if package.json
 
 ## Start
 
+This provider runs a Perl script to correct permissions and manage the Nginx configuration, and then starts Nginx.
 ```
 {nginx_start_serving_cmd}
 ```
