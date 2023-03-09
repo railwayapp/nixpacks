@@ -5,7 +5,7 @@ use Nixpacks::Nix;
 sub if_stmt {
     my ($condition, $value, $else) = @_;
 
-    if($ENV{$condition} eq "yes") {
+    if($ENV{$condition} ne "") {
         return $value;
     } else {
         return $else;
