@@ -64,7 +64,7 @@ impl PhpProvider {
                 &php_pkg,
                 php_extensions
                     .iter()
-                    .map(|ext| format!("pe.all.{}", ext))
+                    .map(|ext| format!("pe.all.{ext}"))
                     .collect::<Vec<_>>()
                     .join(" ")
             )),
