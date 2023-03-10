@@ -34,6 +34,7 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v3.7.0
         with:
           configuration: ".github/changelog-configuration.json"
+          outputFile: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -46,7 +47,13 @@ jobs:
           tag_name: ${{ env.NIXPACKS_VERSION }}
           release_name: ${{ env.NIXPACKS_VERSION }}
           body: ${{steps.build_changelog.outputs.changelog}}
-
+          
+      - name: Push Changelog
+        run: |
+          git add CHANGELOG.md
+          git commit -m "Changelog: ${{ env.NIXPACKS_VERSION }}"
+          git push
+  
   build-release:
     name: Build Release Assets
     needs: ['create-release']
