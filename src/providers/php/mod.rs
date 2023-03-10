@@ -100,7 +100,7 @@ impl PhpProvider {
             "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx".to_string(),
         ));
         if app.includes_file("composer.json") {
-            install.add_cmd("composer install".to_string());
+            install.add_cmd("composer install --ignore-platform-reqs".to_string());
         };
         if app.includes_file("package.json") {
             if let Some(install_cmd) = NodeProvider::get_install_command(app) {
