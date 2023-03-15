@@ -37,14 +37,14 @@ expression: plan
       ],
       "cmds": [
         "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx",
-        "composer install",
+        "composer install --ignore-platform-reqs",
         "npm i"
       ]
     },
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "php81",
+        "(php81.withExtensions (pe: pe.enabled ++ [pe.all.mongodb]))",
         "perl",
         "nginx",
         "libmysqlclient",

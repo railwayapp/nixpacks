@@ -55,21 +55,28 @@ impl PhpProvider {
             Ok(php_package) => php_package,
             _ => "php".to_string(),
         };
+
+        let php_extensions = PhpProvider::get_php_extensions(app).unwrap_or(vec![]);
+
         let mut pkgs = vec![
-            Pkg::new(&php_pkg),
+            Pkg::new(&format!(
+                r"({}.withExtensions (pe: pe.enabled ++ [{}]))",
+                &php_pkg,
+                php_extensions
+                    .iter()
+                    .map(|ext| format!("pe.all.{ext}"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )),
             Pkg::new("perl"),
             Pkg::new("nginx"),
             Pkg::new("libmysqlclient"),
             Pkg::new(&format!("{}Packages.composer", &php_pkg)),
         ];
-        let ext_pkgs = if let Ok(php_extensions) = PhpProvider::get_php_extensions(app) {
-            php_extensions
-                .iter()
-                .map(|extension| format!("{}Extensions.{extension}", &php_pkg))
-                .collect()
-        } else {
-            vec![]
-        };
+        let ext_pkgs: Vec<String> = php_extensions
+            .iter()
+            .map(|extension| format!("{}Extensions.{extension}", &php_pkg))
+            .collect();
 
         if app.includes_file("package.json") {
             pkgs.append(&mut NodeProvider::get_nix_packages(app, env)?);
@@ -93,7 +100,7 @@ impl PhpProvider {
             "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx".to_string(),
         ));
         if app.includes_file("composer.json") {
-            install.add_cmd("composer install".to_string());
+            install.add_cmd("composer install --ignore-platform-reqs".to_string());
         };
         if app.includes_file("package.json") {
             if let Some(install_cmd) = NodeProvider::get_install_command(app) {

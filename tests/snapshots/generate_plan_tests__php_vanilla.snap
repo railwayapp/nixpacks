@@ -31,7 +31,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "php",
+        "(php.withExtensions (pe: pe.enabled ++ []))",
         "perl",
         "nginx",
         "libmysqlclient",
