@@ -3,41 +3,35 @@ source: tests/generate_plan_tests.rs
 expression: plan
 ---
 {
-  "nixpacksVersion": "[version]",
+  "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "BUNDLE_GEMFILE": "/app/Gemfile",
     "GEM_HOME": "/usr/local/rvm/gems/3.1.2",
-    "GEM_PATH": "/usr/local/rvm/gems/3.1.2:/usr/local/rvm/gems/3.1.2@global"
+    "GEM_PATH": "/usr/local/rvm/gems/3.1.2:/usr/local/rvm/gems/3.1.2@global",
+    "MALLOC_ARENA_MAX": "2",
+    "NIXPACKS_METADATA": "ruby",
+    "RAILS_LOG_TO_STDOUT": "enabled",
+    "RAILS_SERVE_STATIC_FILES": "1"
   },
-  "staticAssets": {},
-  "phases": [
-    {
-      "name": "setup",
-      "nixPackages": [],
-      "nixLibraries": [],
-      "aptPackages": [
-        "procps",
-        "libpq-dev"
-      ],
-      "commands": [
-        "curl -sSL https://get.rvm.io | bash -s stable && . /etc/profile.d/rvm.sh",
-        "rvm install 3.1.2",
-        "rvm --default use 3.1.2",
-        "gem install bundler:2.3.7",
-        "echo 'source /usr/local/rvm/scripts/rvm' >> /root/.profile"
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
       ]
     },
-    {
+    "install": {
       "name": "install",
       "dependsOn": [
         "setup"
       ],
-      "commands": [
+      "cmds": [
         "bundle install"
       ],
       "onlyIncludeFiles": [
-        "Gemfile*"
+        "Gemfile",
+        "Gemfile.lock"
       ],
       "cacheDirectories": [
         "/root/.bundle/cache"
@@ -48,15 +42,35 @@ expression: plan
         "/usr/local/rvm/gems/3.1.2@global/bin"
       ]
     },
-    {
-      "name": "build",
-      "dependsOn": [
-        "install"
+    "setup": {
+      "name": "setup",
+      "aptPkgs": [
+        "procps",
+        "git",
+        "curl",
+        "autoconf",
+        "bison",
+        "build-essential",
+        "libssl-dev",
+        "libyaml-dev",
+        "libreadline6-dev",
+        "zlib1g-dev",
+        "libncurses5-dev",
+        "libffi-dev",
+        "libgdbm6",
+        "libgdbm-dev",
+        "libdb-dev"
       ],
-      "commands": []
+      "cmds": [
+        "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash -s stable && printf '\\neval \"$(rbenv init -)\"' >> /root/.profile && . /root/.profile && rbenv install 3.1.2 && rbenv global 3.1.2 && gem install bundler:2.4.2"
+      ],
+      "onlyIncludeFiles": [],
+      "paths": [
+        "$HOME/.rbenv/bin"
+      ]
     }
-  ],
-  "startPhase": {
+  },
+  "start": {
     "cmd": "rake db:migrate && bundle exec bin/rails server -b 0.0.0.0 -p ${PORT:-3000}"
   }
 }
