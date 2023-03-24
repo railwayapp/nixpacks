@@ -182,7 +182,8 @@ impl DockerfileGenerator for BuildPlan {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        let profile_dockerfile = plan.get_sorted_phases()?
+        let profile_dockerfile = plan
+            .get_sorted_phases()?
             .into_iter()
             .map(|phase| {
                 // Ensure paths are available in the environment
