@@ -147,11 +147,11 @@ impl RubyProvider {
     fn get_build(&self, app: &App) -> Result<Option<Phase>> {
         let mut build = Phase::build(None);
 
-        // Only compile assets if a Rails app have the sprockets (Rails' asset
-        // pipeline) gem installed. Rails API-only apps [0] do not come with
-        // the sprockets gem because they have no assets.
+        // Only compile assets if a Rails app have an asset pipeline gem
+        // installed (e.g. sprockets, propshaft). Rails API-only apps [0]
+        // do not come with the asset pipelines because they have no assets.
         // [0] https://guides.rubyonrails.org/api_app.html
-        if self.is_rails_app(app) && self.uses_sprockets(app)? {
+        if self.is_rails_app(app) && self.uses_asset_pipeline(app)? {
             build.add_cmd("bundle exec rake assets:precompile".to_string());
         }
 
@@ -261,10 +261,10 @@ impl RubyProvider {
                 .contains("Rails::Application")
     }
 
-    fn uses_sprockets(&self, app: &App) -> Result<bool> {
+    fn uses_asset_pipeline(&self, app: &App) -> Result<bool> {
         if app.includes_file("Gemfile") {
             let gemfile = app.read_file("Gemfile").unwrap_or_default();
-            return Ok(gemfile.contains("sprockets"));
+            return Ok(gemfile.contains("sprockets") || gemfile.contains("propshaft"));
         }
         Ok(false)
     }
