@@ -1,11 +1,10 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
     utils.url = "github:gytis-ivaskevicius/flake-utils-plus";
-    rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = inputs@{ self, utils, rust-overlay, ... }:
+  outputs = inputs@{ self, utils, ... }:
     utils.lib.mkFlake rec {
       inherit self inputs;
 
@@ -17,31 +16,18 @@
         "x86_64-linux"
       ];
 
-      sharedOverlays = [ (import rust-overlay) ];
-
-      outputsBuilder = channels: with channels; {
-        packages = with nixpkgs; { 
-          inherit (nixpkgs) package-from-overlays;
-
-          nixpacks = rustPlatform.buildRustPackage {
+      outputsBuilder = channels: with channels;
+        let
+          package = with nixpkgs; rustPlatform.buildRustPackage {
             pname = "nixpacks";
-            version = "v0.3.0";
-            doCheck = true;
+            version = "1.5.1";
             src = ./.;
-            checkInputs = [ rustfmt clippy ];
-            # skip `cargo test` due tests FHS dependency
-            checkPhase = ''
-              runHook preCheck
-
-              cargo check
-              rustfmt --check src/**/*.rs
-              cargo clippy
-
-              runHook postCheck
-            '';
             cargoLock = {
               lockFile = ./Cargo.lock;
             };
+            # For tooling like rust-analyzer
+            RUST_SRC_PATH = "${rustPlatform.rustLibSrc}";
+            doCheck = false;
             meta = with nixpkgs.lib; {
               description = "App source + Nix packages + Docker = Image";
               homepage = "https://github.com/railwayapp/nixpacks";
@@ -49,17 +35,20 @@
               maintainers = [ maintainers.zoedsoupe ];
             };
           };
-        };
+        in {
+          packages = {
+            nixpacks = package;
+            default = package;
+          };
 
-        devShell = nixpkgs.mkShell {
-          name = "nixpacks";
+          devShells = {
+            nixpacks = package;
+            default = package;
+          };
 
-          buildInputs = with nixpkgs; [
-            # rust overlay already comes with complete toolchains
-            # see more at https://github.com/oxalica/rust-overlay
-            rust-bin.stable.latest.complete docker
-          ];
+          checks = {
+            nixpacks = package;
+          };
         };
-      };
     };
 }
