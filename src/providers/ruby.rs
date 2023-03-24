@@ -111,7 +111,7 @@ impl RubyProvider {
 
         setup.add_cmd(format!(
             "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash -s stable \
-            && printf '\\neval \"$(rbenv init -)\"' >> /root/.profile \
+            && printf '\\neval \"$(~/.rbenv/bin/rbenv init -)\"' >> /root/.profile \
             && . /root/.profile \
             && rbenv install {ruby_version} \
             && rbenv global {ruby_version} \

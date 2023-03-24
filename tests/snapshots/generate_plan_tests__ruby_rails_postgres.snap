@@ -66,7 +66,7 @@ expression: plan
         "libdb-dev"
       ],
       "cmds": [
-        "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash -s stable && printf '\\neval \"$(rbenv init -)\"' >> /root/.profile && . /root/.profile && rbenv install 3.1.2 && rbenv global 3.1.2 && gem install bundler:2.3.7"
+        "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash -s stable && printf '\\neval \"$(~/.rbenv/bin/rbenv init -)\"' >> /root/.profile && . /root/.profile && rbenv install 3.1.2 && rbenv global 3.1.2 && gem install bundler:2.3.7"
       ],
       "onlyIncludeFiles": [],
       "paths": [
