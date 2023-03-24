@@ -53,9 +53,7 @@ expression: plan
       "dependsOn": [
         "install"
       ],
-      "commands": [
-        "bundle exec rake assets:precompile"
-      ]
+      "commands": []
     }
   ],
   "startPhase": {
