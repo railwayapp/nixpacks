@@ -150,7 +150,6 @@ impl Provider for NodeProvider {
         }
 
         install.add_cache_directory(NodeProvider::get_package_manager_cache_dir(app));
-        install.add_path("/app/node_modules/.bin".to_string());
 
         // Cypress cache directory
         let all_deps = NodeProvider::get_all_deps(app)?;
@@ -180,6 +179,9 @@ impl Provider for NodeProvider {
                 build.add_cache_directory(dir);
             }
         }
+
+        // This is in build instead of install because it often invalidates docker cache in CI
+        build.add_path("/app/node_modules/.bin".to_string());
 
         NodeProvider::cache_tsbuildinfo_file(app, &mut build);
 
