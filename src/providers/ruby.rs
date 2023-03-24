@@ -146,7 +146,12 @@ impl RubyProvider {
 
     fn get_build(&self, app: &App) -> Result<Option<Phase>> {
         let mut build = Phase::build(None);
-        if self.is_rails_app(app) {
+
+        // Only compile assets if a Rails app have the sprockets (Rails' asset
+        // pipeline) gem installed. Rails API-only apps [0] do not come with
+        // the sprockets gem because they have no assets.
+        // [0] https://guides.rubyonrails.org/api_app.html
+        if self.is_rails_app(app) && self.uses_sprockets(app)? {
             build.add_cmd("bundle exec rake assets:precompile".to_string());
         }
 
@@ -254,6 +259,14 @@ impl RubyProvider {
                 .read_file("config/application.rb")
                 .unwrap_or_default()
                 .contains("Rails::Application")
+    }
+
+    fn uses_sprockets(&self, app: &App) -> Result<bool> {
+        if app.includes_file("Gemfile") {
+            let gemfile = app.read_file("Gemfile").unwrap_or_default();
+            return Ok(gemfile.contains("sprockets"));
+        }
+        Ok(false)
     }
 
     fn uses_postgres(&self, app: &App) -> Result<bool> {
