@@ -54,7 +54,8 @@ gem "charlock_holmes"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "debug", platforms: %i[ mri mingw x64_mingw ]
+  # Pinned to 1.7.0 to workaround https://github.com/ruby/debug/issues/898
+  gem "debug", "1.7.0", platforms: %i[ mri mingw x64_mingw ]
 end
 
 group :development do
