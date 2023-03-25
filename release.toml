@@ -1,0 +1,4 @@
+# Automatically update version in flake.nix on `cargo release`
+pre-release-replacements = [
+  { file="flake.nix", search="version = \".*\";", replace="version = \"{{version}}\";" },
+]
