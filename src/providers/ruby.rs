@@ -359,7 +359,7 @@ mod test {
                 &App::new("./examples/ruby-rails-postgres")?,
                 &Environment::default(),
             )?,
-            "3.1.2"
+            "3.2.1"
         );
 
         Ok(())
