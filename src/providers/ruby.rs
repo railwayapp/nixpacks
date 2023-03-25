@@ -156,6 +156,10 @@ impl RubyProvider {
 
         install.add_cmd("bundle install".to_string());
 
+        if self.uses_gem_dep(app, "bootsnap") {
+            install.add_cmd("bundle exec bootsnap precompile --gemfile");
+        }
+
         // Ensure that the ruby executable is in the PATH
         let ruby_version = self.get_ruby_version(app, env)?;
         install.add_path(format!("/usr/local/rvm/rubies/{ruby_version}/bin"));
@@ -174,6 +178,10 @@ impl RubyProvider {
         // [0] https://guides.rubyonrails.org/api_app.html
         if self.is_rails_app(app) && self.uses_asset_pipeline(app)? {
             build.add_cmd("bundle exec rake assets:precompile".to_string());
+        }
+
+        if self.is_rails_app(app) && self.uses_gem_dep(app, "bootsnap") {
+            build.add_cmd("bundle exec bootsnap precompile app/ lib/");
         }
 
         Ok(Some(build))
