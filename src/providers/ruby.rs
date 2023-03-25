@@ -90,6 +90,10 @@ impl RubyProvider {
             setup.add_nix_pkgs(&[Pkg::new("imagemagick")]);
         }
 
+        if self.uses_gem_dep(app, "vips") {
+            setup.add_apt_pkgs(vec![String::from("libvips-dev")]);
+        }
+
         if self.uses_gem_dep(app, "charlock_holmes") {
             setup.add_apt_pkgs(vec![String::from("libicu-dev")]);
         }
