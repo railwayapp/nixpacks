@@ -146,9 +146,14 @@ fn nix_expression_for_group(group: &NixGroup) -> String {
             let pkgs = {} {{ overlays = [ {} ]; }};
             in with pkgs;
               let
-                APPEND_LIBRARY_PATH = \"${{lib.makeLibraryPath [ {} ] }}\";
+                libs = [ {} ];
+                APPEND_LIBRARY_PATH = \"${{lib.makeLibraryPath libs }}\";
+                APPEND_INCLUDE_PATH = \"${{lib.makeSearchPathOutput \"dev\" \"include\" libs}}\";
+                APPEND_PKG_CONFIG_PATH = \"${{lib.makeSearchPathOutput \"dev\" \"lib/pkgconfig\" libs}}\";
                 myLibraries = writeText \"libraries\" ''
                   export LD_LIBRARY_PATH=\"${{APPEND_LIBRARY_PATH}}:$LD_LIBRARY_PATH\"
+                  export C_INCLUDE_PATH=\"${{APPEND_INCLUDE_PATH}}:$C_INCLUDE_PATH\"
+                  export PKG_CONFIG_PATH=\"${{APPEND_PKG_CONFIG_PATH}}:$PKG_CONFIG_PATH\"
                   {}
                 '';
               in

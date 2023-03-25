@@ -11,6 +11,20 @@ use crate::nixpacks::{
 use anyhow::{bail, Ok, Result};
 use regex::Regex;
 
+struct RubyVersion {
+    major: u8,
+    minor: u8
+}
+
+impl RubyVersion {
+    fn parse(version: &str) -> Option<Self> {
+        let mut split = version.split('.');
+        let major = split.next()?.parse().ok()?;
+        let minor = split.next()?.parse().ok()?;
+        Some(Self { major, minor })
+    }
+}
+
 pub struct RubyProvider {}
 
 const BUNDLE_CACHE_DIR: &str = "/root/.bundle/cache";
@@ -56,64 +70,80 @@ impl Provider for RubyProvider {
 }
 
 impl RubyProvider {
+    fn get_setup_nix_pkgs(&self, app: &App, ruby_version: &str) -> Result<(Vec<Pkg>, Vec<String>)> {
+        let mut pkgs = vec![
+            Pkg::new("procps"),
+            Pkg::new("git"),
+            Pkg::new("stdenv.cc"),
+            Pkg::new("gnumake"),
+            Pkg::new("curl"),
+            Pkg::new("autoconf"),
+            Pkg::new("bison"),
+            Pkg::new("pkg-config")
+        ];
+        let mut libs = vec![
+            "stdenv.cc.cc.lib",
+            "libyaml",
+            "gdbm",
+            "openssl",
+            "readline",
+            "zlib",
+            "ncurses",
+            "libffi",
+            "db",
+            "libuuid"
+        ];
+
+        if self.uses_gem_dep(app, "pg") {
+            libs.push("postgresql");
+        }
+
+        if self.uses_gem_dep(app, "mysql") {
+            libs.push("libmysqlclient");
+        }
+
+        if self.uses_gem_dep(app, "magick") {
+            libs.push("imagemagick");
+        }
+
+        if self.uses_gem_dep(app, "ruby-vips") {
+            libs.push("vips");
+        }
+
+        if self.uses_gem_dep(app, "charlock_holmes") {
+            libs.push("icu");
+        }
+
+        if let Some(ruby_version) = RubyVersion::parse(ruby_version) {
+            // YJIT in Ruby 3.2+ requires rustc to install
+            if ruby_version.major >= 3 && ruby_version.minor >= 2 {
+                pkgs.push(Pkg::new("rustc"));
+            }
+        }
+
+        Ok((pkgs, libs.into_iter().map(|lib| lib.to_string()).collect()))
+    }
+
     fn get_setup(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
         let mut setup = Phase::setup(None);
-        setup.add_apt_pkgs(vec!["procps".to_string()]);
 
         // Don't re-install ruby if the code has changed
         setup.only_include_files = Some(Vec::new());
 
-        if self.uses_postgres(app)? {
-            setup.add_apt_pkgs(vec!["libpq-dev".to_string()]);
-        }
-
-        if self.uses_mysql(app)? {
-            setup.add_apt_pkgs(vec!["default-libmysqlclient-dev".to_string()]);
-        }
-
-        if self.uses_gem_dep(app, "magick") {
-            setup.add_apt_pkgs(vec![String::from("libmagickwand-dev")]);
-            setup.add_nix_pkgs(&[Pkg::new("imagemagick")]);
-        }
-
-        if self.uses_gem_dep(app, "charlock_holmes") {
-            setup.add_apt_pkgs(vec![String::from("libicu-dev")]);
-        }
-
         let ruby_version = self.get_ruby_version(app, env)?;
         let ruby_version = ruby_version.trim_start_matches("ruby-");
 
-        // Packages necessary for rbenv
-        // https://github.com/rbenv/ruby-build/wiki#ubuntudebianmint
-        setup.add_apt_pkgs(
-            vec![
-                "git",
-                "curl",
-                "autoconf",
-                "bison",
-                "build-essential",
-                "libssl-dev",
-                "libyaml-dev",
-                "libreadline6-dev",
-                "zlib1g-dev",
-                "libncurses5-dev",
-                "libffi-dev",
-                "libgdbm6",
-                "libgdbm-dev",
-                "libdb-dev",
-            ]
-            .iter()
-            .map(|s| (*s).to_string())
-            .collect(),
-        );
-
         let bundler_version = self.get_bundler_version(app);
+
+        let (nix_pkgs, nix_libs) = self.get_setup_nix_pkgs(app, ruby_version)?;
+        setup.add_nix_pkgs(&nix_pkgs);
+        setup.add_pkgs_libs(nix_libs);
 
         setup.add_cmd(format!(
             "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash -s stable \
             && printf '\\neval \"$(~/.rbenv/bin/rbenv init -)\"' >> /root/.profile \
             && . /root/.profile \
-            && rbenv install {ruby_version} \
+            && rbenv install --verbose {ruby_version} \
             && rbenv global {ruby_version} \
             && gem install {bundler_version}"
         ));
@@ -135,6 +165,10 @@ impl RubyProvider {
 
         install.add_cmd("bundle install".to_string());
 
+        if self.uses_gem_dep(app, "bootsnap") {
+            install.add_cmd("bundle exec bootsnap precompile --gemfile");
+        }
+
         // Ensure that the ruby executable is in the PATH
         let ruby_version = self.get_ruby_version(app, env)?;
         install.add_path(format!("/usr/local/rvm/rubies/{ruby_version}/bin"));
@@ -153,6 +187,10 @@ impl RubyProvider {
         // [0] https://guides.rubyonrails.org/api_app.html
         if self.is_rails_app(app) && self.uses_asset_pipeline(app)? {
             build.add_cmd("bundle exec rake assets:precompile".to_string());
+
+            if self.uses_gem_dep(app, "bootsnap") {
+                build.add_cmd("bundle exec bootsnap precompile app/ lib/");
+            }
         }
 
         Ok(Some(build))
@@ -265,21 +303,6 @@ impl RubyProvider {
         if app.includes_file("Gemfile") {
             let gemfile = app.read_file("Gemfile").unwrap_or_default();
             return Ok(gemfile.contains("sprockets") || gemfile.contains("propshaft"));
-        }
-        Ok(false)
-    }
-
-    fn uses_postgres(&self, app: &App) -> Result<bool> {
-        if app.includes_file("Gemfile") {
-            let gemfile = app.read_file("Gemfile").unwrap_or_default();
-            return Ok(gemfile.contains("pg"));
-        }
-        Ok(false)
-    }
-    fn uses_mysql(&self, app: &App) -> Result<bool> {
-        if app.includes_file("Gemfile") {
-            let gemfile = app.read_file("Gemfile").unwrap_or_default();
-            return Ok(gemfile.contains("mysql"));
         }
         Ok(false)
     }
