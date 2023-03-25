@@ -10,19 +10,13 @@ expression: plan
     "GEM_HOME": "/usr/local/rvm/gems/3.2.1",
     "GEM_PATH": "/usr/local/rvm/gems/3.2.1:/usr/local/rvm/gems/3.2.1@global",
     "MALLOC_ARENA_MAX": "2",
-    "NIXPACKS_METADATA": "ruby",
-    "RAILS_LOG_TO_STDOUT": "enabled",
-    "RAILS_SERVE_STATIC_FILES": "1"
+    "NIXPACKS_METADATA": "ruby"
   },
   "phases": {
     "build": {
       "name": "build",
       "dependsOn": [
         "install"
-      ],
-      "cmds": [
-        "bundle exec rake assets:precompile",
-        "bundle exec bootsnap precompile app/ lib/"
       ]
     },
     "install": {
@@ -31,8 +25,7 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "bundle install",
-        "bundle exec bootsnap precompile --gemfile"
+        "bundle install"
       ],
       "onlyIncludeFiles": [
         "Gemfile",
@@ -50,18 +43,12 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "imagemagick",
         "rustc"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]",
       "aptPkgs": [
         "procps",
-        "libpq-dev",
-        "default-libmysqlclient-dev",
-        "libmagickwand-dev",
-        "libvips-dev",
-        "libicu-dev",
         "git",
         "curl",
         "autoconf",
@@ -87,6 +74,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "rake db:migrate && bundle exec bin/rails server -b 0.0.0.0 -p ${PORT:-3000}"
+    "cmd": "ruby --enable-yjit app.rb"
   }
 }
