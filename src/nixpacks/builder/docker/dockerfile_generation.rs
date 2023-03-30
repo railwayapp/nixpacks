@@ -143,7 +143,7 @@ impl DockerfileGenerator for BuildPlan {
                 // Pull the variables in from docker `--build-arg`
                 variables
                     .iter()
-                    .map(|var| var.0.to_string())
+                    .map(|var| format!("{}={}", var.0, var.1))
                     .collect::<Vec<_>>()
                     .join(" "),
                 // Make the variables available at runtime
