@@ -50,10 +50,16 @@ PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
 
 ## Start
 
-if Django Application
+if Django Application with wsgi and you have `WSGI_APPLICATION` defined
 
 ```
 python manage.py migrate && gunicorn {app_name}.wsgi
+```
+
+if Django Application without wsgi
+
+```
+python manage.py migrate && python manage.py runserver
 ```
 
 if `pyproject.toml`
