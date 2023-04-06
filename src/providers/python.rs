@@ -207,9 +207,9 @@ impl PythonProvider {
                 ))));
             }
 
-            return Ok(Some(StartPhase::new(format!(
-                "python manage.py migrate && python manage.py runserver"
-            ))));
+            return Ok(Some(StartPhase::new(
+                "python manage.py migrate && python manage.py runserver",
+            )));
         }
 
         if app.includes_file("pyproject.toml") {
@@ -272,7 +272,7 @@ impl PythonProvider {
                 }
             }
         }
-        return Ok(None);
+        Ok(None)
     }
 
     fn parse_pipfile_python_version(file_content: &str) -> Result<Option<String>> {
