@@ -10,7 +10,7 @@ use crate::{
     },
     Pkg,
 };
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::{Context, Ok, Result};
 use regex::{Match, Regex};
 use serde::Deserialize;
 use std::result::Result::Ok as OkResult;
@@ -201,8 +201,14 @@ impl PythonProvider {
         if PythonProvider::is_django(app, env)? {
             let app_name = PythonProvider::get_django_app_name(app, env)?;
 
+            if let Some(name) = app_name {
+                return Ok(Some(StartPhase::new(format!(
+                    "python manage.py migrate && gunicorn {name}"
+                ))));
+            }
+
             return Ok(Some(StartPhase::new(format!(
-                "python manage.py migrate && gunicorn {app_name}"
+                "python manage.py migrate && python manage.py runserver"
             ))));
         }
 
@@ -246,7 +252,7 @@ impl PythonProvider {
         app.find_match(&re, "/**/*.py")
     }
 
-    fn get_django_app_name(app: &App, _env: &Environment) -> Result<String> {
+    fn get_django_app_name(app: &App, _env: &Environment) -> Result<Option<String>> {
         // Look for the settings.py file
         let paths = app.find_files("/**/*.py").unwrap();
 
@@ -262,11 +268,11 @@ impl PythonProvider {
                 if let Some(value) = re.captures(f.as_str()) {
                     // Get the first and only match
                     // e.g "mysite.wsgi"
-                    return Ok(value.get(1).unwrap().as_str().into());
+                    return Ok(Some(value.get(1).unwrap().as_str().into()));
                 }
             }
         }
-        bail!("Failed to find django application name!")
+        return Ok(None);
     }
 
     fn parse_pipfile_python_version(file_content: &str) -> Result<Option<String>> {

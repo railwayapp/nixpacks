@@ -617,6 +617,39 @@ async fn test_django() {
 }
 
 #[tokio::test]
+async fn test_django_no_wsgi() {
+    // Create the network
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    // Create the postgres instance
+    let c = run_postgres();
+    let container_name = c.name.clone();
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    // Build the Django example
+    let name = simple_build("./examples/python-django-no-wsgi").await;
+
+    // Run the Django example on the attached network
+    let output = run_image(
+        &name,
+        Some(Config {
+            environment_variables: c.config.unwrap().environment_variables,
+            network: Some(network_name.clone()),
+        }),
+    )
+    .await;
+
+    // Cleanup containers and networks
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
+
+    assert!(output.contains("Running migrations"));
+}
+
+#[tokio::test]
 async fn test_django_mysql() {
     let n = create_network();
     let network_name = n.name.clone();
