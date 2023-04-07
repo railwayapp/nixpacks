@@ -266,7 +266,7 @@ impl PythonProvider {
                 }
             }
         }
-        bail!("Failed to find django application name!")
+        bail!("Failed to find your WSGI_APPLICATION django setting. Add this to continue.")
     }
 
     fn parse_pipfile_python_version(file_content: &str) -> Result<Option<String>> {
