@@ -913,6 +913,14 @@ async fn test_ruby_rails() {
 }
 
 #[tokio::test]
+async fn test_ruby_rails_api_app() {
+    let name = simple_build("./examples/ruby-rails-api-app").await;
+    let output = run_image(&name, None).await;
+
+    assert!(output.contains("Rails 7"));
+}
+
+#[tokio::test]
 async fn test_clojure() {
     let name = simple_build("./examples/clojure").await;
     let output = run_image(&name, None).await;
