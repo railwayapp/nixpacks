@@ -40,7 +40,7 @@ cargo install cargo-insta
 Test and review the generate plan tests.
 
 ```
-cargo insta test --review -- --test generate_plan_tests
+cargo insta test --review --test generate_plan_tests
 # or
 cargo snapshot
 ```

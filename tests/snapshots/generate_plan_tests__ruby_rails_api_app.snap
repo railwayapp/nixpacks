@@ -19,6 +19,9 @@ expression: plan
       "name": "build",
       "dependsOn": [
         "install"
+      ],
+      "cmds": [
+        "bundle exec bootsnap precompile app/ lib/"
       ]
     },
     "install": {
@@ -27,7 +30,8 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "bundle install"
+        "bundle install",
+        "bundle exec bootsnap precompile --gemfile"
       ],
       "onlyIncludeFiles": [
         "Gemfile",
@@ -44,6 +48,11 @@ expression: plan
     },
     "setup": {
       "name": "setup",
+      "nixPkgs": [
+        "rustc"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]",
       "aptPkgs": [
         "procps",
         "git",

@@ -66,6 +66,11 @@ expression: plan
     },
     "setup": {
       "name": "setup",
+      "nixPkgs": [
+        "rustc"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]",
       "aptPkgs": [
         "procps",
         "git",

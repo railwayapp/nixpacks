@@ -11,6 +11,20 @@ use crate::nixpacks::{
 use anyhow::{bail, Ok, Result};
 use regex::Regex;
 
+struct RubyVersion {
+    major: u8,
+    minor: u8,
+}
+
+impl RubyVersion {
+    fn parse(version: &str) -> Option<Self> {
+        let mut split = version.split('.');
+        let major = split.next()?.parse().ok()?;
+        let minor = split.next()?.parse().ok()?;
+        Some(Self { major, minor })
+    }
+}
+
 pub struct RubyProvider {}
 
 const BUNDLE_CACHE_DIR: &str = "/root/.bundle/cache";
@@ -76,12 +90,23 @@ impl RubyProvider {
             setup.add_nix_pkgs(&[Pkg::new("imagemagick")]);
         }
 
+        if self.uses_gem_dep(app, "vips") {
+            setup.add_apt_pkgs(vec![String::from("libvips-dev")]);
+        }
+
         if self.uses_gem_dep(app, "charlock_holmes") {
             setup.add_apt_pkgs(vec![String::from("libicu-dev")]);
         }
 
         let ruby_version = self.get_ruby_version(app, env)?;
         let ruby_version = ruby_version.trim_start_matches("ruby-");
+
+        if let Some(ruby_version) = RubyVersion::parse(ruby_version) {
+            // YJIT in Ruby 3.1+ requires rustc to install
+            if ruby_version.major >= 3 && ruby_version.minor >= 1 {
+                setup.add_nix_pkgs(&[Pkg::new("rustc")]);
+            }
+        }
 
         // Packages necessary for rbenv
         // https://github.com/rbenv/ruby-build/wiki#ubuntudebianmint
@@ -135,6 +160,10 @@ impl RubyProvider {
 
         install.add_cmd("bundle install".to_string());
 
+        if self.uses_gem_dep(app, "bootsnap") {
+            install.add_cmd("bundle exec bootsnap precompile --gemfile");
+        }
+
         // Ensure that the ruby executable is in the PATH
         let ruby_version = self.get_ruby_version(app, env)?;
         install.add_path(format!("/usr/local/rvm/rubies/{ruby_version}/bin"));
@@ -153,6 +182,10 @@ impl RubyProvider {
         // [0] https://guides.rubyonrails.org/api_app.html
         if self.is_rails_app(app) && self.uses_asset_pipeline(app)? {
             build.add_cmd("bundle exec rake assets:precompile".to_string());
+        }
+
+        if self.is_rails_app(app) && self.uses_gem_dep(app, "bootsnap") {
+            build.add_cmd("bundle exec bootsnap precompile app/ lib/");
         }
 
         Ok(Some(build))
@@ -330,7 +363,7 @@ mod test {
                 &App::new("./examples/ruby-rails-postgres")?,
                 &Environment::default(),
             )?,
-            "3.1.2"
+            "3.2.1"
         );
 
         Ok(())

@@ -852,6 +852,13 @@ async fn test_ruby_2() {
 }
 
 #[tokio::test]
+async fn test_ruby_3() {
+    let name = simple_build("./examples/ruby-3").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Hello from Ruby 3! YJIT is enabled."));
+}
+
+#[tokio::test]
 async fn test_ruby_sinatra() {
     let name = simple_build("./examples/ruby-sinatra/").await;
     let output = run_image(&name, None).await;
