@@ -153,8 +153,6 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    const VERSION: &str = env!("CARGO_PKG_VERSION");
-
     let args = Args::parse();
 
     let pkgs = args
