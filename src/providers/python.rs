@@ -140,7 +140,7 @@ impl PythonProvider {
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<Phase>> {
         let env_loc = "/opt/venv";
-        let create_env = format!("python -m venv {env_loc}");
+        let create_env = format!("python -m venv --copies {env_loc}");
         let activate_env = format!(". {env_loc}/bin/activate");
 
         if app.includes_file("requirements.txt") {

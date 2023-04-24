@@ -16,7 +16,7 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install --upgrade build setuptools && pip install ."
+        "python -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip install --upgrade build setuptools && pip install ."
       ],
       "onlyIncludeFiles": [
         "pyproject.toml"
