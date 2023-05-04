@@ -2,7 +2,7 @@
 
 Thanks for your interest in contributing to this project! PRs and issues are welcome.
 
-For larger changes, please first make an [RFC issue](https://github.com/railwayapp/nixpacks/issues). You can follow along with the roadmap in the [GitHub project](https://github.com/railwayapp/nixpacks/projects/1).
+For larger changes, please start a discussion by [creating an issue](https://github.com/railwayapp/nixpacks/issues/new?assignees=&labels=&template=feature_request.yml&title=Nixpacks+Feature+Request).
 
 ## How to contribute
 
