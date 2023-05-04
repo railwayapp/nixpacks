@@ -4,11 +4,13 @@ use super::{
     BuildPlan,
 };
 
+/// Types that impl this trait can be pairwise combined.
 pub trait Mergeable {
     fn merge(c1: &Self, c2: &Self) -> Self;
 }
 
 impl Mergeable for BuildPlan {
+    /// Given two BuildPlans, produce a third BuildPlan containing the data of both.
     fn merge(c1: &BuildPlan, c2: &BuildPlan) -> BuildPlan {
         let mut new_plan = c1.clone();
         let plan2 = c2.clone();
@@ -66,6 +68,7 @@ impl Mergeable for BuildPlan {
 }
 
 impl Mergeable for Phase {
+    /// Given two Phases, produce a third Phase containing the data of both.
     fn merge(c1: &Phase, c2: &Phase) -> Phase {
         let mut phase = c1.clone();
         let c2 = c2.clone();
@@ -88,6 +91,7 @@ impl Mergeable for Phase {
 }
 
 impl Mergeable for StartPhase {
+    /// Given two StartPhases, produce a third StartPhase containing the data of both.
     fn merge(c1: &StartPhase, c2: &StartPhase) -> StartPhase {
         let mut start_phase = c1.clone();
         let c2 = c2.clone();

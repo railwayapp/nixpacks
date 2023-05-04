@@ -20,12 +20,14 @@ use std::{
     string::ToString,
 };
 
+/// The build plan config file format to use.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum PlanFormat {
     Json,
     Toml,
 }
 
+/// Arguments passed to `nixpacks`.
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
@@ -70,6 +72,7 @@ struct Args {
     config: Option<String>,
 }
 
+/// The valid subcommands passed to `nixpacks`, and their arguments.
 #[derive(Subcommand)]
 enum Commands {
     /// Generate a build plan for an app
@@ -201,6 +204,7 @@ async fn main() -> Result<()> {
     };
 
     match args.command {
+        // Produce a build plan for a project and print it to stdout.
         Commands::Plan { path, format } => {
             let plan = generate_build_plan(&path, env, &options)?;
 
@@ -211,10 +215,12 @@ async fn main() -> Result<()> {
 
             println!("{plan_s}");
         }
+        // Detect which providers should be used to build a project and print them to stdout.
         Commands::Detect { path } => {
             let providers = get_plan_providers(&path, env, &options)?;
             println!("{}", providers.join(", "));
         }
+        // Generate a Dockerfile and builds a container, using any specified build options.
         Commands::Build {
             path,
             name,
@@ -265,6 +271,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+/// Creates a key for storing image layers in the Docker cache.
 fn get_default_cache_key(path: &str) -> Result<Option<String>> {
     let current_dir = env::current_dir()?;
     let source = current_dir.join(path).canonicalize();

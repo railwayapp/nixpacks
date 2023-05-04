@@ -2,6 +2,7 @@ use anyhow::Result;
 use ignore::WalkBuilder;
 use std::{fs, io, path::Path};
 
+/// Copies a directory and all its contents to the destination path, recursively.
 pub fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) -> Result<()> {
     let walker = WalkBuilder::new(&source)
         .follow_links(false)
