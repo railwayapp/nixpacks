@@ -48,7 +48,7 @@ impl Provider for RustProvider {
 }
 
 impl RustProvider {
-    fn get_setup(app: &App, env: &Environment) -> Result<Phase> {
+    pub(crate) fn get_setup(app: &App, env: &Environment) -> Result<Phase> {
         let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
 
         if let Some(target) = RustProvider::get_target(app, env)? {
@@ -78,7 +78,7 @@ impl RustProvider {
         Ok(setup)
     }
 
-    fn get_build(app: &App, env: &Environment) -> Result<Phase> {
+    pub(crate) fn get_build(app: &App, env: &Environment) -> Result<Phase> {
         let mut build = Phase::build(None);
         if !app.includes_file("Cargo.toml") {
             return Ok(build);
@@ -127,7 +127,7 @@ impl RustProvider {
         Ok(build)
     }
 
-    fn get_bins(app: &App) -> Result<Option<Vec<String>>> {
+    pub(crate) fn get_bins(app: &App) -> Result<Option<Vec<String>>> {
         let mut bins = vec![];
 
         // Support the main bin
@@ -162,7 +162,7 @@ impl RustProvider {
         Ok(Some(bins))
     }
 
-    fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+    pub(crate) fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if (RustProvider::get_target(app, env)?).is_some() {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
                 let mut start = StartPhase::new(format!("./bin/{workspace}"));
@@ -187,7 +187,7 @@ impl RustProvider {
         }
     }
 
-    fn get_app_name(app: &App) -> Result<Option<String>> {
+    pub(crate) fn get_app_name(app: &App) -> Result<Option<String>> {
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
             if let Some(package) = toml_file.package {
                 let name = package.name;
@@ -198,7 +198,7 @@ impl RustProvider {
         Ok(None)
     }
 
-    fn get_start_bin(app: &App, env: &Environment) -> Result<Option<String>> {
+    pub(crate) fn get_start_bin(app: &App, env: &Environment) -> Result<Option<String>> {
         if let Some(bins) = RustProvider::get_bins(app)? {
             let mut bin: Option<String> = None;
 
@@ -228,7 +228,7 @@ impl RustProvider {
         }
     }
 
-    fn get_target(app: &App, env: &Environment) -> Result<Option<String>> {
+    pub(crate) fn get_target(app: &App, env: &Environment) -> Result<Option<String>> {
         if RustProvider::should_use_musl(app, env)? {
             Ok(Some(format!("{ARCH}-unknown-linux-musl")))
         } else {
@@ -236,7 +236,7 @@ impl RustProvider {
         }
     }
 
-    fn parse_cargo_toml(app: &App) -> Result<Option<Manifest>> {
+    pub(crate) fn parse_cargo_toml(app: &App) -> Result<Option<Manifest>> {
         if app.includes_file("Cargo.toml") {
             let cargo_toml: Manifest = app.read_toml("Cargo.toml").context("Reading Cargo.toml")?;
 
@@ -246,7 +246,7 @@ impl RustProvider {
         Ok(None)
     }
 
-    fn get_rust_toolchain_file(app: &App) -> Option<String> {
+    pub(crate) fn get_rust_toolchain_file(app: &App) -> Option<String> {
         if app.includes_file("rust-toolchain") {
             Some("rust-toolchain".to_string())
         } else if app.includes_file("rust-toolchain.toml") {
@@ -257,7 +257,7 @@ impl RustProvider {
     }
 
     // Get the rust package version by parsing the `rust-version` field in `Cargo.toml`
-    fn get_rust_pkg(app: &App, env: &Environment) -> Result<Pkg> {
+    pub(crate) fn get_rust_pkg(app: &App, env: &Environment) -> Result<Pkg> {
         if let Some(version) = env.get_config_variable("RUST_VERSION") {
             return Ok(Pkg::new(&format!("rust-bin.stable.\"{version}\".default")));
         }
@@ -289,7 +289,7 @@ impl RustProvider {
         Ok(pkg)
     }
 
-    fn should_use_musl(app: &App, env: &Environment) -> Result<bool> {
+    pub(crate) fn should_use_musl(app: &App, env: &Environment) -> Result<bool> {
         if env.is_config_variable_truthy("NO_MUSL") {
             return Ok(false);
         }
@@ -306,7 +306,7 @@ impl RustProvider {
         Ok(true)
     }
 
-    fn uses_openssl(app: &App) -> Result<bool> {
+    pub(crate) fn uses_openssl(app: &App) -> Result<bool> {
         // Check Cargo.toml
         if let Some(toml_file) = RustProvider::parse_cargo_toml(app)? {
             if toml_file.dependencies.contains_key("openssl")
@@ -325,7 +325,7 @@ impl RustProvider {
         Ok(false)
     }
 
-    fn resolve_cargo_workspace(app: &App, env: &Environment) -> Result<Option<String>> {
+    pub(crate) fn resolve_cargo_workspace(app: &App, env: &Environment) -> Result<Option<String>> {
         if let Some(name) = env.get_config_variable("CARGO_WORKSPACE") {
             return Ok(Some(name));
         }
@@ -341,7 +341,7 @@ impl RustProvider {
         Ok(None)
     }
 
-    fn find_binary_in_workspace(app: &App, workspace: &Workspace) -> Result<Option<String>> {
+    pub(crate) fn find_binary_in_workspace(app: &App, workspace: &Workspace) -> Result<Option<String>> {
         let find_binary = |member: &str| -> Result<Option<String>> {
             let mut manifest = app.read_toml::<Manifest>(&format!("{member}/Cargo.toml"))?;
 
