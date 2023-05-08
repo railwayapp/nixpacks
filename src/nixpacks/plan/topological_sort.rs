@@ -6,6 +6,7 @@ pub trait TopItem {
     fn get_dependencies(&self) -> &[String];
 }
 
+/// Sort items by functional dependencies.
 pub fn topological_sort<T>(items: Vec<T>) -> Result<Vec<T>>
 where
     T: Clone + TopItem,

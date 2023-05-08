@@ -47,6 +47,7 @@ mod chain;
 pub mod nixpacks;
 pub mod providers;
 
+/// Supplies all currently-defined providers to build plan generators and image builders.
 pub fn get_providers() -> &'static [&'static (dyn Provider)] {
     &[
         &CrystalProvider {},
@@ -72,6 +73,7 @@ pub fn get_providers() -> &'static [&'static (dyn Provider)] {
     ]
 }
 
+/// Produces a build plan for the project based on environment variables and CLI options.
 pub fn generate_build_plan(
     path: &str,
     envs: Vec<&str>,
@@ -86,6 +88,7 @@ pub fn generate_build_plan(
     Ok(plan.0)
 }
 
+/// Get all specified and detected providers for a project.
 pub fn get_plan_providers(
     path: &str,
     envs: Vec<&str>,
@@ -99,6 +102,7 @@ pub fn get_plan_providers(
     generator.get_plan_providers(&app, &environment)
 }
 
+/// Builds a Docker image based on environment data and build options from config files or existing build plans.
 pub async fn create_docker_image(
     path: &str,
     envs: Vec<&str>,

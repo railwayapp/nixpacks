@@ -21,6 +21,7 @@ const NIXPACKS_SERVER_LISTEN_TO_IP: &str = "0.0.0.0";
 #[derive(Debug, Clone)]
 pub struct FileServer {}
 
+/// Holds the configuration for the fileserver used for the incremental Docker image cache.
 #[derive(Debug, Clone, Default)]
 pub struct FileServerConfig {
     pub listen_to_ip: String,
@@ -31,6 +32,7 @@ pub struct FileServerConfig {
 }
 
 impl FileServer {
+    /// Launch the file server using the default settings and the incremental cache storage directories.
     pub fn start(self, incremental_cache_dirs: &IncrementalCacheDirs) -> FileServerConfig {
         let port = self.get_free_port();
 
@@ -53,6 +55,7 @@ impl FileServer {
         config
     }
 
+    /// Try to find an unused port.
     fn get_free_port(&self) -> u16 {
         for _ in 1..3 {
             // try 2 times
@@ -65,6 +68,7 @@ impl FileServer {
         pick_unused_port().expect("No ports available")
     }
 
+    /// Using the provided config, launch a new file server.
     async fn run_app(data: FileServerConfig) -> std::io::Result<()> {
         let server_config = web::Data::new(data.clone());
         let server = HttpServer::new(move || {
@@ -85,6 +89,7 @@ impl FileServer {
         server.await
     }
 
+    /// Check if the provided access_token matches the one in the server response header.
     fn has_valid_access_token(token: Option<&HeaderValue>, access_token: &str) -> bool {
         if let Some(header) = token {
             match header.to_str() {

@@ -18,11 +18,13 @@ use std::{
 use tempdir::TempDir;
 use uuid::Uuid;
 
+/// Builds Docker images from options, logging to stdout if the build is successful.
 pub struct DockerImageBuilder {
     logger: Logger,
     options: DockerBuilderOptions,
 }
 
+/// Determine where to write project files and generated assets like Dockerfiles.
 fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<OutputDir> {
     if let Some(value) = &options.out_dir {
         OutputDir::new(value.into(), false)
@@ -38,6 +40,7 @@ use async_trait::async_trait;
 
 #[async_trait]
 impl ImageBuilder for DockerImageBuilder {
+    /// Build a Docker image from a given BuildPlan and data from environment variables.
     async fn create_image(&self, app_src: &str, plan: &BuildPlan, env: &Environment) -> Result<()> {
         let id = Uuid::new_v4();
 
@@ -112,6 +115,7 @@ impl DockerImageBuilder {
         DockerImageBuilder { logger, options }
     }
 
+    /// Generates the Docker command and arguments for building the project.
     fn get_docker_build_cmd(
         &self,
         plan: &BuildPlan,
@@ -178,6 +182,7 @@ impl DockerImageBuilder {
         Ok(docker_build_cmd)
     }
 
+    /// Copies project files to temporary output dir, if that option was used.
     fn write_app(&self, app_src: &str, output: &OutputDir) -> Result<()> {
         if output.is_temp {
             files::recursive_copy_dir(app_src, &output.root)
@@ -186,6 +191,7 @@ impl DockerImageBuilder {
         }
     }
 
+    /// Writes the generated Dockerfile to the output dir.
     fn write_dockerfile(&self, dockerfile: String, output: &OutputDir) -> Result<()> {
         let dockerfile_path = output.get_absolute_path("Dockerfile");
         File::create(dockerfile_path.clone()).context("Creating Dockerfile file")?;

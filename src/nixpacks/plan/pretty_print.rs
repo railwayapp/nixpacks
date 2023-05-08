@@ -10,6 +10,7 @@ const MIN_BOX_WIDTH: usize = 20;
 const MAX_BOX_WIDTH: usize = 80;
 
 impl BuildPlan {
+    /// The pretty-printed build plan, emitted by `nixpacks build`.
     pub fn get_build_string(&self) -> Result<String> {
         let title_str = format!(" Nixpacks v{NIX_PACKS_VERSION} ");
         let title_width = console::measure_text_width(title_str.as_str());
@@ -147,6 +148,7 @@ impl BuildPlan {
         })
     }
 
+    /// Produces a string of the packages to install and/or commands to run in the given phase.
     fn get_phase_content(&self, phase: &Phase) -> Result<String> {
         let mut c = String::new();
 
@@ -183,6 +185,7 @@ impl BuildPlan {
     }
 }
 
+/// Renders phase data as a row in the pretty-printed build plan.
 fn print_row(
     title: &str,
     content: &str,

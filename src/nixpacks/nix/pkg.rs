@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Represents a Nix package, any derivation overrides for it, and the nixpkgs overlay to fetch it from.
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
 pub struct Pkg {
@@ -18,6 +19,7 @@ impl Pkg {
         }
     }
 
+    /// Renders the Pkg as a Nix expression.
     pub fn to_nix_string(&self) -> String {
         match &self.overrides {
             Some(overrides) => {
@@ -32,6 +34,7 @@ impl Pkg {
         }
     }
 
+    /// Add desired overrides on the derivation for the given package.
     #[must_use]
     pub fn set_override(mut self, name: &str, pkg: &str) -> Self {
         if let Some(mut overrides) = self.overrides {
@@ -44,12 +47,14 @@ impl Pkg {
         self
     }
 
+    /// Add an overlay to fetch the package from.
     #[must_use]
     pub fn from_overlay(mut self, overlay: &str) -> Self {
         self.overlay = Some(overlay.to_string());
         self
     }
 
+    /// Pretty-print the package and any overrides as a Nix expression.
     pub fn to_pretty_string(&self) -> String {
         match &self.overrides {
             Some(overrides) => {

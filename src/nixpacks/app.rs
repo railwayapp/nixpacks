@@ -14,6 +14,7 @@ pub type StaticAssets = BTreeMap<String, String>;
 
 pub const ASSETS_DIR: &str = "/assets/";
 
+/// Represents a project's file and directory paths.
 #[derive(Debug, Clone)]
 pub struct App {
     pub source: PathBuf,
@@ -21,6 +22,7 @@ pub struct App {
 }
 
 impl App {
+    /// Generate a path representation of a project.
     pub fn new(path: &str) -> Result<App> {
         let current_dir = env::current_dir()?;
         let source = current_dir
@@ -39,7 +41,7 @@ impl App {
         self.source.join(name).is_file()
     }
 
-    /// Returns a list of paths matching a glob pattern
+    /// Returns a list of file paths matching a glob pattern
     ///
     /// # Errors
     /// Creating the Glob fails
@@ -53,7 +55,7 @@ impl App {
         Ok(directories)
     }
 
-    /// Returns a list of paths matching a glob pattern
+    /// Returns a list of directory paths matching a glob pattern
     ///
     /// # Errors
     /// Creating the Glob fails
@@ -67,6 +69,7 @@ impl App {
         Ok(directories)
     }
 
+    /// Check whether a shell-style pattern matches any paths in the app.
     fn find_glob(&self, pattern: &str) -> Result<Vec<PathBuf>> {
         let full_pattern = self.source.join(pattern);
 
@@ -116,6 +119,7 @@ impl App {
         Ok(data.replace("\r\n", "\n"))
     }
 
+    /// Check whether filenames matching a pattern exist in the project.
     pub fn find_match(&self, re: &Regex, pattern: &str) -> Result<bool> {
         let paths = match self.find_files(pattern) {
             Ok(v) => v,
@@ -160,6 +164,7 @@ impl App {
         }
     }
 
+    /// Try to json-parse a file.
     pub fn read_json<T>(&self, name: &str) -> Result<T>
     where
         T: DeserializeOwned,
@@ -172,6 +177,7 @@ impl App {
         Ok(value)
     }
 
+    /// Try to toml-parse a file.
     pub fn read_toml<T>(&self, name: &str) -> Result<T>
     where
         T: DeserializeOwned,
@@ -184,6 +190,7 @@ impl App {
         Ok(toml_file)
     }
 
+    /// Try to yaml-parse a file.
     pub fn read_yaml<T>(&self, name: &str) -> Result<T>
     where
         T: DeserializeOwned,

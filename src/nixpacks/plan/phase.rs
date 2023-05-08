@@ -10,6 +10,7 @@ use super::utils::remove_autos_from_vec;
 
 pub type Phases = BTreeMap<String, Phase>;
 
+/// Holds the packages, commands, and directories needed for part of a build.
 #[serde_with::skip_serializing_none]
 #[derive(PartialEq, Eq, Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -45,6 +46,7 @@ pub struct Phase {
     pub paths: Option<Vec<String>>,
 }
 
+/// Represents the final step of a container image, contains the startup command, any necessary files, and the final image that gets run by Docker.
 #[serde_with::skip_serializing_none]
 #[derive(PartialEq, Eq, Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -62,14 +64,21 @@ impl Phase {
         }
     }
 
+    /// Returns the name of this phase.
     pub fn get_name(&self) -> String {
         self.name.clone().unwrap_or_default()
     }
 
+    /// Prefixes the name of this phase with the provided string.
+    ///
+    /// Used for multi-provider builds to prefix a provider's name to the name of the phases it generated.
     pub fn prefix_name(&mut self, prefix: &str) {
         self.name = Some(format!("{prefix}:{}", self.get_name()));
     }
 
+    /// Prefixes the name of phases depended on by this phase with the provided string.
+    ///
+    /// Used for multi-provider builds to prefix a provider's name to the name of the dependencies in phases it generated.
     pub fn prefix_dependencies(&mut self, prefix: &str) {
         if let Some(depends_on) = &self.depends_on {
             self.depends_on = Some(
@@ -82,6 +91,7 @@ impl Phase {
         }
     }
 
+    /// Set the name of this phase.
     pub fn set_name<S: Into<String>>(&mut self, name: S) {
         self.name = Some(name.into());
     }
@@ -131,10 +141,12 @@ impl Phase {
             || !self.paths.clone().unwrap_or_default().is_empty()
     }
 
+    /// Add a phase name as a dependency of this phase.
     pub fn depends_on_phase<S: Into<String>>(&mut self, name: S) {
         self.depends_on = Some(add_to_option_vec(self.depends_on.clone(), name.into()));
     }
 
+    /// Add a collection of packages to install with Nix in this phase.
     pub fn add_nix_pkgs(&mut self, new_pkgs: &[Pkg]) {
         self.nix_overlays = Some(add_multiple_to_option_vec(
             self.nix_overlays.clone(),
@@ -149,6 +161,7 @@ impl Phase {
         ));
     }
 
+    /// Add a collection of libraries to install with Nix in this phase.
     pub fn add_pkgs_libs(&mut self, new_libraries: Vec<String>) {
         self.nix_libs = Some(add_multiple_to_option_vec(
             self.nix_libs.clone(),
@@ -156,14 +169,17 @@ impl Phase {
         ));
     }
 
+    /// Add a collection of packages to install with apt in this phase.
     pub fn add_apt_pkgs(&mut self, new_pkgs: Vec<String>) {
         self.apt_pkgs = Some(add_multiple_to_option_vec(self.apt_pkgs.clone(), new_pkgs));
     }
 
+    /// Add a command to execute in this phase.
     pub fn add_cmd<S: Into<String>>(&mut self, cmd: S) {
         self.cmds = Some(add_to_option_vec(self.cmds.clone(), cmd.into()));
     }
 
+    /// Add a file to the list of files copied into the container in this phase.
     pub fn add_file_dependency<S: Into<String>>(&mut self, file: S) {
         self.only_include_files = Some(add_to_option_vec(
             self.only_include_files.clone(),
@@ -171,6 +187,7 @@ impl Phase {
         ));
     }
 
+    /// Add a directory in which language-specific packages get installed.
     pub fn add_cache_directory<S: Into<String>>(&mut self, dir: S) {
         let mut new_directories = prevent_duplicates_vec(add_to_option_vec(
             self.cache_directories.clone(),
@@ -180,14 +197,17 @@ impl Phase {
         self.cache_directories = Some(new_directories);
     }
 
+    /// Add the given path to a list of paths that should be present in the built image.
     pub fn add_path(&mut self, path: String) {
         self.paths = Some(add_to_option_vec(self.paths.clone(), path));
     }
 
+    /// Set the nixpkgs revision used by this phase.
     pub fn set_nix_archive(&mut self, archive: String) {
         self.nixpkgs_archive = Some(archive);
     }
 
+    /// Store the phase dependencies for later reproducibility.
     pub fn pin(&mut self, use_legacy_openssl: bool) {
         if self.uses_nix() && self.nixpkgs_archive.is_none() {
             self.nixpkgs_archive = if use_legacy_openssl {
@@ -217,18 +237,22 @@ impl StartPhase {
         }
     }
 
+    /// Set the container image in which to run the StartPhase.
     pub fn run_in_image(&mut self, image_name: String) {
         self.run_image = Some(image_name);
     }
 
+    /// Run the StartPhase in the default base image.
     pub fn run_in_default_image(&mut self) {
         self.run_image = Some(DEFAULT_BASE_IMAGE.to_string());
     }
 
+    /// Run the StartPhase in a generic image.
     pub fn run_in_slim_image(&mut self) {
         self.run_image = Some(STANDALONE_IMAGE.to_string());
     }
 
+    /// Add a file to the set of files to copy into the container image.
     pub fn add_file_dependency<S: Into<String>>(&mut self, file: S) {
         self.only_include_files = Some(add_to_option_vec(
             self.only_include_files.clone(),
@@ -236,11 +260,13 @@ impl StartPhase {
         ));
     }
 
+    /// Store the list of files to include in this phase for later reproducibility.
     pub fn pin(&mut self) {
         self.only_include_files = pin_option_vec(&self.only_include_files);
     }
 }
 
+/// Store the list of options for this phase for later reproducibility.
 fn pin_option_vec(vec: &Option<Vec<String>>) -> Option<Vec<String>> {
     if let Some(vec) = vec {
         Some(remove_autos_from_vec(vec.clone()))
@@ -249,6 +275,7 @@ fn pin_option_vec(vec: &Option<Vec<String>>) -> Option<Vec<String>> {
     }
 }
 
+/// Add an option to the vector of options for the phase.
 fn add_to_option_vec<T>(values: Option<Vec<T>>, v: T) -> Vec<T> {
     if let Some(mut values) = values {
         values.push(v);
@@ -258,6 +285,7 @@ fn add_to_option_vec<T>(values: Option<Vec<T>>, v: T) -> Vec<T> {
     }
 }
 
+/// Add multiple options to the vector of options for the phase.
 fn add_multiple_to_option_vec<T: Clone>(values: Option<Vec<T>>, new_values: Vec<T>) -> Vec<T> {
     if let Some(values) = values {
         [values, new_values].concat()
@@ -266,6 +294,7 @@ fn add_multiple_to_option_vec<T: Clone>(values: Option<Vec<T>>, new_values: Vec<
     }
 }
 
+/// Ensure that files aren't copied into the image twice.
 #[allow(clippy::needless_pass_by_value)]
 fn prevent_duplicates_vec<T: Clone + Eq + Hash>(values: Vec<T>) -> Vec<T> {
     let set: HashSet<T> = values.iter().cloned().collect::<HashSet<_>>();
