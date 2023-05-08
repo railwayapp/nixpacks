@@ -63,8 +63,3 @@ impl LunaticProvider {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-}
