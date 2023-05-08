@@ -13,6 +13,7 @@ use crate::nixpacks::{
 };
 use anyhow::{Context, Result};
 use cargo_toml::{Manifest, Workspace};
+use regex::Regex;
 
 const RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
 const DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
@@ -229,7 +230,10 @@ impl RustProvider {
     }
 
     fn get_target(app: &App, env: &Environment) -> Result<Option<String>> {
-        if RustProvider::should_use_musl(app, env)? {
+        // Target may be defined in .config/cargo.toml
+        if RustProvider::should_make_wasm32_wasi(app, env) {
+            Ok(Some("wasm32-wasi".into()))
+        } else if RustProvider::should_use_musl(app, env)? {
             Ok(Some(format!("{ARCH}-unknown-linux-musl")))
         } else {
             Ok(None)
@@ -287,6 +291,15 @@ impl RustProvider {
         };
 
         Ok(pkg)
+    }
+
+    fn should_make_wasm32_wasi(app: &App, _env: &Environment) -> bool {
+        let re_target = Regex::new(r##"target\s*=\s*"wasm32-wasi""##).expect("BUG: Broken regex");
+
+        match app.find_match(&re_target, ".cargo/config.toml") {
+            Ok(true) => true,
+            _ => false,
+        }
     }
 
     fn should_use_musl(app: &App, env: &Environment) -> Result<bool> {
