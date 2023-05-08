@@ -24,7 +24,7 @@ impl Provider for LunaticProvider {
         }
 
         let re_runner = Regex::new(r##"runner\s*=\s*"lunatic""##).expect("BUG: Broken regex");
-        Ok(app.find_match(&re_runner, ".cargo/config.toml")?)
+        app.find_match(&re_runner, ".cargo/config.toml")
     }
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
