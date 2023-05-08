@@ -40,7 +40,13 @@ impl Provider for LunaticProvider {
 
 impl LunaticProvider {
     fn get_setup(app: &App, env: &Environment) -> Result<Phase> {
-        RustProvider::get_setup(app, env)
+        let mut setup = RustProvider::get_setup(app, env)?;
+
+        if let Some(pkgs) = &mut setup.nix_pkgs {
+            (*pkgs).push("lunatic".into());
+        }
+
+        Ok(setup)
     }
 
     fn get_build(app: &App, env: &Environment) -> Result<Phase> {
