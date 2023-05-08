@@ -9,6 +9,7 @@ use crate::nixpacks::{
 };
 use crate::providers::rust::RustProvider;
 use anyhow::{Result};
+use regex::Regex;
 
 pub struct LunaticProvider {}
 
@@ -22,8 +23,8 @@ impl Provider for LunaticProvider {
             return Ok(false)
         }
 
-        Ok(false)
-        
+        let re_runner = Regex::new(r##"runner\s*=\s*"lunatic")"##).expect("BUG: Broken regex");
+        Ok(app.find_match(&re_runner, ".config/cargo.toml")?)
     }
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
