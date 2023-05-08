@@ -6,10 +6,10 @@ title: Lunatic
 
 Lunatic is detected if both
 
-- a `Cargo.toml` files is found and
-- [.cargo/config.toml](https://doc.rust-lang.org/cargo/reference/config.html) has `runner = "lunatic"`
+- a `Cargo.toml` file is found and
+- [`.cargo/config.toml`](https://doc.rust-lang.org/cargo/reference/config.html) has the `runner = "lunatic"`
 
-.cargo/config.toml:
+For example `.cargo/config.toml`:
 
 ```toml
 [build]
