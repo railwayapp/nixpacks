@@ -1,5 +1,6 @@
 use super::ImageBuilder;
 
+/// Holds options for generating a Docker image.
 #[derive(Clone, Default, Debug)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct DockerBuilderOptions {

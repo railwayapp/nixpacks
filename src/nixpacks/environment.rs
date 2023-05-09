@@ -4,6 +4,7 @@ use std::{collections::BTreeMap, env};
 
 pub type EnvironmentVariables = BTreeMap<String, String>;
 
+/// Holds a map of environment variables.
 #[derive(Default, Debug)]
 pub struct Environment {
     variables: EnvironmentVariables,
@@ -14,6 +15,7 @@ impl Environment {
         Environment { variables }
     }
 
+    /// Collects all variables from the calling environment.
     pub fn from_envs(envs: Vec<&str>) -> Result<Environment> {
         let mut environment = Environment::default();
         for env in envs {
@@ -39,15 +41,18 @@ impl Environment {
         Ok(environment)
     }
 
+    /// Returns the value of the given variable name, if it exists.
     pub fn get_variable(&self, name: &str) -> Option<&str> {
         self.variables.get(name).map(String::as_str)
     }
 
+    /// Returns all the "NIXPACKS_" variables for use in a BuildPlan.
     pub fn get_config_variable(&self, name: &str) -> Option<String> {
         self.get_variable(format!("NIXPACKS_{name}").as_str())
             .map(|var| var.replace('\n', ""))
     }
 
+    /// Checks if the given variable is 1 or true.
     pub fn is_config_variable_truthy(&self, name: &str) -> bool {
         if let Some(var) = self.get_config_variable(name) {
             matches!(var.as_str(), "1" | "true")
@@ -56,18 +61,22 @@ impl Environment {
         }
     }
 
+    /// Store a variable in the Environment.
     pub fn set_variable(&mut self, name: String, value: String) {
         self.variables.insert(name, value);
     }
 
+    /// Returns all the variables currently stored in the Environment.
     pub fn get_variable_names(&self) -> Vec<String> {
         self.variables.keys().cloned().collect()
     }
 
+    /// Returns a copy of all the environment variables.
     pub fn clone_variables(env: &Environment) -> EnvironmentVariables {
         env.variables.clone()
     }
 
+    /// Add variables to the given Environment.
     pub fn append_variables(env: &Environment, variables: EnvironmentVariables) -> Environment {
         let mut new_env = Environment::new(Environment::clone_variables(env));
         new_env.variables.extend(variables);

@@ -15,6 +15,7 @@ const INCREMENTAL_CACHE_IMAGE_DIR: &str = "image";
 #[derive(Default)]
 pub struct IncrementalCache {}
 
+/// Directories in which to cache Docker image layers.
 #[derive(Default)]
 pub struct IncrementalCacheDirs {
     out_dir: OutputDir,
@@ -35,6 +36,7 @@ impl IncrementalCacheDirs {
         }
     }
 
+    /// Makes the incremental cache directories.
     pub fn create(&self) -> Result<()> {
         let incremental_cache_root = self.out_dir.get_absolute_path(INCREMENTAL_CACHE_DIR);
 
@@ -68,6 +70,7 @@ impl IncrementalCacheDirs {
 }
 
 impl IncrementalCache {
+    /// Create a filesystem image for each of the files in the incremental cache uploads directory, then upload these to the Docker cache.
     pub fn create_image(
         &self,
         incremental_cache_dirs: &IncrementalCacheDirs,
@@ -97,6 +100,7 @@ impl IncrementalCache {
         Ok(())
     }
 
+    /// Check if the provided image_tag matches a tag in the incremental Docker image cache.
     pub fn is_image_exists(image_tag: &str) -> Result<bool> {
         let mut docker_inspect_cmd = Command::new("docker");
         docker_inspect_cmd
@@ -114,9 +118,10 @@ impl IncrementalCache {
         Ok(result.success())
     }
 
+    /// Produce Dockerfile line(s) copying cached files from the incremental cache to the final build image.
     pub fn get_copy_to_image_command(
         cache_directories: &Option<Vec<String>>,
-        incremental_cahge_image: &str,
+        incremental_cache_image: &str,
     ) -> Vec<String> {
         let dirs = &cache_directories.clone().unwrap_or_default();
         if dirs.is_empty() {
@@ -134,12 +139,13 @@ impl IncrementalCache {
                     .join("/");
 
                 vec![format!(
-                    "COPY --from={incremental_cahge_image} {target_cache_dir_optional} {target_cache_dir}"
+                    "COPY --from={incremental_cache_image} {target_cache_dir_optional} {target_cache_dir}"
                 )]
             })
             .collect::<Vec<String>>()
     }
 
+    /// Produce Dockerfile line(s) copying files from the build image into the incremental cache.
     pub fn get_copy_from_image_command(
         cache_directories: &Option<Vec<String>>,
         file_server_config: Option<FileServerConfig>,

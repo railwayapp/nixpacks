@@ -2,6 +2,7 @@ use std::path::Path;
 
 use super::cache::sanitize_cache_key;
 
+/// Using the provided cache_key and cache_directories, produce a string of Docker command flags mounting the cache.
 pub fn get_cache_mount(
     cache_key: &Option<String>,
     cache_directories: &Option<Vec<String>>,
@@ -23,6 +24,7 @@ pub fn get_cache_mount(
     }
 }
 
+/// Produce Dockerfile line(s) copying files into the build image.
 pub fn get_copy_commands(files: &[String], app_dir: &str) -> Vec<String> {
     if files.is_empty() {
         Vec::new()
@@ -41,6 +43,7 @@ pub fn get_copy_commands(files: &[String], app_dir: &str) -> Vec<String> {
     }
 }
 
+/// Produce Dockerfile line(s) copying files into the build image from a given Docker image layer.
 pub fn get_copy_from_commands(from: &str, files: &[String], app_dir: &str) -> Vec<String> {
     if files.is_empty() {
         vec![format!("COPY --from=0 {app_dir} {app_dir}")]
@@ -59,6 +62,7 @@ pub fn get_copy_from_commands(from: &str, files: &[String], app_dir: &str) -> Ve
     }
 }
 
+/// Produce the Dockerfile line containing the CMD instruction which executes the application.
 pub fn get_exec_command(command: &str) -> String {
     let params = command.replace('\"', "\\\"");
 

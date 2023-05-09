@@ -1,3 +1,4 @@
+/// Remove space and period characters from the Docker build cache key.
 pub fn sanitize_cache_key(cache_key: &str) -> String {
     cache_key
         .chars()

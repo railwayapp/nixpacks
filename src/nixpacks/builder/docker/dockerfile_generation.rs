@@ -23,6 +23,7 @@ use std::{
 const NIXPACKS_OUTPUT_DIR: &str = ".nixpacks";
 pub const APP_DIR: &str = "/app/";
 
+/// Represents a directory into which project files and generated assets like Dockerfiles are written.
 #[derive(Debug, Clone)]
 pub struct OutputDir {
     pub root: PathBuf,
@@ -62,21 +63,25 @@ impl OutputDir {
         Ok(())
     }
 
+    /// Returns the path to the provided path from the asset_root directory.
     pub fn get_relative_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
         self.asset_root.join(path)
     }
 
+    /// Returns the absolute path to the provided path.
     pub fn get_absolute_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
         self.root.join(self.get_relative_path(path))
     }
 }
 
 impl Default for OutputDir {
+    /// The output directory defaults to wherever `nixpacks` was called from.
     fn default() -> Self {
         Self::from(".", false).unwrap()
     }
 }
 
+/// Types that impl this trait can produce (parts of) Dockerfiles from environment data and specified build options.
 pub trait DockerfileGenerator {
     fn generate_dockerfile(
         &self,
@@ -95,6 +100,7 @@ pub trait DockerfileGenerator {
     }
 }
 
+/// Turns a BuildPlan into a Dockerfile.
 impl DockerfileGenerator for BuildPlan {
     fn generate_dockerfile(
         &self,
@@ -242,6 +248,7 @@ impl DockerfileGenerator for BuildPlan {
         Ok(dockerfile)
     }
 
+    /// Writes the Nix expression files to the output directory.
     fn write_supporting_files(
         &self,
         options: &DockerBuilderOptions,
@@ -272,6 +279,7 @@ impl DockerfileGenerator for BuildPlan {
 }
 
 impl BuildPlan {
+    /// Copies the plan's static assets to the output directory.
     fn write_assets(&self, plan: &BuildPlan, output: &OutputDir) -> Result<()> {
         if let Some(assets) = &plan.static_assets {
             if !assets.is_empty() {
@@ -294,6 +302,7 @@ impl BuildPlan {
         Ok(())
     }
 
+    /// Returns a collection of apt packages required by all phases in the BuildPlan.
     fn all_apt_packages(&self) -> Vec<String> {
         self.phases
             .clone()
@@ -305,6 +314,7 @@ impl BuildPlan {
 }
 
 impl DockerfileGenerator for StartPhase {
+    /// Write the StartPhase data to the Dockerfile.
     fn generate_dockerfile(
         &self,
         _options: &DockerBuilderOptions,
@@ -356,6 +366,7 @@ impl DockerfileGenerator for StartPhase {
 }
 
 impl DockerfileGenerator for Phase {
+    /// Write the Phase data to the Dockerfile.
     fn generate_dockerfile(
         &self,
         options: &DockerBuilderOptions,
