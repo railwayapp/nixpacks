@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import debounce from "lodash.debounce";
-import { useIsMounted } from "../hooks/useIsMounted";
+import Link from "next/link";
 import { useRouter } from "next/router";
-import { GITHUB_EDIT_URL } from "../constants";
+import React, { useEffect, useState } from "react";
 import { ArrowRight } from "react-feather";
+import { GITHUB_EDIT_URL } from "../constants";
+import { useIsMounted } from "../hooks/useIsMounted";
 
 const useActiveHeaderId = () => {
   const [hashHeaderId, setHashHeaderId] = useState(() =>

@@ -47,6 +47,7 @@ if package.json
 ## Start
 
 This provider runs a Perl script to correct permissions and manage the Nginx configuration, and then starts Nginx.
+
 ```
 {nginx_start_serving_cmd}
 ```

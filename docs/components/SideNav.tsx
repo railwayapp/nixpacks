@@ -1,9 +1,8 @@
-import React, { useState } from "react";
-import { useRouter } from "next/router";
 import Link from "next/link";
-import { sidebarItems, ISidebarSection } from "../sidebar";
-import { Section } from "./Section";
+import { useRouter } from "next/router";
+import React, { useState } from "react";
 import { ChevronDown, ChevronRight } from "react-feather";
+import { ISidebarSection, sidebarItems } from "../sidebar";
 
 export const SideNav: React.FC<{ className?: string }> = ({ className }) => {
   return (

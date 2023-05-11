@@ -8,8 +8,8 @@ title: COBOL
 
 To configure the COBOL provider you can use the following environment variables:
 
--   `NIXPACKS_COBOL_COMPILE_ARGS`: Provide custom `cobc` arguments
--   `NIXPACKS_COBOL_APP_NAME`: Provide the name the cobol file to compile
+- `NIXPACKS_COBOL_COMPILE_ARGS`: Provide custom `cobc` arguments
+- `NIXPACKS_COBOL_APP_NAME`: Provide the name the cobol file to compile
 
 ## Setup
 
@@ -26,18 +26,18 @@ the following command is used ( see section below to see how the arguments are g
 
 ### `cobcArgs`
 
--   If `NIXPACKS_COBOL_COMPILE_ARGS` is set that is used`
--   Otherwise `-x -o` is used
+- If `NIXPACKS_COBOL_COMPILE_ARGS` is set that is used`
+- Otherwise `-x -o` is used
 
 ### `appName`
 
--   First if `NIXPACKS_COBOL_APP_NAME` is set that is used.
--   next the source files are searched for the presence of an `index.cbl`. If one is found `index` is used
--   Lastly the source files are searched for any file with the `cbl` extension. If one is found the file name is used.
+- First if `NIXPACKS_COBOL_APP_NAME` is set that is used.
+- next the source files are searched for the presence of an `index.cbl`. If one is found `index` is used
+- Lastly the source files are searched for any file with the `cbl` extension. If one is found the file name is used.
 
 ### `path`
 
--   The source files are searched for `*<appName>.cbl` if found that path is used.
+- The source files are searched for `*<appName>.cbl` if found that path is used.
 
 ## Start
 

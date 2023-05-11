@@ -7,9 +7,10 @@ title: Elixir
 Elixir is detected if a `mix.exs` file is found.
 
 ## Setup
+
 The following Elixir versions are available
 
-- `latest`  (Default)
+- `latest` (Default)
 - `1.12`
 - `1.11`
 - `1.10`
@@ -20,10 +21,8 @@ The version can be overridden by
 - Setting the `NIXPACKS_ELIXIR_VERSION` environment variable
 - Setting the version in a `.elixir-version` file
 
-
-
 ```
-MIX_ENV=prod 
+MIX_ENV=prod
 
 mix local.hex --force
 mix local.rebar --force
@@ -36,7 +35,6 @@ mix deps.get --only prod
 mix compile
 mix assets.deploy
 ```
-
 
 ## Start
 

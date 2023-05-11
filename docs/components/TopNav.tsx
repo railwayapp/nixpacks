@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { Dialog } from "@headlessui/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import React, { useEffect, useState } from "react";
+import { Menu, X } from "react-feather";
 import { GITHUB_URL } from "../constants";
 import { GitHub } from "./icons/GitHub";
-import { Menu, X } from "react-feather";
-import { Dialog } from "@headlessui/react";
 import { SidebarContent } from "./SideNav";
 
 export const TopNav: React.FC<{
