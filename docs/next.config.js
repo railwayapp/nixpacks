@@ -11,13 +11,14 @@ module.exports =
           source: "/install.sh",
           destination:
             "https://raw.githubusercontent.com/railwayapp/nixpacks/main/install.sh",
-            permanent: false,
+          permanent: false,
         },
         {
-            source: "/install.ps1",
-            destination: "https://raw.githubusercontent.com/railwayapp/nixpacks/main/install.ps1",
-            permanent: false,
-        }
+          source: "/install.ps1",
+          destination:
+            "https://raw.githubusercontent.com/railwayapp/nixpacks/main/install.ps1",
+          permanent: false,
+        },
       ];
     },
   });

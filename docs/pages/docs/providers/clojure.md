@@ -10,7 +10,7 @@ Clojure is detected if a `project.clj` or `build.clj` file is found.
 
 The following JDK versions are available
 
-- `8`  (Default)
+- `8` (Default)
 - `11`
 - `latest`
 
@@ -22,6 +22,7 @@ The version can be overridden by
 ## Build
 
 If a `build.clj` file for [`tools.build`](https://clojure.org/guides/tools_build) is found:
+
 ```
 clojure -T:build uber; if [ -f /app/target/uberjar/*standalone.jar ]; then mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi
 ```
@@ -33,10 +34,10 @@ lein ring uberjar; if [ -f /app/target/uberjar/*standalone.jar ]; then mv /app/t
 ```
 
 Default
+
 ```
 lein uberjar; if [ -f /app/target/uberjar/*standalone.jar ]; then mv /app/target/uberjar/standalone.jar /app/target/*standalone.jar; fi
 ```
-
 
 ## Start
 
