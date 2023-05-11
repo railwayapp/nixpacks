@@ -84,6 +84,9 @@ export const TopNav: React.FC<{
           </Dialog.Panel>
         </div>
       </Dialog>
+      {/* using css fallback properties for cross-browser compatibility  */}
+      {/* read more: https://modernweb.com/using-css-fallback-properties-for-better-cross-browser-compatibility/ */}
+      {/* using global style because scope style does not work on Dialog component */}
       <style jsx global>{`
         .dialog-panel-container {
           max-height: calc(100vh - var(--top-nav-height));

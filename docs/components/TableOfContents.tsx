@@ -141,6 +141,8 @@ export const TableOfContents: React.FC<{
           <ArrowRight size={14} className="ml-2 text-current" />
         </a>
       </div>
+      {/* using css fallback properties for cross-browser compatibility  */}
+      {/* read more: https://modernweb.com/using-css-fallback-properties-for-better-cross-browser-compatibility/ */}
       <style jsx> {`
         .table-container {
           height: calc(100vh - var(--top-nav-height) - 4px);
