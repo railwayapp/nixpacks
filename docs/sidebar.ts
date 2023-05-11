@@ -14,7 +14,10 @@ export const sidebarItems: ISidebarSection[] = [
   {
     text: "Guides",
     links: [
-      { text: "Configuring Builds", href: "/docs/guides/configuring-builds" },
+      {
+        text: "Configuring Builds",
+        href: "/docs/guides/configuring-builds",
+      },
     ],
   },
   {

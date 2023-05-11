@@ -6,7 +6,11 @@ module.exports =
 
     async redirects() {
       return [
-        { source: "/", destination: "/docs/getting-started", permanent: false },
+        {
+          source: "/",
+          destination: "/docs/getting-started",
+          permanent: false,
+        },
         {
           source: "/install.sh",
           destination:
