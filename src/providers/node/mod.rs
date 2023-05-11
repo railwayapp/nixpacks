@@ -11,8 +11,9 @@ use crate::nixpacks::{
     },
 };
 use anyhow::Result;
+use const_format::formatcp;
+use node_semver::Range;
 use path_slash::PathExt;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -22,7 +23,8 @@ mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const DEFAULT_NODE_PKG_NAME: &str = "nodejs-16_x";
+const DEFAULT_NODE_VERSION: u32 = 16;
+const DEFAULT_NODE_PKG_NAME: &str = formatcp!("nodejs-{DEFAULT_NODE_VERSION}_x");
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 
 const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
@@ -324,19 +326,8 @@ impl NodeProvider {
             return Ok(Pkg::new(DEFAULT_NODE_PKG_NAME));
         }
 
-        // This also supports 18.x.x, or any number in place of the x.
-        let re = Regex::new(r"^(\d*)(?:\.?(?:\d*|[xX]?)?)(?:\.?(?:\d*|[xX]?)?)").unwrap();
-        if let Some(node_pkg) = parse_regex_into_pkg(&re, &node_version) {
-            return Ok(Pkg::new(node_pkg.as_str()));
-        }
-
-        // Parse `>=14.10.3 <16` into nodejs-14_x
-        let re = Regex::new(r"^>=(\d+)").unwrap();
-        if let Some(node_pkg) = parse_regex_into_pkg(&re, &node_version) {
-            return Ok(Pkg::new(node_pkg.as_str()));
-        }
-
-        Ok(Pkg::new(DEFAULT_NODE_PKG_NAME))
+        let node_pkg = parse_node_version_into_pkg(&node_version);
+        return Ok(Pkg::new(node_pkg.as_str()));
     }
 
     pub fn get_package_manager(app: &App) -> String {
@@ -580,16 +571,19 @@ fn version_number_to_pkg(version: u32) -> String {
     }
 }
 
-fn parse_regex_into_pkg(re: &Regex, node_version: &str) -> Option<String> {
-    let matches: Vec<_> = re.captures_iter(node_version).collect();
-    if let Some(captures) = matches.get(0) {
-        match captures[1].parse::<u32>() {
-            Ok(version) => return Some(version_number_to_pkg(version)),
-            Err(_e) => {}
+fn parse_node_version_into_pkg(node_version: &str) -> String {
+    let range: Range = node_version.parse().unwrap_or_else(|_| {
+        println!("Warning: node version {node_version} is not valid, using default node version {DEFAULT_NODE_PKG_NAME}");
+        Range::parse(DEFAULT_NODE_VERSION.to_string()).unwrap()
+    });
+    for version_number in AVAILABLE_NODE_VERSIONS {
+        let version_range_string = format!("{version_number}.x.x");
+        let version_range: Range = version_range_string.parse().unwrap();
+        if version_range.allows_any(&range) {
+            return version_number_to_pkg(*version_number);
         }
     }
-
-    None
+    DEFAULT_NODE_PKG_NAME.to_string()
 }
 
 #[cfg(test)]
@@ -774,6 +768,60 @@ mod test {
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_engine_caret_range() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    engines: Some(engines_node("^14.10.3")),
+                    ..Default::default()
+                },
+                &App::new("examples/node")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs-14_x")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_engine_multi_range() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    engines: Some(engines_node("1.2.3 || >14.10.3")),
+                    ..Default::default()
+                },
+                &App::new("examples/node")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs-14_x")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_invalid_node_version() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    engines: Some(engines_node("abc")),
+                    ..Default::default()
+                },
+                &App::new("examples/node")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs-16_x")
         );
 
         Ok(())
