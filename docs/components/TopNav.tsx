@@ -77,13 +77,22 @@ export const TopNav: React.FC<{
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
         <div className="fixed inset-0 bg-bg">
-          <Dialog.Panel className="px-8 overflow-y-auto mt-[var(--top-nav-height)] py-4 max-h-[calc(100vh-var(--top-nav-height))]">
+          <Dialog.Panel className="px-8 overflow-y-auto mt-[var(--top-nav-height)] py-4 dialog-panel-container">
             <Dialog.Title className="hidden">Navigation</Dialog.Title>
 
             <SidebarContent className="w-full" />
           </Dialog.Panel>
         </div>
       </Dialog>
+      {/* using css fallback properties for cross-browser compatibility  */}
+      {/* read more: https://modernweb.com/using-css-fallback-properties-for-better-cross-browser-compatibility/ */}
+      {/* using global style because scope style does not work on Dialog component */}
+      <style jsx global>{`
+        .dialog-panel-container {
+          max-height: calc(100vh - var(--top-nav-height));
+          max-height: calc(100dvh - var(--top-nav-height));
+        }
+      `}</style>
     </div>
   );
 };

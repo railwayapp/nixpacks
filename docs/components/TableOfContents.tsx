@@ -91,9 +91,8 @@ export const TableOfContents: React.FC<{
   return (
     <nav className={`toc w-56 px-4 ${className}`}>
       <div
-        className="sticky pt-20"
+        className="sticky pt-20 table-container"
         style={{
-          height: "calc(100vh - var(--top-nav-height) - 4px)",
           top: "calc(var(--top-nav-height) + 4px)",
         }}
       >
@@ -142,6 +141,15 @@ export const TableOfContents: React.FC<{
           <ArrowRight size={14} className="ml-2 text-current" />
         </a>
       </div>
+      {/* using css fallback properties for cross-browser compatibility  */}
+      {/* read more: https://modernweb.com/using-css-fallback-properties-for-better-cross-browser-compatibility/ */}
+      <style jsx> {`
+        .table-container {
+          height: calc(100vh - var(--top-nav-height) - 4px);
+          height: calc(100dvh - var(--top-nav-height) - 4px);
+        }
+      `}
+      </style>
     </nav>
   );
 };
