@@ -1,7 +1,7 @@
 import "react";
 // Augmentation of React
 declare module "react" {
-  interface HTMLProps<T> {
+  interface StyleHTMLAttributes<T> extends React.HTMLAttributes<T> {
     jsx?: boolean;
     global?: boolean;
   }

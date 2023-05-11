@@ -1,7 +1,7 @@
+import Image from "next/image";
 import * as React from "react";
 import { ButtonLink } from "./ButtonLink";
 import { GitHub } from "./icons/GitHub";
-import Image from "next/image";
 
 export const Hero: React.FC = () => {
   return (

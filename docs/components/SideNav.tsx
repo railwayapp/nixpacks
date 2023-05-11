@@ -1,22 +1,31 @@
-import React, { useState } from "react";
-import { useRouter } from "next/router";
 import Link from "next/link";
-import { sidebarItems, ISidebarSection } from "../sidebar";
-import { Section } from "./Section";
+import { useRouter } from "next/router";
+import React, { useState } from "react";
 import { ChevronDown, ChevronRight } from "react-feather";
+import { ISidebarSection, sidebarItems } from "../sidebar";
 
 export const SideNav: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <nav className={`sidenav text-sm px-4 w-[240px] ${className ?? ""}`}>
       <div
-        className="sticky pt-8 pb-4 overflow-y-auto"
+        className="sticky pt-8 pb-4 overflow-y-auto sidebar-container"
         style={{
-          height: "calc(100vh - var(--top-nav-height) - 4px)",
           top: "calc(var(--top-nav-height) + 4px)",
         }}
       >
         <SidebarContent />
       </div>
+      {/* using css fallback properties for cross-browser compatibility  */}
+      {/* read more: https://modernweb.com/using-css-fallback-properties-for-better-cross-browser-compatibility/ */}
+      <style jsx>
+        {" "}
+        {`
+          .sidebar-container {
+            height: calc(100vh - var(--top-nav-height) - 4px);
+            height: calc(100dvh - var(--top-nav-height) - 4px);
+          }
+        `}
+      </style>
     </nav>
   );
 };
