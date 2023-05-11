@@ -4,6 +4,6 @@ title: Flightcontrol
 
 # {% $markdoc.frontmatter.title %}
 
-Nixpacks is available as a builder on the [Flightcontrol](https://www.flightcontrol.dev/) platform. Configure the builder on the service settings page.
+[Flightcontrol](https://www.flightcontrol.dev?ref=nixpacks) uses Nixpacks as the default build type for web applications and workers. You can configure the Nixpacks build with code or through the Flightcontrol dashboard.
 
 ![](/images/flightcontrol.png)
