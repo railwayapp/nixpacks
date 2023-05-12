@@ -4,7 +4,7 @@ title: Lunatic
 
 # {% $markdoc.frontmatter.title %}
 
-Lunatic is detected if both
+[Lunatic](https://github.com/lunatic-solutions/) is detected if both
 
 - a `Cargo.toml` file is found and
 - [`.cargo/config.toml`](https://doc.rust-lang.org/cargo/reference/config.html) has the `runner = "lunatic"`
