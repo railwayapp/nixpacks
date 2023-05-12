@@ -570,15 +570,19 @@ fn version_number_to_pkg(version: u32) -> String {
     }
 }
 
-fn pkg_to_version_number(pkg: &str) -> u32 {
+fn pkg_to_version_number(pkg: &str) -> Option<u32> {
     let re = Regex::new(r"nodejs-(?P<version>\d+)_x").unwrap();
-    let captures = re.captures(pkg).unwrap();
-    let version_number: u32 = captures["version"].parse().unwrap();
-    version_number
+    match re.captures(pkg) {
+        None => None,
+        Some(captures) => {
+            let version_number: u32 = captures["version"].parse().unwrap();
+            Some(version_number)
+        }
+    }
 }
 
 fn parse_node_version_into_pkg(node_version: &str) -> String {
-    let default_node_version = pkg_to_version_number(DEFAULT_NODE_PKG_NAME);
+    let default_node_version = pkg_to_version_number(DEFAULT_NODE_PKG_NAME).unwrap();
     let range: Range = node_version.parse().unwrap_or_else(|_| {
         println!("Warning: node version {node_version} is not valid, using default node version {DEFAULT_NODE_PKG_NAME}");
         Range::parse(default_node_version.to_string()).unwrap()
@@ -604,6 +608,16 @@ mod test {
 
     fn engines_node(version: &str) -> HashMap<String, String> {
         HashMap::from([("node".to_string(), version.to_string())])
+    }
+
+    #[test]
+    fn test_pkg_to_version_number_invalid() {
+        assert_eq!(None, pkg_to_version_number("1"));
+    }
+
+    #[test]
+    fn test_pkg_to_version_number() {
+        assert_eq!(Some(16), pkg_to_version_number("nodejs-16_x"));
     }
 
     #[test]
