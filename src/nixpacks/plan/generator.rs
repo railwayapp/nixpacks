@@ -10,6 +10,7 @@ use crate::{
 };
 use anyhow::{bail, Context, Ok, Result};
 use colored::Colorize;
+use tracing::warn;
 
 use super::{
     merge::Mergeable,
@@ -151,7 +152,7 @@ impl NixpacksBuildPlanGenerator<'_> {
         let provider_names = self.get_all_providers(app, env, manual_providers)?;
 
         if provider_names.len() > 1 {
-            println!(
+            warn!(
                 "{}",
                 "\n Using multiple providers is experimental\n".bright_yellow()
             );
@@ -237,7 +238,7 @@ impl NixpacksBuildPlanGenerator<'_> {
             };
 
         if plan.is_some() {
-            println!(
+            warn!(
                 "{}",
                 "\n Nixpacks file based configuration is experimental and may change\n"
                     .bright_yellow()

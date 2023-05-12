@@ -19,6 +19,7 @@ use std::{
     ops::Deref,
     string::ToString,
 };
+use tracing::info;
 
 /// The build plan config file format to use.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -156,6 +157,8 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    tracing_subscriber::fmt::init();
+
     let args = Args::parse();
 
     let pkgs = args
@@ -213,12 +216,12 @@ async fn main() -> Result<()> {
                 PlanFormat::Toml => plan.to_toml()?,
             };
 
-            println!("{plan_s}");
+            info!("Generated build plan: {}", plan_s);
         }
-        // Detect which providers should be used to build a project and print them to stdout.
+        // Detect which providers should be used to build a project and print them.
         Commands::Detect { path } => {
             let providers = get_plan_providers(&path, env, &options)?;
-            println!("{}", providers.join(", "));
+            info!("Detected providers: {}", providers.join(", "));
         }
         // Generate a Dockerfile and builds a container, using any specified build options.
         Commands::Build {

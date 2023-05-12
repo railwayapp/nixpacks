@@ -16,6 +16,7 @@ use std::{
     process::Command,
 };
 use tempdir::TempDir;
+use tracing::info;
 use uuid::Uuid;
 
 /// Builds Docker images from options, logging to stdout if the build is successful.
@@ -67,7 +68,7 @@ impl ImageBuilder for DockerImageBuilder {
 
         // If printing the Dockerfile, don't write anything to disk
         if self.options.print_dockerfile {
-            println!("{dockerfile}");
+            info!("Dockerfile: {}", dockerfile);
             return Ok(());
         }
 
@@ -88,8 +89,8 @@ impl ImageBuilder for DockerImageBuilder {
             }
 
             self.logger.log_section("Successfully Built!");
-            println!("\nRun:");
-            println!("  docker run -it {name}");
+            info!("\nRun:");
+            info!("  docker run -it {name}");
 
             if self.options.incremental_cache_image.is_some() {
                 incremental_cache.create_image(
@@ -102,8 +103,8 @@ impl ImageBuilder for DockerImageBuilder {
                 remove_dir_all(output.root)?;
             }
         } else {
-            println!("\nSaved output to:");
-            println!("  {}", output.root.to_str().unwrap());
+            info!("\nSaved output to:");
+            info!("  {}", output.root.to_str().unwrap());
         }
 
         Ok(())

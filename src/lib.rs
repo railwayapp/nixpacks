@@ -41,6 +41,7 @@ use providers::{
     rust::RustProvider, scala::ScalaProvider, staticfile::StaticfileProvider, swift::SwiftProvider,
     zig::ZigProvider, Provider,
 };
+use tracing::info;
 
 mod chain;
 #[macro_use]
@@ -118,7 +119,7 @@ pub async fn create_docker_image(
 
     if let Ok(subdir) = app.source.strip_prefix(orig_path) {
         if subdir != std::path::Path::new("") {
-            println!("Using subdirectory \"{}\"", subdir.to_str().unwrap());
+            info!("Using subdirectory \"{}\"", subdir.to_str().unwrap());
         }
     }
 
@@ -127,19 +128,19 @@ pub async fn create_docker_image(
 
     let phase_count = plan.phases.clone().map_or(0, |phases| phases.len());
     if phase_count > 0 {
-        println!("{}", plan.get_build_string()?);
+        info!("Build plan has {} phases", phase_count);
 
         let start = plan.start_phase.clone().unwrap_or_default();
         if start.cmd.is_none() && !build_options.no_error_without_start {
             bail!("No start command could be found")
         }
     } else {
-        println!("\nNixpacks was unable to generate a build plan for this app.\nPlease check the documentation for supported languages: https://nixpacks.com");
-        println!("\nThe contents of the app directory are:\n");
+        info!("\nNixpacks was unable to generate a build plan for this app.\nPlease check the documentation for supported languages: https://nixpacks.com");
+        info!("\nThe contents of the app directory are:\n");
 
         for file in &app.paths {
             let path = app.strip_source_path(file.as_path())?;
-            println!(
+            info!(
                 "  {}{}",
                 path.display(),
                 if file.is_dir() { "/" } else { "" }

@@ -11,6 +11,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::thread;
+use tracing::error;
 
 use super::incremental_cache::IncrementalCacheDirs;
 use uuid::Uuid;
@@ -48,7 +49,7 @@ impl FileServer {
         thread::spawn(move || {
             let server_future = FileServer::run_app(server_config);
             if let Err(e) = rt::System::new().block_on(server_future) {
-                println!("File server error: {e}");
+                error!("File server error: {e}");
             }
         });
 

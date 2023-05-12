@@ -7,6 +7,7 @@ use std::{
 use super::{dockerfile_generation::OutputDir, file_server::FileServerConfig};
 use anyhow::{bail, Context, Result};
 use std::process::Stdio;
+use tracing::info;
 
 const INCREMENTAL_CACHE_DIR: &str = "incremental-cache";
 const INCREMENTAL_CACHE_UPLOADS_DIR: &str = "uploads";
@@ -96,7 +97,7 @@ impl IncrementalCache {
             }
         }
 
-        println!("Incremental cache image created: {}", &tag);
+        info!("Incremental cache image created: {}", &tag);
         Ok(())
     }
 
