@@ -584,6 +584,7 @@ fn parse_node_version_into_pkg(node_version: &str) -> String {
         Range::parse(default_node_version.to_string()).unwrap()
     });
     let mut available_node_versions = AVAILABLE_NODE_VERSIONS.to_vec();
+    // use newest node version first
     available_node_versions.sort_by(|a, b| b.cmp(a));
     for version_number in available_node_versions {
         let version_range_string = format!("{version_number}.x.x");
