@@ -38,7 +38,6 @@ _None_
 
 ## Build
 
-
 ```
 cargo build --release
 ```
