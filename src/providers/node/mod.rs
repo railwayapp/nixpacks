@@ -11,9 +11,9 @@ use crate::nixpacks::{
     },
 };
 use anyhow::Result;
-use const_format::formatcp;
 use node_semver::Range;
 use path_slash::PathExt;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -23,8 +23,7 @@ mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const DEFAULT_NODE_VERSION: u32 = 16;
-const DEFAULT_NODE_PKG_NAME: &str = formatcp!("nodejs-{DEFAULT_NODE_VERSION}_x");
+const DEFAULT_NODE_PKG_NAME: &str = "nodejs-16_x";
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
 
 const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
@@ -571,10 +570,18 @@ fn version_number_to_pkg(version: u32) -> String {
     }
 }
 
+fn pkg_to_version_number(pkg: &str) -> u32 {
+    let re = Regex::new(r"nodejs-(?P<version>\d+)_x").unwrap();
+    let captures = re.captures(pkg).unwrap();
+    let version_number: u32 = captures["version"].parse().unwrap();
+    version_number
+}
+
 fn parse_node_version_into_pkg(node_version: &str) -> String {
+    let default_node_version = pkg_to_version_number(DEFAULT_NODE_PKG_NAME);
     let range: Range = node_version.parse().unwrap_or_else(|_| {
         println!("Warning: node version {node_version} is not valid, using default node version {DEFAULT_NODE_PKG_NAME}");
-        Range::parse(DEFAULT_NODE_VERSION.to_string()).unwrap()
+        Range::parse(default_node_version.to_string()).unwrap()
     });
     let mut available_node_versions = AVAILABLE_NODE_VERSIONS.to_vec();
     available_node_versions.sort_by(|a, b| b.cmp(a));
