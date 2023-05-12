@@ -576,11 +576,13 @@ fn parse_node_version_into_pkg(node_version: &str) -> String {
         println!("Warning: node version {node_version} is not valid, using default node version {DEFAULT_NODE_PKG_NAME}");
         Range::parse(DEFAULT_NODE_VERSION.to_string()).unwrap()
     });
-    for version_number in AVAILABLE_NODE_VERSIONS {
+    let mut available_node_versions = AVAILABLE_NODE_VERSIONS.to_vec();
+    available_node_versions.sort_by(|a, b| b.cmp(a));
+    for version_number in available_node_versions {
         let version_range_string = format!("{version_number}.x.x");
         let version_range: Range = version_range_string.parse().unwrap();
         if version_range.allows_any(&range) {
-            return version_number_to_pkg(*version_number);
+            return version_number_to_pkg(version_number);
         }
     }
     DEFAULT_NODE_PKG_NAME.to_string()
