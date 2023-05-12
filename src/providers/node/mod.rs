@@ -807,13 +807,31 @@ mod test {
             NodeProvider::get_nix_node_pkg(
                 &PackageJson {
                     name: Some(String::default()),
-                    engines: Some(engines_node("1.2.3 || >14.10.3")),
+                    engines: Some(engines_node("1.2.3 || 14.10.3")),
                     ..Default::default()
                 },
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs-14_x")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_engine_multi_satisfied_range() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    engines: Some(engines_node("14.10.3 || 18.10.0")),
+                    ..Default::default()
+                },
+                &App::new("examples/node")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs-18_x")
         );
 
         Ok(())
