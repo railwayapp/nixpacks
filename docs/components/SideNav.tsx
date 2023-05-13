@@ -18,10 +18,8 @@ export const SideNav: React.FC<{ className?: string }> = ({ className }) => {
       {/* using css fallback properties for cross-browser compatibility  */}
       {/* read more: https://modernweb.com/using-css-fallback-properties-for-better-cross-browser-compatibility/ */}
       <style jsx>
-        {" "}
         {`
           .sidebar-container {
-            height: calc(100vh - var(--top-nav-height) - 4px);
             height: calc(100dvh - var(--top-nav-height) - 4px);
           }
         `}
