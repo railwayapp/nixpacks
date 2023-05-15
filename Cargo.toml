@@ -58,6 +58,7 @@ portpicker = "0.1.1"
 tokio = { version = "1.23.0", features = ["full"] }
 async-trait = "0.1.59"
 semver = "1.0.14"
+node-semver = "2.1.0"
 
 [dev-dependencies]
 dotenv-parser = "0.1.3"
