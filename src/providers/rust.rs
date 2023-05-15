@@ -13,6 +13,7 @@ use crate::nixpacks::{
 };
 use anyhow::{Context, Result};
 use cargo_toml::{Manifest, Workspace};
+use regex::Regex;
 
 const RUST_OVERLAY: &str = "https://github.com/oxalica/rust-overlay/archive/master.tar.gz";
 const DEFAULT_RUST_PACKAGE: &str = "rust-bin.stable.latest.default";
@@ -48,7 +49,7 @@ impl Provider for RustProvider {
 }
 
 impl RustProvider {
-    fn get_setup(app: &App, env: &Environment) -> Result<Phase> {
+    pub(crate) fn get_setup(app: &App, env: &Environment) -> Result<Phase> {
         let mut rust_pkg: Pkg = RustProvider::get_rust_pkg(app, env)?;
 
         if let Some(target) = RustProvider::get_target(app, env)? {
@@ -78,7 +79,7 @@ impl RustProvider {
         Ok(setup)
     }
 
-    fn get_build(app: &App, env: &Environment) -> Result<Phase> {
+    pub(crate) fn get_build(app: &App, env: &Environment) -> Result<Phase> {
         let mut build = Phase::build(None);
         if !app.includes_file("Cargo.toml") {
             return Ok(build);
@@ -89,30 +90,35 @@ impl RustProvider {
 
         let mut build_cmd = "cargo build --release".to_string();
 
+        // Default binary suffix (.wasm || none)
+        let bin_suffix = RustProvider::get_bin_suffix(app, env, None);
+
         if let Some(target) = RustProvider::get_target(app, env)? {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
                 write!(build_cmd, " --package {workspace} --target {target}")?;
 
                 build.add_cmd(build_cmd);
-                build.add_cmd(format!("cp target/{target}/release/{workspace} bin"));
+                build.add_cmd(format!(
+                    "cp target/{target}/release/{workspace}{bin_suffix} bin"
+                ));
             } else if let Some(bins) = RustProvider::get_bins(app)? {
                 write!(build_cmd, " --target {target}")?;
 
                 build.add_cmd(build_cmd);
 
                 for bin in bins {
-                    build.add_cmd(format!("cp target/{target}/release/{bin} bin"));
+                    build.add_cmd(format!("cp target/{target}/release/{bin}{bin_suffix} bin"));
                 }
             }
         } else if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
             write!(build_cmd, " --package {workspace}")?;
             build.add_cmd(build_cmd);
-            build.add_cmd(format!("cp target/release/{workspace} bin"));
+            build.add_cmd(format!("cp target/release/{workspace}{bin_suffix} bin"));
         } else if let Some(bins) = RustProvider::get_bins(app)? {
             build.add_cmd(build_cmd);
 
             for bin in bins {
-                build.add_cmd(format!("cp target/release/{bin} bin"));
+                build.add_cmd(format!("cp target/release/{bin}{bin_suffix} bin"));
             }
         }
 
@@ -125,6 +131,16 @@ impl RustProvider {
         }
 
         Ok(build)
+    }
+
+    fn get_bin_suffix(app: &App, env: &Environment, _: Option<String>) -> String {
+        // wasm32-wasi binaries are created with .wasm
+        if RustProvider::should_make_wasm32_wasi(app, env) {
+            ".wasm"
+        } else {
+            ""
+        }
+        .into()
     }
 
     fn get_bins(app: &App) -> Result<Option<Vec<String>>> {
@@ -162,7 +178,7 @@ impl RustProvider {
         Ok(Some(bins))
     }
 
-    fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
+    pub(crate) fn get_start(app: &App, env: &Environment) -> Result<Option<StartPhase>> {
         if (RustProvider::get_target(app, env)?).is_some() {
             if let Some(workspace) = RustProvider::resolve_cargo_workspace(app, env)? {
                 let mut start = StartPhase::new(format!("./bin/{workspace}"));
@@ -218,8 +234,10 @@ impl RustProvider {
                 bin = Some(found_bin);
             }
 
+            let bin_suffix = RustProvider::get_bin_suffix(app, env, None);
+
             if let Some(bin) = bin {
-                Ok(Some(format!("./bin/{bin}")))
+                Ok(Some(format!("./bin/{bin}{bin_suffix}")))
             } else {
                 Ok(None)
             }
@@ -229,7 +247,10 @@ impl RustProvider {
     }
 
     fn get_target(app: &App, env: &Environment) -> Result<Option<String>> {
-        if RustProvider::should_use_musl(app, env)? {
+        // Target may be defined in .config/cargo.toml
+        if RustProvider::should_make_wasm32_wasi(app, env) {
+            Ok(Some("wasm32-wasi".into()))
+        } else if RustProvider::should_use_musl(app, env)? {
             Ok(Some(format!("{ARCH}-unknown-linux-musl")))
         } else {
             Ok(None)
@@ -289,7 +310,17 @@ impl RustProvider {
         Ok(pkg)
     }
 
+    fn should_make_wasm32_wasi(app: &App, _env: &Environment) -> bool {
+        let re_target = Regex::new(r##"target\s*=\s*"wasm32-wasi""##).expect("BUG: Broken regex");
+
+        matches!(app.find_match(&re_target, ".cargo/config.toml"), Ok(true))
+    }
+
     fn should_use_musl(app: &App, env: &Environment) -> Result<bool> {
+        if RustProvider::should_make_wasm32_wasi(app, env) {
+            return Ok(false);
+        }
+
         if env.is_config_variable_truthy("NO_MUSL") {
             return Ok(false);
         }
