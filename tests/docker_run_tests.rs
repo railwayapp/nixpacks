@@ -644,6 +644,13 @@ async fn test_django_mysql() {
 }
 
 #[tokio::test]
+async fn test_lunatic_basic() {
+    let name = simple_build("./examples/lunatic-basic").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("PING-PONG"));
+}
+
+#[tokio::test]
 async fn test_python_poetry() {
     let name = simple_build("./examples/python-poetry").await;
     let output = run_image(&name, None).await;
