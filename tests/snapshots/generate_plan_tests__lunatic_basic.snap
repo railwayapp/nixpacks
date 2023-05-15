@@ -1,0 +1,45 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "lunatic"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "mkdir -p bin",
+        "cargo build --release --target wasm32-wasi",
+        "cp target/wasm32-wasi/release/lunatic-basic.wasm bin"
+      ],
+      "cacheDirectories": [
+        "/root/.cargo/git",
+        "/root/.cargo/registry",
+        "target"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "binutils",
+        "gcc",
+        "(rust-bin.stable.latest.default.override { targets = [\"wasm32-wasi\"]; })",
+        "lunatic"
+      ],
+      "nixOverlays": [
+        "https://github.com/oxalica/rust-overlay/archive/master.tar.gz"
+      ],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "lunatic ./bin/lunatic-basic.wasm"
+  }
+}
