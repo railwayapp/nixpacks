@@ -80,11 +80,15 @@ impl GleamProvider {
 
         let gleam_version = manifest.get_package_version("gleam_stdlib"); // steal the gleam version from the stdlib version
 
-        Ok(Phase::install(Some(format!(
+        let mut phase = Phase::install(Some(format!(
             "sh {} {}",
             app.asset_path("get-gleam.sh"),
             gleam_version.unwrap_or_else(|| "main".into())
-        ))))
+        )));
+        phase.only_include_files = Some(vec!["gleam.toml".into(), "manifest.toml".into()]);
+        phase.add_cmd("gleam deps download");
+
+        Ok(phase)
     }
 
     fn get_build(&self, _app: &App, _env: &Environment) -> Phase {
