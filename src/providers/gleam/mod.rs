@@ -1,7 +1,14 @@
 use anyhow::Result;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use crate::nixpacks::{app::App, environment::Environment, plan::{BuildPlan, phase::{Phase, StartPhase}}, nix::pkg::Pkg};
+use crate::nixpacks::{
+    app::App,
+    environment::Environment,
+    plan::{
+        phase::{Phase, StartPhase},
+        BuildPlan,
+    },
+};
 
 use super::Provider;
 
@@ -18,7 +25,13 @@ struct GleamManifest {
 
 impl GleamManifest {
     fn get_package_version(&self, package: &str) -> Option<String> {
-        Some((&self.packages).into_iter().find(|pkg| pkg.name == package.to_string())?.version.clone())
+        Some(
+            self.packages
+                .iter()
+                .find(|pkg| pkg.name == *package)?
+                .version
+                .clone(),
+        )
     }
 }
 
@@ -50,13 +63,13 @@ impl Provider for GleamProvider {
 }
 
 impl GleamProvider {
-    fn get_setup(&self, app: &App, _env: &Environment) -> Phase {
+    fn get_setup(&self, _app: &App, _env: &Environment) -> Phase {
         // erlang and gleam are required, elixir just in case
         let pkgs = vec![
             "wget".into(),
             "erlang".into(),
             "elixir".into(),
-            "rebar3".into()
+            "rebar3".into(),
         ];
 
         Phase::setup(Some(pkgs))
@@ -67,7 +80,11 @@ impl GleamProvider {
 
         let gleam_version = manifest.get_package_version("gleam_stdlib"); // steal the gleam version from the stdlib version
 
-        Ok(Phase::install(Some(format!("sh {} {}", app.asset_path("get-gleam.sh"), gleam_version.unwrap_or_else(|| "main".into())))))
+        Ok(Phase::install(Some(format!(
+            "sh {} {}",
+            app.asset_path("get-gleam.sh"),
+            gleam_version.unwrap_or_else(|| "main".into())
+        ))))
     }
 
     fn get_build(&self, _app: &App, _env: &Environment) -> Phase {
