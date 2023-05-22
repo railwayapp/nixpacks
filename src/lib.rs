@@ -39,7 +39,7 @@ use providers::{
     fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
     lunatic::LunaticProvider, node::NodeProvider, php::PhpProvider, python::PythonProvider,
     ruby::RubyProvider, rust::RustProvider, scala::ScalaProvider, staticfile::StaticfileProvider,
-    swift::SwiftProvider, zig::ZigProvider, Provider,
+    swift::SwiftProvider, zig::ZigProvider, Provider, gleam::GleamProvider,
 };
 
 mod chain;
@@ -57,6 +57,7 @@ pub fn get_providers() -> &'static [&'static (dyn Provider)] {
         &DenoProvider {},
         &FSharpProvider {},
         &ClojureProvider {},
+        &GleamProvider {},
         &GolangProvider {},
         &HaskellStackProvider {},
         &JavaProvider {},
