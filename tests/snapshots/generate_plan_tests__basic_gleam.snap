@@ -28,7 +28,12 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "sh /assets/get-gleam.sh 0.28.2"
+        "sh /assets/get-gleam.sh 0.28.2",
+        "gleam deps download"
+      ],
+      "onlyIncludeFiles": [
+        "gleam.toml",
+        "manifest.toml"
       ]
     },
     "setup": {
