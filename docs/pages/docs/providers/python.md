@@ -21,6 +21,7 @@ The version can be overridden by
 
 - Setting the `NIXPACKS_PYTHON_VERSION` environment variable
 - Setting the version in a `.python-version` file
+- Setting the version in a `runtime.txt` file
 
 ## Install
 
