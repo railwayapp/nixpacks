@@ -206,9 +206,11 @@ impl PhpProvider {
 
     fn get_php_extensions(app: &App) -> Result<Vec<String>> {
         let composer_json: ComposerJson = app.read_json("composer.json")?;
+        let version = PhpProvider::get_php_version(app)?;
         let mut extensions = Vec::new();
         for extension in composer_json.require.keys() {
-            if extension.starts_with("ext-") {
+            // ext-json is included by default in PHP >= 8.0 (and not available in Nix) so skip over it
+            if extension.starts_with("ext-") && (version == "7.4" || extension != "ext-json") {
                 extensions.push(
                     extension
                         .strip_prefix("ext-")
