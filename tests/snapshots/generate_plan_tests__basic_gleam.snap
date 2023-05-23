@@ -1,0 +1,57 @@
+---
+source: tests/generate_plan_tests.rs
+assertion_line: 4
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "gleam"
+  },
+  "staticAssets": {
+    "get-gleam.sh": "#!/bin/sh\ngleam_version=$1\nbuildarch=$(arch)\n\nfile_url=https://github.com/gleam-lang/gleam/releases/download/v$gleam_version/gleam-v$gleam_version-$buildarch-unknown-linux-musl.tar.gz\n\nwget -O /gleam.tar.gz $file_url\ntar -xzf /gleam.tar.gz -C /usr/bin"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cmds": [
+        "gleam export erlang-shipment"
+      ]
+    },
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "sh /assets/get-gleam.sh 0.28.2",
+        "gleam deps download"
+      ],
+      "onlyIncludeFiles": [
+        "gleam.toml",
+        "manifest.toml"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "wget",
+        "erlang",
+        "elixir",
+        "rebar3"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "./build/erlang-shipment/entrypoint.sh run",
+    "onlyIncludeFiles": [
+      "build/erlang-shipment"
+    ]
+  }
+}

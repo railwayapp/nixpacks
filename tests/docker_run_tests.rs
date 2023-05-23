@@ -734,6 +734,13 @@ async fn test_rust_multiple_bins() {
 }
 
 #[tokio::test]
+async fn test_gleam_basic() {
+    let name = simple_build("./examples/basic_gleam").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Hello from Gleam!"));
+}
+
+#[tokio::test]
 async fn test_go() {
     let name = simple_build("./examples/go").await;
     let output = run_image(&name, None).await;

@@ -9,6 +9,7 @@ pub mod dart;
 pub mod deno;
 pub mod elixir;
 pub mod fsharp;
+pub mod gleam;
 pub mod go;
 pub mod haskell;
 pub mod java;

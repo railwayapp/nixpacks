@@ -70,6 +70,14 @@ impl Pkg {
     }
 }
 
+impl<S> From<S> for Pkg
+where
+    S: Into<String>,
+{
+    fn from(name: S) -> Self {
+        Pkg::new(&name.into())
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

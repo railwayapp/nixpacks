@@ -36,10 +36,11 @@ use anyhow::{bail, Result};
 use providers::{
     clojure::ClojureProvider, cobol::CobolProvider, crystal::CrystalProvider,
     csharp::CSharpProvider, dart::DartProvider, deno::DenoProvider, elixir::ElixirProvider,
-    fsharp::FSharpProvider, go::GolangProvider, haskell::HaskellStackProvider, java::JavaProvider,
-    lunatic::LunaticProvider, node::NodeProvider, php::PhpProvider, python::PythonProvider,
-    ruby::RubyProvider, rust::RustProvider, scala::ScalaProvider, staticfile::StaticfileProvider,
-    swift::SwiftProvider, zig::ZigProvider, Provider,
+    fsharp::FSharpProvider, gleam::GleamProvider, go::GolangProvider,
+    haskell::HaskellStackProvider, java::JavaProvider, lunatic::LunaticProvider,
+    node::NodeProvider, php::PhpProvider, python::PythonProvider, ruby::RubyProvider,
+    rust::RustProvider, scala::ScalaProvider, staticfile::StaticfileProvider, swift::SwiftProvider,
+    zig::ZigProvider, Provider,
 };
 
 mod chain;
@@ -57,6 +58,7 @@ pub fn get_providers() -> &'static [&'static (dyn Provider)] {
         &DenoProvider {},
         &FSharpProvider {},
         &ClojureProvider {},
+        &GleamProvider {},
         &GolangProvider {},
         &HaskellStackProvider {},
         &JavaProvider {},
