@@ -15,7 +15,7 @@ SHELL ["/bin/bash", "-ol", "pipefail", "-c"]
 RUN set -o pipefail && curl -L https://nixos.org/nix/install | bash \
     && /nix/var/nix/profiles/default/bin/nix-channel --remove nixpkgs \
     && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old \
-    && printf 'if [ -d $HOME/.nix-profile/etc/profile.d ]; then\n for i in $HOME/.nix-profile/etc/profile.d/*.sh; do\n if [ -r $i ]; then\n . $i\n fi\n done\n fi\n' >> /root/.profile
+    && printf 'if [ -d $HOME/.nix-profile/etc/profile.d ]; then\n for i in $HOME/.nix-profile/etc/profile.d/*.sh; do\n if [ -r $i ]; then\n . $i\n fi\n done\n fi\n' >> /root/.profile \
     && printf 'PATH=$NIXPACKS_PATH:$PATH' >> /root/.profile
 
 ENV \
