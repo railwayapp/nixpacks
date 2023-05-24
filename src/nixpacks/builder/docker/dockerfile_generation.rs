@@ -389,7 +389,7 @@ impl DockerfileGenerator for Phase {
         // Ensure paths are available in the environment
         let build_path = if let Some(paths) = &phase.paths {
             let joined_paths = paths.join(":");
-            format!("ENV PATH {joined_paths}:$PATH")
+            format!("ENV NIXPACKS_PATH {joined_paths}:$NIXPACKS_PATH")
         } else {
             String::new()
         };
