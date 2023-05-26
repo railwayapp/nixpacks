@@ -118,7 +118,7 @@ enum Commands {
 
         /// Set target platform for your output image
         #[arg(long)]
-        platform: Vec<String>,
+        platform: Option<Vec<String>>,
 
         /// Unique identifier to key cache by. Defaults to the current directory
         #[arg(long)]
@@ -259,7 +259,7 @@ async fn main() -> Result<()> {
                 quiet: false,
                 cache_key,
                 no_cache,
-                platform,
+                platform: platform.unwrap_or_default(),
                 print_dockerfile: dockerfile,
                 current_dir,
                 inline_cache,
