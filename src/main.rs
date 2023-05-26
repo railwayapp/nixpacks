@@ -57,11 +57,11 @@ struct Args {
 
     /// Provide additional apt packages to install in the environment
     #[arg(long, short, global = true)]
-    apt: Vec<String>,
+    apt: Option<Vec<String>>,
 
     /// Provide additional nix libraries to install in the environment
     #[arg(long, global = true)]
-    libs: Vec<String>,
+    libs: Option<Vec<String>>,
 
     /// Provide environment variables to your build
     #[arg(long, short, global = true)]
@@ -166,11 +166,13 @@ async fn main() -> Result<()> {
         .collect::<Vec<_>>();
 
     // CLI build plan
-    let mut cli_plan = BuildPlan::default();
-    if !args.pkgs.is_empty() || !args.libs.is_empty() || !args.apt.is_empty() {
+    let mut cli_plan: BuildPlan = BuildPlan::default();
+    let apt = args.apt.unwrap_or_default();
+    let libs: Vec<String> = args.libs.unwrap_or_default();
+    if !args.pkgs.is_empty() || !libs.is_empty() || !apt.is_empty() {
         let mut setup = Phase::setup(Some(vec![pkgs, vec![Pkg::new("...")]].concat()));
-        setup.apt_pkgs = Some(vec![args.apt, vec!["...".to_string()]].concat());
-        setup.nix_libs = Some(vec![args.libs, vec!["...".to_string()]].concat());
+        setup.apt_pkgs = Some(vec![apt, vec!["...".to_string()]].concat());
+        setup.nix_libs = Some(vec![libs, vec!["...".to_string()]].concat());
         cli_plan.add_phase(setup);
     }
     if let Some(install_cmds) = args.install_cmd {
