@@ -168,7 +168,7 @@ async fn main() -> Result<()> {
 
     // CLI build plan
     let mut cli_plan: BuildPlan = BuildPlan::default();
-    let apt = args.apt.unwrap_or_default();
+    let apt: Vec<String> = args.apt.unwrap_or_default();
     let libs: Vec<String> = args.libs.unwrap_or_default();
     if !pkgs.is_empty() || !libs.is_empty() || !apt.is_empty() {
         let mut setup = Phase::setup(Some(vec![pkgs, vec![Pkg::new("...")]].concat()));
