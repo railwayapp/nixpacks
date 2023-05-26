@@ -23,6 +23,11 @@ use std::{
 const NIXPACKS_OUTPUT_DIR: &str = ".nixpacks";
 pub const APP_DIR: &str = "/app/";
 
+const CREATE_ENTRYPOINT: &str = "
+RUN printf '#!/usr/bin/env bash\\nexec bash -l -c -- \"$*\"\\n' > /usr/local/bin/entrypoint && \
+    chmod +x /usr/local/bin/entrypoint
+";
+
 /// Represents a directory into which project files and generated assets like Dockerfiles are written.
 #[derive(Debug, Clone)]
 pub struct OutputDir {
@@ -222,7 +227,8 @@ impl DockerfileGenerator for BuildPlan {
         let dockerfile = formatdoc! {"
             FROM {base_image}
 
-            ENTRYPOINT [\"/bin/bash\", \"-l\", \"-c\"]
+            {CREATE_ENTRYPOINT}
+            ENTRYPOINT [\"/usr/local/bin/entrypoint\"]
             WORKDIR {APP_DIR}
 
             {setup_copy_cmds}
@@ -339,7 +345,8 @@ impl DockerfileGenerator for StartPhase {
                 formatdoc! {"
                   # start
                   FROM {run_image}
-                  ENTRYPOINT [\"/bin/bash\", \"-l\", \"-c\"]
+                  {CREATE_ENTRYPOINT}
+                  ENTRYPOINT [\"/usr/local/bin/entrypoint\"]
                   WORKDIR {APP_DIR}
                   COPY --from=0 /etc/ssl/certs /etc/ssl/certs
                   RUN true
