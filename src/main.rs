@@ -65,7 +65,7 @@ struct Args {
 
     /// Provide environment variables to your build
     #[arg(long, short, global = true)]
-    env: Vec<String>,
+    env: Option<Vec<String>>,
 
     /// Path to config file
     #[arg(long, short, global = true)]
@@ -200,7 +200,8 @@ async fn main() -> Result<()> {
         cli_plan
     };
 
-    let env: Vec<&str> = args.env.iter().map(|e| e.deref()).collect();
+    let env: Vec<String> = args.env.unwrap_or_default();
+    let env: Vec<&str> = env.iter().map(|e| e.deref()).collect();
     let options = GeneratePlanOptions {
         plan: Some(cli_plan),
         config_file: args.config,
@@ -241,7 +242,7 @@ async fn main() -> Result<()> {
             no_error_without_start,
             verbose,
         } => {
-            let verbose = verbose || args.env.contains(&"NIXPACKS_VERBOSE=1".to_string());
+            let verbose = verbose || env.contains(&"NIXPACKS_VERBOSE=1");
 
             // Default to absolute `path` of the source that is being built as the cache-key if not disabled
             let cache_key = if !no_cache && cache_key.is_none() {
