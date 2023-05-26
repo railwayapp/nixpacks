@@ -110,7 +110,7 @@ enum Commands {
 
         /// Additional tags to add to the output image
         #[arg(short, long)]
-        tag: Vec<String>,
+        tag: Option<Vec<String>>,
 
         /// Additional labels to add to the output image
         #[arg(short, long)]
@@ -252,7 +252,7 @@ async fn main() -> Result<()> {
 
             let build_options = &DockerBuilderOptions {
                 name,
-                tags: tag,
+                tags: tag.unwrap_or_default(),
                 labels: label,
                 out_dir: out,
                 quiet: false,
