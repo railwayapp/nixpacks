@@ -114,7 +114,7 @@ enum Commands {
 
         /// Additional labels to add to the output image
         #[arg(short, long)]
-        label: Vec<String>,
+        label: Option<Vec<String>>,
 
         /// Set target platform for your output image
         #[arg(long)]

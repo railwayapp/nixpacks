@@ -172,8 +172,10 @@ impl DockerImageBuilder {
         for t in self.options.tags.clone() {
             docker_build_cmd.arg("-t").arg(t);
         }
-        for l in self.options.labels.clone() {
-            docker_build_cmd.arg("--label").arg(l);
+        if let Some(l) = self.options.labels.clone() {
+            for label in l {
+                docker_build_cmd.arg("--label").arg(label);
+            }
         }
         for l in self.options.platform.clone() {
             docker_build_cmd.arg("--platform").arg(l);
