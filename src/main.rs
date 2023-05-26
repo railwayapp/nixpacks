@@ -53,7 +53,7 @@ struct Args {
 
     /// Provide additional nix packages to install in the environment
     #[arg(long, short, global = true)]
-    pkgs: Vec<String>,
+    pkgs: Option<Vec<String>>,
 
     /// Provide additional apt packages to install in the environment
     #[arg(long, short, global = true)]
@@ -160,6 +160,7 @@ async fn main() -> Result<()> {
 
     let pkgs = args
         .pkgs
+        .unwrap_or_default()
         .iter()
         .map(|p| p.deref())
         .map(Pkg::new)
@@ -169,7 +170,7 @@ async fn main() -> Result<()> {
     let mut cli_plan: BuildPlan = BuildPlan::default();
     let apt = args.apt.unwrap_or_default();
     let libs: Vec<String> = args.libs.unwrap_or_default();
-    if !args.pkgs.is_empty() || !libs.is_empty() || !apt.is_empty() {
+    if !pkgs.is_empty() || !libs.is_empty() || !apt.is_empty() {
         let mut setup = Phase::setup(Some(vec![pkgs, vec![Pkg::new("...")]].concat()));
         setup.apt_pkgs = Some(vec![apt, vec!["...".to_string()]].concat());
         setup.nix_libs = Some(vec![libs, vec!["...".to_string()]].concat());
