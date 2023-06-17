@@ -16,6 +16,8 @@ The following Go version are available
 
 - `1.17` (Default)
 - `1.18`
+- `1.19`
+- `1.20`
 
 The version is parsed from the `go.mod` file.
 
