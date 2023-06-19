@@ -91,6 +91,8 @@ impl Turborepo {
             )? {
                 return Ok(Some(if pkg_manager == "pnpm" {
                     format!("pnpm --filter {name} run start")
+                } else if pkg_manager == "yarn" {
+                    format!("{pkg_manager} workspace {name} run start")
                 } else {
                     format!("{pkg_manager} --workspace {name} run start")
                 }));
