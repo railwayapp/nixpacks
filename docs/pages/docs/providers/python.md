@@ -4,7 +4,12 @@ title: Python
 
 # {% $markdoc.frontmatter.title %}
 
-Python is detected if a `main.py` OR `requirements.txt` OR `pyproject.toml` file is found.
+Python is detected if any of the following files are found
+
+- `main.py`
+- `requirements.txt`
+- `pyproject.toml`
+- `Pipfile`
 
 ## Setup
 
