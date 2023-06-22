@@ -39,7 +39,7 @@ impl Provider for DenoProvider {
         .unwrap();
         Ok(app.includes_file("deno.json")
             || app.includes_file("deno.jsonc")
-            || app.find_match(&re, "**/*.{tsx,ts,js,jsx}")?)
+            || app.find_match(&re, "**/*.{ts,tsx,js,jsx}")?)
     }
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
@@ -78,9 +78,11 @@ impl DenoProvider {
     }
 
     fn get_start_cmd(app: &App) -> Result<Option<String>> {
-        // First check for a deno.json and see if we can rip the start command from there
-        if app.includes_file("deno.json") {
-            let deno_json: DenoJson = app.read_json("deno.json")?;
+        // First check for a deno.{json,jsonc} and see if we can rip the start command from there
+        if app.includes_file("deno.json") || app.includes_file("deno.jsonc") {
+            let deno_json: DenoJson = app
+                .read_json("deno.json")
+                .or_else(|_| app.read_json("deno.jsonc"))?;
 
             if let Some(tasks) = deno_json.tasks {
                 if let Some(start) = tasks.start {
@@ -89,7 +91,7 @@ impl DenoProvider {
             }
         }
 
-        // Barring that, just try and start the index with sane defaults
+        // Barring that, just try and start the index file with sane defaults
         match DenoProvider::get_start_file(app)? {
             Some(start_file) => Ok(Some(format!(
                 "deno run --allow-all {}",
@@ -101,10 +103,9 @@ impl DenoProvider {
         }
     }
 
-    // Find the first index.ts or index.js file to run
+    // Find the first index.{ts,tsx,js,jsx} file to run
     fn get_start_file(app: &App) -> Result<Option<PathBuf>> {
-        // Find the first index.ts or index.js file to run
-        let matches = app.find_files("**/index.[tj]s")?;
+        let matches = app.find_files("**/index.{ts,tsx,js,jsx}")?;
         let path_to_index = match matches.first() {
             Some(m) => m,
             None => return Ok(None),
