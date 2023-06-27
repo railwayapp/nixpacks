@@ -9,6 +9,8 @@ env:
 jobs:
   create-release:
     name: Create Release
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     outputs:
       nixpacks_version: ${{ env.NIXPACKS_VERSION }}
@@ -49,6 +51,8 @@ jobs:
 
   build-release:
     name: Build Release Assets
+    permissions:
+      contents: write
     needs: ['create-release']
     runs-on: ${{ matrix.os }}
     continue-on-error: true
