@@ -1044,7 +1044,7 @@ dependencies = [
 
 [[package]]
 name = "nixpacks"
-version = "1.9.1"
+version = "1.9.2"
 dependencies = [
  "actix-web",
  "anyhow",
