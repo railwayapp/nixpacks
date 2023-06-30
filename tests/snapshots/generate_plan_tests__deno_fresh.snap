@@ -9,6 +9,16 @@ expression: plan
     "NIXPACKS_METADATA": "deno"
   },
   "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install",
+        "setup"
+      ],
+      "cmds": [
+        "deno cache routes/index.tsx"
+      ]
+    },
     "setup": {
       "name": "setup",
       "nixPkgs": [
