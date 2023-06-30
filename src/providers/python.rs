@@ -20,6 +20,7 @@ use super::{Provider, ProviderMetadata};
 
 const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
 const POETRY_VERSION: &str = "1.3.1";
+const PDM_VERSION: &str = "2.7.4";
 const PIP_CACHE_DIR: &str = "/root/.cache/pip";
 const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python310";
 
@@ -42,11 +43,13 @@ impl Provider for PythonProvider {
         let is_django = PythonProvider::is_django(app, env)?;
         let is_using_postgres = PythonProvider::is_using_postgres(app, env)?;
         let is_poetry = app.includes_file("poetry.lock");
+        let is_pdm = app.includes_file("pdm.lock");
 
         Ok(ProviderMetadata::from(vec![
             (is_django, "django"),
             (is_using_postgres, "postgres"),
             (is_poetry, "poetry"),
+            (is_pdm, "pdm"),
         ]))
     }
 
@@ -72,6 +75,13 @@ impl Provider for PythonProvider {
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),
                 POETRY_VERSION.to_string(),
+            )]));
+        }
+
+        if app.includes_file("pdm.lock") {
+            plan.add_variables(EnvironmentVariables::from([(
+                "NIXPACKS_PDM_VERSION".to_string(),
+                PDM_VERSION.to_string(),
             )]));
         }
 
@@ -157,6 +167,17 @@ impl PythonProvider {
                 let install_poetry = "pip install poetry==$NIXPACKS_POETRY_VERSION".to_string();
                 let mut install_phase = Phase::install(Some(format!(
                     "{create_env} && {activate_env} && {install_poetry} && poetry install --no-dev --no-interaction --no-ansi"
+                )));
+
+                install_phase.add_path(format!("{env_loc}/bin"));
+
+                install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+
+                return Ok(Some(install_phase));
+            } else if app.includes_file("pdm.lock") {
+                let install_pdm = "pip install pdm==$NIXPACKS_PDM_VERSION".to_string();
+                let mut install_phase = Phase::install(Some(format!(
+                    "{create_env} && {activate_env} && {install_pdm} && pdm install"
                 )));
 
                 install_phase.add_path(format!("{env_loc}/bin"));
