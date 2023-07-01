@@ -22,6 +22,7 @@ const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
 const POETRY_VERSION: &str = "1.3.1";
 const PDM_VERSION: &str = "2.7.4";
 const PIP_CACHE_DIR: &str = "/root/.cache/pip";
+const PDM_CACHE_DIR: &str = "/root/.cache/pdm";
 const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python310";
 
 pub struct PythonProvider {}
@@ -177,12 +178,13 @@ impl PythonProvider {
             } else if app.includes_file("pdm.lock") {
                 let install_pdm = "pip install pdm==$NIXPACKS_PDM_VERSION".to_string();
                 let mut install_phase = Phase::install(Some(format!(
-                    "{create_env} && {activate_env} && {install_pdm} && pdm install"
+                    "{create_env} && {activate_env} && {install_pdm} && pdm install --prod"
                 )));
 
                 install_phase.add_path(format!("{env_loc}/bin"));
 
                 install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+                install_phase.add_cache_directory(PDM_CACHE_DIR.to_string());
 
                 return Ok(Some(install_phase));
             }
