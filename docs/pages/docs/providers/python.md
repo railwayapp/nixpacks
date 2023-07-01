@@ -51,7 +51,7 @@ poetry install --no-dev --no-interactive --no-ansi
 If `pyproject.toml` (w/ `pdm.lock`)
 
 ```
-pdm install
+pdm install --prod
 ```
 
 If `Pipfile` (w/ `Pipfile.lock`)
