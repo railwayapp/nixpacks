@@ -1,0 +1,47 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "python,pdm",
+    "NIXPACKS_PDM_VERSION": "2.7.4",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "phases": {
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "python -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip install pdm==$NIXPACKS_PDM_VERSION && pdm install --prod"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/pdm",
+        "/root/.cache/pip"
+      ],
+      "paths": [
+        "/opt/venv/bin"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "python38",
+        "gcc"
+      ],
+      "nixLibs": [
+        "zlib",
+        "stdenv.cc.cc.lib"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "python main.py"
+  }
+}
