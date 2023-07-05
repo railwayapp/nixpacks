@@ -296,8 +296,7 @@ impl RubyProvider {
 
     fn uses_asset_pipeline(&self, app: &App) -> Result<bool> {
         if app.includes_file("Gemfile") {
-            let gemfile = app.read_file("Gemfile").unwrap_or_default();
-            return Ok(gemfile.contains("sprockets") || gemfile.contains("propshaft"));
+            return Ok(self.uses_gem_dep(app, "sprockets") || self.uses_gem_dep(app, "propshaft"));
         }
         Ok(false)
     }
