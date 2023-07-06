@@ -658,6 +658,13 @@ async fn test_python_poetry() {
 }
 
 #[tokio::test]
+async fn test_python_pdm() {
+    let name = simple_build("./examples/python-pdm").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Hello from Python-PDM"));
+}
+
+#[tokio::test]
 async fn test_python_numpy() {
     let name = simple_build("./examples/python-numpy").await;
     let output = run_image(&name, None).await;
