@@ -156,8 +156,8 @@ impl PhpProvider {
             "Nixpacks/Nix.pm" => include_str!("Nixpacks/Nix.pm"),
             "Nixpacks/Config/Template.pm" => include_str!("Nixpacks/Config/Template.pm"),
             "Nixpacks/Util/ChmodRecursive.pm" => include_str!("Nixpacks/Util/ChmodRecursive.pm"),
-            "Nixpacks/Util/Laravel.pm" => include_str!("Nixpacks/Util/Laravel.pm"),
-            "Nixpacks/Util/Logger.pm" => include_str!("Nixpacks/Util/Logger.pm")
+			"Nixpacks/Util/Laravel.pm" => include_str!("Nixpacks/Util/Laravel.pm"),
+			"Nixpacks/Util/Logger.pm" => include_str!("Nixpacks/Util/Logger.pm")
         }
     }
 
