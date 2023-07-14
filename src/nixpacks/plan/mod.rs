@@ -175,7 +175,6 @@ impl BuildPlan {
             deps.append(&mut p.clone().depends_on.unwrap_or_default());
 
             while let Some(dep) = deps.pop() {
-                
                 let p = self.get_phase(&dep);
                 if let Some(p) = p {
                     phases.insert(dep, p.clone());
