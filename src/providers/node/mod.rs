@@ -144,7 +144,7 @@ impl Provider for NodeProvider {
         if corepack {
             let install_cmd = NodeProvider::get_install_command(app);
 
-            if let Some(..) = install_cmd {
+            if install_cmd.is_some() {
                 install.add_cmd(install_cmd.unwrap_or_default());
             }
         }
