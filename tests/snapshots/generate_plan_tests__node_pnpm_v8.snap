@@ -7,16 +7,18 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "CI": "true",
-    "NIXPACKS_METADATA": "node,python",
+    "NIXPACKS_METADATA": "node",
     "NODE_ENV": "production",
-    "NPM_CONFIG_PRODUCTION": "false",
-    "PYTHONUNBUFFERED": "1"
+    "NPM_CONFIG_PRODUCTION": "false"
   },
   "phases": {
     "build": {
       "name": "build",
       "dependsOn": [
         "install"
+      ],
+      "cmds": [
+        "pnpm run build"
       ],
       "cacheDirectories": [
         "node_modules/.cache"
@@ -28,39 +30,20 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "npm i"
+        "pnpm i --frozen-lockfile"
       ],
       "cacheDirectories": [
-        "/root/.npm"
+        "/root/.local/share/pnpm/store/v3"
       ],
       "paths": [
         "/app/node_modules/.bin"
       ]
     },
-    "python:install": {
-      "name": "python:install",
-      "dependsOn": [
-        "python:setup"
-      ]
-    },
-    "python:setup": {
-      "name": "python:setup",
-      "nixPkgs": [
-        "python38",
-        "gcc"
-      ],
-      "nixLibs": [
-        "zlib",
-        "stdenv.cc.cc.lib"
-      ],
-      "nixOverlays": [],
-      "nixpkgsArchive": "[archive]"
-    },
     "setup": {
       "name": "setup",
       "nixPkgs": [
         "nodejs-16_x",
-        "npm-9_x"
+        "pnpm-8_x"
       ],
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
@@ -69,6 +52,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "./start.sh"
+    "cmd": "pnpm run start"
   }
 }

@@ -7,16 +7,18 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "CI": "true",
-    "NIXPACKS_METADATA": "node,python",
+    "NIXPACKS_METADATA": "node",
     "NODE_ENV": "production",
-    "NPM_CONFIG_PRODUCTION": "false",
-    "PYTHONUNBUFFERED": "1"
+    "NPM_CONFIG_PRODUCTION": "false"
   },
   "phases": {
     "build": {
       "name": "build",
       "dependsOn": [
         "install"
+      ],
+      "cmds": [
+        "npm run build"
       ],
       "cacheDirectories": [
         "node_modules/.cache"
@@ -28,7 +30,7 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "npm i"
+        "npm ci"
       ],
       "cacheDirectories": [
         "/root/.npm"
@@ -36,25 +38,6 @@ expression: plan
       "paths": [
         "/app/node_modules/.bin"
       ]
-    },
-    "python:install": {
-      "name": "python:install",
-      "dependsOn": [
-        "python:setup"
-      ]
-    },
-    "python:setup": {
-      "name": "python:setup",
-      "nixPkgs": [
-        "python38",
-        "gcc"
-      ],
-      "nixLibs": [
-        "zlib",
-        "stdenv.cc.cc.lib"
-      ],
-      "nixOverlays": [],
-      "nixpkgsArchive": "[archive]"
     },
     "setup": {
       "name": "setup",
@@ -69,6 +52,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "./start.sh"
+    "cmd": "npm run start"
   }
 }

@@ -51,7 +51,7 @@ expression: plan
         "libmysqlclient",
         "php81Packages.composer",
         "nodejs-16_x",
-        "npm-8_x",
+        "npm-9_x",
         "php81Extensions.mongodb"
       ],
       "nixLibs": [
