@@ -420,8 +420,13 @@ impl NodeProvider {
             let lockfile = app.read_file("pnpm-lock.yaml").unwrap_or_default();
             if lockfile.starts_with("lockfileVersion: 5.3") {
                 pm_pkg = Pkg::new("pnpm-6_x");
-            } else {
+            } else if lockfile.starts_with("lockfileVersion: 5.4") {
                 pm_pkg = Pkg::new("pnpm-7_x");
+            } else {
+                // pnpm v8 uses lockfile v6 as default, it appears as
+                // lockfileVersion: '6.0'
+                // in the lockfile. Take the quotes into account in the future.
+                pm_pkg = Pkg::new("pnpm-8_x");
             }
         } else if package_manager == "yarn" {
             pm_pkg = Pkg::new("yarn-1_x");
@@ -432,8 +437,11 @@ impl NodeProvider {
             let lockfile = app.read_file("package-lock.json").unwrap_or_default();
             if lockfile.contains("\"lockfileVersion\": 1") {
                 pm_pkg = Pkg::new("npm-6_x");
-            } else {
+            } else if lockfile.contains("\"lockfileVersion\": 2") {
                 pm_pkg = Pkg::new("npm-8_x");
+            } else {
+                // npm v9 uses lockfile v3 as default
+                pm_pkg = Pkg::new("npm-9_x");
             }
         };
         pkgs.push(pm_pkg.from_overlay(NODE_OVERLAY));
