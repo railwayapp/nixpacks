@@ -460,10 +460,47 @@ async fn test_prisma_postgres() {
     // Attach the postgres instance to the network
     attach_container_to_network(n.name, container_name.clone());
 
-    // Build the Django example
+    // Build the basic example, a function that calls the database
     let name = simple_build("./examples/node-prisma-postgres").await;
 
-    // Run the Rails example on the attached network
+    // Run the example on the attached network
+    let output = run_image(
+        &name,
+        Some(Config {
+            environment_variables: c.config.unwrap().environment_variables,
+            network: Some(network_name.clone()),
+        }),
+    )
+    .await;
+
+    // Cleanup containers and networks
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
+
+    assert!(output.contains("My post content"));
+}
+
+#[tokio::test]
+async fn test_prisma_postgres_npm_v9() {
+    // This test is similar to the prisma_postgres test, but uses npm 9
+    // This is because npm 9 handles node-gyp differently, and we want to make
+    // sure that we can still build node-gyp packages with npm 9
+
+    // Create the network
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    // Create the postgres instance
+    let c = run_postgres();
+    let container_name = c.name.clone();
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    // Build the basic example, a function that calls the database
+    let name = simple_build("./examples/node-prisma-postgres-npm-v9").await;
+
+    // Run the example on the attached network
     let output = run_image(
         &name,
         Some(Config {
