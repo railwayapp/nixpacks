@@ -6,8 +6,8 @@ expression: plan
   "providers": [],
   "buildImage": "[build_image]",
   "variables": {
-    "IS_LARAVEL": "yes",
     "NIXPACKS_METADATA": "php",
+    "NIXPACKS_PHP_FALLBACK_PATH": "/index.php",
     "NIXPACKS_PHP_ROOT_DIR": "/app/public",
     "PORT": "80"
   },
@@ -22,15 +22,6 @@ expression: plan
     "prestart.pl": "#!/usr/bin/env perl\n\nundef $/;\n\nuse strict;\nuse warnings;\n\nuse FindBin;\nuse lib (\"$FindBin::RealBin\");\n\nuse File::Find;\nuse Nixpacks::Config::Template qw(compile_template);\nuse Nixpacks::Util::Logger;\nuse Nixpacks::Util::ChmodRecursive qw(chmod_recursive);\nuse Nixpacks::Util::Laravel qw(is_laravel check_possible_env_errors);\n\nmy $server_logger = Nixpacks::Util::Logger->new(\"server\");\n\nNixpacks::Util::ChmodRecursive::chmod_recursive(\"/app/storage\") if -e \"/app/storage\";\n\nif ($#ARGV != 1) {\n    print STDERR \"Usage: $0 <config-file> <output-file>\\n\";\n    exit 1;\n}\n\nif(Nixpacks::Util::Laravel::is_laravel()) {\n    Nixpacks::Util::Laravel::check_possible_env_errors(\"/app\");\n}\n\nNixpacks::Config::Template::compile_template($ARGV[0], $ARGV[1]);\nmy $port = $ENV{\"PORT\"};\n$server_logger->info(\"Server starting on port $port\");"
   },
   "phases": {
-    "build": {
-      "name": "build",
-      "dependsOn": [
-        "install"
-      ],
-      "cmds": [
-        "npm run prod"
-      ]
-    },
     "install": {
       "name": "install",
       "dependsOn": [
@@ -38,27 +29,22 @@ expression: plan
       ],
       "cmds": [
         "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx",
-        "composer install --ignore-platform-reqs",
-        "npm i"
+        "composer install --ignore-platform-reqs"
       ]
     },
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "(php81.withExtensions (pe: pe.enabled ++ []))",
+        "(php82.withExtensions (pe: pe.enabled ++ []))",
         "perl",
         "nginx",
         "libmysqlclient",
-        "php81Packages.composer",
-        "nodejs-16_x",
-        "npm-8_x"
+        "php82Packages.composer"
       ],
       "nixLibs": [
         "libmysqlclient"
       ],
-      "nixOverlays": [
-        "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
-      ],
+      "nixOverlays": [],
       "nixpkgsArchive": "[archive]"
     }
   },

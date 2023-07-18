@@ -11,6 +11,7 @@ Note that Laravel apps need an `APP_KEY` environment variable in order to work.
 If an `nginx.conf` or `nginx.template.conf` (see [this file](https://github.com/railwayapp/nixpacks/blob/main/src/providers/php/nginx.template.conf) for an example of template syntax) file is found in the project root directory, that configuration will be used.
 
 If a `NIXPACKS_PHP_ROOT_DIR` variable is passed, that will be used as the server root.
+If a `NIXPACKS_PHP_FALLBACK_PATH` variable is passed, that will be used as a fallback for the server - for instance, if your app uses `index.php` as a router, you would set this variable to `/index.php`.
 
 ## Setup
 
