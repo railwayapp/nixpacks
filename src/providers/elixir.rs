@@ -113,7 +113,7 @@ impl ElixirProvider {
             (major, minor) => {
                 let pkg_name = format!("elixir_{}_{}", major, minor);
                 Ok(Pkg::new(&pkg_name))
-            },
+            }
             _ => Ok(Pkg::new(DEFAULT_ELIXIR_PKG_NAME)),
         }
     }
