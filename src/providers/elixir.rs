@@ -110,10 +110,10 @@ impl ElixirProvider {
 
         // Match major and minor versions
         match parsed_version {
-            ("1", "9") => Ok(Pkg::new("elixir_1_9")),
-            ("1", "10") => Ok(Pkg::new("elixir_1_10")),
-            ("1", "11") => Ok(Pkg::new("elixir_1_11")),
-            ("1", "12") => Ok(Pkg::new("elixir_1_12")),
+            (major, minor) => {
+                let pkg_name = format!("elixir_{}_{}", major, minor);
+                Ok(Pkg::new(&pkg_name))
+            },
             _ => Ok(Pkg::new(DEFAULT_ELIXIR_PKG_NAME)),
         }
     }
