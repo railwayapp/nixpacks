@@ -11,6 +11,7 @@ use crate::nixpacks::{
 use anyhow::Result;
 use regex::{Match, Regex};
 const DEFAULT_ELIXIR_PKG_NAME: &str = "elixir";
+const ELIXIR_NIXPKGS_ARCHIVE: &str = "ef99fa5c5ed624460217c31ac4271cfb5cb2502c";
 
 pub struct ElixirProvider {}
 
@@ -32,7 +33,8 @@ impl Provider for ElixirProvider {
         )]));
 
         let elixir_pkg = ElixirProvider::get_nix_elixir_package(app, env)?;
-        let setup_phase = Phase::setup(Some(vec![elixir_pkg]));
+        let mut setup_phase = Phase::setup(Some(vec![elixir_pkg]));
+        setup_phase.set_nix_archive(ELIXIR_NIXPKGS_ARCHIVE.to_string());
         plan.add_phase(setup_phase);
 
         // Install Phase
@@ -114,6 +116,9 @@ impl ElixirProvider {
             ("1", "10") => Ok(Pkg::new("elixir_1_10")),
             ("1", "11") => Ok(Pkg::new("elixir_1_11")),
             ("1", "12") => Ok(Pkg::new("elixir_1_12")),
+            ("1", "13") => Ok(Pkg::new("elixir_1_13")),
+            ("1", "14") => Ok(Pkg::new("elixir")),
+            ("1", "15") => Ok(Pkg::new("elixir_1_15")),
             _ => Ok(Pkg::new(DEFAULT_ELIXIR_PKG_NAME)),
         }
     }

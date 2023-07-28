@@ -35,7 +35,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "elixir"
+        "elixir_1_13"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]"
