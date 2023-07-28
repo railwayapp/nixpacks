@@ -123,7 +123,9 @@ impl Nx {
                 )));
             }
 
-            if project_json.targets.build.executor == "@nrwl/next:build" {
+            if project_json.targets.build.executor == "@nx/next:build"
+                || project_json.targets.build.executor == "@nrwl/next:build"
+            {
                 return Ok(Some(format!("cd {output_path} && npm run start")));
             }
 
