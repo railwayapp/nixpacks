@@ -117,6 +117,7 @@ impl ElixirProvider {
             ("1", "11") => Ok(Pkg::new("elixir_1_11")),
             ("1", "12") => Ok(Pkg::new("elixir_1_12")),
             ("1", "13") => Ok(Pkg::new("elixir_1_13")),
+            ("1", "14") => Ok(Pkg::new("elixir")),
             ("1", "15") => Ok(Pkg::new("elixir_1_15")),
             _ => Ok(Pkg::new(DEFAULT_ELIXIR_PKG_NAME)),
         }
