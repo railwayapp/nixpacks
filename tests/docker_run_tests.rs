@@ -337,7 +337,7 @@ async fn test_elixir_no_ecto() {
         .collect();
     let secret_env = format!("SECRET_KEY_BASE={rand_64_str}");
     let name = build_with_build_time_env_vars(
-        "./examples/elixir_no_ecto",
+        "./examples/elixir-phx-no-ecto",
         vec![&*secret_env, "MIX_ENV=prod"],
     )
     .await;
