@@ -54,6 +54,10 @@ Install Nixpacks from Scoop using the [official bucket](https://github.com/Scoop
 scoop install nixpacks
 ```
 
+## Windows
+
+Nixpacks provides `.msi` files provided in each [release](https://github.com/railwayapp/nixpacks/releases).
+
 ## Source
 
 Build and install from source using [Rust](https://www.rust-lang.org/tools/install).
