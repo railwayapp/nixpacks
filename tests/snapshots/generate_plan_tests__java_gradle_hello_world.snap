@@ -26,7 +26,7 @@ expression: plan
       "name": "setup",
       "nixPkgs": [
         "jdk17",
-        "gradle"
+        "gradle_7"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]"

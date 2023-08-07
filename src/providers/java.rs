@@ -176,7 +176,8 @@ impl JavaProvider {
 
     fn get_gradle_pkg(&self, gradle_version: u32) -> Result<Pkg> {
         let pkg = match gradle_version {
-            7 => Pkg::new("gradle"),
+            8 => Pkg::new("gradle"),
+            7 => Pkg::new("gradle_7"),
             6 => Pkg::new("gradle_6"),
             5 => Pkg::new("gradle_5"),
             4 => Pkg::new("gradle_4"),
@@ -294,6 +295,18 @@ mod tests {
 
         assert_eq!(
             Pkg::new("gradle"),
+            java.get_gradle_pkg(
+                java.get_gradle_version(
+                    &App::new("examples/java-gradle-hello-world").unwrap(),
+                    &Environment::from_envs(vec!["NIXPACKS_GRADLE_VERSION=8"]).unwrap(),
+                )
+                .unwrap()
+            )
+            .unwrap()
+        );
+
+        assert_eq!(
+            Pkg::new("gradle_7"),
             java.get_gradle_pkg(
                 java.get_gradle_version(
                     &App::new("examples/java-gradle-hello-world").unwrap(),
