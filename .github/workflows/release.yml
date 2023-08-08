@@ -56,6 +56,8 @@ jobs:
     needs: ['create-release']
     runs-on: ${{ matrix.os }}
     continue-on-error: true
+    env:
+      RUSTFLAGS: ${{ matrix.rustflags || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -83,12 +85,15 @@ jobs:
 
           - target: x86_64-pc-windows-msvc
             os: windows-latest
+            rustflags: -C target-feature=+crt-static
 
           - target: i686-pc-windows-msvc
             os: windows-latest
+            rustflags: -C target-feature=+crt-static
 
           - target: aarch64-pc-windows-msvc
             os: windows-latest
+            rustflags: -C target-feature=+crt-static
 
           # - target: x86_64-unknown-freebsd
           #   os: ubuntu-latest
@@ -155,6 +160,32 @@ jobs:
       with:
         tag: ${{ needs.create-release.outputs.nixpacks_version }}
         file: nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-amd64.deb
+
+    - name: Install cargo-wix
+      continue-on-error: true
+      # aarch64 is not supported by cargo-wix since it requires wix v4
+      # see https://github.com/volks73/cargo-wix/issues/174
+      if: matrix.os == 'windows-latest' && matrix.target != 'aarch64-pc-windows-msvc'
+      run: cargo install cargo-wix
+      env:
+        # cargo-wix does not require static crt
+        RUSTFLAGS: ""
+
+    - name: Create windows installers
+      continue-on-error: true
+      if: matrix.os == 'windows-latest' && matrix.target != 'aarch64-pc-windows-msvc'
+      run: >
+        cargo wix -v --no-build --nocapture
+        --target ${{ matrix.target }}
+        --output nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.msi
+
+    - name: Upload windows installers
+      continue-on-error: true
+      if: matrix.os == 'windows-latest' && matrix.target != 'aarch64-pc-windows-msvc'
+      uses: svenstaro/upload-release-action@v2
+      with:
+        tag: ${{ needs.create-release.outputs.nixpacks_version }}
+        file: nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.msi
 
     - name: Set SHA
       if: matrix.config.os == 'macos-latest'
