@@ -297,8 +297,8 @@ mod tests {
             Pkg::new("gradle"),
             java.get_gradle_pkg(
                 java.get_gradle_version(
-                    &App::new("examples/java-gradle-hello-world").unwrap(),
-                    &Environment::from_envs(vec!["NIXPACKS_GRADLE_VERSION=8"]).unwrap(),
+                    &App::new("examples/java-gradle-8").unwrap(),
+                    &Environment::from_envs(vec![]).unwrap(),
                 )
                 .unwrap()
             )
