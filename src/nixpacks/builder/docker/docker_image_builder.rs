@@ -156,6 +156,10 @@ impl DockerImageBuilder {
             env::set_var("DOCKER_HOST", value);
         }
 
+        if let Some(value) = &self.options.docker_tls_verify {
+            env::set_var("DOCKER_TLS_VERIFY", value);
+        }
+
         if self.options.inline_cache {
             docker_build_cmd
                 .arg("--build-arg")
