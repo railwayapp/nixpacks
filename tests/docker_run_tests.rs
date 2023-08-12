@@ -832,6 +832,26 @@ async fn test_cowsay() {
 }
 
 #[tokio::test]
+async fn test_docker_host() {
+    let name = Uuid::new_v4().to_string();
+    create_docker_image(
+        "./examples/shell-hello",
+        Vec::new(),
+        &GeneratePlanOptions::default(),
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            docker_host: Some("tcp://192.168.1.10:2375".to_string()),
+            ..Default::default()
+        },
+    )
+        .await
+        .unwrap();
+    let output = run_image(&name, None).await;
+    assert!(!output.contains("Hello World"));
+}
+
+#[tokio::test]
 async fn test_staticfile() {
     let name = simple_build("./examples/staticfile").await;
     let output = run_image(&name, None).await;

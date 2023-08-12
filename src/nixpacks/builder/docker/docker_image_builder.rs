@@ -155,6 +155,10 @@ impl DockerImageBuilder {
             docker_build_cmd.arg("--cache-from").arg(value);
         }
 
+        if let Some(value) = &self.options.docker_host {
+            docker_build_cmd.arg("--add-host").arg(value);
+        }
+
         if self.options.inline_cache {
             docker_build_cmd
                 .arg("--build-arg")

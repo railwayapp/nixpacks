@@ -19,6 +19,7 @@ pub struct DockerBuilderOptions {
     pub no_error_without_start: bool,
     pub incremental_cache_image: Option<String>,
     pub verbose: bool,
+    pub docker_host: Option<String>,
 }
 
 mod cache;
