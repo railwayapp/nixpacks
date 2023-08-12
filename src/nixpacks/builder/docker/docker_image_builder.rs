@@ -11,10 +11,7 @@ use crate::nixpacks::{
     plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
-use std::{
-    fs::{self, remove_dir_all, File},
-    process::Command,
-};
+use std::{env, fs::{self, remove_dir_all, File}, process::Command};
 use tempdir::TempDir;
 use uuid::Uuid;
 
@@ -156,7 +153,7 @@ impl DockerImageBuilder {
         }
 
         if let Some(value) = &self.options.docker_host {
-            docker_build_cmd.arg("--add-host").arg(value);
+            env::set_var("DOCKER_HOST", value);
         }
 
         if self.options.inline_cache {
