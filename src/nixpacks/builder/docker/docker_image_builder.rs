@@ -157,7 +157,11 @@ impl DockerImageBuilder {
         }
 
         if let Some(value) = &self.options.docker_tls_verify {
-            env::set_var("DOCKER_TLS_VERIFY", value);
+            if value == "1" {
+                env::set_var("DOCKER_TLS_VERIFY", value);
+            } else {
+                env::remove_var("DOCKER_TLS_VERIFY");  // Clear the variable to disable TLS verification
+            }
         }
 
         if self.options.inline_cache {
