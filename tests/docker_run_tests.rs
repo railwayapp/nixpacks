@@ -841,14 +841,15 @@ async fn test_docker_host() {
         &DockerBuilderOptions {
             name: Some(name.clone()),
             quiet: true,
-            docker_host: Some("tcp://192.168.1.10:2375".to_string()),
+            docker_host: Some("tcp://0.0.0.0:2375".to_string()),
+            docker_tls_verify: Some("0".to_string()),
             ..Default::default()
         },
     )
         .await
         .unwrap();
     let output = run_image(&name, None).await;
-    assert!(!output.contains("Hello World"));
+    assert!(output.contains("Hello World"));
 }
 
 #[tokio::test]
