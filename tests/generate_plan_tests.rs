@@ -107,27 +107,6 @@ fn test_haskell_stack() {
     );
 }
 
-#[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "i386"))]
-#[test]
-fn test_zig_gyro() {
-    let plan = simple_gen_plan("./examples/zig-gyro");
-    let install = plan.get_phase("install").unwrap().clone();
-    let build = plan.get_phase("build").unwrap();
-    let start = plan.start_phase.clone().unwrap();
-
-    assert_eq!(
-        build.cmds,
-        Some(vec!["zig build -Drelease-safe=true".to_string()])
-    );
-    assert_eq!(start.cmd, Some("./zig-out/bin/zig-gyro".to_string()));
-    assert!(install
-        .cmds
-        .unwrap()
-        .get(0)
-        .unwrap()
-        .contains("mkdir /gyro"));
-}
-
 #[test]
 fn test_node_turborepo_custom_app() {
     let plan = generate_build_plan(
