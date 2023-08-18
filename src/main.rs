@@ -148,6 +148,16 @@ enum Commands {
         #[arg(long)]
         no_error_without_start: bool,
 
+        /// Limit the CPU CFS (Completely Fair Scheduler) quota.
+        /// Passed directly to the docker build command
+        #[arg(long)]
+        cpu_quota: Option<String>,
+
+        /// Memory limit.
+        /// Passed directly to the docker build command
+        #[arg(long)]
+        memory: Option<String>,
+
         /// Display more info during build
         #[arg(long, short)]
         verbose: bool,
@@ -236,6 +246,8 @@ async fn main() -> Result<()> {
             cache_from,
             inline_cache,
             no_error_without_start,
+            cpu_quota,
+            memory,
             verbose,
         } => {
             let verbose = verbose || args.env.contains(&"NIXPACKS_VERBOSE=1".to_string());
@@ -262,6 +274,8 @@ async fn main() -> Result<()> {
                 cache_from,
                 no_error_without_start,
                 incremental_cache_image,
+                cpu_quota,
+                memory,
                 verbose,
             };
             create_docker_image(&path, env, &options, build_options).await?;
