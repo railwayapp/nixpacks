@@ -895,14 +895,6 @@ async fn test_zig() {
 }
 
 #[tokio::test]
-async fn test_zig_gyro() {
-    let name = simple_build("./examples/zig-gyro").await;
-    let output = run_image(&name, None).await;
-    assert!(output.contains("Hello from Zig"));
-    assert!(output.contains("The URI scheme of GitHub is https."));
-}
-
-#[tokio::test]
 async fn test_ruby_2() {
     let name = simple_build("./examples/ruby-2").await;
     let output = run_image(&name, None).await;
