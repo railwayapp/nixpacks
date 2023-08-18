@@ -73,6 +73,7 @@ struct Args {
 }
 
 /// The valid subcommands passed to `nixpacks`, and their arguments.
+#[allow(clippy::large_enum_variant)]
 #[derive(Subcommand)]
 enum Commands {
     /// Generate a build plan for an app
