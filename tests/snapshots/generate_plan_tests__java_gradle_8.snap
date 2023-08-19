@@ -33,6 +33,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "java $JAVA_OPTS -jar  build/libs/*.jar"
+    "cmd": "gradle -v && java $JAVA_OPTS -jar build/libs/*.jar"
   }
 }
