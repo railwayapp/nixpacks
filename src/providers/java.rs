@@ -15,6 +15,7 @@ pub struct JavaProvider {}
 
 const DEFAULT_JDK_VERSION: u32 = 17;
 const DEFAULT_GRADLE_VERSION: u32 = 7;
+const GRADLE_NIXPKGS_ARCHIVE: &str = "2f9286912cb215969ece465147badf6d07aa43fe";
 
 impl Provider for JavaProvider {
     fn name(&self) -> &str {
@@ -36,7 +37,8 @@ impl Provider for JavaProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         let (setup, build) = if self.is_using_gradle(app) {
             let pkgs = self.get_jdk_and_gradle_pkgs(app, env)?;
-            let setup = Phase::setup(Some(pkgs));
+            let mut setup = Phase::setup(Some(pkgs));
+            setup.set_nix_archive(GRADLE_NIXPKGS_ARCHIVE.to_string());
 
             let mut build = Phase::build(None);
             let gradle_exe = self.get_gradle_exe(app);
