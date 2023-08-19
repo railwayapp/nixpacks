@@ -179,6 +179,13 @@ impl DockerImageBuilder {
             docker_build_cmd.arg("--platform").arg(l);
         }
 
+        if let Some(cpu_quota) = self.options.cpu_quota.clone() {
+            docker_build_cmd.arg("--cpu-quota").arg(cpu_quota);
+        }
+        if let Some(memory) = self.options.memory.clone() {
+            docker_build_cmd.arg("--memory").arg(memory);
+        }
+
         Ok(docker_build_cmd)
     }
 
