@@ -185,7 +185,7 @@ impl Provider for NodeProvider {
         NodeProvider::cache_tsbuildinfo_file(app, &mut build);
 
         if Moon::is_moon_repo(app, env) {
-            build.add_cache_directory(".moon/cache");
+            build.add_cache_directory(".moon/cache/outputs");
         }
 
         // Start
