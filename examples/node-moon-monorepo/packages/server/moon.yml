@@ -1,0 +1,7 @@
+tasks:
+  dev:
+    command: nodemon index.ts
+  build:
+    command: tsc -p tsconfig.json
+  start:
+    command: node dist/index.js
