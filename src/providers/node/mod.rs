@@ -184,6 +184,10 @@ impl Provider for NodeProvider {
 
         NodeProvider::cache_tsbuildinfo_file(app, &mut build);
 
+        if Moon::is_moon_repo(app, env) {
+            build.add_cache_directory(".moon/cache");
+        }
+
         // Start
         let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
 
