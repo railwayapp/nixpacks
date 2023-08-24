@@ -241,9 +241,7 @@ impl NodeProvider {
 
     pub fn get_build_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
         if Moon::is_moon_repo(app, env) {
-            if let Some(moon_build_cmd) = Moon::get_build_cmd(app, env) {
-                return Ok(Some(moon_build_cmd));
-            }
+            return Ok(Some(Moon::get_build_cmd(app, env)));
         }
 
         if Nx::is_nx_monorepo(app, env) {
@@ -271,9 +269,7 @@ impl NodeProvider {
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
 
         if Moon::is_moon_repo(app, env) {
-            if let Some(moon_start_cmd) = Moon::get_start_cmd(app, env) {
-                return Ok(Some(moon_start_cmd));
-            }
+            return Ok(Some(Moon::get_start_cmd(app, env)));
         }
 
         if Nx::is_nx_monorepo(app, env) {
