@@ -3,7 +3,8 @@ tasks:
     command: next dev
   build:
     command: next build
-  start:
+  # start
+  serve:
     command: next start
   lint:
     command: next lint
