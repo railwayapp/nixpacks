@@ -73,6 +73,7 @@ struct Args {
 }
 
 /// The valid subcommands passed to `nixpacks`, and their arguments.
+#[allow(clippy::large_enum_variant)]
 #[derive(Subcommand)]
 enum Commands {
     /// Generate a build plan for an app
@@ -155,6 +156,16 @@ enum Commands {
         /// Do not error when no start command can be found
         #[arg(long)]
         no_error_without_start: bool,
+
+        /// Limit the CPU CFS (Completely Fair Scheduler) quota.
+        /// Passed directly to the docker build command
+        #[arg(long)]
+        cpu_quota: Option<String>,
+
+        /// Memory limit.
+        /// Passed directly to the docker build command
+        #[arg(long)]
+        memory: Option<String>,
 
         /// Display more info during build
         #[arg(long, short)]
@@ -246,6 +257,8 @@ async fn main() -> Result<()> {
             docker_tls_verify,
             inline_cache,
             no_error_without_start,
+            cpu_quota,
+            memory,
             verbose,
         } => {
             let verbose = verbose || args.env.contains(&"NIXPACKS_VERBOSE=1".to_string());
@@ -274,6 +287,8 @@ async fn main() -> Result<()> {
                 docker_tls_verify,
                 no_error_without_start,
                 incremental_cache_image,
+                cpu_quota,
+                memory,
                 verbose,
             };
             create_docker_image(&path, env, &options, build_options).await?;
