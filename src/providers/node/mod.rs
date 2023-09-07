@@ -1,4 +1,4 @@
-use self::{nx::Nx, turborepo::Turborepo};
+use self::{moon::Moon, nx::Nx, turborepo::Turborepo};
 use super::Provider;
 use crate::nixpacks::plan::merge::Mergeable;
 use crate::nixpacks::{
@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 
+mod moon;
 mod nx;
 mod turborepo;
 
@@ -183,6 +184,10 @@ impl Provider for NodeProvider {
 
         NodeProvider::cache_tsbuildinfo_file(app, &mut build);
 
+        if Moon::is_moon_repo(app, env) {
+            build.add_cache_directory(".moon/cache/outputs");
+        }
+
         // Start
         let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
 
@@ -235,6 +240,10 @@ impl NodeProvider {
     }
 
     pub fn get_build_cmd(app: &App, env: &Environment) -> Result<Option<String>> {
+        if Moon::is_moon_repo(app, env) {
+            return Ok(Some(Moon::get_build_cmd(app, env)));
+        }
+
         if Nx::is_nx_monorepo(app, env) {
             if let Some(nx_build_cmd) = Nx::get_nx_build_cmd(app, env) {
                 return Ok(Some(nx_build_cmd));
@@ -259,11 +268,16 @@ impl NodeProvider {
         let executor = NodeProvider::get_executor(app);
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
 
+        if Moon::is_moon_repo(app, env) {
+            return Ok(Some(Moon::get_start_cmd(app, env)));
+        }
+
         if Nx::is_nx_monorepo(app, env) {
             if let Some(nx_start_cmd) = Nx::get_nx_start_cmd(app, env)? {
                 return Ok(Some(nx_start_cmd));
             }
         }
+
         if Turborepo::is_turborepo(app) {
             if let Ok(Some(turbo_start_cmd)) =
                 Turborepo::get_actual_start_cmd(app, env, &package_json)

@@ -448,6 +448,36 @@ async fn test_node_canvas() {
 }
 
 #[tokio::test]
+async fn test_node_moon_custom_build() {
+    let name = build_with_build_time_env_vars(
+        "./examples/node-moon-monorepo",
+        vec![
+            "NIXPACKS_MOON_APP_NAME=server",
+            "NIXPACKS_MOON_BUILD_TASK=compile",
+        ],
+    )
+    .await;
+
+    assert!(run_image(&name, None).await.contains("Server listening at"));
+}
+
+#[tokio::test]
+async fn test_node_moon_custom_start() {
+    let name = build_with_build_time_env_vars(
+        "./examples/node-moon-monorepo",
+        vec![
+            "NIXPACKS_MOON_APP_NAME=client",
+            "NIXPACKS_MOON_START_TASK=serve",
+        ],
+    )
+    .await;
+
+    assert!(run_image(&name, None)
+        .await
+        .contains("ready - started server on 0.0.0.0:3000"));
+}
+
+#[tokio::test]
 async fn test_prisma_postgres() {
     // Create the network
     let n = create_network();
@@ -889,6 +919,14 @@ async fn test_dart() {
     let name = simple_build("./examples/dart").await;
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Dart"));
+}
+
+#[tokio::test]
+async fn test_java_gradle_8() {
+    let name = simple_build("./examples/java-gradle-8").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Gradle 8"));
+    assert!(output.contains("Hello from Java Gradle"));
 }
 
 #[tokio::test]

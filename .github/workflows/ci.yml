@@ -22,7 +22,7 @@ jobs:
           access_token: ${{ github.token }}
 
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -49,7 +49,7 @@ jobs:
           access_token: ${{ github.token }}
 
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -90,7 +90,7 @@ jobs:
           access_token: ${{ github.token }}
 
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -127,7 +127,7 @@ jobs:
           access_token: ${{ github.token }}
 
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -166,7 +166,7 @@ jobs:
           access_token: ${{ github.token }}
 
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install 1.60 rust toolchain
         uses: actions-rs/toolchain@v1
@@ -194,7 +194,7 @@ jobs:
           access_token: ${{ github.token }}
 
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main

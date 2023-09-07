@@ -23,6 +23,7 @@ The version can be overridden by setting the `NIXPACKS_JDK_VERSION` environment 
 
 The following major Gradle versions are available
 
+- `8`
 - `7` (Default)
 - `6`
 - `5`
