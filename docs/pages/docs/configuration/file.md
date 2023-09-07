@@ -4,7 +4,7 @@ title: Configuration File Reference
 
 # {% $markdoc.frontmatter.title %}
 
-Nixpacks has **experimental** support for specifying build configuration in a `nixpacks.toml` or `nixpacks.json` file. The config will automatically be used if one of these files is found in the app root. Otherwise, the file can be specified with the `--config <file>` flag or with the `NIXPACKS_CONFIG_FILE` environment variable.
+Nixpacks supports specifying build configuration in a `nixpacks.toml` or `nixpacks.json` file. The config will automatically be used if one of these files is found in the app root. Otherwise, the file can be specified with the `--config <file>` flag or with the `NIXPACKS_CONFIG_FILE` environment variable.
 
 The contents of this file can contain a full build plan, which means that every aspect of the build can be customized. An example config looks something like:
 
