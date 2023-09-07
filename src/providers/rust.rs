@@ -311,7 +311,7 @@ impl RustProvider {
     }
 
     fn should_make_wasm32_wasi(app: &App, _env: &Environment) -> bool {
-        let re_target = Regex::new(r##"target\s*=\s*"wasm32-wasi""##).expect("BUG: Broken regex");
+        let re_target = Regex::new(r#"target\s*=\s*"wasm32-wasi""#).expect("BUG: Broken regex");
 
         matches!(app.find_match(&re_target, ".cargo/config.toml"), Ok(true))
     }

@@ -217,7 +217,7 @@ impl JavaProvider {
         }
 
         let file_content = app.read_file("gradle/wrapper/gradle-wrapper.properties")?;
-        let custom_version = Regex::new(r#"(distributionUrl[\S].*[gradle])(-)([0-9|\.]*)"#)?
+        let custom_version = Regex::new(r"(distributionUrl[\S].*[gradle])(-)([0-9|\.]*)")?
             .captures(&file_content)
             .map(|c| c.get(3).unwrap().as_str().to_owned());
 
