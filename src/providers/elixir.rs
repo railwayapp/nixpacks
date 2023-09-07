@@ -77,7 +77,7 @@ impl ElixirProvider {
         let mix_exs_content = app.read_file("mix.exs")?;
         let custom_version = env.get_config_variable("ELIXIR_VERSION");
 
-        let mix_elixir_version_regex = Regex::new(r#"(elixir:[\s].*[> ])([0-9|\.]*)"#)?;
+        let mix_elixir_version_regex = Regex::new(r"(elixir:[\s].*[> ])([0-9|\.]*)")?;
 
         // If not from env variable, get it from the .elixir-version file then try to parse from mix.exs
         let custom_version = if custom_version.is_some() {
