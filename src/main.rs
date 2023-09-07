@@ -179,9 +179,9 @@ async fn main() -> Result<()> {
     // CLI build plan
     let mut cli_plan = BuildPlan::default();
     if !args.pkgs.is_empty() || !args.libs.is_empty() || !args.apt.is_empty() {
-        let mut setup = Phase::setup(Some(vec![pkgs, vec![Pkg::new("...")]].concat()));
-        setup.apt_pkgs = Some(vec![args.apt, vec!["...".to_string()]].concat());
-        setup.nix_libs = Some(vec![args.libs, vec!["...".to_string()]].concat());
+        let mut setup = Phase::setup(Some([pkgs, [Pkg::new("...")].to_vec()].to_vec().concat()));
+        setup.apt_pkgs = Some([args.apt, ["...".to_string()].to_vec()].to_vec().concat());
+        setup.nix_libs = Some([args.libs, ["...".to_string()].to_vec()].to_vec().concat());
         cli_plan.add_phase(setup);
     }
     if let Some(install_cmds) = args.install_cmd {
