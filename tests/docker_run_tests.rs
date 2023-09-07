@@ -867,6 +867,14 @@ async fn test_dart() {
 }
 
 #[tokio::test]
+async fn test_java_gradle_8() {
+    let name = simple_build("./examples/java-gradle-8").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Gradle 8"));
+    assert!(output.contains("Hello from Java Gradle"));
+}
+
+#[tokio::test]
 async fn test_java_maven() {
     let name = simple_build("./examples/java-maven").await;
     let output = run_image(&name, None).await;

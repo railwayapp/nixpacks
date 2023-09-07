@@ -1,0 +1,2 @@
+[start]
+cmd = "gradle -v && java $JAVA_OPTS -jar build/libs/*.jar"
