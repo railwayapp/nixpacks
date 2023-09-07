@@ -34,7 +34,7 @@ impl Provider for DenoProvider {
 
     fn detect(&self, app: &App, _env: &Environment) -> Result<bool> {
         let re = Regex::new(
-            r##"import .+ from (?:"|'|`)https://deno.land/[^"`']+\.(?:ts|js|tsx|jsx)(?:"|'|`);?"##,
+            r#"import .+ from (?:"|'|`)https://deno.land/[^"`']+\.(?:ts|js|tsx|jsx)(?:"|'|`);?"#,
         )
         .unwrap();
         Ok(app.includes_file("deno.json")

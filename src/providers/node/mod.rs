@@ -529,8 +529,8 @@ impl NodeProvider {
             .map(|dev_deps| dev_deps.keys().cloned().collect::<Vec<String>>())
             .unwrap_or_default();
 
-        all_deps.extend(deps.into_iter());
-        all_deps.extend(dev_deps.into_iter());
+        all_deps.extend(deps);
+        all_deps.extend(dev_deps);
 
         all_deps
     }
