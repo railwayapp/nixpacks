@@ -9,7 +9,6 @@ use crate::{
     providers::{procfile::ProcfileProvider, Provider},
 };
 use anyhow::{bail, Context, Ok, Result};
-use colored::Colorize;
 
 use super::{
     merge::Mergeable,
@@ -150,13 +149,6 @@ impl NixpacksBuildPlanGenerator<'_> {
     ) -> Result<BuildPlan> {
         let provider_names = self.get_all_providers(app, env, manual_providers)?;
 
-        if provider_names.len() > 1 {
-            println!(
-                "{}",
-                "\n Using multiple providers is experimental\n".bright_yellow()
-            );
-        }
-
         let mut plan = BuildPlan::default();
         let mut count = 0;
 
@@ -235,14 +227,6 @@ impl NixpacksBuildPlanGenerator<'_> {
             } else {
                 None
             };
-
-        if plan.is_some() {
-            println!(
-                "{}",
-                "\n Nixpacks file based configuration is experimental and may change\n"
-                    .bright_yellow()
-            );
-        }
 
         Ok(plan.unwrap_or_default())
     }
