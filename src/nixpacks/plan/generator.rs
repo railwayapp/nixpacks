@@ -9,7 +9,6 @@ use crate::{
     providers::{procfile::ProcfileProvider, Provider},
 };
 use anyhow::{bail, Context, Ok, Result};
-use colored::Colorize;
 
 use super::{
     merge::Mergeable,
