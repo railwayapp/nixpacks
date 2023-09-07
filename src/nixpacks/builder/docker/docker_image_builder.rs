@@ -11,7 +11,11 @@ use crate::nixpacks::{
     plan::BuildPlan,
 };
 use anyhow::{bail, Context, Ok, Result};
-use std::{env, fs::{self, remove_dir_all, File}, process::Command};
+use std::{
+    env,
+    fs::{self, remove_dir_all, File},
+    process::Command,
+};
 use tempdir::TempDir;
 use uuid::Uuid;
 
@@ -160,7 +164,7 @@ impl DockerImageBuilder {
             if value == "1" {
                 env::set_var("DOCKER_TLS_VERIFY", value);
             } else {
-                env::remove_var("DOCKER_TLS_VERIFY");  // Clear the variable to disable TLS verification
+                env::remove_var("DOCKER_TLS_VERIFY"); // Clear the variable to disable TLS verification
             }
         }
 

@@ -877,7 +877,7 @@ async fn test_docker_host() {
             ..Default::default()
         },
     )
-        .await;
+    .await;
 
     // Expect the creation of the Docker image to fail
     assert!(result.is_err());
