@@ -1,0 +1,10 @@
+tasks:
+  dev:
+    command: next dev
+  build:
+    command: next build
+  # start
+  serve:
+    command: next start
+  lint:
+    command: next lint

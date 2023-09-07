@@ -1,0 +1,13 @@
+{
+  "name": "moon-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "@moonrepo/cli": "^1.12.0"
+  }
+}
