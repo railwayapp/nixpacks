@@ -212,7 +212,7 @@ impl BuildPlan {
     /// Ensures correctness of the Phases map.
     pub fn resolve_phase_names(&mut self) {
         let phases = self.phases.get_or_insert(BTreeMap::default());
-        for (name, phase) in phases.iter_mut() {
+        for (name, phase) in &mut *phases {
             phase.set_name(name);
         }
     }
@@ -220,7 +220,7 @@ impl BuildPlan {
     /// Strip keys out of the Phases map before serializing with to_json or to_toml.
     pub fn remove_phase_names(&mut self) {
         let phases = self.phases.get_or_insert(BTreeMap::default());
-        for (_, phase) in phases.iter_mut() {
+        for phase in (*phases).values_mut() {
             phase.name = None;
         }
     }
@@ -305,7 +305,7 @@ impl BuildPlan {
 
         self.resolve_phase_names();
         let phases = self.phases.get_or_insert(Phases::default());
-        for (_, phase) in phases.iter_mut() {
+        for phase in (*phases).values_mut() {
             phase.pin(use_debian);
         }
 

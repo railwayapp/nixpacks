@@ -23,7 +23,7 @@ impl Provider for LunaticProvider {
             return Ok(false);
         }
 
-        let re_runner = Regex::new(r##"runner\s*=\s*"lunatic""##).expect("BUG: Broken regex");
+        let re_runner = Regex::new(r#"runner\s*=\s*"lunatic""#).expect("BUG: Broken regex");
         app.find_match(&re_runner, ".cargo/config.toml")
     }
 
