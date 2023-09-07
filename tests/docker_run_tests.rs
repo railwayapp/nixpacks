@@ -861,6 +861,31 @@ async fn test_cowsay() {
     assert!(output.contains("Hello World"));
 }
 
+// This test is intentionally written to fail
+#[tokio::test]
+async fn test_docker_host() {
+    let name = Uuid::new_v4().to_string();
+    let result = create_docker_image(
+        "./examples/shell-hello",
+        Vec::new(),
+        &GeneratePlanOptions::default(),
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            docker_host: Some("tcp://0.0.0.0:2375".to_string()),
+            docker_tls_verify: Some("0".to_string()),
+            ..Default::default()
+        },
+    )
+        .await;
+
+    // Expect the creation of the Docker image to fail
+    assert!(result.is_err());
+
+    let output = run_image(&name, None).await;
+    assert!(!output.contains("Hello World"));
+}
+
 #[tokio::test]
 async fn test_staticfile() {
     let name = simple_build("./examples/staticfile").await;

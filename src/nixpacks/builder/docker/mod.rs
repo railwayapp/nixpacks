@@ -21,6 +21,8 @@ pub struct DockerBuilderOptions {
     pub cpu_quota: Option<String>,
     pub memory: Option<String>,
     pub verbose: bool,
+    pub docker_host: Option<String>,
+    pub docker_tls_verify: Option<String>,
 }
 
 mod cache;

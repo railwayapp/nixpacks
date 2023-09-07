@@ -7,6 +7,7 @@
     "lint": "npm-run-all --parallel --continue-on-error lint:*",
     "clean": "rm -rf .next",
     "lint:formatting": "prettier . --check --cache",
+    "lint:prettier": "prettier . --write --cache",
     "lint:next": "next lint",
     "format": "prettier . --write --cache"
   },

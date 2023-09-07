@@ -141,6 +141,14 @@ enum Commands {
         #[arg(long)]
         cache_from: Option<String>,
 
+        /// Image to consider as cache sources
+        #[arg(long)]
+        docker_host: Option<String>,
+
+        /// Image to consider as cache sources
+        #[arg(long)]
+        docker_tls_verify: Option<String>,
+
         /// Enable writing cache metadata into the output image
         #[arg(long)]
         inline_cache: bool,
@@ -245,6 +253,8 @@ async fn main() -> Result<()> {
             no_cache,
             incremental_cache_image,
             cache_from,
+            docker_host,
+            docker_tls_verify,
             inline_cache,
             no_error_without_start,
             cpu_quota,
@@ -273,6 +283,8 @@ async fn main() -> Result<()> {
                 current_dir,
                 inline_cache,
                 cache_from,
+                docker_host,
+                docker_tls_verify,
                 no_error_without_start,
                 incremental_cache_image,
                 cpu_quota,
