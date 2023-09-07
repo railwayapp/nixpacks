@@ -50,7 +50,6 @@ The build script found in `package.json` if it exists.
 
 - Or, if it's a [moon repo](https://moonrepo.dev/moon) (detected if `.moon/workspace.yml` exists), the `build` task for the `NIXPACKS_MOON_APP_NAME` will be called. The task name can be customized with `NIXPACKS_MOON_BUILD_TASK`. This will run the command `moon run <app_name>:<build_task>`.
 
-
 ## Start
 
 The start command priority is:
