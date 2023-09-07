@@ -20,7 +20,7 @@
         let
           package = with nixpkgs; rustPlatform.buildRustPackage {
             pname = "nixpacks";
-            version = "1.13.1";
+            version = "1.14.0";
             src = ./.;
             cargoLock = {
               lockFile = ./Cargo.lock;
