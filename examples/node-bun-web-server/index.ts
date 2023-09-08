@@ -1,8 +1,8 @@
-console.log("Hello from a Bun web server!");
+const server = Bun.serve({
+  port: 5005,
+  fetch(req) {
+    return new Response(`Bun!`);
+  },
+});
 
-export default {
-    port: 3000,
-    request() {
-        return new Response("Hello from a Bun web server!")
-    }
-}
+console.log(`Hello from a Bun web server!`);
