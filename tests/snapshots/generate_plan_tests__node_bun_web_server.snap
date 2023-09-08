@@ -48,6 +48,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "bun index.ts"
+    "cmd": "bun run start"
   }
 }
