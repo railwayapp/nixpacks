@@ -47,7 +47,7 @@ jobs:
         run: echo "::set-output name=date::$(date +%s)"
       
       - name: Build and push [Debian]
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: base/debian
           platforms: linux/arm64, linux/amd64, linux/386
@@ -55,7 +55,7 @@ jobs:
           tags: ghcr.io/railwayapp/nixpacks:debian, ghcr.io/railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
       
       - name: Build and push [Ubuntu]
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: base/ubuntu
           platforms: linux/arm64, linux/amd64
@@ -87,7 +87,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
            
       - name: Build and push to Docker Hub [Debian]
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: base/debian
           platforms: linux/arm64, linux/amd64, linux/386
@@ -95,7 +95,7 @@ jobs:
           tags: railwayapp/nixpacks:debian, railwayapp/nixpacks:latest, railwayapp/nixpacks:debian-${{ steps.date.outputs.date }}
 
       - name: Build and push to Docker Hub [Ubuntu]
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: base/ubuntu
           platforms: linux/arm64, linux/amd64
