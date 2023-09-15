@@ -1,8 +1,0 @@
-{
-  "name": "bun",
-  "version": "1.0.0",
-  "license": "MIT",
-  "dependencies": {
-    "is-even": "^1.0.0"
-  }
-}

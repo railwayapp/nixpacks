@@ -1,12 +1,15 @@
 {
-  "name": "bun-web-server",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.ts",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "name": "node-bun",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun index.ts"
+  },
   "devDependencies": {
-    "bun-types": "^0.1.3"
-  }
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {}
 }

@@ -33,6 +33,8 @@ const BUN_CACHE_DIR: &str = "/root/.bun";
 const CYPRESS_CACHE_DIR: &str = "/root/.cache/Cypress";
 const NODE_MODULES_CACHE_DIR: &str = "node_modules/.cache";
 
+const BUN_NIXPKGS_ARCHIVE_VERSION: &str = "c636fe7908e2b52713ff7c260a9da233effc5b7f";
+
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 struct TsConfigJson {
     #[serde(rename = "compilerOptions")]
@@ -110,6 +112,10 @@ impl Provider for NodeProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
+
+        if NodeProvider::get_package_manager(app) == "bun" {
+            setup.set_nix_archive(BUN_NIXPKGS_ARCHIVE_VERSION.to_string());
+        }
 
         if NodeProvider::uses_node_dependency(app, "prisma") {
             setup.add_nix_pkgs(&[Pkg::new("openssl")]);
