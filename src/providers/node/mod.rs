@@ -33,7 +33,7 @@ const BUN_CACHE_DIR: &str = "/root/.bun";
 const CYPRESS_CACHE_DIR: &str = "/root/.cache/Cypress";
 const NODE_MODULES_CACHE_DIR: &str = "node_modules/.cache";
 
-const BUN_NIXPKGS_ARCHIVE_VERSION: &str = "0bffda19b8af722f8069d09d8b6a24594c80b352";
+const BUN_NIXPKGS_ARCHIVE_VERSION: &str = "c636fe7908e2b52713ff7c260a9da233effc5b7f";
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 struct TsConfigJson {
