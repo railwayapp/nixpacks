@@ -1,7 +1,8 @@
 const std = @import("std");
 
 pub fn main() !void {
-    std.debug.print("Hello from Zig\n", .{});
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("Hello from {s}!\n", .{"Zig"});
 }
 
 test "simple test" {
