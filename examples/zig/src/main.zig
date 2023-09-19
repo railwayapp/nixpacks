@@ -1,10 +1,13 @@
 const std = @import("std");
 
-pub fn main() anyerror!void {
+pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
-    nosuspend stdout.print("Hello from Zig\n", .{}) catch return;
+    try stdout.print("Hello from {s}!\n", .{"Zig"});
 }
 
-test "basic test" {
-    try std.testing.expectEqual(10, 3 + 7);
+test "simple test" {
+    var list = std.ArrayList(i32).init(std.testing.allocator);
+    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
+    try list.append(42);
+    try std.testing.expectEqual(@as(i32, 42), list.pop());
 }

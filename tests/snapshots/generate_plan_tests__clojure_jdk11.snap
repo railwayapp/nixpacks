@@ -30,6 +30,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "bash -c \"java $JAVA_OPTS -jar /app/target/*standalone.jar\""
+    "cmd": "JAR_FILE=$(find ./target -name \"*standalone.jar\"); bash -c \"java $JAVA_OPTS -jar $JAR_FILE\""
   }
 }

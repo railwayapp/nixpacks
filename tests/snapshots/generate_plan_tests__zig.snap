@@ -15,7 +15,7 @@ expression: plan
         "install"
       ],
       "cmds": [
-        "zig build -Drelease-safe=true"
+        "zig build -Doptimize=ReleaseSafe"
       ]
     },
     "install": {

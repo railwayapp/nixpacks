@@ -6,6 +6,6 @@
     "start": "echo Node version: $(node --version) && node index.js"
   },
   "engines": {
-    "node": ">=14.2 <16"
+    "node": "16.x"
   }
 }

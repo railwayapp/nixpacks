@@ -551,7 +551,7 @@ async fn test_prisma_postgres_npm_v9() {
 async fn test_yarn_custom_version() {
     let name = simple_build("./examples/node-yarn-custom-node-version").await;
     let output = run_image(&name, None).await;
-    assert!(output.contains("Node version: v14"));
+    assert!(output.contains("Node version: v16"));
 }
 
 #[tokio::test]

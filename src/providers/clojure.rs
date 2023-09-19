@@ -47,7 +47,7 @@ impl Provider for ClojureProvider {
         let mut build = Phase::build(Some(format!("{build_cmd}; {move_file_cmd}")));
         build.depends_on_phase("setup");
 
-        let start = StartPhase::new("bash -c \"java $JAVA_OPTS -jar /app/target/*standalone.jar\"");
+        let start = StartPhase::new("JAR_FILE=$(find ./target -name \"*standalone.jar\"); bash -c \"java $JAVA_OPTS -jar $JAR_FILE\"");
 
         let plan = BuildPlan::new(&vec![setup, build], Some(start));
         Ok(Some(plan))
