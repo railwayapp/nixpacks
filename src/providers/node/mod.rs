@@ -870,7 +870,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-16_x")
+            Pkg::new("nodejs-18_x")
         );
 
         Ok(())
