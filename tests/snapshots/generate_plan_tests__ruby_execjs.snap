@@ -56,7 +56,7 @@ expression: plan
     "node:setup": {
       "name": "node:setup",
       "nixPkgs": [
-        "nodejs-16_x",
+        "nodejs_18",
         "npm-9_x"
       ],
       "nixOverlays": [

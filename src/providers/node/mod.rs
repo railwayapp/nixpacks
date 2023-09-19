@@ -23,8 +23,8 @@ mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const DEFAULT_NODE_VERSION: u32 = 16;
-const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
+const DEFAULT_NODE_VERSION: u32 = 18;
+const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18, 20];
 
 const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
 const PNPM_CACHE_DIR: &str = "/root/.local/share/pnpm/store/v3";
@@ -32,8 +32,6 @@ const NPM_CACHE_DIR: &str = "/root/.npm";
 const BUN_CACHE_DIR: &str = "/root/.bun";
 const CYPRESS_CACHE_DIR: &str = "/root/.cache/Cypress";
 const NODE_MODULES_CACHE_DIR: &str = "node_modules/.cache";
-
-const BUN_NIXPKGS_ARCHIVE_VERSION: &str = "c636fe7908e2b52713ff7c260a9da233effc5b7f";
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 struct TsConfigJson {
@@ -112,10 +110,6 @@ impl Provider for NodeProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
-
-        if NodeProvider::get_package_manager(app) == "bun" {
-            setup.set_nix_archive(BUN_NIXPKGS_ARCHIVE_VERSION.to_string());
-        }
 
         if NodeProvider::uses_node_dependency(app, "prisma") {
             setup.add_nix_pkgs(&[Pkg::new("openssl")]);
@@ -340,7 +334,7 @@ impl NodeProvider {
             None => return Ok(Pkg::new(default_node_pkg_name.as_str())),
         };
 
-        // Any version will work, use latest
+        // Any version will work, use default
         if node_version == "*" {
             return Ok(Pkg::new(default_node_pkg_name.as_str()));
         }
@@ -592,9 +586,9 @@ impl NodeProvider {
 
 fn version_number_to_pkg(version: u32) -> String {
     if AVAILABLE_NODE_VERSIONS.contains(&version) {
-        format!("nodejs-{version}_x")
+        format!("nodejs_{version}")
     } else {
-        format!("nodejs-{DEFAULT_NODE_VERSION}_x")
+        format!("nodejs_{DEFAULT_NODE_VERSION}")
     }
 }
 
@@ -674,7 +668,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -692,7 +686,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-18_x")
+            Pkg::new("nodejs_18")
         );
 
         assert_eq!(
@@ -705,7 +699,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -723,7 +717,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-18_x")
+            Pkg::new("nodejs_18")
         );
 
         assert_eq!(
@@ -736,7 +730,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -754,7 +748,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-18_x")
+            Pkg::new("nodejs_18")
         );
 
         assert_eq!(
@@ -767,7 +761,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         assert_eq!(
@@ -780,7 +774,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -798,7 +792,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -816,7 +810,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -834,7 +828,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -852,7 +846,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-18_x")
+            Pkg::new("nodejs_18")
         );
 
         Ok(())
@@ -870,7 +864,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-16_x")
+            Pkg::new("nodejs_18")
         );
 
         Ok(())
@@ -890,7 +884,7 @@ mod test {
                     "14".to_string()
                 )]))
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -907,7 +901,7 @@ mod test {
                 &App::new("examples/node-nvmrc")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())

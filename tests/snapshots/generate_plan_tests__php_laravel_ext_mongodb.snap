@@ -50,7 +50,7 @@ expression: plan
         "nginx",
         "libmysqlclient",
         "php81Packages.composer",
-        "nodejs-16_x",
+        "nodejs_18",
         "npm-9_x",
         "php81Extensions.mongodb"
       ],
