@@ -30,6 +30,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "JAR_FILE=$(find ./target/uberjar -name \"*standalone.jar\"); bash -c \"java $JAVA_OPTS -jar $JAR_FILE\""
+    "cmd": "JAR_FILE=$(find ./target -name \"*standalone.jar\"); bash -c \"java $JAVA_OPTS -jar $JAR_FILE\""
   }
 }
