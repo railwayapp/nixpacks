@@ -437,7 +437,7 @@ async fn test_node_nx_express() {
 async fn test_node_custom_version() {
     let name = simple_build("./examples/node-custom-version").await;
     let output = run_image(&name, None).await;
-    assert!(output.contains("Node version: v18"));
+    assert!(output.contains("Node version: v20"));
 }
 
 #[tokio::test]
