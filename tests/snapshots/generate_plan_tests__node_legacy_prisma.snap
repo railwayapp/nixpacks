@@ -43,7 +43,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "nodejs-14_x",
+        "nodejs_14",
         "yarn-1_x",
         "openssl"
       ],

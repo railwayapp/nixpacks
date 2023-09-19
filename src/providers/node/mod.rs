@@ -668,7 +668,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -686,7 +686,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-18_x")
+            Pkg::new("nodejs_18")
         );
 
         assert_eq!(
@@ -699,7 +699,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -717,7 +717,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-18_x")
+            Pkg::new("nodejs_18")
         );
 
         assert_eq!(
@@ -730,7 +730,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -748,7 +748,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-18_x")
+            Pkg::new("nodejs_18")
         );
 
         assert_eq!(
@@ -761,7 +761,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         assert_eq!(
@@ -774,7 +774,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -792,7 +792,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -810,7 +810,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -828,7 +828,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -846,7 +846,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-18_x")
+            Pkg::new("nodejs_18")
         );
 
         Ok(())
@@ -864,7 +864,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-18_x")
+            Pkg::new("nodejs_18")
         );
 
         Ok(())
@@ -884,7 +884,7 @@ mod test {
                     "14".to_string()
                 )]))
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
@@ -901,7 +901,7 @@ mod test {
                 &App::new("examples/node-nvmrc")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs-14_x")
+            Pkg::new("nodejs_14")
         );
 
         Ok(())
