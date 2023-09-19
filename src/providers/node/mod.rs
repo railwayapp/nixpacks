@@ -23,8 +23,8 @@ mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const DEFAULT_NODE_VERSION: u32 = 16;
-const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18];
+const DEFAULT_NODE_VERSION: u32 = 18;
+const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18, 20];
 
 const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
 const PNPM_CACHE_DIR: &str = "/root/.local/share/pnpm/store/v3";
@@ -340,7 +340,7 @@ impl NodeProvider {
             None => return Ok(Pkg::new(default_node_pkg_name.as_str())),
         };
 
-        // Any version will work, use latest
+        // Any version will work, use default
         if node_version == "*" {
             return Ok(Pkg::new(default_node_pkg_name.as_str()));
         }
