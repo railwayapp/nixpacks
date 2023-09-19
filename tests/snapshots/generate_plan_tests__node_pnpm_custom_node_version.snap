@@ -42,7 +42,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "nodejs-14_x",
+        "nodejs-18_x",
         "pnpm-6_x"
       ],
       "nixOverlays": [
