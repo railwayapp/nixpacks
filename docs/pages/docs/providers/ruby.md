@@ -8,7 +8,7 @@ Ruby is detected if a `Gemfile` file is found.
 
 ## Setup
 
-The Ruby version is installed using [rbenv]([https://rvm.io/](https://github.com/rbenv/rbenv)). You can specify the version in a `.ruby-version` file or the versions found in the `Gemfile` is installed.
+The Ruby version is installed using [rbenv](<[https://rvm.io/](https://github.com/rbenv/rbenv)>). You can specify the version in a `.ruby-version` file or the versions found in the `Gemfile` is installed.
 
 ## Install
 
