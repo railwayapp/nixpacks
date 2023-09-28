@@ -1171,6 +1171,5 @@ async fn test_nested_directory() {
 async fn test_ffmpeg() {
     let name = simple_build("./examples/apt-ffmpeg").await;
     let output = run_image(&name, None).await;
-    println!("OUTPUT: {}", output);
     assert!(output.contains("ffmpeg version"));
 }
