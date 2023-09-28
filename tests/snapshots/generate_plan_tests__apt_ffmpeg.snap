@@ -1,0 +1,25 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "phases": {
+    "setup": {
+      "name": "setup",
+      "aptPkgs": [
+        "ffmpeg",
+        "imagemagick",
+        "ghostscript",
+        "gsfonts",
+        "fonts-droid-fallback",
+        "fonts-noto-mono",
+        "fonts-urw-base35"
+      ]
+    }
+  },
+  "start": {
+    "cmd": "ffmpeg 2>&1"
+  }
+}
