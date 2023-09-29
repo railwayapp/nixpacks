@@ -39,6 +39,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
+        "nodejs_18",
         "bun"
       ],
       "nixOverlays": [

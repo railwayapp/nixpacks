@@ -1,0 +1,19 @@
+{
+  "name": "node-bun-prisma",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun run prisma generate",
+    "start": "bunx prisma migrate deploy"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "prisma": "5.3.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@prisma/client": "5.3.1"
+  }
+}
