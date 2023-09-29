@@ -113,6 +113,7 @@ impl Provider for NodeProvider {
 
         if NodeProvider::uses_node_dependency(app, "prisma") {
             setup.add_nix_pkgs(&[Pkg::new("openssl")]);
+            setup.add_pkgs_libs(vec!["openssl".into()]);
         }
 
         if NodeProvider::uses_node_dependency(app, "puppeteer") {
@@ -427,9 +428,8 @@ impl NodeProvider {
         let mut pkgs = Vec::<Pkg>::new();
 
         let package_manager = NodeProvider::get_package_manager(app);
-        if package_manager != "bun" {
-            pkgs.push(node_pkg);
-        }
+        pkgs.push(node_pkg);
+
         if package_manager == "pnpm" {
             let lockfile = app.read_file("pnpm-lock.yaml").unwrap_or_default();
             if lockfile.starts_with("lockfileVersion: 5.3") {
