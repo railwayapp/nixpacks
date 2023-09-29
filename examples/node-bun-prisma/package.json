@@ -3,8 +3,8 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "sleep 5 && bun run prisma generate && bun run prisma migrate deploy",
-    "start": "index.ts"
+    "build": "bun run prisma generate",
+    "start": "bunx prisma migrate deploy"
   },
   "devDependencies": {
     "bun-types": "latest",
