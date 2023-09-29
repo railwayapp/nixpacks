@@ -7,7 +7,6 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "CI": "true",
-    "NIXPACKS_DEBIAN": "1",
     "NIXPACKS_METADATA": "node",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
@@ -19,7 +18,7 @@ expression: plan
         "install"
       ],
       "cmds": [
-        "yarn run build"
+        "bun run build"
       ],
       "cacheDirectories": [
         "node_modules/.cache"
@@ -31,10 +30,10 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "yarn install --frozen-lockfile"
+        "bun i --no-save"
       ],
       "cacheDirectories": [
-        "/usr/local/share/.cache/yarn/v6"
+        "/root/.bun"
       ],
       "paths": [
         "/app/node_modules/.bin"
@@ -43,8 +42,8 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "nodejs_14",
-        "yarn-1_x",
+        "nodejs_18",
+        "bun",
         "openssl"
       ],
       "nixLibs": [
@@ -57,6 +56,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "yarn run start"
+    "cmd": "bun run start"
   }
 }
