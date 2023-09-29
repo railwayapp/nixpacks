@@ -1166,3 +1166,10 @@ async fn test_nested_directory() {
     let name = simple_build("./examples/nested").await;
     assert!(run_image(&name, None).await.contains("Nested directories!"));
 }
+
+#[tokio::test]
+async fn test_ffmpeg() {
+    let name = simple_build("./examples/apt-ffmpeg").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("ffmpeg version"));
+}

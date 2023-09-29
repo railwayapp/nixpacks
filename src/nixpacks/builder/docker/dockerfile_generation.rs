@@ -135,7 +135,7 @@ impl DockerfileGenerator for BuildPlan {
             String::new()
         } else {
             format!(
-                "RUN apt-get update && apt-get install -y --no-install-recommends {}",
+                "RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends {}",
                 apt_pkgs.join(" ")
             )
         };
