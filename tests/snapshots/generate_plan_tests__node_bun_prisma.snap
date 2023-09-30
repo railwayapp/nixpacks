@@ -46,9 +46,6 @@ expression: plan
         "bun",
         "openssl"
       ],
-      "nixLibs": [
-        "openssl"
-      ],
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
       ],

@@ -46,9 +46,6 @@ expression: plan
         "npm-9_x",
         "openssl"
       ],
-      "nixLibs": [
-        "openssl"
-      ],
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
       ],
