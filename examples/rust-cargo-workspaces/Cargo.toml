@@ -3,3 +3,7 @@ members = [
     "binary",
     "library"
 ]
+
+[workspace.dependencies]
+http = "0.2.9"
+
