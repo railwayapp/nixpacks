@@ -11,7 +11,7 @@ use crate::nixpacks::{
     },
 };
 use anyhow::Result;
-use node_semver::Range;
+use nodejs_semver::Range;
 use path_slash::PathExt;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
