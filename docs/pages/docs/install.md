@@ -9,7 +9,7 @@ title: Installation
 Install Nixpacks with [Homebrew](https://brew.sh/) (macOS Only)
 
 ```sh
-brew install railwayapp/tap/nixpacks
+brew install nixpacks
 ```
 
 ## MacPorts
