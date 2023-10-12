@@ -3,3 +3,6 @@ members = [
     "binary",
     "library"
 ]
+
+[workspace.dependencies]
+toml = "0.5.10"
