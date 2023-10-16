@@ -33,7 +33,6 @@ pub struct OutputDir {
 
 impl OutputDir {
     pub fn new(root: PathBuf, is_temp: bool) -> Result<Self> {
-        let root = root;
         let asset_root = PathBuf::from(NIXPACKS_OUTPUT_DIR);
 
         Ok(Self {

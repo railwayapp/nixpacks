@@ -120,7 +120,7 @@ impl FileServer {
 
         while let Some(chunk) = payload.next().await {
             let data = chunk?;
-            f = web::block(move || f.write_all(&data).map(|_| f)).await??;
+            f = web::block(move || f.write_all(&data).map(|()| f)).await??;
         }
         web::block(move || f.flush()).await??;
 
