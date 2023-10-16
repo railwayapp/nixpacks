@@ -113,7 +113,6 @@ impl Provider for NodeProvider {
 
         if NodeProvider::uses_node_dependency(app, "prisma") {
             setup.add_nix_pkgs(&[Pkg::new("openssl")]);
-            setup.add_pkgs_libs(vec!["openssl".into()]);
         }
 
         if NodeProvider::uses_node_dependency(app, "puppeteer") {
