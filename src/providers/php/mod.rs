@@ -56,7 +56,7 @@ impl PhpProvider {
             _ => "php".to_string(),
         };
 
-        let mut php_extensions = PhpProvider::get_php_extensions(app).unwrap_or(vec![]);
+        let mut php_extensions = PhpProvider::get_php_extensions(app).unwrap_or_default();
         php_extensions.sort_unstable();
 
         let mut pkgs = vec![
