@@ -25,14 +25,14 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "jdk17",
-        "gradle_7"
+        "jdk11",
+        "gradle_6"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]"
     }
   },
   "start": {
-    "cmd": "java $JAVA_OPTS -jar  $(ls -1 build/libs/*jar | grep -v plain)"
+    "cmd": "java $JAVA_OPTS -jar -Dserver.port=$PORT $(ls -1 build/libs/*jar | grep -v plain)"
   }
 }

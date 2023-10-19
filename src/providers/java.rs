@@ -48,7 +48,7 @@ impl Provider for JavaProvider {
                 build.add_cmd("chmod +x gradlew");
             }
 
-            build.add_cmd(format!("{gradle_exe} build -x check"));
+            build.add_cmd(format!("{gradle_exe} clean build -x check -x test"));
             build.add_cache_directory("/root/.gradle");
             build.depends_on_phase("setup");
 
@@ -96,10 +96,11 @@ impl JavaProvider {
     }
 
     fn get_start_cmd(&self, app: &App) -> Result<String> {
+        let build_gradle_content = self.read_build_gradle(app)?;
         let cmd = if self.is_using_gradle(app) {
             format!(
-                "java $JAVA_OPTS -jar {} build/libs/*.jar",
-                self.get_gradle_port_config(app)?
+                "java $JAVA_OPTS -jar {} $(ls -1 build/libs/*jar | grep -v plain)",
+                self.get_gradle_port_config(&build_gradle_content)
             )
         } else if app.includes_file("pom.xml") {
             format!(
@@ -117,27 +118,29 @@ impl JavaProvider {
         app.includes_file("gradlew")
     }
 
-    fn get_gradle_port_config(&self, app: &App) -> Result<String> {
-        let file_content = if app.includes_file("build.gradle") {
-            app.read_file("build.gradle")?
+    fn is_using_spring_boot(&self, build_gradle_content: &str) -> bool {
+        build_gradle_content.contains("org.springframework.boot:spring-boot")
+            || build_gradle_content.contains("spring-boot-gradle-plugin")
+            || build_gradle_content.contains("org.springframework.boot")
+            || build_gradle_content.contains("org.grails:grails-")
+    }
+
+    fn read_build_gradle(&self, app: &App) -> Result<String> {
+        if app.includes_file("build.gradle") {
+            app.read_file("build.gradle")
         } else if app.includes_file("build.gradle.kts") {
-            app.read_file("build.gradle.kts")?
+            app.read_file("build.gradle.kts")
         } else {
-            String::new()
-        };
+            Ok(String::new())
+        }
+    }
 
-        let is_spring_boot = file_content.contains("org.springframework.boot:spring-boot")
-            || file_content.contains("spring-boot-gradle-plugin")
-            || file_content.contains("org.springframework.boot")
-            || file_content.contains("org.grails:grails-");
-
-        let port_arg = if is_spring_boot {
+    fn get_gradle_port_config(&self, build_gradle_content: &str) -> String {
+        if self.is_using_spring_boot(build_gradle_content) {
             "-Dserver.port=$PORT".to_string()
         } else {
             String::new()
-        };
-
-        Ok(port_arg)
+        }
     }
 
     fn get_port_config(&self, app: &App) -> String {
@@ -249,6 +252,80 @@ impl JavaProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_read_build_gradle_returns_with_content() {
+        let java = JavaProvider {};
+        let app = App::new("examples/java-gradle-8").unwrap();
+
+        let build_gradle_content = java.read_build_gradle(&app).unwrap();
+        let expcted_string = "mavenCentral";
+
+        assert!(build_gradle_content.contains(expcted_string));
+    }
+
+    #[test]
+    fn test_read_build_gradle_returns_with_content_from_kts_extension() {
+        let java = JavaProvider {};
+        let app = App::new("examples/java-gradle-8-kotlin").unwrap();
+
+        let build_gradle_content = java.read_build_gradle(&app).unwrap();
+        let expcted_string = "mavenCentral";
+
+        assert!(build_gradle_content.contains(expcted_string));
+    }
+
+    #[test]
+    fn test_read_build_gradle_returns_with_empty_string_if_build_gradle_is_not_found() {
+        let java = JavaProvider {};
+        let app = App::new("examples/java-maven").unwrap();
+
+        let build_gradle_content = java.read_build_gradle(&app).unwrap();
+
+        assert!(build_gradle_content.is_empty());
+    }
+
+    #[test]
+    fn test_is_using_spring_boot_returns_true() {
+        let java = JavaProvider {};
+        let spring_boot_identifiers = vec![
+            "org.springframework.boot:spring-boot",
+            "spring-boot-gradle-plugin",
+            "org.springframework.boot",
+            "org.grails:grails-",
+        ];
+
+        for spring_boot_identifier in spring_boot_identifiers {
+            assert!(java.is_using_spring_boot(spring_boot_identifier));
+        }
+    }
+
+    #[test]
+    fn test_is_using_spring_boot_returns_false() {
+        let java = JavaProvider {};
+
+        assert!(!java.is_using_spring_boot(""));
+    }
+
+    #[test]
+    fn test_get_start_cmd_returns_with_gradle_specific_command() {
+        let java = JavaProvider {};
+        let app = App::new("examples/java-gradle-hello-world").unwrap();
+
+        let expected_start_cmd =
+            String::from("java $JAVA_OPTS -jar  $(ls -1 build/libs/*jar | grep -v plain)");
+        assert_eq!(java.get_start_cmd(&app).unwrap(), expected_start_cmd);
+    }
+
+    #[test]
+    fn test_get_start_cmd_returns_with_maven_specific_command() {
+        let java = JavaProvider {};
+        let app = App::new("examples/java-maven").unwrap();
+
+        let expected_start_cmd =
+            String::from("java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar");
+        assert_eq!(java.get_start_cmd(&app).unwrap(), expected_start_cmd);
+    }
 
     #[test]
     fn test_get_jdk_pkg() {

@@ -33,6 +33,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "java $JAVA_OPTS -jar  $(ls -1 build/libs/*jar | grep -v plain)"
+    "cmd": "java $JAVA_OPTS -jar -Dserver.port=$PORT $(ls -1 build/libs/*jar | grep -v plain)"
   }
 }

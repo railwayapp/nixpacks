@@ -42,7 +42,7 @@ If Maven is found:
 If Gradle is found:
 
 ```
-./gradlew build
+./gradlew clean build -x check -x test
 ```
 
 ## Start
@@ -68,11 +68,11 @@ java -Dserver.port=$PORT $JAVA_OPTS -jar target/*jar
 If Gradle is found:
 
 ```
-java $JAVA_OPTS -jar build/libs/*.jar
+java $JAVA_OPTS -jar $(ls -1 build/libs/*jar | grep -v plain)
 ```
 
 If Gradle and Spring Boot is found:
 
 ```
-java $JAVA_OPTS -jar -Dserver.port=$PORT build/libs/*.jar
+java $JAVA_OPTS -jar -Dserver.port=$PORT $(ls -1 build/libs/*jar | grep -v plain)
 ```
