@@ -150,9 +150,9 @@ impl PhpProvider {
             "nginx.template.conf" => include_str!("nginx.template.conf"),
             "scripts/prestart.mjs" => include_str!("scripts/prestart.mjs"),
             "php-fpm.conf" => include_str!("php-fpm.conf"),
+            "scripts/util/cmd.mjs" => include_str!("scripts/util/cmd.mjs"),
             "scripts/util/nix.mjs" => include_str!("scripts/util/nix.mjs"),
             "scripts/config/template.mjs" => include_str!("scripts/config/template.mjs"),
-            "scripts/util/chmodRecursive.mjs" => include_str!("scripts/util/chmodRecursive.mjs"),
             "scripts/util/laravel.mjs" => include_str!("scripts/util/laravel.mjs"),
             "scripts/util/logger.mjs" => include_str!("scripts/util/logger.mjs")
         }
