@@ -1,0 +1,42 @@
+name: Is Org Member
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  is-member:
+    name: Is org member?
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+      - name: Is org member?
+        id: is_org_member
+        uses: zuchka/community-actions@v0.0.12
+        env:   
+          GITHUB_ISSUE_URL: ${{ toJson(github.event.issue.html_url) }}
+          GITHUB_PR_URL: ${{ toJson(github.event.pull_request._links.html.href) }}
+          GITHUB_REPO: ${{ toJson(github.repository) }}
+          GITHUB_EVENT_NAME: ${{ toJson(github.event_name) }}
+        with:
+          username: ${{ github.actor }}
+          teammates: 20k-ultra|char8|coffee-cup|dbanys|FarazPatankar|gschier|half0wl|JakeCooper|jitachi|melissa-hale|ndneighbor|ohrgaard|pierre-borckmans|railway-bot|tacLog|trif0lium|zuchka
+          webhook: https://discord.com/api/webhooks/1174144680104038511/D8RTqckekpv1KfCmVp3kcfFSvV35MavPSuO3FHHxlXoxK8lM5DGwuZLI-XjhTQWB5m8D
+      - name: Add label
+        uses: actions-ecosystem/action-add-labels@v1
+        if: ${{ steps.is_org_member.outputs.result == 'false' }}
+        with:
+          labels: community
+      - name: Add initial comment
+        uses: actions-ecosystem/action-create-comment@v1
+        if: ${{ steps.is_org_member.outputs.result == 'false' }}
+        with:
+          github_token: ${{ secrets.github_token }}
+          body: |
+            Hello, @${{ github.actor }}! Thanks for your submission. 
+            
+            Our team will respond soon. If you need more immediate help, try our [Forum](https://community.railway.app/) or our [Discord](https://discord.com/invite/railway). Thanks!
