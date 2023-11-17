@@ -122,9 +122,9 @@ mod test {
 
     #[test]
     fn test_with_go_mod() -> Result<()> {
-        let go_mod_contents = r#"
+        let go_mod_contents = r"
             go 1.18
-        "#;
+        ";
 
         assert_eq!(
             GolangProvider::get_nix_golang_pkg(Some(&go_mod_contents.to_string()))?,
@@ -136,9 +136,9 @@ mod test {
 
     #[test]
     fn test_fallback_on_invalid_version() -> Result<()> {
-        let go_mod_contents = r#"
+        let go_mod_contents = r"
             go 1.8
-        "#;
+        ";
 
         assert_eq!(
             GolangProvider::get_nix_golang_pkg(Some(&go_mod_contents.to_string()))?,

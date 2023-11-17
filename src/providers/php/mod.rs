@@ -69,7 +69,6 @@ impl PhpProvider {
                     .collect::<Vec<_>>()
                     .join(" ")
             )),
-            Pkg::new("perl"),
             Pkg::new("nginx"),
             Pkg::new("libmysqlclient"),
             Pkg::new(&format!("{}Packages.composer", &php_pkg)),
@@ -79,9 +78,7 @@ impl PhpProvider {
             .map(|extension| format!("{}Extensions.{extension}", &php_pkg))
             .collect();
 
-        if app.includes_file("package.json") {
-            pkgs.append(&mut NodeProvider::get_nix_packages(app, env)?);
-        }
+        pkgs.append(&mut NodeProvider::get_nix_packages(app, env)?);
 
         {
             let mut tmp_ext_pkgs = ext_pkgs.iter().map(|pkg| Pkg::new(pkg)).collect();
@@ -134,14 +131,14 @@ impl PhpProvider {
             ))
         } else if app.includes_file("nginx.template.conf") {
             StartPhase::new(format!(
-                "perl {} /app/nginx.template.conf /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
-                app.asset_path("prestart.pl"),
+                "node {} /app/nginx.template.conf /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
+                app.asset_path("scripts/prestart.mjs"),
                 app.asset_path("php-fpm.conf"),
             ))
         } else {
             StartPhase::new(format!(
-                "perl {} {} /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
-                app.asset_path("prestart.pl"),
+                "node {} {} /nginx.conf && (php-fpm -y {} & nginx -c /nginx.conf)",
+                app.asset_path("scripts/prestart.mjs"),
                 app.asset_path("nginx.template.conf"),
                 app.asset_path("php-fpm.conf"),
             ))
@@ -151,13 +148,13 @@ impl PhpProvider {
     fn static_assets() -> StaticAssets {
         static_asset_list! {
             "nginx.template.conf" => include_str!("nginx.template.conf"),
-            "prestart.pl" => include_str!("prestart.pl"),
+            "scripts/prestart.mjs" => include_str!("scripts/prestart.mjs"),
             "php-fpm.conf" => include_str!("php-fpm.conf"),
-            "Nixpacks/Nix.pm" => include_str!("Nixpacks/Nix.pm"),
-            "Nixpacks/Config/Template.pm" => include_str!("Nixpacks/Config/Template.pm"),
-            "Nixpacks/Util/ChmodRecursive.pm" => include_str!("Nixpacks/Util/ChmodRecursive.pm"),
-            "Nixpacks/Util/Laravel.pm" => include_str!("Nixpacks/Util/Laravel.pm"),
-            "Nixpacks/Util/Logger.pm" => include_str!("Nixpacks/Util/Logger.pm")
+            "scripts/util/cmd.mjs" => include_str!("scripts/util/cmd.mjs"),
+            "scripts/util/nix.mjs" => include_str!("scripts/util/nix.mjs"),
+            "scripts/config/template.mjs" => include_str!("scripts/config/template.mjs"),
+            "scripts/util/laravel.mjs" => include_str!("scripts/util/laravel.mjs"),
+            "scripts/util/logger.mjs" => include_str!("scripts/util/logger.mjs")
         }
     }
 
