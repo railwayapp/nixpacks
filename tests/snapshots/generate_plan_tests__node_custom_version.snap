@@ -39,7 +39,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "nodejs_20",
+        "nodejs_21",
         "npm-8_x"
       ],
       "nixOverlays": [

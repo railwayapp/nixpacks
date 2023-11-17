@@ -6,6 +6,6 @@
     "start": "./start.sh"
   },
   "engines": {
-    "node": "20.x"
+    "node": "21.x"
   }
 }
