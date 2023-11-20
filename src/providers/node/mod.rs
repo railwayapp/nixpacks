@@ -113,13 +113,11 @@ impl Provider for NodeProvider {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
 
-        if setup
+        if !setup
             .clone()
             .nix_pkgs
             .unwrap_or_default()
-            .iter()
-            .find(|p| p.contains("14"))
-            .is_none()
+            .iter().any(|p| p.contains("14"))
         {
             // Only use the latest archive version of Node > 14
             setup.set_nix_archive(NODE_NIXPKGS_ARCHIVE.into());
