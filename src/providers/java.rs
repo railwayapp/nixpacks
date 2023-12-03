@@ -169,6 +169,8 @@ impl JavaProvider {
 
     fn get_jdk_pkg(&self, jdk_version: u32) -> Result<Pkg> {
         let pkg = match jdk_version {
+            21 => Pkg::new("jdk21"),
+            20 => Pkg::new("jdk20"),
             19 => Pkg::new("jdk"),
             17 => Pkg::new("jdk17"),
             11 => Pkg::new("jdk11"),
