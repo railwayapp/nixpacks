@@ -13,8 +13,8 @@ use regex::Regex;
 
 pub struct JavaProvider {}
 
-const DEFAULT_JDK_VERSION: u32 = 17;
-const DEFAULT_GRADLE_VERSION: u32 = 7;
+const DEFAULT_JDK_VERSION: u32 = 21;
+const DEFAULT_GRADLE_VERSION: u32 = 8;
 const GRADLE_NIXPKGS_ARCHIVE: &str = "2f9286912cb215969ece465147badf6d07aa43fe";
 
 impl Provider for JavaProvider {
