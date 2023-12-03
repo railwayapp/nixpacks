@@ -13,7 +13,12 @@ use anyhow::Result;
 pub struct GolangProvider {}
 
 const BINARY_NAME: &str = "out";
-const AVAILABLE_GO_VERSIONS: &[(&str, &str)] = &[("1.18", "go_1_18"), ("1.19", "go_1_19"), ("1.20", "go_1_20"), ("1.21", "go")];
+const AVAILABLE_GO_VERSIONS: &[(&str, &str)] = &[
+    ("1.18", "go_1_18"),
+    ("1.19", "go_1_19"),
+    ("1.20", "go_1_20"),
+    ("1.21", "go"),
+];
 const DEFAULT_GO_PKG_NAME: &str = "go";
 
 const GO_BUILD_CACHE_DIR: &str = "/root/.cache/go-build";
