@@ -169,6 +169,8 @@ impl JavaProvider {
 
     fn get_jdk_pkg(&self, jdk_version: u32) -> Result<Pkg> {
         let pkg = match jdk_version {
+            21 => Pkg::new("jdk21"),
+            20 => Pkg::new("jdk20"),
             19 => Pkg::new("jdk"),
             17 => Pkg::new("jdk17"),
             11 => Pkg::new("jdk11"),
@@ -349,6 +351,42 @@ mod tests {
                 java.get_jdk_version(
                     &App::new("examples/java-gradle-hello-world").unwrap(),
                     &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=8"]).unwrap(),
+                )
+                .unwrap()
+            )
+            .unwrap()
+        );
+
+        assert_eq!(
+            Pkg::new("jdk21"),
+            java.get_jdk_pkg(
+                java.get_jdk_version(
+                    &App::new("examples/java-gradle-hello-world").unwrap(),
+                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=21"]).unwrap(),
+                )
+                .unwrap()
+            )
+            .unwrap()
+        );
+
+        assert_eq!(
+            Pkg::new("jdk20"),
+            java.get_jdk_pkg(
+                java.get_jdk_version(
+                    &App::new("examples/java-gradle-hello-world").unwrap(),
+                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=20"]).unwrap(),
+                )
+                .unwrap()
+            )
+            .unwrap()
+        );
+
+        assert_eq!(
+            Pkg::new("jdk"),
+            java.get_jdk_pkg(
+                java.get_jdk_version(
+                    &App::new("examples/java-gradle-hello-world").unwrap(),
+                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=19"]).unwrap(),
                 )
                 .unwrap()
             )

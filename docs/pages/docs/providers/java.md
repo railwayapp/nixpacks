@@ -12,6 +12,8 @@ Java is detected if a `pom.[xml|atom|clj|groovy|rb|scala|yaml|yml]` or `gradlew`
 
 The following major JDK versions are available
 
+- `21`
+- `20`
 - `19`
 - `17` (Default)
 - `11`
