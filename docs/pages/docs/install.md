@@ -28,6 +28,8 @@ Download Nixpacks from GH releases and install automatically
 curl -sSL https://nixpacks.com/install.sh | bash
 ```
 
+This works across all supported platforms.
+
 ## PowerShell
 
 Download Nixpacks from GH release and install automatically (with powershell)
