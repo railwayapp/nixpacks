@@ -342,6 +342,9 @@ impl PythonProvider {
         } else if app.includes_file("Pipfile") {
             let file_content = &app.read_file("Pipfile")?;
             custom_version = PythonProvider::parse_pipfile_python_version(file_content)?;
+        } else if app.includes_file(".tool-versions") {
+            let file_content = &app.read_file(".tool-versions")?;
+            custom_version = PythonProvider::parse_asdf_python_version(file_content)?;
         }
 
         // If it's still none, return default
