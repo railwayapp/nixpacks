@@ -51,6 +51,10 @@ nixpacks build --help
 Environment variables can be provided in the format `FOO` or `FOO=bar`. If no equal sign is present then the value is
 pulled from the current environment.
 
+#### Labels
+
+You can provide values to labels, just like Docker. For example, `--label org.opencontainers.image.source=https://github.com/owner/repo`.
+
 ## Plan
 
 The plan command will show the full set of options (nix packages, build cmd, start cmd, etc) that will be used to when
