@@ -334,7 +334,7 @@ mod tests {
         let java = JavaProvider {};
 
         assert_eq!(
-            Pkg::new("jdk17"),
+            Pkg::new("jdk21"),
             java.get_jdk_pkg(
                 java.get_jdk_version(
                     &App::new("examples/java-gradle-hello-world").unwrap(),
