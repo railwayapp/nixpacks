@@ -13,8 +13,26 @@ use anyhow::Result;
 pub struct GolangProvider {}
 
 const BINARY_NAME: &str = "out";
-const AVAILABLE_GO_VERSIONS: &[(&str, &str)] = &[("1.17", "go"), ("1.18", "go_1_18")];
+const AVAILABLE_GO_VERSIONS: &[(&str, &str, &str)] = &[
+    (
+        "1.18",
+        "go_1_18",
+        "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db",
+    ),
+    (
+        "1.19",
+        "go_1_19",
+        "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db",
+    ),
+    (
+        "1.20",
+        "go_1_20",
+        "1f13eabcd6f5b00fe9de9575ac52c66a0e887ce6",
+    ),
+    ("1.21", "go", "1f13eabcd6f5b00fe9de9575ac52c66a0e887ce6"),
+];
 const DEFAULT_GO_PKG_NAME: &str = "go";
+const DEFAULT_ARCHIVE: &str = "1f13eabcd6f5b00fe9de9575ac52c66a0e887ce6";
 
 const GO_BUILD_CACHE_DIR: &str = "/root/.cache/go-build";
 
@@ -31,8 +49,12 @@ impl Provider for GolangProvider {
         let mut plan = BuildPlan::default();
 
         let go_mod = self.read_go_mod_if_exists(app)?;
-        let nix_pkg = GolangProvider::get_nix_golang_pkg(go_mod.as_ref())?;
-        plan.add_phase(Phase::setup(Some(vec![Pkg::new(&nix_pkg)])));
+        let (nix_pkg, archive) = GolangProvider::get_nix_golang_pkg(go_mod.as_ref())?;
+
+        let mut setup = Phase::setup(Some(vec![Pkg::new(&nix_pkg)]));
+        setup.set_nix_archive(archive);
+
+        plan.add_phase(setup);
 
         if app.includes_file("go.mod") {
             let mut install = Phase::install(Some("go mod download".to_string()));
@@ -82,7 +104,7 @@ impl GolangProvider {
         }
     }
 
-    pub fn get_nix_golang_pkg(go_mod_contents: Option<&String>) -> Result<String> {
+    pub fn get_nix_golang_pkg(go_mod_contents: Option<&String>) -> Result<(String, String)> {
         if go_mod_contents.is_some() {
             let mut lines = go_mod_contents.as_ref().unwrap().lines();
             let go_version_line = lines.find(|line| line.trim().starts_with("go"));
@@ -90,20 +112,27 @@ impl GolangProvider {
             if let Some(go_version_line) = go_version_line {
                 let go_version = go_version_line.split_whitespace().nth(1).unwrap();
 
-                if let Some(nix_pkg) = version_number_to_pkg(go_version) {
-                    return Ok(nix_pkg);
-                }
+                let nix_pkg = version_number_to_pkg(go_version)
+                    .unwrap_or_else(|| DEFAULT_GO_PKG_NAME.to_string());
+                let nix_archive = version_number_to_archive(go_version)
+                    .unwrap_or_else(|| DEFAULT_ARCHIVE.to_string());
+
+                return Ok((nix_pkg, nix_archive));
             }
         }
 
-        Ok(DEFAULT_GO_PKG_NAME.to_string())
+        Ok((DEFAULT_GO_PKG_NAME.to_string(), DEFAULT_ARCHIVE.to_string()))
     }
 }
 
 fn version_number_to_pkg(version: &str) -> Option<String> {
-    let matched_version = AVAILABLE_GO_VERSIONS.iter().find(|(v, _)| v == &version);
+    let matched_version = AVAILABLE_GO_VERSIONS.iter().find(|(v, _, _)| v == &version);
+    matched_version.map(|(_, pkg, _)| (*pkg).to_string())
+}
 
-    matched_version.map(|(_, pkg)| (*pkg).to_string())
+fn version_number_to_archive(version: &str) -> Option<String> {
+    let matched_version = AVAILABLE_GO_VERSIONS.iter().find(|(v, _, _)| v == &version);
+    matched_version.map(|(_, _, archive)| (*archive).to_string())
 }
 
 #[cfg(test)]
@@ -113,7 +142,7 @@ mod test {
     #[test]
     fn test_no_go_mod() -> Result<()> {
         assert_eq!(
-            GolangProvider::get_nix_golang_pkg(None)?,
+            GolangProvider::get_nix_golang_pkg(None)?.0,
             DEFAULT_GO_PKG_NAME.to_string()
         );
 
@@ -127,7 +156,7 @@ mod test {
         ";
 
         assert_eq!(
-            GolangProvider::get_nix_golang_pkg(Some(&go_mod_contents.to_string()))?,
+            GolangProvider::get_nix_golang_pkg(Some(&go_mod_contents.to_string()))?.0,
             "go_1_18".to_string()
         );
 
@@ -141,7 +170,7 @@ mod test {
         ";
 
         assert_eq!(
-            GolangProvider::get_nix_golang_pkg(Some(&go_mod_contents.to_string()))?,
+            GolangProvider::get_nix_golang_pkg(Some(&go_mod_contents.to_string()))?.0,
             DEFAULT_GO_PKG_NAME.to_string()
         );
 

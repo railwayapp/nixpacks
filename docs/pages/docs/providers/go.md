@@ -12,10 +12,12 @@ Go is detected if a `main.go` file is found.
 
 ## Setup
 
-The following Go version are available
+The following Go versions are available:
 
-- `1.17` (Default)
 - `1.18`
+- `1.19`
+- `1.20`
+- `1.21` (default)
 
 The version is parsed from the `go.mod` file.
 
