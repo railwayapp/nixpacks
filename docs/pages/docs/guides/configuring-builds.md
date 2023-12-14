@@ -16,7 +16,7 @@ You can have more than just the auto-detected provider contribute to the build b
 providers = ["...", "python"]
 ```
 
-You can also override the the auto-detected providers by leaving `"..."` out of the array.
+You can also override the auto-detected providers by leaving `"..."` out of the array.
 
 ```toml
 # Only the go provider will be run
@@ -25,7 +25,7 @@ providers = ["go"]
 
 ## Install additional packages
 
-You can easily install additional Nix or Apt packages so that they are available during the the build or at runtime. Packages are typically installed in the setup phase.
+You can easily install additional Nix or Apt packages so that they are available during the build or at runtime. Packages are typically installed in the setup phase.
 
 ```toml
 [phases.setup]
