@@ -38,7 +38,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "go_1_20"
+        "go_1_18"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]"
