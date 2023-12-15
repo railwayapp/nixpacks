@@ -23,7 +23,10 @@ mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const NODE_NIXPKGS_ARCHIVE: &str = "386647bebf6b1430c783790a513a51769f478252";
+const NODE_NIXPKGS_ARCHIVE: &str = "bf744fe90419885eefced41b3e5ae442d732712d";
+
+// Version of Nixpkgs used for Bun
+const BUN_NIXPKGS_ARCHIVE: &str = "386647bebf6b1430c783790a513a51769f478252";
 
 const DEFAULT_NODE_VERSION: u32 = 18;
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18, 20, 21];
@@ -112,7 +115,12 @@ impl Provider for NodeProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
-        setup.set_nix_archive(NODE_NIXPKGS_ARCHIVE.into());
+
+        if NodeProvider::get_package_manager(&app) == "bun" {
+            setup.set_nix_archive(BUN_NIXPKGS_ARCHIVE.into());
+        } else {
+            setup.set_nix_archive(NODE_NIXPKGS_ARCHIVE.into());
+        }
 
         if NodeProvider::uses_node_dependency(app, "prisma") {
             setup.add_nix_pkgs(&[Pkg::new("openssl")]);
