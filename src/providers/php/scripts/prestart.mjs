@@ -13,11 +13,8 @@ if (process.argv.length != 4) {
     process.exit(1);
 }
 
-if (isLaravel()) {
-   checkEnvErrors('/app')
-}
-
 await Promise.all([
+    isLaravel() ? checkEnvErrors('/app') : Promise.resolve(),
     access('/app/storage', constants.R_OK)
         .then(() => e('chmod -R ugo+rw /app/storage'))
         .catch(() => {}),
