@@ -78,6 +78,8 @@ impl ScalaProvider {
 
     fn get_jdk_pkg_name(&self, jdk_version: u32) -> &str {
         match jdk_version {
+            21 => "jdk21",
+            20 => "jdk20",
             19 => "jdk",
             11 => "jdk11",
             8 => "jdk8",
@@ -89,12 +91,14 @@ impl ScalaProvider {
 
     fn get_jdk_run_image(&self, jdk_version: u32) -> &str {
         match jdk_version {
+            21 => "eclipse-temurim:21.0.1_12-jre-jammy",
+            20 => "eclipse-temurim:20.0.2_9-jre-jammy",
             19 => "eclipse-temurin:19.0.2_7-jre-jammy",
-            11 => "eclipse-temurin:11.0.18_10-jre-jammy",
-            8 => "eclipse-temurin:8u362-b09-jre-jammy",
+            11 => "eclipse-temurin:11.0.21_9-jre-jammy",
+            8 => "eclipse-temurin:8u392-b08-jre-jammy",
 
             // Using 17 as default because its the latest LTS
-            _ => "eclipse-temurin:17.0.5_8-jre-jammy",
+            _ => "eclipse-temurin:17.0.9_9-jre-jammy",
         }
     }
 
@@ -122,6 +126,34 @@ impl ScalaProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_get_jdk_pkg_name() {
+        let scala = ScalaProvider {};
+
+        // defaults to Java 17
+        assert_eq!(
+            "jdk17",
+            scala
+                .get_jdk_pkg_name(scala.get_jdk_version(&Environment::from_envs(vec![]).unwrap(),))
+        );
+
+        // Supports Java 20
+        assert_eq!(
+            "jdk20",
+            scala.get_jdk_pkg_name(scala.get_jdk_version(
+                &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=20"]).unwrap(),
+            ))
+        );
+
+        // Supports Java 21
+        assert_eq!(
+            "jdk21",
+            scala.get_jdk_pkg_name(scala.get_jdk_version(
+                &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=21"]).unwrap(),
+            ))
+        );
+    }
 
     #[test]
     fn test_sbt_package() {

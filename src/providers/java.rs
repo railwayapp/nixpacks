@@ -15,7 +15,7 @@ pub struct JavaProvider {}
 
 const DEFAULT_JDK_VERSION: u32 = 17;
 const DEFAULT_GRADLE_VERSION: u32 = 7;
-const GRADLE_NIXPKGS_ARCHIVE: &str = "2f9286912cb215969ece465147badf6d07aa43fe";
+const JAVA_NIXPKGS_ARCHIVE: &str = "59dc10b5a6f2a592af36375c68fda41246794b86";
 
 impl Provider for JavaProvider {
     fn name(&self) -> &str {
@@ -38,7 +38,7 @@ impl Provider for JavaProvider {
         let (setup, build) = if self.is_using_gradle(app) {
             let pkgs = self.get_jdk_and_gradle_pkgs(app, env)?;
             let mut setup = Phase::setup(Some(pkgs));
-            setup.set_nix_archive(GRADLE_NIXPKGS_ARCHIVE.to_string());
+            setup.set_nix_archive(JAVA_NIXPKGS_ARCHIVE.to_string());
 
             let mut build = Phase::build(None);
             let gradle_exe = self.get_gradle_exe(app);
@@ -57,7 +57,8 @@ impl Provider for JavaProvider {
             let jdk_version = self.get_jdk_version(app, env)?;
             let jdk_pkg = self.get_jdk_pkg(jdk_version)?;
 
-            let setup = Phase::setup(Some(vec![jdk_pkg, Pkg::new("maven")]));
+            let mut setup = Phase::setup(Some(vec![jdk_pkg, Pkg::new("maven")]));
+            setup.set_nix_archive(JAVA_NIXPKGS_ARCHIVE.to_string());
 
             let mvn_exe = self.get_maven_exe(app);
             let mut build = Phase::build(Some(format!("{mvn_exe} -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install"
@@ -169,6 +170,8 @@ impl JavaProvider {
 
     fn get_jdk_pkg(&self, jdk_version: u32) -> Result<Pkg> {
         let pkg = match jdk_version {
+            21 => Pkg::new("jdk21"),
+            20 => Pkg::new("jdk20"),
             19 => Pkg::new("jdk"),
             17 => Pkg::new("jdk17"),
             11 => Pkg::new("jdk11"),
@@ -349,6 +352,42 @@ mod tests {
                 java.get_jdk_version(
                     &App::new("examples/java-gradle-hello-world").unwrap(),
                     &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=8"]).unwrap(),
+                )
+                .unwrap()
+            )
+            .unwrap()
+        );
+
+        assert_eq!(
+            Pkg::new("jdk21"),
+            java.get_jdk_pkg(
+                java.get_jdk_version(
+                    &App::new("examples/java-gradle-hello-world").unwrap(),
+                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=21"]).unwrap(),
+                )
+                .unwrap()
+            )
+            .unwrap()
+        );
+
+        assert_eq!(
+            Pkg::new("jdk20"),
+            java.get_jdk_pkg(
+                java.get_jdk_version(
+                    &App::new("examples/java-gradle-hello-world").unwrap(),
+                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=20"]).unwrap(),
+                )
+                .unwrap()
+            )
+            .unwrap()
+        );
+
+        assert_eq!(
+            Pkg::new("jdk"),
+            java.get_jdk_pkg(
+                java.get_jdk_version(
+                    &App::new("examples/java-gradle-hello-world").unwrap(),
+                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=19"]).unwrap(),
                 )
                 .unwrap()
             )
