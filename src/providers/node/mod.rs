@@ -116,7 +116,7 @@ impl Provider for NodeProvider {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
 
-        if NodeProvider::get_package_manager(&app) == "bun" {
+        if NodeProvider::get_package_manager(app) == "bun" {
             setup.set_nix_archive(BUN_NIXPKGS_ARCHIVE.into());
         } else {
             setup.set_nix_archive(NODE_NIXPKGS_ARCHIVE.into());
