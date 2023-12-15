@@ -134,31 +134,24 @@ mod tests {
         // defaults to Java 17
         assert_eq!(
             "jdk17",
-             scala.get_jdk_pkg_name(
-                 scala.get_jdk_version(
-                     &Environment::from_envs(vec![]).unwrap(),
-                )
-             )
+            scala
+                .get_jdk_pkg_name(scala.get_jdk_version(&Environment::from_envs(vec![]).unwrap(),))
         );
 
         // Supports Java 20
         assert_eq!(
             "jdk20",
-             scala.get_jdk_pkg_name(
-                 scala.get_jdk_version(
-                     &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=20"]).unwrap(),
-                )
-             )
+            scala.get_jdk_pkg_name(scala.get_jdk_version(
+                &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=20"]).unwrap(),
+            ))
         );
 
         // Supports Java 21
         assert_eq!(
             "jdk21",
-             scala.get_jdk_pkg_name(
-                 scala.get_jdk_version(
-                     &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=21"]).unwrap(),
-                )
-             )
+            scala.get_jdk_pkg_name(scala.get_jdk_version(
+                &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=21"]).unwrap(),
+            ))
         );
     }
 
