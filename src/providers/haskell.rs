@@ -61,8 +61,7 @@ impl Provider for HaskellStackProvider {
         let package: HaskellStackPackageYaml = app.read_yaml("package.yaml")?;
         let exe_names: Vec<String> = package.executables.keys().cloned().collect();
 
-        let name = exe_names
-            .get(0)
+        let name = exe_names.first()
             .ok_or_else(|| anyhow::anyhow!("Failed to get executable name"))?;
 
         let start = StartPhase::new(format!("/root/.local/bin/{name}"));
