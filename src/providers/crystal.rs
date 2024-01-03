@@ -40,7 +40,8 @@ impl Provider for CrystalProvider {
         let target_names = config.targets.keys().cloned().collect::<Vec<_>>();
         let start = StartPhase::new(format!(
             "./bin/{}",
-            target_names.first()
+            target_names
+                .first()
                 .ok_or_else(|| anyhow::anyhow!("Unable to get executable name"))?
         ));
 
