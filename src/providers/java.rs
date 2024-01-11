@@ -14,7 +14,7 @@ use regex::Regex;
 pub struct JavaProvider {}
 
 const DEFAULT_JDK_VERSION: u32 = 17;
-const DEFAULT_GRADLE_VERSION: u32 = 7;
+const DEFAULT_GRADLE_VERSION: u32 = 8;
 const JAVA_NIXPKGS_ARCHIVE: &str = "59dc10b5a6f2a592af36375c68fda41246794b86";
 
 impl Provider for JavaProvider {
