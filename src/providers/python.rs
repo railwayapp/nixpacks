@@ -386,11 +386,11 @@ impl PythonProvider {
         let module_name = chain!(project.project.clone() =>
             (
                 |proj| proj.packages,
-                |pkgs| pkgs.get(0).cloned()
+                |pkgs| pkgs.first().cloned()
             );
             (
                 |proj| proj.py_modules,
-                |mods| mods.get(0).cloned()
+                |mods| mods.first().cloned()
             );
             (
                 |_| project_name.clone()

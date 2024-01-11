@@ -41,7 +41,7 @@ impl Provider for CrystalProvider {
         let start = StartPhase::new(format!(
             "./bin/{}",
             target_names
-                .get(0)
+                .first()
                 .ok_or_else(|| anyhow::anyhow!("Unable to get executable name"))?
         ));
 
