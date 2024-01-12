@@ -15,7 +15,7 @@ use crate::nixpacks::{
 use super::{node::NodeProvider, Provider};
 use anyhow::Result;
 
-const DEFAULT_PHP_VERSION: &str = "8.2";
+const DEFAULT_PHP_VERSION: &str = "8.3";
 
 pub struct PhpProvider;
 
@@ -187,6 +187,8 @@ impl PhpProvider {
                 "8.1".to_string()
             } else if v.contains("8.2") {
                 "8.2".to_string()
+            } else if v.contains("8.3") {
+                "8.3".to_string()
             } else if v.contains("7.4") {
                 "7.4".to_string()
             } else {
