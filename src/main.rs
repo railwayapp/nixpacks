@@ -141,11 +141,11 @@ enum Commands {
         #[arg(long)]
         cache_from: Option<String>,
 
-        /// Image to consider as cache sources
+        /// Specify host for Docker client
         #[arg(long)]
         docker_host: Option<String>,
 
-        /// Image to consider as cache sources
+        /// Specify if Docker client should verify the TLS (Transport Layer Security) certificates
         #[arg(long)]
         docker_tls_verify: Option<String>,
 
