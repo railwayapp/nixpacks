@@ -67,10 +67,7 @@ impl Provider for PythonProvider {
             plan.set_start_phase(start);
         }
 
-        plan.add_variables(EnvironmentVariables::from([(
-            "PYTHONUNBUFFERED".to_owned(),
-            "1".to_owned(),
-        )]));
+        plan.add_variables(PythonProvider::default_python_environment_variables());
 
         if app.includes_file("poetry.lock") {
             plan.add_variables(EnvironmentVariables::from([(
@@ -299,6 +296,26 @@ impl PythonProvider {
         Ok(matches
             .filter(|m| m.len() > 2)
             .map(|m| m.get(2).unwrap().as_str().to_string()))
+    }
+
+    fn default_python_environment_variables() -> EnvironmentVariables {
+        let python_variables = vec![
+            ("PYTHONFAULTHANDLER", "1"),
+            ("PYTHONUNBUFFERED", "1"),
+            ("PYTHONHASHSEED", "random"),
+            ("PYTHONDONTWRITEBYTECODE", "1"),
+            ("PIP_NO_CACHE_DIR", "1"),
+            ("PIP_DISABLE_PIP_VERSION_CHECK", "1"),
+            ("PIP_DEFAULT_TIMEOUT", "100"),
+        ];
+
+        let mut env_vars = EnvironmentVariables::new();
+
+        for (key, value) in python_variables {
+            env_vars.insert(key.to_owned(), value.to_owned());
+        }
+
+        env_vars
     }
 
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
