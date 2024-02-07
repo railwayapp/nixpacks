@@ -6,6 +6,7 @@ pub mod images;
 pub mod logger;
 pub mod nix;
 pub mod plan;
+pub mod asdf;
 #[macro_use]
 pub mod static_assets;
 
