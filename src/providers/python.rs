@@ -2,12 +2,12 @@ use crate::{
     chain,
     nixpacks::{
         app::App,
+        asdf::parse_tool_versions_content,
         environment::{Environment, EnvironmentVariables},
         plan::{
             phase::{Phase, StartPhase},
             BuildPlan,
         },
-        asdf::parse_tool_versions_content
     },
     Pkg,
 };
@@ -79,8 +79,13 @@ impl Provider for PythonProvider {
             if app.includes_file(".tool-versions") {
                 let file_content = &app.read_file(".tool-versions")?;
 
-                if let Some(poetry_version) = PythonProvider::parse_tool_versions_poetry_version(file_content)? {
-                    println!("Using poetry version from .tool-versions: {}", poetry_version);
+                if let Some(poetry_version) =
+                    PythonProvider::parse_tool_versions_poetry_version(file_content)?
+                {
+                    println!(
+                        "Using poetry version from .tool-versions: {}",
+                        poetry_version
+                    );
                     version = poetry_version;
                 }
             }
@@ -339,7 +344,11 @@ impl PythonProvider {
         // the python version can only specify a major.minor version right now, and not a patch version
         Ok(asdf_versions.get("python").map(|s| {
             let parts: Vec<&str> = s.split('.').collect();
-            assert_eq!(parts.len(), 3, "Expected a version string in the format x.x.x");
+            assert_eq!(
+                parts.len(),
+                3,
+                "Expected a version string in the format x.x.x"
+            );
             format!("{}.{}", parts[0], parts[1])
         }))
     }
