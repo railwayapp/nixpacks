@@ -74,13 +74,6 @@ impl Provider for PythonProvider {
         )]));
 
         if app.includes_file("poetry.lock") {
-            plan.add_variables(EnvironmentVariables::from([(
-                "NIXPACKS_POETRY_VERSION".to_string(),
-                POETRY_VERSION.to_string(),
-            )]));
-        }
-
-        if app.includes_file("poetry.lock") {
             let mut version = POETRY_VERSION.to_string();
 
             if app.includes_file(".tool-versions") {
