@@ -43,7 +43,9 @@ expression: plan
       "name": "setup",
       "nixPkgs": [
         "nodejs_18",
-        "npm-9_x",
+        "npm-9_x"
+      ],
+      "nixLibs": [
         "openssl"
       ],
       "nixOverlays": [
