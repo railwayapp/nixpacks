@@ -30,6 +30,7 @@ You can easily install additional Nix or Apt packages so that they are available
 ```toml
 [phases.setup]
 nixPkgs = ["...", "ffmpeg"] # Install the ffmpeg package from Nix
+nixLibs = ["...", "gcc-unwrapped"] # Install the gcc-unwrapped package from Nix and add it to the LD_LIBRARY_PATH
 aptPkgs = ["...", "wget"]   # Install the wget package with apt-get
 ```
 

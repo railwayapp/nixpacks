@@ -118,6 +118,10 @@ impl Provider for NodeProvider {
             setup.add_nix_pkgs(&[Pkg::new("openssl")]);
         }
 
+        if NodeProvider::uses_node_dependency(app, "sharp") {
+            setup.add_pkgs_libs(vec!["gcc-unwrapped".to_string()]);
+        }
+
         if NodeProvider::uses_node_dependency(app, "puppeteer") {
             // https://gist.github.com/winuxue/cfef08e2f5fe9dfc16a1d67a4ad38a01
             setup.add_apt_pkgs(vec![
