@@ -20,6 +20,7 @@ The following PHP versions are available
 - `8.0`
 - `8.1`
 - `8.2` (Default)
+- `8.3`
 
 The version is automatically detected by parsing your `composer.json` file.
 
