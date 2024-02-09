@@ -37,6 +37,11 @@ fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<Outpu
     }
 }
 
+fn command_to_string(command: &Command) -> String {
+    let args = command.get_args().map(|arg| arg.to_string_lossy()).collect::<Vec<_>>();
+    format!("{} {}", command.get_program().to_string_lossy(), args.join(" "))
+}
+
 use async_trait::async_trait;
 
 #[async_trait]
@@ -78,9 +83,16 @@ impl ImageBuilder for DockerImageBuilder {
         plan.write_supporting_files(&self.options, env, &output)
             .context("Writing supporting files")?;
 
+        let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), &output)?;
+
+        if !self.options.out_dir.is_none() {
+            let command_path = output.get_absolute_path("build.sh");
+            File::create(command_path.clone()).context("Creating command.sh file")?;
+            fs::write(command_path, command_to_string(&docker_build_cmd)).context("Write command")?;
+        }
+
         // Only build if the --out flag was not specified
         if self.options.out_dir.is_none() {
-            let mut docker_build_cmd = self.get_docker_build_cmd(plan, name.as_str(), &output)?;
 
             // Execute docker build
             let build_result = docker_build_cmd.spawn()?.wait().context("Building image")?;
