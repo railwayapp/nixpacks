@@ -12,7 +12,7 @@ Nixpacks can be configured via environment variables. All of these variables are
 | `NIXPACKS_BUILD_CMD`          | Override the build command to use                                                            |
 | `NIXPACKS_START_CMD`          | Override command to run when starting the container                                          |
 | `NIXPACKS_PKGS`               | Add additional [Nix packages](https://search.nixos.org/packages?channel=unstable) to install |
-| `NIXPACKS_APT_PKGS`           | Add additional Apt packages to install                                                       |
+| `NIXPACKS_APT_PKGS`           | Add additional Apt packages to install (comma delimited)                                     |
 | `NIXPACKS_LIBS`               | Add additional Nix libraries to make available                                               |
 | `NIXPACKS_INSTALL_CACHE_DIRS` | Add additional directories to cache during the install phase                                 |
 | `NIXPACKS_BUILD_CACHE_DIRS`   | Add additional directories to cache during the build phase                                   |
