@@ -44,7 +44,8 @@ expression: plan
       "name": "setup",
       "nixPkgs": [
         "nodejs_14",
-        "yarn-1_x"
+        "yarn-1_x",
+        "openssl"
       ],
       "nixLibs": [
         "openssl"
