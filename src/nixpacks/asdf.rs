@@ -5,7 +5,7 @@ pub fn parse_tool_versions_content(file_content: &str) -> HashMap<String, String
     let re = Regex::new(r"\s+").unwrap();
     file_content
         .lines()
-        .map(|line| line.trim())
+        .map(str::trim)
         .filter(|line| !line.starts_with('#'))
         .filter_map(|line| {
             let parts: Vec<&str> = re.splitn(line, 2).collect();

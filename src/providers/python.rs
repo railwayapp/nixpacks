@@ -83,8 +83,7 @@ impl Provider for PythonProvider {
                     PythonProvider::parse_tool_versions_poetry_version(file_content)?
                 {
                     println!(
-                        "Using poetry version from .tool-versions: {}",
-                        poetry_version
+                        "Using poetry version from .tool-versions: {poetry_version}"
                     );
                     version = poetry_version;
                 }
