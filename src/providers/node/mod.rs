@@ -137,7 +137,9 @@ impl Provider for NodeProvider {
                 "libxshmfence1".to_string(),
                 "libglu1".to_string(),
             ]);
-        } else if NodeProvider::uses_node_dependency(app, "canvas") {
+        }
+
+        if NodeProvider::uses_node_dependency(app, "canvas") {
             setup.add_pkgs_libs(vec!["libuuid".to_string(), "libGL".to_string()]);
         }
 
