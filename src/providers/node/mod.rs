@@ -25,6 +25,9 @@ pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/ar
 
 const NODE_NIXPKGS_ARCHIVE: &str = "579039abfd00a657f986979e610ac731863d3de4";
 
+// We need to use a specific commit hash for Node versions <16 since it is EOL in the latest Nix packages
+const NODE_LT_16_ARCHIVE: &str = "bf744fe90419885eefced41b3e5ae442d732712d";
+
 const DEFAULT_NODE_VERSION: u32 = 18;
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18, 20, 21];
 
@@ -111,8 +114,9 @@ impl Provider for NodeProvider {
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
+
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
-        setup.set_nix_archive(NODE_NIXPKGS_ARCHIVE.into());
+        setup.set_nix_archive(NodeProvider::get_nix_archive(app)?);
 
         if NodeProvider::uses_node_dependency(app, "prisma") {
             setup.add_nix_pkgs(&[Pkg::new("openssl")]);
@@ -421,6 +425,19 @@ impl NodeProvider {
             "node"
         }
         .to_string()
+    }
+
+    /// Returns the Nix archive to use for the Node and related packages
+    pub fn get_nix_archive(app: &App) -> Result<String> {
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
+        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, &Environment::default())?;
+        let uses_le_16 = node_pkg.name.contains("14") || node_pkg.name.contains("16");
+
+        if uses_le_16 {
+            Ok(NODE_LT_16_ARCHIVE.to_string())
+        } else {
+            Ok(NODE_NIXPKGS_ARCHIVE.to_string())
+        }
     }
 
     /// Returns the nodejs nix package and the appropriate package manager nix image.
