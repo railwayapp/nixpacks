@@ -23,7 +23,7 @@ mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const NODE_NIXPKGS_ARCHIVE: &str = "bf744fe90419885eefced41b3e5ae442d732712d";
+const NODE_NIXPKGS_ARCHIVE: &str = "579039abfd00a657f986979e610ac731863d3de4";
 
 const DEFAULT_NODE_VERSION: u32 = 18;
 const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18, 20, 21];
