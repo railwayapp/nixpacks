@@ -146,7 +146,7 @@ impl Provider for NodeProvider {
         // Install
         let corepack = NodeProvider::uses_corepack(app, env)?;
         let mut install = Phase::install(if corepack {
-            Some("npm install -g corepack && corepack enable".to_string())
+            Some("npm install -g corepack@0.24.1 && corepack enable".to_string())
         } else {
             NodeProvider::get_install_command(app)
         });
