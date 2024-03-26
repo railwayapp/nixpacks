@@ -26,7 +26,7 @@ impl Moon {
             .unwrap_or("build".to_string());
 
         format!(
-            "{} moon run {app_name}:{task_name}",
+            "{} @moonrepo/cli run {app_name}:{task_name}",
             NodeProvider::get_package_manager_dlx_command(app)
         )
     }
@@ -39,7 +39,7 @@ impl Moon {
             .unwrap_or("start".to_string());
 
         format!(
-            "{} moon run {app_name}:{task_name}",
+            "{} @moonrepo/cli run {app_name}:{task_name}",
             NodeProvider::get_package_manager_dlx_command(app)
         )
     }
