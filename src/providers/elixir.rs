@@ -52,8 +52,7 @@ impl Provider for ElixirProvider {
         }
 
         if mix_exs_content.contains("postgrex") && mix_exs_content.contains("ecto") {
-            build_phase.add_cmd("mix ecto.migrate");
-            build_phase.add_cmd("mix run priv/repo/seeds.exs");
+            build_phase.add_cmd("mix ecto.setup");
         }
         plan.add_phase(build_phase);
 
