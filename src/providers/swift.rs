@@ -11,7 +11,7 @@ use crate::nixpacks::{
 use anyhow::{bail, Result};
 use path_slash::PathExt;
 
-const DEFAULT_SWIFT_VERSION: &str = "5.4.2";
+const DEFAULT_SWIFT_VERSION: &str = "5.8";
 
 // From: https://lazamar.co.uk/nix-versions/?channel=nixpkgs-unstable&package=swift
 const AVAILABLE_SWIFT_VERSIONS: &[(&str, &str)] = &[
