@@ -8,7 +8,12 @@ title: Swift
 
 The following Swift versions are available
 
-- `5.4.2` (Default)
+- `5.8` (Default)
+- `5.7.3`
+- `5.6.2`
+- `5.5.3`
+- `5.5.2`
+- `5.4.2`
 - `5.4`
 - `5.1.1`
 - `5.0.2`

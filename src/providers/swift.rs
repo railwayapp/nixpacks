@@ -11,7 +11,7 @@ use crate::nixpacks::{
 use anyhow::{bail, Result};
 use path_slash::PathExt;
 
-const DEFAULT_SWIFT_VERSION: &str = "5.4.2";
+const DEFAULT_SWIFT_VERSION: &str = "5.8";
 
 // From: https://lazamar.co.uk/nix-versions/?channel=nixpkgs-unstable&package=swift
 const AVAILABLE_SWIFT_VERSIONS: &[(&str, &str)] = &[
@@ -27,6 +27,11 @@ const AVAILABLE_SWIFT_VERSIONS: &[(&str, &str)] = &[
     ("5.1.1", "9986226d5182c368b7be1db1ab2f7488508b5a87"),
     ("5.4", "c82b46413401efa740a0b994f52e9903a4f6dcd5"),
     ("5.4.2", "c82b46413401efa740a0b994f52e9903a4f6dcd5"),
+    ("5.5.2", "7592790b9e02f7f99ddcb1bd33fd44ff8df6a9a7"),
+    ("5.5.3", "7cf5ccf1cdb2ba5f08f0ac29fc3d04b0b59a07e4"),
+    ("5.6.2", "3c3b3ab88a34ff8026fc69cb78febb9ec9aedb16"),
+    ("5.7.3", "8cad3dbe48029cb9def5cdb2409a6c80d3acfe2e"),
+    ("5.8", "9957cd48326fe8dbd52fdc50dd2502307f188b0d"),
 ];
 
 pub struct SwiftProvider {}
