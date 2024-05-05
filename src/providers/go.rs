@@ -8,7 +8,7 @@ use crate::nixpacks::{
         BuildPlan,
     },
 };
-use anyhow::{Ok, Result};
+use anyhow::Result;
 
 pub struct GolangProvider {}
 
