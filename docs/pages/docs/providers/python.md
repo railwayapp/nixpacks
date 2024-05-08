@@ -85,3 +85,20 @@ python main.py
 These directories are cached between builds
 
 - Install: `~/.cache/pip`
+
+## Environment Variables
+
+The following environment variables are set by default:
+
+```shell
+PYTHONFAULTHANDLER=1
+PYTHONUNBUFFERED=1
+PYTHONHASHSEED=random
+PYTHONDONTWRITEBYTECODE=1
+
+PIP_NO_CACHE_DIR=1
+PIP_DISABLE_PIP_VERSION_CHECK=1
+PIP_DEFAULT_TIMEOUT=100
+```
+
+These can be overwritten by the `--env` option.
