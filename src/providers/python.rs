@@ -341,13 +341,19 @@ impl PythonProvider {
         let asdf_versions = parse_tool_versions_content(file_content);
 
         // the python version can only specify a major.minor version right now, and not a patch version
+        // however, in asdf a patch version is specified, so we need to strip it
         Ok(asdf_versions.get("python").map(|s| {
             let parts: Vec<&str> = s.split('.').collect();
-            assert_eq!(
-                parts.len(),
-                3,
-                "Expected a version string in the format x.x.x"
-            );
+
+            if parts.len() == 3 {
+                // this is the expected result, but will be unexpected to users
+                println!("Patch version detected in .tool-versions, but not supported in nixpkgs.")
+            } else if parts.len() == 2 {
+                println!("Expected a version string in the format x.y.z from .tool-versions")
+            } else {
+                println!("Could not find a version string in the format x.y.z or x.y from .tool-versions")
+            }
+
             format!("{}.{}", parts[0], parts[1])
         }))
     }
