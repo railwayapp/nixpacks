@@ -137,7 +137,7 @@ Nix packages to be made available through the `LD_LIBRARY_PATH` environment vari
 
 ### Nix overlays
 
-[Nix overlays](https://nixos.wiki/wiki/Overlays) to use as alternate package sources.
+[Nix overlays](https://wiki.nixos.org/wiki/Overlays) to use as alternate package sources.
 
 ```toml
 [phase.name]
