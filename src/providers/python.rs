@@ -142,8 +142,15 @@ impl PythonProvider {
         let mut setup = Phase::setup(Some(pkgs));
 
         // Many Python packages need some C headers to be available
-        // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
-        setup.add_pkgs_libs(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
+        //
+        //   - https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
+        //   - https://github.com/mcdonc/.nixconfig/blob/e7885ad18b7980f221e59a21c91b8eb02795b541/videos/pydev/script.rst
+        //
+        // Some packages (like stdenv.cc.cc.lib) may conflict with other system commands and cause libc version conflicts
+        // since LD_LIBRARY_PATH is mutated by `add_pkgs_libs`
+        //
+
+        setup.add_pkgs_libs(vec!["zlib".to_string()]);
         setup.add_nix_pkgs(&[Pkg::new("gcc")]);
 
         Ok(Some(setup))

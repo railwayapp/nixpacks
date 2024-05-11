@@ -97,6 +97,8 @@ async fn run_image(name: &str, cfg: Option<Config>) -> String {
         }
     };
 
+    assert!(_status_code == Some(0), "Failed to run image successfully");
+
     let reader = BufReader::new(child.stdout.unwrap());
     reader
         .lines()
@@ -771,6 +773,7 @@ async fn test_python_numpy() {
     let name = simple_build("./examples/python-numpy").await;
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Python numpy and pandas"));
+    assert!(output.contains("apt is a commandline package manager"));
 }
 
 #[tokio::test]
