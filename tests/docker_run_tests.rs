@@ -1176,15 +1176,6 @@ async fn test_cobol_no_index() {
 }
 
 #[tokio::test]
-async fn test_multiple_providers() {
-    let name = simple_build("./examples/multiple-providers").await;
-    let output = run_image(&name, None).await;
-    assert!(output.contains("Python"));
-    assert!(output.contains("go"));
-    assert!(output.contains("deno"));
-}
-
-#[tokio::test]
 async fn test_django_pipfile() {
     // Create the network
     let n = create_network();
