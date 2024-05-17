@@ -7,7 +7,7 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "python,pdm",
-    "NIXPACKS_PDM_VERSION": "2.7.4",
+    "NIXPACKS_PDM_VERSION": "2.13.3",
     "PYTHONUNBUFFERED": "1"
   },
   "phases": {
