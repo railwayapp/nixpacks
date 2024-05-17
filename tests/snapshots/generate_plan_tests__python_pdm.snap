@@ -7,7 +7,7 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "python,pdm",
-    "NIXPACKS_PDM_VERSION": "2.7.4",
+    "NIXPACKS_PDM_VERSION": "2.13.3",
     "PIP_DEFAULT_TIMEOUT": "100",
     "PIP_DISABLE_PIP_VERSION_CHECK": "1",
     "PIP_NO_CACHE_DIR": "1",
