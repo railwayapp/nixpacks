@@ -164,7 +164,7 @@ impl Provider for NodeProvider {
 
         // Cypress cache directory
         let all_deps = NodeProvider::get_all_deps(app)?;
-        if all_deps.get("cypress").is_some() {
+        if all_deps.contains("cypress") {
             install.add_cache_directory((*CYPRESS_CACHE_DIR).to_string());
         }
 
@@ -219,7 +219,7 @@ impl NodeProvider {
     pub fn has_script(app: &App, script: &str) -> Result<bool> {
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         if let Some(scripts) = package_json.scripts {
-            if scripts.get(script).is_some() {
+            if scripts.contains_key(script) {
                 return Ok(true);
             }
         }
