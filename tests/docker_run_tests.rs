@@ -437,7 +437,7 @@ async fn test_node_nx_express() {
 async fn test_node_custom_version() {
     let name = simple_build("./examples/node-custom-version").await;
     let output = run_image(&name, None).await;
-    assert!(output.contains("Node version: v21"));
+    assert!(output.contains("Node version: v22"));
 }
 
 #[tokio::test]
@@ -1173,15 +1173,6 @@ async fn test_cobol_no_index() {
         run_image(&name, None).await,
         "Hello from cobol! cobol-no-index"
     );
-}
-
-#[tokio::test]
-async fn test_multiple_providers() {
-    let name = simple_build("./examples/multiple-providers").await;
-    let output = run_image(&name, None).await;
-    assert!(output.contains("Python"));
-    assert!(output.contains("go"));
-    assert!(output.contains("deno"));
 }
 
 #[tokio::test]

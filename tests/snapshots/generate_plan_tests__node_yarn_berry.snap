@@ -30,7 +30,7 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "npm install -g corepack && corepack enable",
+        "npm install -g corepack@0.24.1 && corepack enable",
         "yarn install --check-cache"
       ],
       "cacheDirectories": [
