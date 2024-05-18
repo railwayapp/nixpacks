@@ -25,6 +25,8 @@ const PIP_CACHE_DIR: &str = "/root/.cache/pip";
 const PDM_CACHE_DIR: &str = "/root/.cache/pdm";
 const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python310";
 
+const PYTHON_NIXPKGS_ARCHIVE: &str = "bf446f08bff6814b569265bef8374cfdd3d8f0e0";
+
 pub struct PythonProvider {}
 
 impl Provider for PythonProvider {
@@ -57,7 +59,9 @@ impl Provider for PythonProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
 
-        let setup = self.setup(app, env)?.unwrap_or_default();
+        let mut setup = self.setup(app, env)?.unwrap_or_default();
+        setup.set_nix_archive(PYTHON_NIXPKGS_ARCHIVE.to_string());
+
         plan.add_phase(setup);
 
         let install = self.install(app, env)?.unwrap_or_default();
@@ -368,6 +372,7 @@ impl PythonProvider {
 
         // Match major and minor versions
         match python_version {
+            ("3", "12") => Ok(Pkg::new("python312")),
             ("3", "11") => Ok(Pkg::new("python311")),
             ("3", "10") => Ok(Pkg::new("python310")),
             ("3", "9") => Ok(Pkg::new("python39")),
