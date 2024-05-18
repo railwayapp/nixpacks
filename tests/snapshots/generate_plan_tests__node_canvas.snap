@@ -39,8 +39,8 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "nodejs_16",
-        "npm-8_x"
+        "nodejs_20",
+        "npm-9_x"
       ],
       "nixLibs": [
         "libuuid",
