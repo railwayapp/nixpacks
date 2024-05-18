@@ -17,8 +17,7 @@ expression: plan
       ],
       "cmds": [
         "mix compile",
-        "mix ecto.migrate",
-        "mix run priv/repo/seeds.exs"
+        "mix ecto.setup"
       ]
     },
     "install": {
