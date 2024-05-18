@@ -29,10 +29,15 @@ const AVAILABLE_GO_VERSIONS: &[(&str, &str, &str)] = &[
         "go_1_20",
         "1f13eabcd6f5b00fe9de9575ac52c66a0e887ce6",
     ),
-    ("1.21", "go", "1f13eabcd6f5b00fe9de9575ac52c66a0e887ce6"),
+    (
+        "1.21",
+        "go_1_21",
+        "1f13eabcd6f5b00fe9de9575ac52c66a0e887ce6",
+    ),
+    ("1.22", "go", "e89cf1c932006531f454de7d652163a9a5c86668"),
 ];
 const DEFAULT_GO_PKG_NAME: &str = "go";
-const DEFAULT_ARCHIVE: &str = "1f13eabcd6f5b00fe9de9575ac52c66a0e887ce6";
+const DEFAULT_ARCHIVE: &str = "e89cf1c932006531f454de7d652163a9a5c86668";
 
 const GO_BUILD_CACHE_DIR: &str = "/root/.cache/go-build";
 
