@@ -354,7 +354,7 @@ impl PythonProvider {
             }
             return Ok((
                 Pkg::new(DEFAULT_PYTHON_PKG_NAME),
-                PYTHON_NIXPKGS_ARCHIVE.into(),
+                LEGACY_PYTHON_NIXPKGS_ARCHIVE.into(),
             ));
         }
         let custom_version = custom_version.unwrap();
@@ -376,7 +376,7 @@ impl PythonProvider {
             }
             return Ok((
                 Pkg::new(DEFAULT_PYTHON_PKG_NAME),
-                PYTHON_NIXPKGS_ARCHIVE.into(),
+                LEGACY_PYTHON_NIXPKGS_ARCHIVE.into(),
             ));
         }
         let matches = matches.unwrap();
@@ -400,7 +400,7 @@ impl PythonProvider {
                 }
                 Ok((
                     Pkg::new(DEFAULT_PYTHON_PKG_NAME),
-                    PYTHON_NIXPKGS_ARCHIVE.into(),
+                    LEGACY_PYTHON_NIXPKGS_ARCHIVE.into(),
                 ))
             }
         }
@@ -484,7 +484,7 @@ mod test {
             )?,
             (
                 Pkg::new(DEFAULT_PYTHON_PKG_NAME),
-                PYTHON_NIXPKGS_ARCHIVE.into()
+                LEGACY_PYTHON_NIXPKGS_ARCHIVE.into()
             )
         );
 
