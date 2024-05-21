@@ -47,6 +47,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "python manage.py migrate && gunicorn mysite.wsgi"
+    "cmd": "python manage.py migrate && gunicorn python_django.wsgi"
   }
 }

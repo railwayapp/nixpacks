@@ -672,6 +672,13 @@ async fn test_python() {
 }
 
 #[tokio::test]
+async fn test_python_pipfile() {
+    let name = simple_build("./examples/python-pipfile").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Data fetched successfully!"));
+}
+
+#[tokio::test]
 async fn test_python_procfile() {
     let name = simple_build("./examples/python-procfile").await;
     let output = run_image(&name, None).await;
@@ -1176,7 +1183,7 @@ async fn test_cobol_no_index() {
 }
 
 #[tokio::test]
-async fn test_django_pipfile() {
+async fn test_pipfile() {
     // Create the network
     let n = create_network();
     let network_name = n.name.clone();
