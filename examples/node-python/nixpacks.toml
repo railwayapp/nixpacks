@@ -1,4 +1,4 @@
-providers = ["...", "python"]
+providers = ["node", "python"]
 
 [start]
-cmd = "./start.sh"
+cmd = "echo Node $(node --version) && python --version"

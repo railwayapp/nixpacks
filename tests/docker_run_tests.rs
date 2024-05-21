@@ -1227,3 +1227,11 @@ async fn test_ffmpeg() {
     let output = run_image(&name, None).await;
     assert!(output.contains("ffmpeg version"));
 }
+
+#[tokio::test]
+async fn test_node_python() {
+    let name = simple_build("./examples/node-python").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Node"));
+    assert!(output.contains("Python"));
+}

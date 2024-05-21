@@ -1,2 +1,0 @@
-node --version
-cargo --version
