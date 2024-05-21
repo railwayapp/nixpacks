@@ -18,12 +18,12 @@ use std::{collections::HashMap, fs};
 
 use super::{Provider, ProviderMetadata};
 
-const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
+const DEFAULT_PYTHON_PKG_NAME: &str = "python3";
 const POETRY_VERSION: &str = "1.3.1";
 const PDM_VERSION: &str = "2.13.3";
 const PIP_CACHE_DIR: &str = "/root/.cache/pip";
 const PDM_CACHE_DIR: &str = "/root/.cache/pdm";
-const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python310";
+const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python3";
 
 const PYTHON_NIXPKGS_ARCHIVE: &str = "bf446f08bff6814b569265bef8374cfdd3d8f0e0";
 const LEGACY_PYTHON_NIXPKGS_ARCHIVE: &str = "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db";
@@ -354,7 +354,7 @@ impl PythonProvider {
             }
             return Ok((
                 Pkg::new(DEFAULT_PYTHON_PKG_NAME),
-                LEGACY_PYTHON_NIXPKGS_ARCHIVE.into(),
+                PYTHON_NIXPKGS_ARCHIVE.into(),
             ));
         }
         let custom_version = custom_version.unwrap();
@@ -376,7 +376,7 @@ impl PythonProvider {
             }
             return Ok((
                 Pkg::new(DEFAULT_PYTHON_PKG_NAME),
-                LEGACY_PYTHON_NIXPKGS_ARCHIVE.into(),
+                PYTHON_NIXPKGS_ARCHIVE.into(),
             ));
         }
         let matches = matches.unwrap();
@@ -400,7 +400,7 @@ impl PythonProvider {
                 }
                 Ok((
                     Pkg::new(DEFAULT_PYTHON_PKG_NAME),
-                    LEGACY_PYTHON_NIXPKGS_ARCHIVE.into(),
+                    PYTHON_NIXPKGS_ARCHIVE.into(),
                 ))
             }
         }
@@ -484,7 +484,7 @@ mod test {
             )?,
             (
                 Pkg::new(DEFAULT_PYTHON_PKG_NAME),
-                LEGACY_PYTHON_NIXPKGS_ARCHIVE.into()
+                PYTHON_NIXPKGS_ARCHIVE.into()
             )
         );
 
