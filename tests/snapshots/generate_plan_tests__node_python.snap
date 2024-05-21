@@ -52,7 +52,7 @@ expression: plan
     "python:setup": {
       "name": "python:setup",
       "nixPkgs": [
-        "python38",
+        "python3",
         "gcc"
       ],
       "nixLibs": [
