@@ -6,7 +6,7 @@ expression: plan
   "providers": [],
   "buildImage": "[build_image]",
   "variables": {
-    "NIXPACKS_METADATA": "python,django,postgres",
+    "NIXPACKS_METADATA": "python",
     "PIP_DEFAULT_TIMEOUT": "100",
     "PIP_DISABLE_PIP_VERSION_CHECK": "1",
     "PIP_NO_CACHE_DIR": "1",
@@ -35,7 +35,6 @@ expression: plan
       "name": "setup",
       "nixPkgs": [
         "python311",
-        "postgresql",
         "pipenv",
         "gcc"
       ],
@@ -48,6 +47,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "python manage.py migrate && gunicorn mysite.wsgi"
+    "cmd": "python main.py"
   }
 }

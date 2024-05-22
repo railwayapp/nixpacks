@@ -672,6 +672,13 @@ async fn test_python() {
 }
 
 #[tokio::test]
+async fn test_python_pipfile() {
+    let name = simple_build("./examples/python-pipfile").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Data fetched successfully!"));
+}
+
+#[tokio::test]
 async fn test_python_procfile() {
     let name = simple_build("./examples/python-procfile").await;
     let output = run_image(&name, None).await;
@@ -1176,39 +1183,6 @@ async fn test_cobol_no_index() {
 }
 
 #[tokio::test]
-async fn test_django_pipfile() {
-    // Create the network
-    let n = create_network();
-    let network_name = n.name.clone();
-
-    // Create the postgres instance
-    let c = run_postgres();
-    let container_name = c.name.clone();
-
-    // Attach the postgres instance to the network
-    attach_container_to_network(n.name, container_name.clone());
-
-    // Build the Django example
-    let name = simple_build("./examples/python-django-pipfile").await;
-
-    // Run the Django example on the attached network
-    let output = run_image(
-        &name,
-        Some(Config {
-            environment_variables: c.config.unwrap().environment_variables,
-            network: Some(network_name.clone()),
-        }),
-    )
-    .await;
-
-    // Cleanup containers and networks
-    stop_and_remove_container(container_name);
-    remove_network(network_name);
-
-    assert!(output.contains("Running migrations"));
-}
-
-#[tokio::test]
 async fn test_nested_directory() {
     let name = simple_build("./examples/nested").await;
     assert!(run_image(&name, None).await.contains("Nested directories!"));
@@ -1219,4 +1193,12 @@ async fn test_ffmpeg() {
     let name = simple_build("./examples/apt-ffmpeg").await;
     let output = run_image(&name, None).await;
     assert!(output.contains("ffmpeg version"));
+}
+
+#[tokio::test]
+async fn test_node_python() {
+    let name = simple_build("./examples/node-python").await;
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Node"));
+    assert!(output.contains("Python"));
 }

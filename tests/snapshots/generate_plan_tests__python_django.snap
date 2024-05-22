@@ -34,7 +34,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "python38",
+        "python3",
         "postgresql",
         "gcc"
       ],
@@ -47,6 +47,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "python manage.py migrate && gunicorn mysite.wsgi"
+    "cmd": "python manage.py migrate && gunicorn python_django.wsgi"
   }
 }
