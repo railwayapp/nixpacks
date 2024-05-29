@@ -23,7 +23,7 @@ mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const NODE_NIXPKGS_ARCHIVE: &str = "bf446f08bff6814b569265bef8374cfdd3d8f0e0";
+const NODE_NIXPKGS_ARCHIVE: &str = "bdd2f439c62aa0b8aa97f5c784a965c23f968fe6";
 
 // We need to use a specific commit hash for Node versions <16 since it is EOL in the latest Nix packages
 const NODE_LT_16_ARCHIVE: &str = "bf744fe90419885eefced41b3e5ae442d732712d";
