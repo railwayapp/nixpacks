@@ -2,6 +2,7 @@ use crate::{
     chain,
     nixpacks::{
         app::App,
+        asdf::parse_tool_versions_content,
         environment::{Environment, EnvironmentVariables},
         plan::{
             phase::{Phase, StartPhase},
@@ -73,12 +74,24 @@ impl Provider for PythonProvider {
         plan.add_variables(PythonProvider::default_python_environment_variables());
 
         if app.includes_file("poetry.lock") {
+            let mut version = POETRY_VERSION.to_string();
+
+            if app.includes_file(".tool-versions") {
+                let file_content = &app.read_file(".tool-versions")?;
+
+                if let Some(poetry_version) =
+                    PythonProvider::parse_tool_versions_poetry_version(file_content)?
+                {
+                    println!("Using poetry version from .tool-versions: {poetry_version}");
+                    version = poetry_version;
+                }
+            }
+
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),
-                POETRY_VERSION.to_string(),
+                version,
             )]));
         }
-
         if app.includes_file("pdm.lock") {
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_PDM_VERSION".to_string(),
@@ -302,6 +315,32 @@ impl PythonProvider {
             .map(|m| m.get(2).unwrap().as_str().to_string()))
     }
 
+    fn parse_tool_versions_python_version(file_content: &str) -> Result<Option<String>> {
+        let asdf_versions = parse_tool_versions_content(file_content);
+
+        // the python version can only specify a major.minor version right now, and not a patch version
+        // however, in asdf a patch version is specified, so we need to strip it
+        Ok(asdf_versions.get("python").map(|s| {
+            let parts: Vec<&str> = s.split('.').collect();
+
+            if parts.len() == 3 {
+                // this is the expected result, but will be unexpected to users
+                println!("Patch version detected in .tool-versions, but not supported in nixpkgs.");
+            } else if parts.len() == 2 {
+                println!("Expected a version string in the format x.y.z from .tool-versions");
+            } else {
+                println!("Could not find a version string in the format x.y.z or x.y from .tool-versions");
+            }
+
+            format!("{}.{}", parts[0], parts[1])
+        }))
+    }
+
+    fn parse_tool_versions_poetry_version(file_content: &str) -> Result<Option<String>> {
+        let asdf_versions = parse_tool_versions_content(file_content);
+        Ok(asdf_versions.get("poetry").cloned())
+    }
+
     fn default_python_environment_variables() -> EnvironmentVariables {
         let python_variables = vec![
             ("PYTHONFAULTHANDLER", "1"),
@@ -342,6 +381,9 @@ impl PythonProvider {
         } else if app.includes_file("Pipfile") {
             let file_content = &app.read_file("Pipfile")?;
             custom_version = PythonProvider::parse_pipfile_python_version(file_content)?;
+        } else if app.includes_file(".tool-versions") {
+            let file_content = &app.read_file(".tool-versions")?;
+            custom_version = PythonProvider::parse_tool_versions_python_version(file_content)?;
         }
 
         // If it's still none, return default

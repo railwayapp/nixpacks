@@ -1,0 +1,52 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "python,poetry",
+    "NIXPACKS_POETRY_VERSION": "1.8.2",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PIP_NO_CACHE_DIR": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "phases": {
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "python -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip install poetry==$NIXPACKS_POETRY_VERSION && poetry install --no-dev --no-interaction --no-ansi"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/pip"
+      ],
+      "paths": [
+        "/opt/venv/bin"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "python312",
+        "gcc"
+      ],
+      "nixLibs": [
+        "zlib",
+        "stdenv.cc.cc.lib"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "python main.py"
+  }
+}
