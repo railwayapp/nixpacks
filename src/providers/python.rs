@@ -19,12 +19,15 @@ use std::{collections::HashMap, fs};
 
 use super::{Provider, ProviderMetadata};
 
-const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
+const DEFAULT_PYTHON_PKG_NAME: &str = "python3";
 const POETRY_VERSION: &str = "1.3.1";
-const PDM_VERSION: &str = "2.7.4";
+const PDM_VERSION: &str = "2.13.3";
 const PIP_CACHE_DIR: &str = "/root/.cache/pip";
 const PDM_CACHE_DIR: &str = "/root/.cache/pdm";
-const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python310";
+const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python3";
+
+const PYTHON_NIXPKGS_ARCHIVE: &str = "bf446f08bff6814b569265bef8374cfdd3d8f0e0";
+const LEGACY_PYTHON_NIXPKGS_ARCHIVE: &str = "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db";
 
 pub struct PythonProvider {}
 
@@ -131,7 +134,7 @@ enum EntryPoint {
 impl PythonProvider {
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
         let mut pkgs: Vec<Pkg> = vec![];
-        let python_base_package = PythonProvider::get_nix_python_package(app, env)?;
+        let (python_base_package, nix_archive) = PythonProvider::get_nix_python_package(app, env)?;
 
         pkgs.append(&mut vec![python_base_package]);
 
@@ -150,17 +153,11 @@ impl PythonProvider {
         }
 
         let mut setup = Phase::setup(Some(pkgs));
+        setup.set_nix_archive(nix_archive);
 
         // Many Python packages need some C headers to be available
-        //
-        //   - https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
-        //   - https://github.com/mcdonc/.nixconfig/blob/e7885ad18b7980f221e59a21c91b8eb02795b541/videos/pydev/script.rst
-        //
-        // Some packages (like stdenv.cc.cc.lib) may conflict with other system commands and cause libc version conflicts
-        // since LD_LIBRARY_PATH is mutated by `add_pkgs_libs`
-        //
-
-        setup.add_pkgs_libs(vec!["zlib".to_string()]);
+        // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
+        setup.add_pkgs_libs(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
         setup.add_nix_pkgs(&[Pkg::new("gcc")]);
 
         Ok(Some(setup))
@@ -364,7 +361,7 @@ impl PythonProvider {
         env_vars
     }
 
-    fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
+    fn get_nix_python_package(app: &App, env: &Environment) -> Result<(Pkg, String)> {
         // Fetch python versions into tuples with defaults
         fn as_default(v: Option<Match>) -> &str {
             match v {
@@ -392,9 +389,15 @@ impl PythonProvider {
         // If it's still none, return default
         if custom_version.is_none() {
             if app.includes_file("poetry.lock") {
-                return Ok(Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME));
+                return Ok((
+                    Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME),
+                    PYTHON_NIXPKGS_ARCHIVE.into(),
+                ));
             }
-            return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
+            return Ok((
+                Pkg::new(DEFAULT_PYTHON_PKG_NAME),
+                PYTHON_NIXPKGS_ARCHIVE.into(),
+            ));
         }
         let custom_version = custom_version.unwrap();
 
@@ -408,26 +411,39 @@ impl PythonProvider {
         // If no matches, just use default
         if matches.is_none() {
             if app.includes_file("poetry.lock") {
-                return Ok(Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME));
+                return Ok((
+                    Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME),
+                    PYTHON_NIXPKGS_ARCHIVE.into(),
+                ));
             }
-            return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
+            return Ok((
+                Pkg::new(DEFAULT_PYTHON_PKG_NAME),
+                PYTHON_NIXPKGS_ARCHIVE.into(),
+            ));
         }
         let matches = matches.unwrap();
         let python_version = (as_default(matches.get(1)), as_default(matches.get(2)));
 
         // Match major and minor versions
         match python_version {
-            ("3", "11") => Ok(Pkg::new("python311")),
-            ("3", "10") => Ok(Pkg::new("python310")),
-            ("3", "9") => Ok(Pkg::new("python39")),
-            ("3", "8") => Ok(Pkg::new("python38")),
-            ("3", "7") => Ok(Pkg::new("python37")),
-            ("2", "7" | "_") => Ok(Pkg::new("python27")),
+            ("3", "12") => Ok((Pkg::new("python312"), PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "11") => Ok((Pkg::new("python311"), PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "10") => Ok((Pkg::new("python310"), PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "9") => Ok((Pkg::new("python39"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "8") => Ok((Pkg::new("python38"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "7") => Ok((Pkg::new("python37"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("2", "7" | "_") => Ok((Pkg::new("python27"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())),
             _ => {
                 if app.includes_file("poetry.lock") {
-                    return Ok(Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME));
+                    return Ok((
+                        Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME),
+                        PYTHON_NIXPKGS_ARCHIVE.into(),
+                    ));
                 }
-                Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME))
+                Ok((
+                    Pkg::new(DEFAULT_PYTHON_PKG_NAME),
+                    PYTHON_NIXPKGS_ARCHIVE.into(),
+                ))
             }
         }
     }
@@ -508,7 +524,10 @@ mod test {
                 &App::new("./examples/python")?,
                 &Environment::default()
             )?,
-            Pkg::new(DEFAULT_PYTHON_PKG_NAME)
+            (
+                Pkg::new(DEFAULT_PYTHON_PKG_NAME),
+                PYTHON_NIXPKGS_ARCHIVE.into()
+            )
         );
 
         Ok(())
@@ -516,20 +535,20 @@ mod test {
 
     #[test]
     fn test_pipfile_python_version() -> Result<()> {
-        let file_content = "\npython_version = '3.11'\n";
+        let file_content = "\npython_version = '3.12'\n";
         let custom_version = PythonProvider::parse_pipfile_python_version(file_content)?.unwrap();
 
-        assert_eq!(custom_version, "3.11");
+        assert_eq!(custom_version, "3.12");
 
         Ok(())
     }
 
     #[test]
     fn test_pipfile_python_full_version() -> Result<()> {
-        let file_content = "\npython_full_version = '3.11.0'\n";
+        let file_content = "\npython_full_version = '3.12.0'\n";
         let custom_version = PythonProvider::parse_pipfile_python_version(file_content)?.unwrap();
 
-        assert_eq!(custom_version, "3.11.0");
+        assert_eq!(custom_version, "3.12.0");
 
         Ok(())
     }
@@ -541,7 +560,7 @@ mod test {
                 &App::new("./examples/python-2")?,
                 &Environment::default()
             )?,
-            Pkg::new("python27")
+            (Pkg::new("python27"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())
         );
 
         Ok(())
@@ -554,7 +573,7 @@ mod test {
                 &App::new("./examples/python-2-runtime")?,
                 &Environment::default()
             )?,
-            Pkg::new("python27")
+            (Pkg::new("python27"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())
         );
 
         Ok(())
@@ -570,7 +589,7 @@ mod test {
                     "2.7".to_string()
                 )]))
             )?,
-            Pkg::new("python27")
+            (Pkg::new("python27"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())
         );
 
         Ok(())
