@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Beta Issues
+    url: https://github.com/payloadcms/payload/issues/new/choose
+    about: Any issues should be opened on the main repository

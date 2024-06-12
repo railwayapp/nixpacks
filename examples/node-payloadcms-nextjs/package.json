@@ -1,0 +1,56 @@
+{
+  "name": "next-latest-starter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "devturbo": "cross-env NODE_OPTIONS=--no-deprecation next dev --turbo",
+    "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "builds": "cross-env NODE_OPTIONS=--no-deprecation next build",
+    "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
+    "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
+    "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
+    "build": "payload migrate && pnpm build",
+    "create-migration": "payload migrate:create",
+    "generate:types": "payload generate:types",
+    "standalone-script": "node ./src/scripts/standalone-script.js"
+  },
+  "engines": {
+    "node": "^18.20.2 || >=20.9.0"
+  },
+  "dependencies": {
+    "@payloadcms/db-mongodb": "3.0.0-beta.43",
+    "@payloadcms/db-postgres": "3.0.0-beta.43",
+    "@payloadcms/next": "3.0.0-beta.43",
+    "@payloadcms/richtext-lexical": "3.0.0-beta.43",
+    "@payloadcms/richtext-slate": "3.0.0-beta.43",
+    "@payloadcms/ui": "3.0.0-beta.43",
+    "cross-env": "^7.0.3",
+    "graphql": "^16.8.1",
+    "next": "15.0.0-rc.0",
+    "payload": "3.0.0-beta.43",
+    "react": "19.0.0-rc-f994737d14-20240522",
+    "react-dom": "19.0.0-rc-f994737d14-20240522",
+    "sharp": "0.32.6",
+    "babel-plugin-react-compiler": "^0.0.0-experimental-592953e-20240517"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/react": "npm:types-react@19.0.0-beta.2",
+    "@types/react-dom": "npm:types-react-dom@19.0.0-beta.2",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.3",
+    "typescript": "^5.4.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "npm:types-react@19.0.0-beta.2",
+      "@types/react-dom": "npm:types-react-dom@19.0.0-beta.2"
+    }
+  },
+  "overrides": {
+    "@types/react": "npm:types-react@19.0.0-beta.2",
+    "@types/react-dom": "npm:types-react-dom@19.0.0-beta.2"
+  }
+}
