@@ -125,6 +125,25 @@ async fn simple_build(path: &str) -> String {
     name
 }
 
+async fn simple_build_with_docker_network(path: &str, docker_network: String, envs: Vec<&str>) -> String {
+    let name = Uuid::new_v4().to_string();
+    create_docker_image(
+        path,
+        envs,
+        &GeneratePlanOptions::default(),
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            docker_network: Some(docker_network),
+            ..Default::default()
+        },
+    )
+        .await
+        .unwrap();
+
+    name
+}
+
 async fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
     let name = Uuid::new_v4().to_string();
     create_docker_image(
@@ -693,6 +712,29 @@ async fn test_python_2() {
 }
 
 #[tokio::test]
+async fn test_payload() {
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    let c = run_postgres();
+    let container_name = c.name.clone();
+
+    let config = c.config.unwrap().environment_variables;
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    let database_dsn = config.get("DATABASE_URL").unwrap().clone();
+    let postgres_uri = format!("POSTGRES_URI={}", database_dsn);
+    let payload_secret = "PAYLOAD_SECRET=jawliejfilwajefSEANlawefawfewag349jwgo3gj4w".to_string();
+
+    let envs = vec![&postgres_uri[..], &payload_secret[..]];
+
+    // Build the PayloadCMS example
+    let name = simple_build_with_docker_network("./examples/node-payloadcms-nextjs", network_name, envs).await;
+}
+
+#[tokio::test]
 async fn test_django() {
     // Create the network
     let n = create_network();
@@ -705,6 +747,10 @@ async fn test_django() {
     // Attach the postgres instance to the network
     attach_container_to_network(n.name, container_name.clone());
 
+    let config = c.config.unwrap().environment_variables;
+
+    let variable = config.get("DATABASE_URL").unwrap().clone();
+
     // Build the Django example
     let name = simple_build("./examples/python-django").await;
 
@@ -712,7 +758,7 @@ async fn test_django() {
     let output = run_image(
         &name,
         Some(Config {
-            environment_variables: c.config.unwrap().environment_variables,
+            environment_variables: config,
             network: Some(network_name.clone()),
         }),
     )
@@ -721,6 +767,9 @@ async fn test_django() {
     // Cleanup containers and networks
     stop_and_remove_container(container_name);
     remove_network(network_name);
+
+    // output output to stdout
+    println!("OUTPUT = {output}");
 
     assert!(output.contains("Running migrations"));
 }

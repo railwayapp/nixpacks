@@ -39,6 +39,7 @@ nixpacks build --help
 | `--cache-key <key>`         | Unique identifier to use for the build cache                                                                                                            |
 | `--no-cache`                | Disable caching for the build                                                                                                                           |
 | `--docker-host`             | Specify host for Docker client                                                                                                                          |
+| `--docker-network`          | Specify the Docker network for building the Docker image                                                                                                |
 | `--docker-tls-verify`       | Specify if Docker client should verify the TLS (Transport Layer Security) certificates of the Docker daemon when communicating over a secure connection |
 | `--cache-from`              | Image to consider as cache sources                                                                                                                      |
 | `--inline-cache`            | Enable writing cache metadata into the output image                                                                                                     |

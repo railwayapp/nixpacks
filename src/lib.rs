@@ -22,6 +22,7 @@ use crate::nixpacks::{
     app::App,
     builder::{
         docker::{docker_image_builder::DockerImageBuilder, DockerBuilderOptions},
+        docker::{docker_buildx_builder::DockerBuildxBuilder},
         ImageBuilder,
     },
     environment::Environment,
@@ -115,6 +116,15 @@ pub async fn create_docker_image(
     let app = App::new(path)?;
     let environment = Environment::from_envs(envs)?;
     let orig_path = app.source.clone();
+
+    // If docker network is provided, check as soon as possible if we're able to use the network
+    if build_options.docker_network.is_some() {
+        let buildx_builder = DockerBuildxBuilder::default();
+        let network_exists = buildx_builder.check_if_network_exists(build_options.docker_network.as_ref().unwrap());
+        if network_exists.is_err() {
+            bail!("Provided docker network possibly does not exist. Provide a network that exist prior to building");
+        }
+    }
 
     let mut generator = NixpacksBuildPlanGenerator::new(get_providers(), plan_options.clone());
     let (plan, app) = generator.generate_plan(&app, &environment)?;

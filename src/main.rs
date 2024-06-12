@@ -4,6 +4,7 @@ use nixpacks::{
     create_docker_image, generate_build_plan, get_plan_providers,
     nixpacks::{
         builder::docker::DockerBuilderOptions,
+        builder::docker::docker_buildx_builder::DockerBuildxBuilder,
         nix::pkg::Pkg,
         plan::{
             generator::GeneratePlanOptions,
@@ -145,6 +146,10 @@ enum Commands {
         #[arg(long)]
         docker_host: Option<String>,
 
+        /// Specify Docker network to run the build on
+        #[arg(long)]
+        docker_network: Option<String>,
+
         /// Specify if Docker client should verify the TLS (Transport Layer Security) certificates
         #[arg(long)]
         docker_tls_verify: Option<String>,
@@ -254,6 +259,7 @@ async fn main() -> Result<()> {
             incremental_cache_image,
             cache_from,
             docker_host,
+            docker_network,
             docker_tls_verify,
             inline_cache,
             no_error_without_start,
@@ -284,6 +290,7 @@ async fn main() -> Result<()> {
                 inline_cache,
                 cache_from,
                 docker_host,
+                docker_network,
                 docker_tls_verify,
                 no_error_without_start,
                 incremental_cache_image,

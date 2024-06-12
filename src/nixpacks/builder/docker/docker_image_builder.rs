@@ -38,6 +38,7 @@ fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<Outpu
 }
 
 use async_trait::async_trait;
+use crate::nixpacks::builder::docker::docker_buildx_builder_manager::DockerBuildxBuilderManager;
 
 #[async_trait]
 impl ImageBuilder for DockerImageBuilder {
@@ -131,6 +132,17 @@ impl DockerImageBuilder {
 
         // Enable BuildKit for all builds
         docker_build_cmd.env("DOCKER_BUILDKIT", "1");
+
+        if self.options.docker_network.is_some() {
+            let network_name = self.options.docker_network.clone().unwrap();
+
+            let manager = DockerBuildxBuilderManager::create_manager_for_network(network_name.clone());
+
+            let network_exists = manager.validate_network_exists();
+            if network_exists.is_err() {
+                bail!("Docker network seems not to exists. Docker network needs to exist prior to running nixpacks.")
+            }
+        }
 
         docker_build_cmd
             .arg("build")

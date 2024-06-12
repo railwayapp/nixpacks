@@ -22,6 +22,7 @@ pub struct DockerBuilderOptions {
     pub memory: Option<String>,
     pub verbose: bool,
     pub docker_host: Option<String>,
+    pub docker_network: Option<String>,
     pub docker_tls_verify: Option<String>,
 }
 
@@ -30,4 +31,6 @@ pub mod docker_image_builder;
 mod dockerfile_generation;
 pub mod file_server;
 pub mod incremental_cache;
+pub mod docker_buildx_builder;
+pub mod docker_buildx_builder_manager;
 pub mod utils;
