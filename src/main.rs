@@ -145,6 +145,10 @@ enum Commands {
         #[arg(long)]
         docker_host: Option<String>,
 
+        /// Adds hosts to the Docker build
+        #[arg(long, short, global = true)]
+        add_hosts: Vec<String>,
+
         /// Specify if Docker client should verify the TLS (Transport Layer Security) certificates
         #[arg(long)]
         docker_tls_verify: Option<String>,
@@ -255,6 +259,7 @@ async fn main() -> Result<()> {
             cache_from,
             docker_host,
             docker_tls_verify,
+            add_hosts,
             inline_cache,
             no_error_without_start,
             cpu_quota,
@@ -288,6 +293,7 @@ async fn main() -> Result<()> {
                 no_error_without_start,
                 incremental_cache_image,
                 cpu_quota,
+                add_hosts,
                 memory,
                 verbose,
             };

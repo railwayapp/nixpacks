@@ -14,6 +14,7 @@ use wait_timeout::ChildExt;
 
 use rand::thread_rng;
 use rand::{distributions::Alphanumeric, Rng};
+use test_helper::{fetch_docker_containers_in_network};
 
 async fn get_container_ids_from_image(image: &str) -> String {
     let output = Command::new("docker")
@@ -145,6 +146,7 @@ async fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> Stri
 
 const POSTGRES_IMAGE: &str = "postgres";
 const MYSQL_IMAGE: &str = "mysql";
+const NGINX_IMAGE: &str = "nginx";
 
 struct Network {
     name: String,
@@ -322,6 +324,41 @@ fn run_mysql() -> Container {
     }
 }
 
+fn run_nginx() -> Container {
+    let mut docker_cmd = Command::new("docker");
+
+    let hash = Uuid::new_v4().to_string();
+    let container_name = format!("nginx-{hash}");
+
+    // run
+    docker_cmd.arg("run");
+
+    // Run detached
+    docker_cmd.arg("-d");
+
+    // attach name
+    docker_cmd.arg("--name").arg(container_name.clone());
+
+    // Assign image
+    docker_cmd.arg(NGINX_IMAGE);
+
+    // Run the command
+    docker_cmd
+        .spawn()
+        .unwrap()
+        .wait()
+        .context("Building nginx")
+        .unwrap();
+
+    Container {
+        name: container_name.clone(),
+        config: Some(Config {
+            environment_variables: EnvironmentVariables::from([]),
+            network: None,
+        }),
+    }
+}
+
 #[tokio::test]
 async fn test_deno() {
     let name = simple_build("./examples/deno").await;
@@ -475,6 +512,42 @@ async fn test_node_moon_custom_start() {
     assert!(run_image(&name, None)
         .await
         .contains("ready - started server on 0.0.0.0:3000"));
+}
+
+
+#[tokio::test]
+async fn test_pnpm_network_call() {
+    // Create the network
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    // Create the nginx instance
+    let c = run_nginx();
+    let container_name = c.name.clone();
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    let containers = fetch_docker_containers_in_network!(&network_name).await;
+
+    // Build the basic example, a function that calls the database
+    let name = simple_build("./examples/node-prisma-postgres").await;
+
+    // Run the example on the attached network
+    let output = run_image(
+        &name,
+        Some(Config {
+            environment_variables: c.config.unwrap().environment_variables,
+            network: Some(network_name.clone()),
+        }),
+    )
+        .await;
+
+    // Cleanup containers and networks
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
+
+    assert!(output.contains("My post content"));
 }
 
 #[tokio::test]
