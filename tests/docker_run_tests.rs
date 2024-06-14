@@ -3,6 +3,7 @@ use nixpacks::{
     create_docker_image,
     nixpacks::{
         builder::docker::DockerBuilderOptions, environment::EnvironmentVariables,
+        builder::docker::docker_helper::DockerHelper,
         plan::generator::GeneratePlanOptions,
     },
 };
@@ -10,10 +11,12 @@ use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 use std::time::Duration;
 use uuid::Uuid;
+use std::str;
 use wait_timeout::ChildExt;
 
 use rand::thread_rng;
 use rand::{distributions::Alphanumeric, Rng};
+
 
 async fn get_container_ids_from_image(image: &str) -> String {
     let output = Command::new("docker")
@@ -105,6 +108,48 @@ async fn run_image(name: &str, cfg: Option<Config>) -> String {
         .join("\n")
 }
 
+async fn build_with_hosts(path: &str, add_hosts: &Vec<String>, nginx_host: String) -> String {
+    let name = Uuid::new_v4().to_string();
+    let mut env: Vec<&str> = Vec::new();
+    let env_var = format!("REMOTE_URL=http://{}", nginx_host);
+    env.push(&*env_var);
+
+    create_docker_image(
+        path,
+        env,
+        &GeneratePlanOptions::default(),
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            add_host: add_hosts.clone(),
+
+            ..Default::default()
+        },
+    )
+        .await
+        .unwrap();
+
+    name
+}
+
+async fn build_with_env(path: &str, env: Vec<&str>) -> anyhow::Result<()> {
+    let name = Uuid::new_v4().to_string();
+
+    let result = create_docker_image(
+        path,
+        env,
+        &GeneratePlanOptions::default(),
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+        .await;
+
+    return result;
+}
+
 /// Builds a directory with default options
 /// Returns the randomly generated image name
 async fn simple_build(path: &str) -> String {
@@ -145,6 +190,7 @@ async fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> Stri
 
 const POSTGRES_IMAGE: &str = "postgres";
 const MYSQL_IMAGE: &str = "mysql";
+const NGINX_IMAGE: &str = "nginx";
 
 struct Network {
     name: String,
@@ -322,6 +368,41 @@ fn run_mysql() -> Container {
     }
 }
 
+fn run_nginx() -> Container {
+    let mut docker_cmd = Command::new("docker");
+
+    let hash = Uuid::new_v4().to_string();
+    let container_name = format!("nginx-{hash}");
+
+    // run
+    docker_cmd.arg("run");
+
+    // Run detached
+    docker_cmd.arg("-d");
+
+    // attach name
+    docker_cmd.arg("--name").arg(container_name.clone());
+
+    // Assign image
+    docker_cmd.arg(NGINX_IMAGE);
+
+    // Run the command
+    docker_cmd
+        .spawn()
+        .unwrap()
+        .wait()
+        .context("Building nginx")
+        .unwrap();
+
+    Container {
+        name: container_name.clone(),
+        config: Some(Config {
+            environment_variables: EnvironmentVariables::from([]),
+            network: None,
+        }),
+    }
+}
+
 #[tokio::test]
 async fn test_deno() {
     let name = simple_build("./examples/deno").await;
@@ -475,6 +556,94 @@ async fn test_node_moon_custom_start() {
     assert!(run_image(&name, None)
         .await
         .contains("ready - started server on 0.0.0.0:3000"));
+}
+
+
+#[tokio::test]
+async fn test_pnpm_network_call_working_with_add_hosts() {
+    // Create the network
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    // Create the nginx instance
+    let c = run_nginx();
+    let container_name = c.name.clone();
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    let containers = DockerHelper::containers_in_network(&network_name);
+
+    if containers.is_err() {
+        panic!("Failed to fetch containers in network");
+    }
+
+
+    let mut vec_hosts = Vec::new();
+
+    for (_,containerinfo) in containers.unwrap() {
+        let add_host = format!("{}:{}", containerinfo.name, containerinfo.ipv4_address_without_mask);
+        vec_hosts.push(add_host);
+    }
+
+
+    // Build the basic example, a function that calls the database
+    let name = build_with_hosts("./examples/node-fetch-network", &vec_hosts, container_name.clone()).await;
+
+    // Run the example on the attached network
+    let output = run_image(
+        &name,
+        Some(Config {
+            environment_variables: c.config.unwrap().environment_variables,
+            network: Some(network_name.clone()),
+        }),
+    )
+        .await;
+
+    // Cleanup containers and networks
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
+
+    assert!(output.contains("Fetched data: OK"));
+}
+
+#[tokio::test]
+async fn test_pnpm_network_call_should_not_work_without_hosts() {
+    // Create the network
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    // Create the nginx instance
+    let c = run_nginx();
+    let container_name = c.name.clone();
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    let containers = DockerHelper::containers_in_network(&network_name);
+
+    if containers.is_err() {
+        panic!("Failed to fetch containers in network");
+    }
+
+    let mut vec_hosts = Vec::new();
+
+    for (_, container_info) in containers.unwrap() {
+        let add_host = format!("{}:{}", container_info.name, container_info.ipv4_address_without_mask);
+        vec_hosts.push(add_host);
+    }
+
+    let mut env: Vec<&str> = Vec::new();
+    let env_var = format!("REMOTE_URL=http://{}", container_name);
+    env.push(&*env_var);
+
+    // Build the basic example, a function that calls the database
+    let build_result = build_with_env("./examples/node-fetch-network", env).await;
+
+    assert!(build_result.is_err());
+
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
 }
 
 #[tokio::test]

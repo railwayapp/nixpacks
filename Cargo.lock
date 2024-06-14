@@ -1626,6 +1626,10 @@ dependencies = [
  "globset",
  "proc-macro2",
  "quote",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "serde_yaml",
  "walkdir",
 ]
 
