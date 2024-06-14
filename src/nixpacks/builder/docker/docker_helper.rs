@@ -6,20 +6,16 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ContainerInfoFromDocker {
-    Name: String,
-    EndpointID: String,
-    MacAddress: String,
-    IPv4Address: String,
-    IPv6Address: String,
+    #[serde(rename = "Name")]
+    name: String,
+    #[serde(rename = "IPv4Address")]
+    ipv4_address: String,
 }
 
 pub struct ContainerInfo {
-    pub Name: String,
-    pub EndpointID: String,
-    pub MacAddress: String,
-    pub IPv4Address: String,
-    pub IPv6Address: String,
-    pub IPv4WithoutMask: String,
+    pub name: String,
+    pub ipv4_address: String,
+    pub ipv4_address_without_mask: String,
 }
 
 type Containers = HashMap<String, ContainerInfo>;
@@ -44,20 +40,17 @@ impl DockerHelper {
             let containers: HashMap<String, ContainerInfoFromDocker> = serde_json::from_str(containers_string)?;
 
             let mut vec = Vec::new();
-            for (name, info) in containers.iter() {
-                let ipv4 = info.IPv4Address.split('/').next().unwrap();
+            for (_, info) in containers.iter() {
+                let ipv4 = info.ipv4_address.split('/').next().unwrap();
                 let container_info = ContainerInfo {
-                    Name: info.Name.clone(),
-                    EndpointID: info.EndpointID.clone(),
-                    MacAddress: info.MacAddress.clone(),
-                    IPv4Address: info.IPv4Address.clone(),
-                    IPv6Address: info.IPv6Address.clone(),
-                    IPv4WithoutMask: ipv4.to_string(),
+                    name: info.name.clone(),
+                    ipv4_address: info.ipv4_address.clone(),
+                    ipv4_address_without_mask: ipv4.to_string(),
                 };
                 vec.push(container_info);
             }
 
-            return  Ok(vec.into_iter().map(|info| (info.Name.clone(), info)).collect());
+            return  Ok(vec.into_iter().map(|info| (info.name.clone(), info)).collect());
         }
         let err = str::from_utf8(&output.stderr)?;
         eprintln!("Docker command failed: {}", err);

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use anyhow::Context;
 use nixpacks::{
     create_docker_image,
@@ -15,23 +14,8 @@ use uuid::Uuid;
 use std::str;
 use wait_timeout::ChildExt;
 
-
-
 use rand::thread_rng;
-use serde::{Deserialize, Serialize};
-
 use rand::{distributions::Alphanumeric, Rng};
-
-
-
-#[derive(Deserialize, Debug)]
-struct NetworkInfo {
-    Name: String,
-    EndpointID: String,
-    MacAddress: String,
-    IPv4Address: String,
-    IPv6Address: String,
-}
 
 
 async fn get_container_ids_from_image(image: &str) -> String {
@@ -597,8 +581,8 @@ async fn test_pnpm_network_call_working_with_add_hosts() {
 
     let mut vec_hosts = Vec::new();
 
-    for (container,containerinfo) in containers.unwrap() {
-        let add_host = format!("{}:{}", containerinfo.Name, containerinfo.IPv4WithoutMask);
+    for (_,containerinfo) in containers.unwrap() {
+        let add_host = format!("{}:{}", containerinfo.name, containerinfo.ipv4_address_without_mask);
         vec_hosts.push(add_host);
     }
 
@@ -644,8 +628,8 @@ async fn test_pnpm_network_call_should_not_work_without_hosts() {
 
     let mut vec_hosts = Vec::new();
 
-    for (container,containerinfo) in containers.unwrap() {
-        let add_host = format!("{}:{}", containerinfo.Name, containerinfo.IPv4WithoutMask);
+    for (_, container_info) in containers.unwrap() {
+        let add_host = format!("{}:{}", container_info.name, container_info.ipv4_address_without_mask);
         vec_hosts.push(add_host);
     }
 

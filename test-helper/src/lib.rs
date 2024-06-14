@@ -1,9 +1,6 @@
 use proc_macro::TokenStream;
-use std::collections::HashMap;
-use std::process::Command;
 use quote::{format_ident, quote};
 use walkdir::{DirEntry, WalkDir};
-use serde::{Deserialize, Serialize};
 
 
 const IGNORE: &[&str] = &[
