@@ -259,7 +259,7 @@ async fn main() -> Result<()> {
             cache_from,
             docker_host,
             docker_tls_verify,
-            add_host: add_hosts,
+            add_host,
             inline_cache,
             no_error_without_start,
             cpu_quota,
@@ -293,7 +293,7 @@ async fn main() -> Result<()> {
                 no_error_without_start,
                 incremental_cache_image,
                 cpu_quota,
-                add_host: add_hosts,
+                add_host,
                 memory,
                 verbose,
             };
