@@ -641,6 +641,9 @@ async fn test_pnpm_network_call_should_not_work_without_hosts() {
     let build_result = build_with_env("./examples/node-fetch-network", env).await;
 
     assert!(build_result.is_err());
+
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
 }
 
 #[tokio::test]
