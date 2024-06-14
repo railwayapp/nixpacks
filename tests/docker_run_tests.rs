@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use anyhow::Context;
 use nixpacks::{
     create_docker_image,
     nixpacks::{
         builder::docker::DockerBuilderOptions, environment::EnvironmentVariables,
+        builder::docker::docker_helper::DockerHelper,
         plan::generator::GeneratePlanOptions,
     },
 };
@@ -10,11 +12,25 @@ use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 use std::time::Duration;
 use uuid::Uuid;
+use std::str;
 use wait_timeout::ChildExt;
 
 use rand::thread_rng;
+use serde::{Deserialize, Serialize};
+
 use rand::{distributions::Alphanumeric, Rng};
-use test_helper::{fetch_docker_containers_in_network};
+
+
+
+#[derive(Deserialize, Debug)]
+struct NetworkInfo {
+    Name: String,
+    EndpointID: String,
+    MacAddress: String,
+    IPv4Address: String,
+    IPv6Address: String,
+}
+
 
 async fn get_container_ids_from_image(image: &str) -> String {
     let output = Command::new("docker")
@@ -104,6 +120,30 @@ async fn run_image(name: &str, cfg: Option<Config>) -> String {
         .map(|line| line.unwrap())
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+async fn build_with_hosts(path: &str, add_hosts: &Vec<String>, nginx_host: String) -> String {
+    let name = Uuid::new_v4().to_string();
+    let mut env: Vec<&str> = Vec::new();
+    let env_var = format!("REMOTE_URL=http://{}", nginx_host);
+    env.push(&*env_var);
+
+    create_docker_image(
+        path,
+        env,
+        &GeneratePlanOptions::default(),
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            add_hosts: add_hosts.clone(),
+
+            ..Default::default()
+        },
+    )
+        .await
+        .unwrap();
+
+    name
 }
 
 /// Builds a directory with default options
@@ -516,7 +556,7 @@ async fn test_node_moon_custom_start() {
 
 
 #[tokio::test]
-async fn test_pnpm_network_call() {
+async fn test_pnpm_network_call_working_with_add_hosts() {
     // Create the network
     let n = create_network();
     let network_name = n.name.clone();
@@ -528,10 +568,23 @@ async fn test_pnpm_network_call() {
     // Attach the postgres instance to the network
     attach_container_to_network(n.name, container_name.clone());
 
-    let containers = fetch_docker_containers_in_network!(&network_name).await;
+    let containers = DockerHelper::containers_in_network(&network_name);
+
+    if containers.is_err() {
+        panic!("Failed to fetch containers in network");
+    }
+
+
+    let mut vec_hosts = Vec::new();
+
+    for (container,containerinfo) in containers.unwrap() {
+        let add_host = format!("{}:{}", containerinfo.Name, containerinfo.IPv4WithoutMask);
+        vec_hosts.push(add_host);
+    }
+
 
     // Build the basic example, a function that calls the database
-    let name = simple_build("./examples/node-prisma-postgres").await;
+    let name = build_with_hosts("./examples/node-fetch-network", &vec_hosts, container_name.clone()).await;
 
     // Run the example on the attached network
     let output = run_image(
@@ -547,8 +600,10 @@ async fn test_pnpm_network_call() {
     stop_and_remove_container(container_name);
     remove_network(network_name);
 
-    assert!(output.contains("My post content"));
+    assert!(output.contains("Fetched data: OK"));
 }
+
+
 
 #[tokio::test]
 async fn test_prisma_postgres() {

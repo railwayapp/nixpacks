@@ -146,7 +146,7 @@ enum Commands {
         docker_host: Option<String>,
 
         /// Adds hosts to the Docker build
-        #[arg(long, short, global = true)]
+        #[arg(long, global = true)]
         add_hosts: Vec<String>,
 
         /// Specify if Docker client should verify the TLS (Transport Layer Security) certificates

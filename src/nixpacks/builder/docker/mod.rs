@@ -32,3 +32,4 @@ mod dockerfile_generation;
 pub mod file_server;
 pub mod incremental_cache;
 pub mod utils;
+pub mod docker_helper;

@@ -1,5 +1,3 @@
-mod docker_helper;
-
 use proc_macro::TokenStream;
 use std::collections::HashMap;
 use std::process::Command;
@@ -41,6 +39,7 @@ fn get_examples() -> Vec<String> {
         .collect()
 }
 
+#[proc_macro]
 pub fn generate_plan_tests(_tokens: TokenStream) -> TokenStream {
     let mut examples = get_examples();
     let mut tests = Vec::with_capacity(examples.len());
