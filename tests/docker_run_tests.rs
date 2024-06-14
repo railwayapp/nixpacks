@@ -15,6 +15,8 @@ use uuid::Uuid;
 use std::str;
 use wait_timeout::ChildExt;
 
+
+
 use rand::thread_rng;
 use serde::{Deserialize, Serialize};
 
@@ -144,6 +146,24 @@ async fn build_with_hosts(path: &str, add_hosts: &Vec<String>, nginx_host: Strin
         .unwrap();
 
     name
+}
+
+async fn build_with_env(path: &str, env: Vec<&str>) -> anyhow::Result<()> {
+    let name = Uuid::new_v4().to_string();
+
+    let result = create_docker_image(
+        path,
+        env,
+        &GeneratePlanOptions::default(),
+        &DockerBuilderOptions {
+            name: Some(name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+        .await;
+
+    return result;
 }
 
 /// Builds a directory with default options
@@ -603,7 +623,41 @@ async fn test_pnpm_network_call_working_with_add_hosts() {
     assert!(output.contains("Fetched data: OK"));
 }
 
+#[tokio::test]
+async fn test_pnpm_network_call_should_not_work_without_hosts() {
+    // Create the network
+    let n = create_network();
+    let network_name = n.name.clone();
 
+    // Create the nginx instance
+    let c = run_nginx();
+    let container_name = c.name.clone();
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    let containers = DockerHelper::containers_in_network(&network_name);
+
+    if containers.is_err() {
+        panic!("Failed to fetch containers in network");
+    }
+
+    let mut vec_hosts = Vec::new();
+
+    for (container,containerinfo) in containers.unwrap() {
+        let add_host = format!("{}:{}", containerinfo.Name, containerinfo.IPv4WithoutMask);
+        vec_hosts.push(add_host);
+    }
+
+    let mut env: Vec<&str> = Vec::new();
+    let env_var = format!("REMOTE_URL=http://{}", container_name);
+    env.push(&*env_var);
+
+    // Build the basic example, a function that calls the database
+    let build_result = build_with_env("./examples/node-fetch-network", env).await;
+
+    assert!(build_result.is_err());
+}
 
 #[tokio::test]
 async fn test_prisma_postgres() {
