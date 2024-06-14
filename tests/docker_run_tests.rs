@@ -121,7 +121,7 @@ async fn build_with_hosts(path: &str, add_hosts: &Vec<String>, nginx_host: Strin
         &DockerBuilderOptions {
             name: Some(name.clone()),
             quiet: true,
-            add_hosts: add_hosts.clone(),
+            add_host: add_hosts.clone(),
 
             ..Default::default()
         },

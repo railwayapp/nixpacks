@@ -144,8 +144,8 @@ impl DockerImageBuilder {
             docker_build_cmd.arg("--progress=plain");
         }
 
-        if !self.options.add_hosts.is_empty() {
-            for host in &self.options.add_hosts {
+        if !self.options.add_host.is_empty() {
+            for host in &self.options.add_host {
                 docker_build_cmd.arg("--add-host").arg(host);
             }
         }

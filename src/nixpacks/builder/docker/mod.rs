@@ -23,7 +23,7 @@ pub struct DockerBuilderOptions {
     pub verbose: bool,
     pub docker_host: Option<String>,
     pub docker_tls_verify: Option<String>,
-    pub add_hosts: Vec<String>
+    pub add_host: Vec<String>
 }
 
 mod cache;
