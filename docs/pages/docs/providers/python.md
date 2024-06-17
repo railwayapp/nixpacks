@@ -15,12 +15,12 @@ Python is detected if any of the following files are found
 
 The following Python versions are available
 
-- `3.11`
-- `3.10`
-- `3.9`
-- `3.8` (Default)
-- `3.7`
 - `2.7`
+- `3.8`
+- `3.9`
+- `3.10`
+- `3.11` (Default)
+- `3.12`
 
 The version can be overridden by
 

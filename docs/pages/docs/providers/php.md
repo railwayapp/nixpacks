@@ -17,7 +17,6 @@ If a `NIXPACKS_PHP_FALLBACK_PATH` variable is passed, that will be used as a fal
 
 The following PHP versions are available
 
-- `8.0`
 - `8.1`
 - `8.2` (Default)
 - `8.3`
