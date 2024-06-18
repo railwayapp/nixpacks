@@ -44,6 +44,7 @@ export const sidebarItems: ISidebarSection[] = [
       { href: "/docs/providers/deno", text: "Deno" },
       { href: "/docs/providers/elixir", text: "Elixir" },
       { href: "/docs/providers/fsharp", text: "F#" },
+      { href: "/docs/providers/gleam", text: "Gleam" },
       { href: "/docs/providers/go", text: "Go" },
       { href: "/docs/providers/haskell", text: "Haskell" },
       { href: "/docs/providers/java", text: "Java" },
