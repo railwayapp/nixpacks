@@ -15,7 +15,7 @@ use wait_timeout::ChildExt;
 use rand::thread_rng;
 use rand::{distributions::Alphanumeric, Rng};
 
-async fn get_container_ids_from_image(image: &str) -> String {
+fn get_container_ids_from_image(image: &str) -> String {
     let output = Command::new("docker")
         .arg("ps")
         .arg("-a")
@@ -42,6 +42,7 @@ fn stop_containers(container_id: &str) {
 fn remove_containers(container_id: &str) {
     Command::new("docker")
         .arg("rm")
+        .arg("-v")
         .arg(container_id)
         .spawn()
         .unwrap()
@@ -50,11 +51,24 @@ fn remove_containers(container_id: &str) {
         .unwrap();
 }
 
-async fn stop_and_remove_container_by_image(image: &str) {
-    let container_ids = get_container_ids_from_image(image).await;
-    let container_id = container_ids.trim().split('\n').collect::<Vec<_>>()[0].to_string();
+fn remove_image(image_id: &str) {
+    Command::new("docker")
+        .arg("rmi")
+        .arg(image_id)
+        .spawn()
+        .unwrap()
+        .wait()
+        .context("Removing image")
+        .unwrap();
+}
 
-    stop_and_remove_container(container_id);
+fn stop_and_remove_container_by_image(image: &str) {
+    let container_ids = get_container_ids_from_image(image);
+    container_ids
+        .trim()
+        .split("\n")
+        .for_each(|container_id| stop_and_remove_container(container_id.to_string()));
+    remove_image(image);
 }
 
 fn stop_and_remove_container(name: String) {
@@ -67,6 +81,7 @@ struct Config {
     environment_variables: EnvironmentVariables,
     network: Option<String>,
 }
+
 /// Runs an image with Docker and returns the output
 /// The image is automatically stopped and removed after `TIMEOUT_SECONDS`
 async fn run_image(name: &str, cfg: Option<Config>) -> String {
@@ -90,9 +105,12 @@ async fn run_image(name: &str, cfg: Option<Config>) -> String {
     let secs = Duration::from_secs(20);
 
     let _status_code = match child.wait_timeout(secs).unwrap() {
-        Some(status) => status.code(),
+        Some(status) => {
+            stop_and_remove_container_by_image(name);
+            status.code()
+        }
         None => {
-            stop_and_remove_container_by_image(name).await;
+            stop_and_remove_container_by_image(name);
             child.wait().unwrap().code()
         }
     };
