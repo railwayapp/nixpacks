@@ -149,6 +149,10 @@ enum Commands {
         #[arg(long)]
         docker_tls_verify: Option<String>,
 
+        /// Specify the path to the Docker client certificates
+        #[arg(long)]
+        docker_cert_path: Option<String>,
+
         /// Enable writing cache metadata into the output image
         #[arg(long)]
         inline_cache: bool,
@@ -255,6 +259,7 @@ async fn main() -> Result<()> {
             cache_from,
             docker_host,
             docker_tls_verify,
+            docker_cert_path,
             inline_cache,
             no_error_without_start,
             cpu_quota,
@@ -285,6 +290,7 @@ async fn main() -> Result<()> {
                 cache_from,
                 docker_host,
                 docker_tls_verify,
+                docker_cert_path,
                 no_error_without_start,
                 incremental_cache_image,
                 cpu_quota,

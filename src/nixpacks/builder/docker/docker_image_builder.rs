@@ -168,6 +168,11 @@ impl DockerImageBuilder {
             }
         }
 
+        match &self.options.docker_cert_path {
+            Some(value) => env::set_var("DOCKER_CERT_PATH", value),
+            None => env::remove_var("DOCKER_CERT_PATH"),
+        }
+
         if self.options.inline_cache {
             docker_build_cmd
                 .arg("--build-arg")

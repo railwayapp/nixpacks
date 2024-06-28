@@ -23,6 +23,7 @@ pub struct DockerBuilderOptions {
     pub verbose: bool,
     pub docker_host: Option<String>,
     pub docker_tls_verify: Option<String>,
+    pub docker_cert_path: Option<String>,
 }
 
 mod cache;
