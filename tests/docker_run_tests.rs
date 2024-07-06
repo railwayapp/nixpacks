@@ -693,6 +693,15 @@ async fn test_python_2() {
 }
 
 #[tokio::test]
+async fn test_python_asdf_poetry() {
+    let name = simple_build("./examples/python-asdf-poetry").await;
+    let output = run_image(&name, None).await;
+
+    assert!(output.contains("3.12.3"), "{}", output);
+    assert!(output.contains("Poetry (version 1.8.2)"), "{}", output);
+}
+
+#[tokio::test]
 async fn test_django() {
     // Create the network
     let n = create_network();
