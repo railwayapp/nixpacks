@@ -2,21 +2,19 @@ use anyhow::Context;
 use nixpacks::{
     create_docker_image,
     nixpacks::{
-        builder::docker::DockerBuilderOptions, environment::EnvironmentVariables,
-        builder::docker::docker_helper::DockerHelper,
-        plan::generator::GeneratePlanOptions,
+        builder::docker::docker_helper::DockerHelper, builder::docker::DockerBuilderOptions,
+        environment::EnvironmentVariables, plan::generator::GeneratePlanOptions,
     },
 };
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
+use std::str;
 use std::time::Duration;
 use uuid::Uuid;
-use std::str;
 use wait_timeout::ChildExt;
 
 use rand::thread_rng;
 use rand::{distributions::Alphanumeric, Rng};
-
 
 async fn get_container_ids_from_image(image: &str) -> String {
     let output = Command::new("docker")
@@ -126,8 +124,8 @@ async fn build_with_hosts(path: &str, add_hosts: &Vec<String>, nginx_host: Strin
             ..Default::default()
         },
     )
-        .await
-        .unwrap();
+    .await
+    .unwrap();
 
     name
 }
@@ -145,7 +143,7 @@ async fn build_with_env(path: &str, env: Vec<&str>) -> anyhow::Result<()> {
             ..Default::default()
         },
     )
-        .await;
+    .await;
 
     return result;
 }
@@ -558,7 +556,6 @@ async fn test_node_moon_custom_start() {
         .contains("ready - started server on 0.0.0.0:3000"));
 }
 
-
 #[tokio::test]
 async fn test_pnpm_network_call_working_with_add_hosts() {
     // Create the network
@@ -578,17 +575,23 @@ async fn test_pnpm_network_call_working_with_add_hosts() {
         panic!("Failed to fetch containers in network");
     }
 
-
     let mut vec_hosts = Vec::new();
 
-    for (_,containerinfo) in containers.unwrap() {
-        let add_host = format!("{}:{}", containerinfo.name, containerinfo.ipv4_address_without_mask);
+    for (_, containerinfo) in containers.unwrap() {
+        let add_host = format!(
+            "{}:{}",
+            containerinfo.name, containerinfo.ipv4_address_without_mask
+        );
         vec_hosts.push(add_host);
     }
 
-
     // Build the basic example, a function that calls the database
-    let name = build_with_hosts("./examples/node-fetch-network", &vec_hosts, container_name.clone()).await;
+    let name = build_with_hosts(
+        "./examples/node-fetch-network",
+        &vec_hosts,
+        container_name.clone(),
+    )
+    .await;
 
     // Run the example on the attached network
     let output = run_image(
@@ -598,7 +601,7 @@ async fn test_pnpm_network_call_working_with_add_hosts() {
             network: Some(network_name.clone()),
         }),
     )
-        .await;
+    .await;
 
     // Cleanup containers and networks
     stop_and_remove_container(container_name);
@@ -629,7 +632,10 @@ async fn test_pnpm_network_call_should_not_work_without_hosts() {
     let mut vec_hosts = Vec::new();
 
     for (_, container_info) in containers.unwrap() {
-        let add_host = format!("{}:{}", container_info.name, container_info.ipv4_address_without_mask);
+        let add_host = format!(
+            "{}:{}",
+            container_info.name, container_info.ipv4_address_without_mask
+        );
         vec_hosts.push(add_host);
     }
 

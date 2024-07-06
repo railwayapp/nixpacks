@@ -1,8 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::process::Command;
 use std::str;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ContainerInfoFromDocker {
@@ -20,10 +20,7 @@ pub struct ContainerInfo {
 
 type Containers = HashMap<String, ContainerInfo>;
 
-
-pub struct DockerHelper {
-
-}
+pub struct DockerHelper {}
 
 impl DockerHelper {
     pub fn containers_in_network(network: &str) -> Result<Containers, Box<dyn Error>> {
@@ -37,7 +34,8 @@ impl DockerHelper {
 
         if output.status.success() {
             let containers_string = str::from_utf8(&output.stdout)?;
-            let containers: HashMap<String, ContainerInfoFromDocker> = serde_json::from_str(containers_string)?;
+            let containers: HashMap<String, ContainerInfoFromDocker> =
+                serde_json::from_str(containers_string)?;
 
             let mut vec = Vec::new();
             for (_, info) in containers.iter() {
@@ -50,7 +48,10 @@ impl DockerHelper {
                 vec.push(container_info);
             }
 
-            return  Ok(vec.into_iter().map(|info| (info.name.clone(), info)).collect());
+            return Ok(vec
+                .into_iter()
+                .map(|info| (info.name.clone(), info))
+                .collect());
         }
         let err = str::from_utf8(&output.stderr)?;
         eprintln!("Docker command failed: {}", err);

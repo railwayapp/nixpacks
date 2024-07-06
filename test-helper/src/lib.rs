@@ -2,7 +2,6 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use walkdir::{DirEntry, WalkDir};
 
-
 const IGNORE: &[&str] = &[
     "custom-plan-path",
     "rust-custom-version",

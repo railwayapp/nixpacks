@@ -3,7 +3,6 @@ use std::env::consts::ARCH;
 
 test_helper::generate_plan_tests!();
 
-
 #[test]
 fn test_custom_plan_path() {
     let plan = generate_build_plan(
