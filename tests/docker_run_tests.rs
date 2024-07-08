@@ -66,7 +66,7 @@ fn stop_and_remove_container_by_image(image: &str) {
     let container_ids = get_container_ids_from_image(image);
     container_ids
         .trim()
-        .split("\n")
+        .split('\n')
         .for_each(|container_id| stop_and_remove_container(container_id.to_string()));
     remove_image(image);
 }
