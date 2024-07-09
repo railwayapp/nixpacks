@@ -21,17 +21,17 @@ The Node provider sets the following environment variables:
 
 The following major versions are available
 
-- `14`
 - `16`
 - `18` (Default)
 - `20`
+- `22`
 
 The version can be overridden by
 
 - Setting the `NIXPACKS_NODE_VERSION` environment variable
 - Specifying the `engines.node` field in `package.json`
 
-Only a major version can be specified. For example, `14.x` or `14`.
+Only a major version can be specified. For example, `18.x` or `20`.
 
 **Node Canvas**
 
@@ -91,11 +91,11 @@ You can specify `cacheDirectories` in `package.json`. Each directory that is pro
 
 Nixpacks has first class support for [Corepack](https://nodejs.org/api/corepack.html), an experimental tool that enables installing specific versions of Node based package managers.
 
-For example, To install a specific version of PNPM, add a `packageManager` key to your `package.json` file
+For example, To install the latest version of PNPM, add a `packageManager` key to your `package.json` file
 
 ```json
 {
-  "packageManager": "pnpm@7.7.0"
+  "packageManager": "pnpm@latest"
 }
 ```
 
