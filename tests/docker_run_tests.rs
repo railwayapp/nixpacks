@@ -124,7 +124,7 @@ async fn run_image(name: &str, cfg: Option<Config>) -> String {
         .join("\n")
 }
 
-async fn build_with_hosts(path: &str, add_hosts: &Vec<String>, nginx_host: String) -> String {
+async fn build_with_hosts(path: &str, add_hosts: &[String], nginx_host: String) -> String {
     let name = Uuid::new_v4().to_string();
     let mut env: Vec<&str> = Vec::new();
     let env_var = format!("REMOTE_URL=http://{}", nginx_host);
@@ -137,7 +137,7 @@ async fn build_with_hosts(path: &str, add_hosts: &Vec<String>, nginx_host: Strin
         &DockerBuilderOptions {
             name: Some(name.clone()),
             quiet: true,
-            add_host: add_hosts.clone(),
+            add_host: add_hosts.to_owned(),
 
             ..Default::default()
         },
@@ -151,7 +151,7 @@ async fn build_with_hosts(path: &str, add_hosts: &Vec<String>, nginx_host: Strin
 async fn build_with_env(path: &str, env: Vec<&str>) -> anyhow::Result<()> {
     let name = Uuid::new_v4().to_string();
 
-    let result = create_docker_image(
+    create_docker_image(
         path,
         env,
         &GeneratePlanOptions::default(),
@@ -161,9 +161,7 @@ async fn build_with_env(path: &str, env: Vec<&str>) -> anyhow::Result<()> {
             ..Default::default()
         },
     )
-    .await;
-
-    return result;
+    .await
 }
 
 /// Builds a directory with default options

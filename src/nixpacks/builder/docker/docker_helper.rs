@@ -38,7 +38,7 @@ impl DockerHelper {
                 serde_json::from_str(containers_string)?;
 
             let mut vec = Vec::new();
-            for (_, info) in containers.iter() {
+            for info in containers.values() {
                 let ipv4 = info.ipv4_address.split('/').next().unwrap();
                 let container_info = ContainerInfo {
                     name: info.name.clone(),
@@ -53,9 +53,7 @@ impl DockerHelper {
                 .map(|info| (info.name.clone(), info))
                 .collect());
         }
-        let err = str::from_utf8(&output.stderr)?;
-        eprintln!("Docker command failed: {}", err);
 
-        return Err("Docker command failed".into());
+        Err("Docker command failed".into())
     }
 }
