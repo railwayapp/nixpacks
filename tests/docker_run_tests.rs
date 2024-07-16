@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{Context, Result};
 use nixpacks::{
     create_docker_image,
     nixpacks::{
@@ -16,7 +16,7 @@ use wait_timeout::ChildExt;
 use rand::thread_rng;
 use rand::{distributions::Alphanumeric, Rng};
 
-async fn get_container_ids_from_image(image: &str) -> String {
+fn get_container_ids_from_image(image: &str) -> String {
     let output = Command::new("docker")
         .arg("ps")
         .arg("-a")
@@ -43,6 +43,7 @@ fn stop_containers(container_id: &str) {
 fn remove_containers(container_id: &str) {
     Command::new("docker")
         .arg("rm")
+        .arg("-v")
         .arg(container_id)
         .spawn()
         .unwrap()
@@ -51,11 +52,24 @@ fn remove_containers(container_id: &str) {
         .unwrap();
 }
 
-async fn stop_and_remove_container_by_image(image: &str) {
-    let container_ids = get_container_ids_from_image(image).await;
-    let container_id = container_ids.trim().split('\n').collect::<Vec<_>>()[0].to_string();
+fn remove_image(image_id: &str) {
+    Command::new("docker")
+        .arg("rmi")
+        .arg(image_id)
+        .spawn()
+        .unwrap()
+        .wait()
+        .context("Removing image")
+        .unwrap();
+}
 
-    stop_and_remove_container(container_id);
+fn stop_and_remove_container_by_image(image: &str) {
+    let container_ids = get_container_ids_from_image(image);
+    container_ids
+        .trim()
+        .split('\n')
+        .for_each(|container_id| stop_and_remove_container(container_id.to_string()));
+    remove_image(image);
 }
 
 fn stop_and_remove_container(name: String) {
@@ -68,6 +82,7 @@ struct Config {
     environment_variables: EnvironmentVariables,
     network: Option<String>,
 }
+
 /// Runs an image with Docker and returns the output
 /// The image is automatically stopped and removed after `TIMEOUT_SECONDS`
 async fn run_image(name: &str, cfg: Option<Config>) -> String {
@@ -91,9 +106,12 @@ async fn run_image(name: &str, cfg: Option<Config>) -> String {
     let secs = Duration::from_secs(20);
 
     let _status_code = match child.wait_timeout(secs).unwrap() {
-        Some(status) => status.code(),
+        Some(status) => {
+            stop_and_remove_container_by_image(name);
+            status.code()
+        }
         None => {
-            stop_and_remove_container_by_image(name).await;
+            stop_and_remove_container_by_image(name);
             child.wait().unwrap().code()
         }
     };
@@ -150,7 +168,7 @@ async fn build_with_env(path: &str, env: Vec<&str>) -> anyhow::Result<()> {
 
 /// Builds a directory with default options
 /// Returns the randomly generated image name
-async fn simple_build(path: &str) -> String {
+async fn simple_build(path: &str) -> Result<String> {
     let name = Uuid::new_v4().to_string();
     create_docker_image(
         path,
@@ -162,13 +180,12 @@ async fn simple_build(path: &str) -> String {
             ..Default::default()
         },
     )
-    .await
-    .unwrap();
+    .await?;
 
-    name
+    Ok(name)
 }
 
-async fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> String {
+async fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> Result<String> {
     let name = Uuid::new_v4().to_string();
     create_docker_image(
         path,
@@ -180,10 +197,9 @@ async fn build_with_build_time_env_vars(path: &str, env_vars: Vec<&str>) -> Stri
             ..Default::default()
         },
     )
-    .await
-    .unwrap();
+    .await?;
 
-    name
+    Ok(name)
 }
 
 const POSTGRES_IMAGE: &str = "postgres";
@@ -403,7 +419,7 @@ fn run_nginx() -> Container {
 
 #[tokio::test]
 async fn test_deno() {
-    let name = simple_build("./examples/deno").await;
+    let name = simple_build("./examples/deno").await.unwrap();
     assert!(run_image(&name, None).await.contains("Hello from Deno"));
 }
 
@@ -419,20 +435,21 @@ async fn test_elixir_no_ecto() {
         "./examples/elixir-phx-no-ecto",
         vec![&*secret_env, "MIX_ENV=prod"],
     )
-    .await;
+    .await
+    .unwrap();
 
     assert!(run_image(&name, None).await.contains("Hello from Phoenix"));
 }
 
 #[tokio::test]
 async fn test_node() {
-    let name = simple_build("./examples/node").await;
+    let name = simple_build("./examples/node").await.unwrap();
     assert!(run_image(&name, None).await.contains("Hello from Node"));
 }
 
 #[tokio::test]
 async fn test_node_nx_default_app() {
-    let name = simple_build("./examples/node-nx").await;
+    let name = simple_build("./examples/node-nx").await.unwrap();
     assert!(run_image(&name, None)
         .await
         .contains("nx express app works"));
@@ -442,7 +459,8 @@ async fn test_node_nx_default_app() {
 async fn test_node_nx_next() {
     let name =
         build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=next-app"])
-            .await;
+            .await
+            .unwrap();
 
     assert!(run_image(&name, None)
         .await
@@ -455,7 +473,8 @@ async fn test_node_nx_start_command() {
         "./examples/node-nx",
         vec!["NIXPACKS_NX_APP_NAME=start-command"],
     )
-    .await;
+    .await
+    .unwrap();
 
     assert!(run_image(&name, None)
         .await
@@ -468,7 +487,8 @@ async fn test_node_nx_no_options() {
         "./examples/node-nx",
         vec!["NIXPACKS_NX_APP_NAME=no-options"],
     )
-    .await;
+    .await
+    .unwrap();
 
     assert!(run_image(&name, None)
         .await
@@ -481,7 +501,8 @@ async fn test_node_nx_start_command_production() {
         "./examples/node-nx",
         vec!["NIXPACKS_NX_APP_NAME=start-command-production"],
     )
-    .await;
+    .await
+    .unwrap();
 
     assert!(run_image(&name, None)
         .await
@@ -492,7 +513,8 @@ async fn test_node_nx_start_command_production() {
 async fn test_node_nx_node() {
     let name =
         build_with_build_time_env_vars("./examples/node-nx", vec!["NIXPACKS_NX_APP_NAME=node-app"])
-            .await;
+            .await
+            .unwrap();
 
     assert!(run_image(&name, None)
         .await
@@ -505,7 +527,8 @@ async fn test_node_nx_express() {
         "./examples/node-nx",
         vec!["NIXPACKS_NX_APP_NAME=express-app"],
     )
-    .await;
+    .await
+    .unwrap();
 
     assert!(run_image(&name, None)
         .await
@@ -514,14 +537,16 @@ async fn test_node_nx_express() {
 
 #[tokio::test]
 async fn test_node_custom_version() {
-    let name = simple_build("./examples/node-custom-version").await;
+    let name = simple_build("./examples/node-custom-version")
+        .await
+        .unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Node version: v22"));
 }
 
 #[tokio::test]
 async fn test_node_canvas() {
-    let name = simple_build("./examples/node-canvas").await;
+    let name = simple_build("./examples/node-canvas").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Node canvas"));
 }
@@ -535,7 +560,8 @@ async fn test_node_moon_custom_build() {
             "NIXPACKS_MOON_BUILD_TASK=compile",
         ],
     )
-    .await;
+    .await
+    .unwrap();
 
     assert!(run_image(&name, None).await.contains("Server listening at"));
 }
@@ -549,7 +575,8 @@ async fn test_node_moon_custom_start() {
             "NIXPACKS_MOON_START_TASK=serve",
         ],
     )
-    .await;
+    .await
+    .unwrap();
 
     assert!(run_image(&name, None)
         .await
@@ -653,7 +680,7 @@ async fn test_pnpm_network_call_should_not_work_without_hosts() {
 }
 
 #[tokio::test]
-async fn test_prisma_postgres() {
+async fn test_prisma_postgres() -> Result<()> {
     // Create the network
     let n = create_network();
     let network_name = n.name.clone();
@@ -666,7 +693,15 @@ async fn test_prisma_postgres() {
     attach_container_to_network(n.name, container_name.clone());
 
     // Build the basic example, a function that calls the database
-    let name = simple_build("./examples/node-prisma-postgres").await;
+    let name = match simple_build("./examples/node-prisma-postgres").await {
+        Ok(name) => name,
+        Err(err) => {
+            // Cleanup containers and networks, and then error
+            stop_and_remove_container(container_name);
+            remove_network(network_name);
+            return Err(err);
+        }
+    };
 
     // Run the example on the attached network
     let output = run_image(
@@ -683,10 +718,11 @@ async fn test_prisma_postgres() {
     remove_network(network_name);
 
     assert!(output.contains("My post content"));
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_bun_prisma_postgres() {
+async fn test_bun_prisma_postgres() -> Result<()> {
     // Create the network
     let n = create_network();
     let network_name = n.name.clone();
@@ -699,7 +735,15 @@ async fn test_bun_prisma_postgres() {
     attach_container_to_network(n.name, container_name.clone());
 
     // Build the basic example, a function that calls the database
-    let name = simple_build("./examples/node-bun-prisma").await;
+    let name = match simple_build("./examples/node-bun-prisma").await {
+        Ok(name) => name,
+        Err(err) => {
+            // Cleanup containers and networks, and then error
+            stop_and_remove_container(container_name);
+            remove_network(network_name);
+            return Err(err);
+        }
+    };
 
     // Run the example on the attached network
     let output = run_image(
@@ -718,10 +762,11 @@ async fn test_bun_prisma_postgres() {
     println!("OUTPUT = {output}");
 
     assert!(output.contains("All migrations have been successfully applied"));
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_prisma_postgres_npm_v9() {
+async fn test_prisma_postgres_npm_v9() -> Result<()> {
     // This test is similar to the prisma_postgres test, but uses npm 9
     // This is because npm 9 handles node-gyp differently, and we want to make
     // sure that we can still build node-gyp packages with npm 9
@@ -738,7 +783,15 @@ async fn test_prisma_postgres_npm_v9() {
     attach_container_to_network(n.name, container_name.clone());
 
     // Build the basic example, a function that calls the database
-    let name = simple_build("./examples/node-prisma-postgres-npm-v9").await;
+    let name = match simple_build("./examples/node-prisma-postgres-npm-v9").await {
+        Ok(name) => name,
+        Err(err) => {
+            // Cleanup containers and networks, and then error
+            stop_and_remove_container(container_name);
+            remove_network(network_name);
+            return Err(err);
+        }
+    };
 
     // Run the example on the attached network
     let output = run_image(
@@ -755,11 +808,14 @@ async fn test_prisma_postgres_npm_v9() {
     remove_network(network_name);
 
     assert!(output.contains("My post content"));
+    Ok(())
 }
 
 #[tokio::test]
 async fn test_yarn_custom_version() {
-    let name = simple_build("./examples/node-yarn-custom-node-version").await;
+    let name = simple_build("./examples/node-yarn-custom-node-version")
+        .await
+        .unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Node version: v16"));
 }
@@ -770,14 +826,15 @@ async fn test_node_turborepo() {
         "./examples/node-turborepo",
         vec!["NIXPACKS_TURBO_APP_NAME=web"],
     )
-    .await;
+    .await
+    .unwrap();
 
     assert!(run_image(&name, None).await.contains("> next start"));
 }
 
 #[tokio::test]
 async fn test_yarn_berry() {
-    let name = simple_build("./examples/node-yarn-berry").await;
+    let name = simple_build("./examples/node-yarn-berry").await.unwrap();
     let output = run_image(&name, None).await;
 
     assert!(output.contains("Hello from Yarn v2+"));
@@ -785,91 +842,95 @@ async fn test_yarn_berry() {
 
 #[tokio::test]
 async fn test_yarn_prisma() {
-    let name = simple_build("./examples/node-yarn-prisma").await;
+    let name = simple_build("./examples/node-yarn-prisma").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("My post content"));
 }
 
 #[tokio::test]
 async fn test_pnpm() {
-    let name = simple_build("./examples/node-pnpm").await;
+    let name = simple_build("./examples/node-pnpm").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from PNPM"));
 }
 
 #[tokio::test]
 async fn test_bun() {
-    let name = simple_build("./examples/node-bun").await;
+    let name = simple_build("./examples/node-bun").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Bun"));
 }
 
 #[tokio::test]
 async fn test_bun_web_server() {
-    let name = simple_build("./examples/node-bun-web-server").await;
+    let name = simple_build("./examples/node-bun-web-server")
+        .await
+        .unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from a Bun web server!"));
 }
 
 #[tokio::test]
 async fn test_pnpm_custom_version() {
-    let name = simple_build("./examples/node-pnpm-custom-node-version").await;
+    let name = simple_build("./examples/node-pnpm-custom-node-version")
+        .await
+        .unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from PNPM"));
 }
 
 #[tokio::test]
 async fn test_puppeteer() {
-    let name = simple_build("./examples/node-puppeteer").await;
+    let name = simple_build("./examples/node-puppeteer").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from puppeteer"));
 }
 
 #[tokio::test]
 async fn test_csharp() {
-    let name = simple_build("./examples/csharp-cli").await;
+    let name = simple_build("./examples/csharp-cli").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello world from C#"));
 }
 
 #[tokio::test]
 async fn test_fsharp() {
-    let name = simple_build("./examples/fsharp-cli").await;
+    let name = simple_build("./examples/fsharp-cli").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello world from F#"));
 }
 
 #[tokio::test]
 async fn test_python() {
-    let name = simple_build("./examples/python").await;
+    let name = simple_build("./examples/python").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Python"));
 }
 
 #[tokio::test]
 async fn test_python_pipfile() {
-    let name = simple_build("./examples/python-pipfile").await;
+    let name = simple_build("./examples/python-pipfile").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Data fetched successfully!"));
 }
 
 #[tokio::test]
 async fn test_python_procfile() {
-    let name = simple_build("./examples/python-procfile").await;
+    let name = simple_build("./examples/python-procfile").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Python"));
 }
 
 #[tokio::test]
 async fn test_python_2() {
-    let name = simple_build("./examples/python-2").await;
+    let name = simple_build("./examples/python-2").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Python 2"));
 }
 
 #[tokio::test]
 async fn test_python_asdf_poetry() {
-    let name = simple_build("./examples/python-asdf-poetry").await;
+    let name = simple_build("./examples/python-asdf-poetry").await.unwrap();
     let output = run_image(&name, None).await;
 
     assert!(output.contains("3.12.3"), "{}", output);
@@ -877,7 +938,7 @@ async fn test_python_asdf_poetry() {
 }
 
 #[tokio::test]
-async fn test_django() {
+async fn test_django() -> Result<()> {
     // Create the network
     let n = create_network();
     let network_name = n.name.clone();
@@ -890,7 +951,15 @@ async fn test_django() {
     attach_container_to_network(n.name, container_name.clone());
 
     // Build the Django example
-    let name = simple_build("./examples/python-django").await;
+    let name = match simple_build("./examples/python-django").await {
+        Ok(name) => name,
+        Err(err) => {
+            // Cleanup containers and networks, and then error
+            stop_and_remove_container(container_name);
+            remove_network(network_name);
+            return Err(err);
+        }
+    };
 
     // Run the Django example on the attached network
     let output = run_image(
@@ -907,10 +976,11 @@ async fn test_django() {
     remove_network(network_name);
 
     assert!(output.contains("Running migrations"));
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_django_mysql() {
+async fn test_django_mysql() -> Result<()> {
     let n = create_network();
     let network_name = n.name.clone();
 
@@ -919,7 +989,15 @@ async fn test_django_mysql() {
 
     attach_container_to_network(n.name, container_name.clone());
 
-    let name = simple_build("./examples/python-django-mysql").await;
+    let name = match simple_build("./examples/python-django-mysql").await {
+        Ok(name) => name,
+        Err(err) => {
+            // Cleanup containers and networks, and then error
+            stop_and_remove_container(container_name);
+            remove_network(network_name);
+            return Err(err);
+        }
+    };
 
     let output = run_image(
         &name,
@@ -934,39 +1012,40 @@ async fn test_django_mysql() {
     remove_network(network_name);
 
     assert!(output.contains("Running migrations"));
+    Ok(())
 }
 
 #[tokio::test]
 async fn test_lunatic_basic() {
-    let name = simple_build("./examples/lunatic-basic").await;
+    let name = simple_build("./examples/lunatic-basic").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("PING-PONG"));
 }
 
 #[tokio::test]
 async fn test_python_poetry() {
-    let name = simple_build("./examples/python-poetry").await;
+    let name = simple_build("./examples/python-poetry").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Python-Poetry"));
 }
 
 #[tokio::test]
 async fn test_python_pdm() {
-    let name = simple_build("./examples/python-pdm").await;
+    let name = simple_build("./examples/python-pdm").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Python-PDM"));
 }
 
 #[tokio::test]
 async fn test_python_numpy() {
-    let name = simple_build("./examples/python-numpy").await;
+    let name = simple_build("./examples/python-numpy").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Python numpy and pandas"));
 }
 
 #[tokio::test]
 async fn test_python_postgres() {
-    let name = simple_build("./examples/python-postgres").await;
+    let name = simple_build("./examples/python-postgres").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("psycopg2"));
 }
@@ -993,77 +1072,83 @@ async fn test_rust_custom_version() {
 
 #[tokio::test]
 async fn test_rust_toolchain_file() {
-    let name = simple_build("./examples/rust-custom-toolchain").await;
+    let name = simple_build("./examples/rust-custom-toolchain")
+        .await
+        .unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("cargo 1.60.0-nightly"));
 }
 
 #[tokio::test]
 async fn test_rust_ring() {
-    let name = simple_build("./examples/rust-ring").await;
+    let name = simple_build("./examples/rust-ring").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from rust"));
 }
 
 #[tokio::test]
 async fn test_rust_openssl() {
-    let name = simple_build("./examples/rust-openssl").await;
+    let name = simple_build("./examples/rust-openssl").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Rust openssl!"));
 }
 
 #[tokio::test]
 async fn test_rust_cargo_workspaces() {
-    let name = simple_build("./examples/rust-cargo-workspaces").await;
+    let name = simple_build("./examples/rust-cargo-workspaces")
+        .await
+        .unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from rust"));
 }
 
 #[tokio::test]
 async fn test_rust_cargo_workspaces_glob() {
-    let name = simple_build("./examples/rust-cargo-workspaces-glob").await;
+    let name = simple_build("./examples/rust-cargo-workspaces-glob")
+        .await
+        .unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from rust"));
 }
 
 #[tokio::test]
 async fn test_rust_multiple_bins() {
-    let name = simple_build("./examples/rust-multiple-bins").await;
+    let name = simple_build("./examples/rust-multiple-bins").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Bin 1"));
 }
 
 #[tokio::test]
 async fn test_gleam_basic() {
-    let name = simple_build("./examples/basic_gleam").await;
+    let name = simple_build("./examples/basic_gleam").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Gleam!"));
 }
 
 #[tokio::test]
 async fn test_go() {
-    let name = simple_build("./examples/go").await;
+    let name = simple_build("./examples/go").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Go"));
 }
 
 #[tokio::test]
 async fn test_go_custom_version() {
-    let name = simple_build("./examples/go-custom-version").await;
+    let name = simple_build("./examples/go-custom-version").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from go1.18"));
 }
 
 #[tokio::test]
 async fn test_haskell_stack() {
-    let name = simple_build("./examples/haskell-stack").await;
+    let name = simple_build("./examples/haskell-stack").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Haskell"));
 }
 
 #[tokio::test]
 async fn test_crystal() {
-    let name = simple_build("./examples/crystal").await;
+    let name = simple_build("./examples/crystal").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Crystal"));
 }
@@ -1114,42 +1199,28 @@ async fn test_docker_host() {
 
 #[tokio::test]
 async fn test_staticfile() {
-    let name = simple_build("./examples/staticfile").await;
+    let name = simple_build("./examples/staticfile").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("start worker process"));
 }
 
 #[tokio::test]
 async fn test_swift() {
-    let name = Uuid::new_v4().to_string();
-
-    create_docker_image(
-        "./examples/swift",
-        Vec::new(),
-        &GeneratePlanOptions::default(),
-        &DockerBuilderOptions {
-            name: Some(name.clone()),
-            quiet: true,
-            ..Default::default()
-        },
-    )
-    .await
-    .unwrap();
-
+    let name = simple_build("./examples/swift").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from swift"));
 }
 
 #[tokio::test]
 async fn test_dart() {
-    let name = simple_build("./examples/dart").await;
+    let name = simple_build("./examples/dart").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Dart"));
 }
 
 #[tokio::test]
 async fn test_java_gradle_8() {
-    let name = simple_build("./examples/java-gradle-8").await;
+    let name = simple_build("./examples/java-gradle-8").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Gradle 8"));
     assert!(output.contains("Hello from Java Gradle"));
@@ -1157,97 +1228,97 @@ async fn test_java_gradle_8() {
 
 #[tokio::test]
 async fn test_java_maven() {
-    let name = simple_build("./examples/java-maven").await;
+    let name = simple_build("./examples/java-maven").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Built with Spring Boot"));
 }
 
 #[tokio::test]
 async fn test_java_spring_boot_3() {
-    let name = simple_build("./examples/java-spring-boot-3").await;
+    let name = simple_build("./examples/java-spring-boot-3").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Started HelloSpringApplication"));
 }
 
 #[tokio::test]
 async fn test_java_spring_boot_2() {
-    let name = simple_build("./examples/java-spring-boot-2").await;
+    let name = simple_build("./examples/java-spring-boot-2").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Started HelloSpringApplication"));
 }
 
 #[tokio::test]
 async fn test_java_spring_boot_1() {
-    let name = simple_build("./examples/java-spring-boot-1").await;
+    let name = simple_build("./examples/java-spring-boot-1").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Started HelloSpringApplication"));
 }
 
 #[tokio::test]
 async fn test_php_vanilla() {
-    let name = simple_build("./examples/php-vanilla").await;
+    let name = simple_build("./examples/php-vanilla").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Server starting on port 80"));
 }
 
 #[tokio::test]
 async fn test_scala_sbt() {
-    let name = simple_build("./examples/scala-sbt").await;
+    let name = simple_build("./examples/scala-sbt").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("I was compiled by Scala 3"));
 }
 
 #[tokio::test]
 async fn test_zig() {
-    let name = simple_build("./examples/zig").await;
+    let name = simple_build("./examples/zig").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Zig"));
 }
 
 #[tokio::test]
 async fn test_ruby_2() {
-    let name = simple_build("./examples/ruby-2").await;
+    let name = simple_build("./examples/ruby-2").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Ruby 2"));
 }
 
 #[tokio::test]
 async fn test_ruby_3() {
-    let name = simple_build("./examples/ruby-3").await;
+    let name = simple_build("./examples/ruby-3").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Ruby 3! YJIT is enabled."));
 }
 
 #[tokio::test]
 async fn test_ruby_sinatra() {
-    let name = simple_build("./examples/ruby-sinatra/").await;
+    let name = simple_build("./examples/ruby-sinatra/").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Sinatra"));
 }
 
 #[tokio::test]
 async fn test_ruby_node() {
-    let name = simple_build("./examples/ruby-with-node/").await;
+    let name = simple_build("./examples/ruby-with-node/").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Ruby with Node"));
 }
 
 #[tokio::test]
 async fn test_ruby_execjs() {
-    let name = simple_build("./examples/ruby-execjs/").await;
+    let name = simple_build("./examples/ruby-execjs/").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("HELLO FROM EXECJS"));
 }
 
 #[tokio::test]
 async fn test_ruby_local_deps() {
-    let name = simple_build("./examples/ruby-local-deps/").await;
+    let name = simple_build("./examples/ruby-local-deps/").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello world from Local lib"));
 }
 
 #[tokio::test]
-async fn test_ruby_rails() {
+async fn test_ruby_rails() -> Result<()> {
     // Create the network
     let n = create_network();
     let network_name = n.name.clone();
@@ -1260,7 +1331,15 @@ async fn test_ruby_rails() {
     attach_container_to_network(n.name, container_name.clone());
 
     // Build the Rails example
-    let name = simple_build("./examples/ruby-rails-postgres").await;
+    let name = match simple_build("./examples/ruby-rails-postgres").await {
+        Ok(name) => name,
+        Err(err) => {
+            // Cleanup containers and networks, and then error
+            stop_and_remove_container(container_name);
+            remove_network(network_name);
+            return Err(err);
+        }
+    };
 
     // Run the Rails example on the attached network
     let output = run_image(
@@ -1277,47 +1356,49 @@ async fn test_ruby_rails() {
     remove_network(network_name);
 
     assert!(output.contains("Rails 7"));
+    Ok(())
 }
 
 #[tokio::test]
 async fn test_ruby_rails_api_app() {
-    let name = simple_build("./examples/ruby-rails-api-app").await;
+    let name = simple_build("./examples/ruby-rails-api-app").await.unwrap();
     let output = run_image(&name, None).await;
-
     assert!(output.contains("Rails 7"));
 }
 
 #[tokio::test]
 async fn test_clojure() {
-    let name = simple_build("./examples/clojure").await;
+    let name = simple_build("./examples/clojure").await.unwrap();
     let output = run_image(&name, None).await;
     assert_eq!(output, "Hello, World From Clojure!");
 }
 
 #[tokio::test]
 async fn test_clojure_ring_app() {
-    let name = simple_build("./examples/clojure-ring-app").await;
+    let name = simple_build("./examples/clojure-ring-app").await.unwrap();
     let output = run_image(&name, None).await;
     assert_eq!(output, "Started server on port 3000");
 }
 
 #[tokio::test]
 async fn test_clojure_tools_build() {
-    let name = simple_build("./examples/clojure-tools-build").await;
+    let name = simple_build("./examples/clojure-tools-build")
+        .await
+        .unwrap();
     let output = run_image(&name, None).await;
     assert_eq!(output, "Hello, World From Clojure!");
 }
 
 #[tokio::test]
 async fn test_cobol() {
-    let name = simple_build("./examples/cobol").await;
+    let name = simple_build("./examples/cobol").await.unwrap();
     let output = run_image(&name, None).await;
     assert_eq!(output, "Hello from cobol! index");
 }
 
 #[tokio::test]
 async fn test_cobol_src_index() {
-    let name = simple_build("./examples/cobol-src").await;
+    let name = simple_build("./examples/cobol-src").await.unwrap();
     let output = run_image(&name, None).await;
     assert_eq!(output, "Hello from cobol! src-index");
 }
@@ -1326,7 +1407,8 @@ async fn test_cobol_src_index() {
 async fn test_cobol_my_app() {
     let name =
         build_with_build_time_env_vars("./examples/cobol", vec!["NIXPACKS_COBOL_APP_NAME=my-app"])
-            .await;
+            .await
+            .unwrap();
 
     assert_eq!(run_image(&name, None).await, "Hello from cobol! my-app");
 }
@@ -1337,7 +1419,8 @@ async fn test_cobol_src_my_app() {
         "./examples/cobol-src",
         vec!["NIXPACKS_COBOL_APP_NAME=my-app"],
     )
-    .await;
+    .await
+    .unwrap();
 
     assert_eq!(run_image(&name, None).await, "Hello from cobol! src-my-app");
 }
@@ -1351,14 +1434,15 @@ async fn test_cobol_free() {
             "NIXPACKS_COBOL_COMPILE_ARGS=-free -x -o",
         ],
     )
-    .await;
+    .await
+    .unwrap();
 
     assert_eq!(run_image(&name, None).await, "Hello from cobol! cobol-free");
 }
 
 #[tokio::test]
 async fn test_cobol_no_index() {
-    let name = simple_build("./examples/cobol-no-index").await;
+    let name = simple_build("./examples/cobol-no-index").await.unwrap();
 
     assert_eq!(
         run_image(&name, None).await,
@@ -1368,20 +1452,20 @@ async fn test_cobol_no_index() {
 
 #[tokio::test]
 async fn test_nested_directory() {
-    let name = simple_build("./examples/nested").await;
+    let name = simple_build("./examples/nested").await.unwrap();
     assert!(run_image(&name, None).await.contains("Nested directories!"));
 }
 
 #[tokio::test]
 async fn test_ffmpeg() {
-    let name = simple_build("./examples/apt-ffmpeg").await;
+    let name = simple_build("./examples/apt-ffmpeg").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("ffmpeg version"));
 }
 
 #[tokio::test]
 async fn test_node_python() {
-    let name = simple_build("./examples/node-python").await;
+    let name = simple_build("./examples/node-python").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Node"));
     assert!(output.contains("Python"));

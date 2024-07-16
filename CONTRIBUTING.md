@@ -50,7 +50,7 @@ PRs are all checked with
 
 - `cargo check`
 - `cargo test`
-- `cargo clippy`
+- `cargo clippy --all-targets --all-features -- -D warnings`
 
 so you can run these locally to ensure CI passes.
 
