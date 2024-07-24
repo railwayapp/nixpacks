@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node fetchData.js",
+    "build": "node fetchData.js",
     "fetch": "node fetchData.js"
   },
   "dependencies": {
