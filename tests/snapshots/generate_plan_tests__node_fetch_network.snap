@@ -17,9 +17,6 @@ expression: plan
       "dependsOn": [
         "install"
       ],
-      "cmds": [
-        "pnpm run build"
-      ],
       "cacheDirectories": [
         "node_modules/.cache"
       ]
