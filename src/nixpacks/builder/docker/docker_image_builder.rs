@@ -167,6 +167,8 @@ impl DockerImageBuilder {
             for host in &self.options.add_host {
                 docker_build_cmd.arg("--add-host").arg(host);
             }
+
+            docker_build_cmd.arg("--network").arg("host");
         }
 
         if self.options.quiet {

@@ -5,6 +5,7 @@
   "description": "A project to fetch data from a remote URL",
   "main": "index.js",
   "scripts": {
+    "build": "echo $REMOTE_URL && node fetchData.js",
     "start": "node fetchData.js"
   },
   "dependencies": {
