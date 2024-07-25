@@ -5,9 +5,7 @@
   "description": "A project to fetch data from a remote URL",
   "main": "index.js",
   "scripts": {
-    "start": "node fetchData.js",
-    "build": "node fetchData.js",
-    "fetch": "node fetchData.js"
+    "start": "node fetchData.js"
   },
   "dependencies": {
     "dotenv": "^10.0.0",
