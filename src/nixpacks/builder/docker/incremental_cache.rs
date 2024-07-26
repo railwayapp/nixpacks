@@ -84,7 +84,7 @@ impl IncrementalCache {
         // #3 Use Docker import: Provide 3 seconds in a sample test
         for f in files {
             let mut docker_import_cmd = Command::new("docker");
-            docker_import_cmd.arg("import").arg(&f?.path()).arg(tag);
+            docker_import_cmd.arg("import").arg(f?.path()).arg(tag);
 
             let result = docker_import_cmd
                 .spawn()?

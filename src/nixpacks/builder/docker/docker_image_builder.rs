@@ -155,12 +155,20 @@ impl DockerImageBuilder {
             .arg("build")
             .arg(&output.root)
             .arg("-f")
-            .arg(&output.get_absolute_path("Dockerfile"))
+            .arg(output.get_absolute_path("Dockerfile"))
             .arg("-t")
             .arg(name);
 
         if self.options.verbose {
             docker_build_cmd.arg("--progress=plain");
+        }
+
+        if !self.options.add_host.is_empty() {
+            for host in &self.options.add_host {
+                docker_build_cmd.arg("--add-host").arg(host);
+            }
+
+            docker_build_cmd.arg("--network").arg("host");
         }
 
         if self.options.quiet {

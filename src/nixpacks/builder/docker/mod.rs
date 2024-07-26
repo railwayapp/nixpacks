@@ -23,9 +23,11 @@ pub struct DockerBuilderOptions {
     pub verbose: bool,
     pub docker_host: Option<String>,
     pub docker_tls_verify: Option<String>,
+    pub add_host: Vec<String>,
 }
 
 mod cache;
+pub mod docker_helper;
 pub mod docker_image_builder;
 mod dockerfile_generation;
 pub mod file_server;
