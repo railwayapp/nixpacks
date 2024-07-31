@@ -195,6 +195,10 @@ impl DockerImageBuilder {
             }
         }
 
+        if let Some(value) = &self.options.docker_output {
+            docker_build_cmd.arg("--output").arg(value);
+        }
+
         if self.options.inline_cache {
             docker_build_cmd
                 .arg("--build-arg")

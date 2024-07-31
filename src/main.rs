@@ -153,6 +153,11 @@ enum Commands {
         #[arg(long)]
         docker_tls_verify: Option<String>,
 
+        /// Specify output destination for Docker build.
+        /// https://docs.docker.com/reference/cli/docker/buildx/build/#output
+        #[arg(long)]
+        docker_output: Option<String>,
+
         /// Enable writing cache metadata into the output image
         #[arg(long)]
         inline_cache: bool,
@@ -259,6 +264,7 @@ async fn main() -> Result<()> {
             cache_from,
             docker_host,
             docker_tls_verify,
+            docker_output,
             add_host,
             inline_cache,
             no_error_without_start,
@@ -290,6 +296,7 @@ async fn main() -> Result<()> {
                 cache_from,
                 docker_host,
                 docker_tls_verify,
+                docker_output,
                 no_error_without_start,
                 incremental_cache_image,
                 cpu_quota,
