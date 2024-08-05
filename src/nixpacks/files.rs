@@ -1,6 +1,12 @@
 use anyhow::Result;
 use ignore::WalkBuilder;
-use std::{fs, io, path::Path};
+use std::{fs, io, os::unix::fs::PermissionsExt, path::Path};
+
+fn is_writable<P: AsRef<Path>>(path: P) -> io::Result<bool> {
+    let metadata = fs::metadata(path)?;
+    let permissions = metadata.permissions();
+    Ok(permissions.mode() & 0o200 != 0)
+}
 
 /// Copies a directory and all its contents to the destination path, recursively.
 pub fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) -> Result<()> {
@@ -30,9 +36,12 @@ pub fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) ->
             // copy files
             else if file_type.is_file() {
                 fs::copy(from, &to)?;
-                // replace CRLF with LF
-                if let Ok(data) = fs::read_to_string(from) {
-                    fs::write(&to, data.replace("\r\n", "\n"))?;
+
+                if is_writable(&to)? {
+                    // replace CRLF with LF
+                    if let Ok(data) = fs::read_to_string(from) {
+                        fs::write(&to, data.replace("\r\n", "\n"))?;
+                    }
                 }
             }
         }
