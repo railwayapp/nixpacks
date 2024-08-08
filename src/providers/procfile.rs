@@ -15,7 +15,7 @@ pub struct ProcfileProvider {}
 
 impl Provider for ProcfileProvider {
     fn name(&self) -> &str {
-        "deno"
+        "procfile"
     }
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
