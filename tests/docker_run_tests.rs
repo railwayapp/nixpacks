@@ -1074,7 +1074,7 @@ async fn test_rust_toolchain_file() {
         .await
         .unwrap();
     let output = run_image(&name, None).await;
-    assert!(output.contains("cargo 1.60.0-nightly"));
+    assert!(output.contains("cargo 1.82.0-nightly"));
 }
 
 #[tokio::test]
