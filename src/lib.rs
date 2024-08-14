@@ -42,6 +42,7 @@ use providers::{
     rust::RustProvider, scala::ScalaProvider, staticfile::StaticfileProvider, swift::SwiftProvider,
     zig::ZigProvider, Provider,
 };
+use std::process::Command;
 
 mod chain;
 #[macro_use]
@@ -152,9 +153,23 @@ pub async fn create_docker_image(
         std::process::exit(1);
     }
 
+    if build_options.out_dir.is_none() {
+        ensure_docker_exists()?;
+    }
+
     builder
         .create_image(app.source.to_str().unwrap(), &plan, &environment)
         .await?;
+
+    Ok(())
+}
+
+fn ensure_docker_exists() -> Result<()> {
+    let mut docker_build_cmd = Command::new("docker");
+
+    if docker_build_cmd.output().is_err() {
+        bail!("Please install Docker to build the app https://docs.docker.com/engine/install/");
+    }
 
     Ok(())
 }

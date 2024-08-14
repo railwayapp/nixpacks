@@ -144,10 +144,6 @@ impl DockerImageBuilder {
     ) -> Result<Command> {
         let mut docker_build_cmd = Command::new("docker");
 
-        if docker_build_cmd.output().is_err() {
-            bail!("Please install Docker to build the app https://docs.docker.com/engine/install/")
-        }
-
         // Enable BuildKit for all builds
         docker_build_cmd.env("DOCKER_BUILDKIT", "1");
 
