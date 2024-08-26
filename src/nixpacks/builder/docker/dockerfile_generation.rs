@@ -466,6 +466,8 @@ impl DockerfileGenerator for Phase {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::*;
 
     #[test]
@@ -490,6 +492,11 @@ mod tests {
     fn test_plan_generation() {
         let mut plan = BuildPlan::default();
 
+        plan.add_variables(BTreeMap::from([(
+            "VAR1 ".to_string(),
+            "value1".to_string(),
+        )]));
+
         let mut test1 = Phase::new("test1");
         test1.add_cmd("echo test1");
         test1.add_apt_pkgs(vec!["wget".to_owned()]);
@@ -512,5 +519,6 @@ mod tests {
         assert!(dockerfile.contains("echo test2"));
         assert!(dockerfile.contains("apt-get update"));
         assert!(dockerfile.contains("wget"));
+        assert!(dockerfile.contains("ENV VAR1=$VAR1"));
     }
 }
