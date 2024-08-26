@@ -154,7 +154,7 @@ impl DockerfileGenerator for BuildPlan {
                 // Make the variables available at runtime
                 variables
                     .iter()
-                    .map(|var| format!("{}=${}", var.0, var.0))
+                    .map(|var| format!("{}=${}", var.0.trim(), var.0.trim()))
                     .collect::<Vec<_>>()
                     .join(" ")
             )
