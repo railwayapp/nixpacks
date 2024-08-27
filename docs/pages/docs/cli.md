@@ -40,7 +40,7 @@ nixpacks build --help
 | `--no-cache`                | Disable caching for the build                                                                                                                           |
 | `--docker-host`             | Specify host for Docker client                                                                                                                          |
 | `--docker-tls-verify`       | Specify if Docker client should verify the TLS (Transport Layer Security) certificates of the Docker daemon when communicating over a secure connection |
-| `--docker-cert-path`       | Specify the path of your cert to docker if your connection is under TLS |
+| `--docker-cert-path`        | Specify the path of your cert to docker if your connection is under TLS                                                                                 |
 | `--cache-from`              | Image to consider as cache sources                                                                                                                      |
 | `--inline-cache`            | Enable writing cache metadata into the output image                                                                                                     |
 | `--out <dir>`, `-o`         | Save output directory instead of building it with Docker                                                                                                |
