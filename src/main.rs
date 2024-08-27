@@ -157,6 +157,9 @@ enum Commands {
         /// https://docs.docker.com/reference/cli/docker/buildx/build/#output
         #[arg(long)]
         docker_output: Option<String>,
+        /// Specify the path to the Docker client certificates
+        #[arg(long)]
+        docker_cert_path: Option<String>,
 
         /// Enable writing cache metadata into the output image
         #[arg(long)]
@@ -266,6 +269,7 @@ async fn main() -> Result<()> {
             docker_tls_verify,
             docker_output,
             add_host,
+            docker_cert_path,
             inline_cache,
             no_error_without_start,
             cpu_quota,
@@ -297,6 +301,7 @@ async fn main() -> Result<()> {
                 docker_host,
                 docker_tls_verify,
                 docker_output,
+                docker_cert_path,
                 no_error_without_start,
                 incremental_cache_image,
                 cpu_quota,

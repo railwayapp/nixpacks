@@ -191,8 +191,9 @@ impl DockerImageBuilder {
             }
         }
 
-        if let Some(value) = &self.options.docker_output {
-            docker_build_cmd.arg("--output").arg(value);
+        match &self.options.docker_cert_path {
+            Some(value) => env::set_var("DOCKER_CERT_PATH", value),
+            None => env::remove_var("DOCKER_CERT_PATH"),
         }
 
         if self.options.inline_cache {
