@@ -16,12 +16,12 @@ To install PHP extensions, you can add them to the `require` section of your `co
 
 ```json
 {
-    "require": {
-        "php": ">=8.2",
-        "ext-ctype": "*",
-        "ext-iconv": "*",
-        "ext-redis": "*"
-    }
+  "require": {
+    "php": ">=8.2",
+    "ext-ctype": "*",
+    "ext-iconv": "*",
+    "ext-redis": "*"
+  }
 }
 ```
 
