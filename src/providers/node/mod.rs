@@ -460,11 +460,11 @@ impl NodeProvider {
                 pm_pkg = Pkg::new("pnpm-6_x");
             } else if lockfile.starts_with("lockfileVersion: 5.4") {
                 pm_pkg = Pkg::new("pnpm-7_x");
-            } else {
-                // pnpm v8 uses lockfile v6 as default, it appears as
-                // lockfileVersion: '6.0'
-                // in the lockfile. Take the quotes into account in the future.
+            } else if lockfile.starts_with("lockfileVersion: '6.0'") {
                 pm_pkg = Pkg::new("pnpm-8_x");
+            } else {
+                // Default to pnpm 9
+                pm_pkg = Pkg::new("pnpm-9_x");
             }
         } else if package_manager == "yarn" {
             pm_pkg = Pkg::new("yarn-1_x");
