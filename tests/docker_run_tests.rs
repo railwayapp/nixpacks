@@ -846,10 +846,24 @@ async fn test_yarn_prisma() {
 }
 
 #[tokio::test]
-async fn test_pnpm() {
-    let name = simple_build("./examples/node-pnpm").await.unwrap();
+async fn test_pnpm_v8() {
+    let name = simple_build("./examples/node-pnpm-v8").await.unwrap();
     let output = run_image(&name, None).await;
-    assert!(output.contains("Hello from PNPM"));
+    assert!(output.contains("Hello from PNPM 8"));
+}
+
+#[tokio::test]
+async fn test_pnpm_v9() {
+    let name = simple_build("./examples/node-pnpm-v9").await.unwrap();
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Hello from PNPM 9"));
+}
+
+#[tokio::test]
+async fn test_pnpm_corepack() {
+    let name = simple_build("./examples/node-pnpm-corepack").await.unwrap();
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Hello from PNPM 9"));
 }
 
 #[tokio::test]
@@ -866,15 +880,6 @@ async fn test_bun_web_server() {
         .unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from a Bun web server!"));
-}
-
-#[tokio::test]
-async fn test_pnpm_custom_version() {
-    let name = simple_build("./examples/node-pnpm-custom-node-version")
-        .await
-        .unwrap();
-    let output = run_image(&name, None).await;
-    assert!(output.contains("Hello from PNPM"));
 }
 
 #[tokio::test]
