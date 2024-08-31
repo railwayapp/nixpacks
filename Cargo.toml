@@ -46,7 +46,7 @@ base64 = "0.20.0"
 console = { default-features = false, version = "0.15.2" }
 box_drawing = "0.1.2"
 textwrap = { default-features = false, version = "0.16.0" }
-cargo_toml = "0.13.0"
+cargo_toml = "0.20.4"
 rand = "0.8.5"
 path-slash = "0.2.1"
 ignore = "0.4.18"
