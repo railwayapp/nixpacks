@@ -179,8 +179,9 @@ impl DockerImageBuilder {
             docker_build_cmd.arg("--cache-from").arg(value);
         }
 
-        if let Some(value) = &self.options.docker_host {
-            env::set_var("DOCKER_HOST", value);
+        match &self.options.docker_host {
+            Some(value) => env::set_var("DOCKER_HOST", value),
+            None => env::remove_var("DOCKER_HOST"),
         }
 
         if let Some(value) = &self.options.docker_tls_verify {
