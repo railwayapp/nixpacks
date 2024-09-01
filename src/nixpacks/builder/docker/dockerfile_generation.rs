@@ -474,7 +474,6 @@ mod tests {
     fn test_phase_generation() {
         let mut phase = Phase::new("test");
         phase.add_cmd("echo test");
-        phase.add_apt_pkgs(vec!["wget".to_owned()]);
 
         let dockerfile = phase
             .generate_dockerfile(
