@@ -152,6 +152,10 @@ impl PythonProvider {
             pkgs.append(&mut vec![Pkg::new("pipenv")]);
         }
 
+        if PythonProvider::uses_dep(app, "cairo")? {
+            pkgs.append(&mut vec![Pkg::new("cairo")]);
+        }
+
         let mut setup = Phase::setup(Some(pkgs));
         setup.set_nix_archive(nix_archive);
 
