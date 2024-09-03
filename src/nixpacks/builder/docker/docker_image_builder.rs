@@ -179,17 +179,15 @@ impl DockerImageBuilder {
             docker_build_cmd.arg("--cache-from").arg(value);
         }
 
-        if let Some(value) = &self.options.docker_host {
-            docker_build_cmd.env("DOCKER_HOST", value);
-        }
+        match &self.options.docker_host {
+            Some(value) => docker_build_cmd.env("DOCKER_HOST", value),
+            None => docker_build_cmd.env_remove("DOCKER_HOST"),
+        };
 
-        if let Some(value) = &self.options.docker_tls_verify {
-            if value == "1" {
-                docker_build_cmd.env("DOCKER_TLS_VERIFY", value);
-            } else {
-                docker_build_cmd.env_remove("DOCKER_TLS_VERIFY"); // Clear the variable to disable TLS verification
-            }
-        }
+        match &self.options.docker_tls_verify {
+            Some(value) if value == "1" => docker_build_cmd.env("DOCKER_TLS_VERIFY", value),
+            _ => docker_build_cmd.env_remove("DOCKER_TLS_VERIFY"), // Clear the variable to disable TLS verification
+        };
 
         match &self.options.docker_cert_path {
             Some(value) => docker_build_cmd.env("DOCKER_CERT_PATH", value),
