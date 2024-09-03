@@ -180,21 +180,21 @@ impl DockerImageBuilder {
         }
 
         if let Some(value) = &self.options.docker_host {
-            env::set_var("DOCKER_HOST", value);
+            docker_build_cmd.env("DOCKER_HOST", value);
         }
 
         if let Some(value) = &self.options.docker_tls_verify {
             if value == "1" {
-                env::set_var("DOCKER_TLS_VERIFY", value);
+                docker_build_cmd.env("DOCKER_TLS_VERIFY", value);
             } else {
-                env::remove_var("DOCKER_TLS_VERIFY"); // Clear the variable to disable TLS verification
+                docker_build_cmd.env_remove("DOCKER_TLS_VERIFY"); // Clear the variable to disable TLS verification
             }
         }
 
         match &self.options.docker_cert_path {
-            Some(value) => env::set_var("DOCKER_CERT_PATH", value),
-            None => env::remove_var("DOCKER_CERT_PATH"),
-        }
+            Some(value) => docker_build_cmd.env("DOCKER_CERT_PATH", value),
+            None => docker_build_cmd.env_remove("DOCKER_CERT_PATH"),
+        };
 
         if self.options.inline_cache {
             docker_build_cmd
