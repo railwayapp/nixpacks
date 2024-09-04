@@ -18,7 +18,7 @@ pub mod merge;
 pub mod phase;
 pub mod pretty_print;
 mod topological_sort;
-mod utils;
+pub mod utils;
 
 /// Types that impl this trait can generate build plans.
 pub trait PlanGenerator {

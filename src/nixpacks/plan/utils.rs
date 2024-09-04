@@ -9,11 +9,13 @@ pub fn remove_autos_from_vec(original: Vec<String>) -> Vec<String> {
 /// Fills in the `"..."`'s or `"@auto"`'s in `replacer` with the values from the `original`
 ///
 /// ```
+/// use nixpacks::nixpacks::plan::utils::fill_auto_in_vec;
+///
 /// let arr = fill_auto_in_vec(
-///   Some(vec!["a", "b", "c"]),
-///   Some(vec!["x", "...", "z"])
+///   Some(vec!["a".into(), "b".into(), "c".into()]),
+///   Some(vec!["x".into(), "...".into(), "z".into()])
 /// );
-/// assert_eq!(Some(vec!["x", "...", "a", "b", "c", "z"]), arr);
+/// assert_eq!(Some(vec!["x".into(), "...".into(), "a".into(), "b".into(), "c".into(), "z".into()]), arr);
 /// ```
 pub fn fill_auto_in_vec(
     original: Option<Vec<String>>,
