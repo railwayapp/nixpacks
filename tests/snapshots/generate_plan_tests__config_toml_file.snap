@@ -1,0 +1,32 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "HELLO": "hey there"
+  },
+  "phases": {
+    "custom": {
+      "name": "custom",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "echo building!"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "cowsay"
+      ],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "cowsay ${HELLO}"
+  }
+}
