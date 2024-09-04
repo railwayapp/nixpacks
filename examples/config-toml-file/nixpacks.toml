@@ -1,0 +1,12 @@
+[variables]
+HELLO = "hey there"
+
+[phases.setup]
+nixPkgs = ["cowsay"]
+
+[phases.custom]
+dependsOn = ["setup"]
+cmds = ['echo building!']
+
+[start]
+cmd = "cowsay ${HELLO}"
