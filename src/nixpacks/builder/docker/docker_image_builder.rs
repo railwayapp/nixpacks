@@ -12,7 +12,6 @@ use crate::nixpacks::{
 };
 use anyhow::{bail, Context, Ok, Result};
 use std::{
-    env,
     fs::{self, remove_dir_all, File},
     process::Command,
 };
