@@ -178,6 +178,10 @@ impl DockerImageBuilder {
             docker_build_cmd.arg("--cache-from").arg(value);
         }
 
+        if let Some(value) = &self.options.docker_output {
+            docker_build_cmd.arg("--output").arg(value);
+        }
+
         match &self.options.docker_host {
             Some(value) => docker_build_cmd.env("DOCKER_HOST", value),
             None => docker_build_cmd.env_remove("DOCKER_HOST"),
