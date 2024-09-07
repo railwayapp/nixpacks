@@ -11,7 +11,7 @@ use crate::nixpacks::{
 use anyhow::Result;
 use regex::{Match, Regex};
 const DEFAULT_ELIXIR_PKG_NAME: &str = "elixir";
-const ELIXIR_NIXPKGS_ARCHIVE: &str = "ef99fa5c5ed624460217c31ac4271cfb5cb2502c";
+const ELIXIR_NIXPKGS_ARCHIVE: &str = "437cedbd616d3005b54d63f6710a67abe6bd6056";
 
 pub struct ElixirProvider {}
 
@@ -116,8 +116,10 @@ impl ElixirProvider {
             ("1", "11") => Ok(Pkg::new("elixir_1_11")),
             ("1", "12") => Ok(Pkg::new("elixir_1_12")),
             ("1", "13") => Ok(Pkg::new("elixir_1_13")),
-            ("1", "14") => Ok(Pkg::new("elixir")),
+            ("1", "14") => Ok(Pkg::new("elixir_1_14")),
             ("1", "15") => Ok(Pkg::new("elixir_1_15")),
+            ("1", "16") => Ok(Pkg::new("elixir_1_16")),
+            ("1", "17") => Ok(Pkg::new("elixir")),
             _ => Ok(Pkg::new(DEFAULT_ELIXIR_PKG_NAME)),
         }
     }
