@@ -1,11 +1,20 @@
 use anyhow::Result;
 use ignore::WalkBuilder;
-use std::{fs, io, os::unix::fs::PermissionsExt, path::Path};
+use std::{fs, io, path::Path};
 
+#[cfg(unix)]
 fn is_writable<P: AsRef<Path>>(path: P) -> io::Result<bool> {
+    use std::os::unix::fs::PermissionsExt;
     let metadata = fs::metadata(path)?;
     let permissions = metadata.permissions();
     Ok(permissions.mode() & 0o200 != 0)
+}
+
+#[cfg(windows)]
+fn is_writable<P: AsRef<Path>>(path: P) -> io::Result<bool> {
+    use std::os::windows::fs::MetadataExt;
+    let metadata = fs::metadata(path)?;
+    Ok(!metadata.file_attributes() & 1 != 0)
 }
 
 /// Copies a directory and all its contents to the destination path, recursively.
