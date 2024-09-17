@@ -1473,3 +1473,10 @@ async fn test_node_python() {
     assert!(output.contains("Node"));
     assert!(output.contains("Python"));
 }
+
+#[tokio::test]
+async fn test_config_toml_file() {
+    let name = simple_build("./examples/config-toml-file").await.unwrap();
+    let output = run_image(&name, None).await;
+    assert!(output.contains("hey there"));
+}

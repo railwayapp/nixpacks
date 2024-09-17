@@ -388,7 +388,7 @@ impl DockerfileGenerator for Phase {
         // Ensure paths are available in the environment
         let build_path = if let Some(paths) = &phase.paths {
             let joined_paths = paths.join(":");
-            format!("ENV NIXPACKS_PATH {joined_paths}:$NIXPACKS_PATH")
+            format!("ENV NIXPACKS_PATH={joined_paths}:$NIXPACKS_PATH")
         } else {
             String::new()
         };
@@ -474,7 +474,7 @@ mod tests {
     fn test_phase_generation() {
         let mut phase = Phase::new("test");
         phase.add_cmd("echo test");
-        phase.add_apt_pkgs(vec!["wget".to_owned()]);
+        phase.add_path("/test".to_string());
 
         let dockerfile = phase
             .generate_dockerfile(
@@ -486,6 +486,7 @@ mod tests {
             .unwrap();
 
         assert!(dockerfile.contains("echo test"));
+        assert!(dockerfile.contains("ENV NIXPACKS_PATH=/test:$NIXPACKS_PATH"));
     }
 
     #[test]

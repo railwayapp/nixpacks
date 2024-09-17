@@ -12,7 +12,6 @@ use crate::nixpacks::{
 };
 use anyhow::{bail, Context, Ok, Result};
 use std::{
-    env,
     fs::{self, remove_dir_all, File},
     process::Command,
 };
@@ -179,22 +178,24 @@ impl DockerImageBuilder {
             docker_build_cmd.arg("--cache-from").arg(value);
         }
 
-        if let Some(value) = &self.options.docker_host {
-            env::set_var("DOCKER_HOST", value);
+        if let Some(value) = &self.options.docker_output {
+            docker_build_cmd.arg("--output").arg(value);
         }
 
-        if let Some(value) = &self.options.docker_tls_verify {
-            if value == "1" {
-                env::set_var("DOCKER_TLS_VERIFY", value);
-            } else {
-                env::remove_var("DOCKER_TLS_VERIFY"); // Clear the variable to disable TLS verification
-            }
-        }
+        match &self.options.docker_host {
+            Some(value) => docker_build_cmd.env("DOCKER_HOST", value),
+            None => docker_build_cmd.env_remove("DOCKER_HOST"),
+        };
+
+        match &self.options.docker_tls_verify {
+            Some(value) if value == "1" => docker_build_cmd.env("DOCKER_TLS_VERIFY", value),
+            _ => docker_build_cmd.env_remove("DOCKER_TLS_VERIFY"), // Clear the variable to disable TLS verification
+        };
 
         match &self.options.docker_cert_path {
-            Some(value) => env::set_var("DOCKER_CERT_PATH", value),
-            None => env::remove_var("DOCKER_CERT_PATH"),
-        }
+            Some(value) => docker_build_cmd.env("DOCKER_CERT_PATH", value),
+            None => docker_build_cmd.env_remove("DOCKER_CERT_PATH"),
+        };
 
         if self.options.inline_cache {
             docker_build_cmd
