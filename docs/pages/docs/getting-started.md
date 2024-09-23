@@ -9,7 +9,7 @@ To get started with Nixpacks you need an app that you want to build and package.
 ## 1. Install
 
 ```
-brew install railwayapp/tap/nixpacks
+brew install nixpacks
 ```
 
 [View more installation options](/docs/install)
