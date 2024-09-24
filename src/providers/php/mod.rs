@@ -15,7 +15,21 @@ use crate::nixpacks::{
 use super::{node::NodeProvider, Provider};
 use anyhow::Result;
 
-const DEFAULT_PHP_VERSION: &str = "8.2";
+const LEGACY_ARCHIVE_VERSION: &str = "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db";
+
+const DEFAULT_ARCHIVE_VERSION: &str = "dbc4f15b899ac77a8d408d8e0f89fa9c0c5f2b78";
+
+const DEFAULT_PHP_VERSION: &str = "8.3";
+
+// (php_version, (nix_pkg_name, archive_version))
+const PHP_ARCHIVE_VERSIONS: &[(&str, (&str, &str))] = &[
+    ("7.4", ("php74", LEGACY_ARCHIVE_VERSION)),
+    ("8.0", ("php80", LEGACY_ARCHIVE_VERSION)),
+    ("8.1", ("php81", DEFAULT_ARCHIVE_VERSION)),
+    ("8.2", ("php", DEFAULT_ARCHIVE_VERSION)),
+    ("8.3", ("php83", DEFAULT_ARCHIVE_VERSION)),
+    ("8.4", ("php84", DEFAULT_ARCHIVE_VERSION)),
+];
 
 pub struct PhpProvider;
 
@@ -51,10 +65,7 @@ impl Provider for PhpProvider {
 
 impl PhpProvider {
     fn get_setup(app: &App, env: &Environment) -> Result<Phase> {
-        let php_pkg = match PhpProvider::get_php_package(app) {
-            Ok(php_package) => php_package,
-            _ => "php".to_string(),
-        };
+        let (php_pkg, archive_version) = PhpProvider::get_php_package_and_archive(app)?;
 
         let mut php_extensions = PhpProvider::get_php_extensions(app).unwrap_or_default();
         php_extensions.sort_unstable();
@@ -87,6 +98,7 @@ impl PhpProvider {
 
         let mut phase = Phase::setup(Some(pkgs));
 
+        phase.set_nix_archive(archive_version.to_string());
         phase.add_pkgs_libs(ext_pkgs);
         phase.add_pkgs_libs(vec!["libmysqlclient".into()]);
 
@@ -171,9 +183,14 @@ impl PhpProvider {
         vars
     }
 
-    fn get_php_package(app: &App) -> Result<String> {
+    fn get_php_package_and_archive(app: &App) -> Result<(&str, &str)> {
         let version = PhpProvider::get_php_version(app)?;
-        Ok(format!("php{}", version.replace('.', "")))
+        let (_, (pkg, archive)) = PHP_ARCHIVE_VERSIONS
+            .iter()
+            .find(|(php_version, _)| version == *php_version)
+            .ok_or(anyhow::anyhow!("Unsupported PHP version: {}", version))?;
+
+        Ok((pkg, archive))
     }
 
     fn get_php_version(app: &App) -> Result<String> {
