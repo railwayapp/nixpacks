@@ -184,7 +184,7 @@ impl PhpProvider {
     }
 
     fn get_php_package_and_archive(app: &App) -> Result<(&str, &str)> {
-        let version = PhpProvider::get_php_version(app)?;
+        let version = PhpProvider::get_php_version(app).unwrap_or(DEFAULT_PHP_VERSION.to_string());
         let (_, (pkg, archive)) = PHP_ARCHIVE_VERSIONS
             .iter()
             .find(|(php_version, _)| version == *php_version)
