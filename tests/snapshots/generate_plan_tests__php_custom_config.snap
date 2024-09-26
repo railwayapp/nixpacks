@@ -32,10 +32,10 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "(php.withExtensions (pe: pe.enabled ++ []))",
+        "(php83.withExtensions (pe: pe.enabled ++ []))",
         "nginx",
         "libmysqlclient",
-        "phpPackages.composer",
+        "php83Packages.composer",
         "nodejs_18",
         "npm-9_x"
       ],
@@ -49,6 +49,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "node /assets/scripts/prestart.mjs /assets/nginx.template.conf /nginx.conf && (php-fpm -y /assets/php-fpm.conf & nginx -c /nginx.conf)"
+    "cmd": "node /assets/scripts/prestart.mjs /app/nginx.template.conf /nginx.conf && (php-fpm -y /assets/php-fpm.conf & nginx -c /nginx.conf)"
   }
 }
