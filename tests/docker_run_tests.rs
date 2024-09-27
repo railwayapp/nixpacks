@@ -1483,7 +1483,7 @@ async fn test_config_toml_file() {
 
 #[tokio::test]
 async fn test_scheme() {
-    let name = simple_build("./examples/haunt").await.unwrap();
+    let name = simple_build("./examples/scheme").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("serving site on port 8080"));
     // let name = simple_build("./examples/scheme").await.unwrap();

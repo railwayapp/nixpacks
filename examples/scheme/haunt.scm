@@ -10,5 +10,5 @@
       '((author . "siarune")
         (email  . "aidan.sharp@siarune.dev"))
       #:readers (list commonmark-reader)
-      #:builders (list (blog))
+      #:builders (list  )
 )
