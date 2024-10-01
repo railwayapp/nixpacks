@@ -1,5 +1,5 @@
-pub const DEBIAN_BASE_IMAGE: &str = "ghcr.io/railwayapp/nixpacks:debian-1727136237";
-pub const UBUNTU_BASE_IMAGE: &str = "ghcr.io/railwayapp/nixpacks:ubuntu-1727136237";
+pub const DEBIAN_BASE_IMAGE: &str = "ghcr.io/railwayapp/nixpacks:debian-1727741078";
+pub const UBUNTU_BASE_IMAGE: &str = "ghcr.io/railwayapp/nixpacks:ubuntu-1727741078";
 pub const DEFAULT_BASE_IMAGE: &str = UBUNTU_BASE_IMAGE;
 
 pub const STANDALONE_IMAGE: &str = "ubuntu:jammy";
