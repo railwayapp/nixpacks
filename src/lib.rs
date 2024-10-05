@@ -39,8 +39,8 @@ use providers::{
     fsharp::FSharpProvider, gleam::GleamProvider, go::GolangProvider,
     haskell::HaskellStackProvider, java::JavaProvider, lunatic::LunaticProvider,
     node::NodeProvider, php::PhpProvider, python::PythonProvider, ruby::RubyProvider,
-    rust::RustProvider, scala::ScalaProvider, scheme::HauntProvider, staticfile::StaticfileProvider, swift::SwiftProvider,
-    zig::ZigProvider, Provider,
+    rust::RustProvider, scala::ScalaProvider, scheme::HauntProvider,
+    staticfile::StaticfileProvider, swift::SwiftProvider, zig::ZigProvider, Provider,
 };
 use std::process::Command;
 
@@ -62,7 +62,7 @@ pub fn get_providers() -> &'static [&'static (dyn Provider)] {
         &GleamProvider {},
         &GolangProvider {},
         &HaskellStackProvider {},
-        &HauntProvider{},
+        &HauntProvider {},
         &JavaProvider {},
         &LunaticProvider {},
         &ScalaProvider {},

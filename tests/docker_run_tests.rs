@@ -1486,6 +1486,4 @@ async fn test_scheme() {
     let name = simple_build("./examples/scheme").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("serving site on port 8080"));
-    // let name = simple_build("./examples/scheme").await.unwrap();
-    // assert!(run_image(&name, None).await.contains("serving site on port 8080"));
 }

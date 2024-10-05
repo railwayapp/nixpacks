@@ -4,7 +4,7 @@
 
  # {% $markdoc.frontmatter.title %}
 
- Scheme is detected is there is a `haunt.scm` file found.
+ Scheme via [haunt](https://dthompson.us/projects/haunt.html) is detected is there is a `haunt.scm` file found.
 
  ## Install
  
