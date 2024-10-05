@@ -35,10 +35,10 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "(php82.withExtensions (pe: pe.enabled ++ []))",
+        "(php.withExtensions (pe: pe.enabled ++ []))",
         "nginx",
         "libmysqlclient",
-        "php82Packages.composer",
+        "phpPackages.composer",
         "nodejs_18",
         "npm-9_x"
       ],
