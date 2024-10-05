@@ -1,0 +1,23 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cmds": [
+        "echo building"
+      ]
+    }
+  },
+  "start": {
+    "cmd": "bash start.sh",
+    "user": "myuser"
+  }
+}
