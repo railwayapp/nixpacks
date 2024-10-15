@@ -101,6 +101,7 @@ impl Mergeable for StartPhase {
             start_phase.only_include_files.clone(),
             c2.only_include_files,
         );
+        start_phase.user = c2.user.or_else(|| start_phase.user.clone());
         start_phase
     }
 }
