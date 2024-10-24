@@ -69,3 +69,7 @@ Build and install from source using [Rust](https://www.rust-lang.org/tools/insta
 ```sh
 cargo install nixpacks
 ```
+
+## Zsh Completions
+
+Shell completions are available [in this repo](https://github.com/iloveitaly/zsh-ai-completions).
