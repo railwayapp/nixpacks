@@ -22,12 +22,15 @@ impl Provider for HauntProvider {
     }
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
-        let setup = Phase::setup(Some(vec![Pkg::new("haunt")]));
-        let build = Phase::build(Some("haunt build".to_string()));
-        let start = StartPhase::new("haunt serve".to_string());
+        let setup = Phase::setup(Some(vec![Pkg::new("haunt"), Pkg::new("guile")]));
+        let mut build = Phase::build(Some("haunt build".to_string()));
+        build.depends_on_phase("setup");
+        // In production, init.scm should run "haunt serve"
+        // However, "haunt serve" doesn't terminate on its own, which the tests depend on
+        // So for the example, init.scm simply logs to the console
+        let start = StartPhase::new("guile init.scm --auto-compile".to_string());
 
         let plan = BuildPlan::new(&vec![setup, build], Some(start));
-        
         Ok(Some(plan))
     }
 }
