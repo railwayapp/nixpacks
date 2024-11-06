@@ -16,7 +16,7 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "clojure -T:build uber; if [ -f /app/target/default+uberjar/*standalone.jar ]; then mv /app/target/default+uberjar/*standalone.jar /app/target/*standalone.jar; fi"
+        "clojure -T:build uber; for name in /app/target/default+uberjar/*.jar; do case $name in (*SNAPSHOT*) continue;; esac; mv $name /app/target/standalone.jar; fi"
       ]
     },
     "setup": {

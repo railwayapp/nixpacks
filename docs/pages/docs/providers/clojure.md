@@ -24,7 +24,7 @@ The version can be overridden by
 If a `build.clj` file for [`tools.build`](https://clojure.org/guides/tools_build) is found:
 
 ```
-clojure -T:build uber; if [ -f /app/target/uberjar/*standalone.jar ]; then mv /app/target/uberjar/*standalone.jar /app/target/*standalone.jar; fi
+"clojure -T:build uber; for name in /app/target/default+uberjar/*.jar; do case $name in (*SNAPSHOT*) continue;; esac; mv $name /app/target/standalone.jar; fi"
 ```
 
 If the `lein-ring` plugin is found:
