@@ -152,12 +152,12 @@ impl PythonProvider {
             pkgs.append(&mut vec![Pkg::new("pipenv")]);
         }
 
-        if PythonProvider::uses_dep(app, "cairo")? {
-            pkgs.append(&mut vec![Pkg::new("cairo")]);
-        }
-
         let mut setup = Phase::setup(Some(pkgs));
         setup.set_nix_archive(nix_archive);
+
+        if PythonProvider::uses_dep(app, "cairo")? {
+            setup.add_pkgs_libs(vec!["cairo".to_string()]);
+        }
 
         // Many Python packages need some C headers to be available
         // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
