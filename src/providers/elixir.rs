@@ -66,7 +66,7 @@ impl ElixirProvider {
         setup.add_pkgs_libs(vec!["stdenv.cc.cc.lib".to_string()]);
         setup.add_nix_pkgs(&[Pkg::new("gcc")]);
 
-        return Ok(Some(setup));
+        Ok(Some(setup))
     }
 
     fn default_elixir_environment_variables() -> EnvironmentVariables {
