@@ -21,7 +21,7 @@ impl Provider for HauntProvider {
         Ok(app.includes_file("haunt.scm"))
     }
 
-    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(&self, _app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
         let setup = Phase::setup(Some(vec![Pkg::new("haunt"), Pkg::new("guile")]));
         let mut build = Phase::build(Some("haunt build".to_string()));
         build.depends_on_phase("setup");
