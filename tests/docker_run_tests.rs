@@ -1033,7 +1033,7 @@ async fn test_python_poetry() {
 }
 
 #[tokio::test]
-async fn test_python_poetry() {
+async fn test_python_uv() {
     let name = simple_build("./examples/python-uv").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Python-Uv"));

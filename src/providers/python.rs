@@ -119,15 +119,10 @@ impl Provider for PythonProvider {
                 }
             }
 
-            plan.add_variables(EnvironmentVariables::from([(
-                "NIXPACKS_UV_VERSION".to_string(),
-                version,
-            )]));
-
-            plan.add_variables(EnvironmentVariables::from([(
-                "UV_PROJECT_ENVIRONMENT".to_string(),
-                VENV_LOCATION.to_string(),
-            )]));
+            plan.add_variables(EnvironmentVariables::from([
+                ("NIXPACKS_UV_VERSION".to_string(), version),
+                ("UV_PROJECT_ENVIRONMENT".to_string(), VENV_LOCATION.to_string()),
+            ]));
         }
 
         Ok(Some(plan))
