@@ -293,6 +293,12 @@ impl PythonProvider {
             ))));
         }
 
+        // the python package is extracted from pyproject.toml, but this can often not be the desired entrypoint
+        // for this reason we prefer main.py to the module heuristic used in the pyproject.toml logic
+        if app.includes_file("main.py") {
+            return Ok(Some(StartPhase::new("python main.py".to_string())));
+        }
+
         if app.includes_file("pyproject.toml") {
             if let OkResult(meta) = PythonProvider::parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
@@ -302,10 +308,6 @@ impl PythonProvider {
                     })));
                 }
             }
-        }
-        // falls through
-        if app.includes_file("main.py") {
-            return Ok(Some(StartPhase::new("python main.py".to_string())));
         }
 
         Ok(None)
