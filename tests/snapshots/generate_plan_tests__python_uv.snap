@@ -49,6 +49,6 @@ snapshot_kind: text
     }
   },
   "start": {
-    "cmd": "python -m python-uv"
+    "cmd": "python main.py"
   }
 }
