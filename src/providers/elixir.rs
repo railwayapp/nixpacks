@@ -37,13 +37,13 @@ impl Provider for ElixirProvider {
         install_phase.add_cmd("mix deps.get --only prod");
         plan.add_phase(install_phase);
 
-        if mix_exs_content.contains("postgrex") && mix_exs_content.contains("ecto") {
-            build_phase.add_cmd("mix ecto.setup");
-        }
-
         // Build Phase
         let mut build_phase = Phase::build(Some("mix compile".to_string()));
         let mix_exs_content = app.read_file("mix.exs")?;
+
+        if mix_exs_content.contains("postgrex") && mix_exs_content.contains("ecto") {
+            build_phase.add_cmd("mix ecto.setup");
+        }
 
         if mix_exs_content.contains("assets.deploy") {
             build_phase.add_cmd("mix assets.deploy".to_string());
