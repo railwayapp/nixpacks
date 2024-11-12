@@ -34,9 +34,9 @@ The version can be overridden by
 
 You also specify the exact poetry, pdm, and uv versions:
 
-* The `NIXPACKS_POETRY_VERSION` environment variable or `poetry` in a `.tool-versions` file
-* The `NIXPACKS_PDM_VERSION` environment variable
-* The `NIXPACKS_UV_VERSION` environment variable or `uv` in a `.tool-versions` file
+- The `NIXPACKS_POETRY_VERSION` environment variable or `poetry` in a `.tool-versions` file
+- The `NIXPACKS_PDM_VERSION` environment variable
+- The `NIXPACKS_UV_VERSION` environment variable or `uv` in a `.tool-versions` file
 
 ## Install
 
