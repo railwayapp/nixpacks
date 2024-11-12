@@ -1,6 +1,7 @@
 ---
 source: tests/generate_plan_tests.rs
 expression: plan
+snapshot_kind: text
 ---
 {
   "providers": [],
@@ -17,7 +18,8 @@ expression: plan
         "install"
       ],
       "cmds": [
-        "mix compile"
+        "mix compile",
+        "mix ecto.setup"
       ]
     },
     "install": {
