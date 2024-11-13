@@ -23,13 +23,13 @@ mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const NODE_NIXPKGS_ARCHIVE: &str = "e05605ec414618eab4a7a6aea8b38f6fbbcc8f08";
+const NODE_NIXPKGS_ARCHIVE: &str = "fe0ab2747612f6df8091438bb3bac0fcee942853";
 
 // We need to use a specific commit hash for Node versions <16 since it is EOL in the latest Nix packages
 const NODE_LT_16_ARCHIVE: &str = "bf744fe90419885eefced41b3e5ae442d732712d";
 
 const DEFAULT_NODE_VERSION: u32 = 18;
-const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18, 20, 22];
+const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18, 20, 22, 23];
 
 const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
 const PNPM_CACHE_DIR: &str = "/root/.local/share/pnpm/store/v3";
@@ -215,6 +215,7 @@ impl NodeProvider {
         EnvironmentVariables::from([
             ("NODE_ENV".to_string(), "production".to_string()),
             ("NPM_CONFIG_PRODUCTION".to_string(), "false".to_string()),
+            // CI required for various node tooling
             ("CI".to_string(), "true".to_string()),
         ])
     }
