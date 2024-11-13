@@ -35,7 +35,11 @@ const AVAILABLE_GO_VERSIONS: &[(&str, &str, &str)] = &[
         "1f13eabcd6f5b00fe9de9575ac52c66a0e887ce6",
     ),
     ("1.22", "go", "e89cf1c932006531f454de7d652163a9a5c86668"),
-    ("1.23", "go_1_23", "05bbf675397d5366259409139039af8077d695ce"),
+    (
+        "1.23",
+        "go_1_23",
+        "05bbf675397d5366259409139039af8077d695ce",
+    ),
 ];
 const DEFAULT_GO_PKG_NAME: &str = "go";
 const DEFAULT_ARCHIVE: &str = "e89cf1c932006531f454de7d652163a9a5c86668";
