@@ -1,0 +1,28 @@
+
+#
+# Name of the base image. Capstan will download this automatically from
+# Cloudius S3 repository.
+#
+#base: cloudius/osv
+base: cloudius/osv-openjdk8
+
+#
+# The command line passed to OSv to start up the application.
+#
+cmdline: /java.so -jar /clojure-luminus/app.jar
+
+#
+# The command to use to build the application.
+# You can use any build tool/command (make/rake/lein/boot) - this runs locally on your machine
+#
+# For Leiningen, you can use:
+#build: lein uberjar
+# For Boot, you can use:
+#build: boot build
+
+#
+# List of files that are included in the generated image.
+#
+files:
+  /clojure-luminus/app.jar: ./target/uberjar/clojure-luminus.jar
+
