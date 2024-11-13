@@ -1,6 +1,7 @@
 ---
 source: tests/generate_plan_tests.rs
 expression: plan
+snapshot_kind: text
 ---
 {
   "providers": [],
@@ -35,7 +36,7 @@ expression: plan
       "name": "setup",
       "nixPkgs": [
         "python3",
-        "postgresql",
+        "postgresql.dev",
         "gcc"
       ],
       "nixLibs": [
