@@ -30,7 +30,7 @@ const PIP_CACHE_DIR: &str = "/root/.cache/pip";
 const PDM_CACHE_DIR: &str = "/root/.cache/pdm";
 const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python3";
 
-const PYTHON_NIXPKGS_ARCHIVE: &str = "fe348e1a06a2d791e992d46844a83d2d44436c5a";
+const PYTHON_NIXPKGS_ARCHIVE: &str = "bc8f8d1be58e8c8383e683a06e1e1e57893fff87";
 const LEGACY_PYTHON_NIXPKGS_ARCHIVE: &str = "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db";
 
 pub struct PythonProvider {}
@@ -169,7 +169,11 @@ impl PythonProvider {
 
         if PythonProvider::is_using_postgres(app, env)? {
             // Postgres requires postgresql and gcc on top of the original python packages
-            pkgs.append(&mut vec![Pkg::new("postgresql")]);
+
+            // .dev variant is required in order for pg_config to be available, which is needed by psycopg2
+            // the .dev variant requirement is caused by this change in nix pkgs:
+            // https://github.com/NixOS/nixpkgs/blob/43eac3c9e618c4114a3441b52949609ea2104670/pkgs/servers/sql/postgresql/pg_config.sh
+            pkgs.append(&mut vec![Pkg::new("postgresql.dev")]);
         }
 
         if PythonProvider::is_django(app, env)? && PythonProvider::is_using_mysql(app, env)? {
