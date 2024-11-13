@@ -19,6 +19,7 @@ The following Go versions are available:
 - `1.20`
 - `1.21`
 - `1.22` (default)
+- `1.23`
 
 The version is parsed from the `go.mod` file.
 
