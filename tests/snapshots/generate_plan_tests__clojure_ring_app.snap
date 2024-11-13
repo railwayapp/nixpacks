@@ -1,6 +1,7 @@
 ---
 source: tests/generate_plan_tests.rs
 expression: plan
+snapshot_kind: text
 ---
 {
   "providers": [],
@@ -30,6 +31,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "JAR_FILE=$(find ./target -name \"*standalone.jar\"); bash -c \"java $JAVA_OPTS -jar $JAR_FILE\""
+    "cmd": "JAR_FILE=$(find /app/target -name \"*-standalone.jar\" -o -name \"*.jar\" ! -name \"*-SNAPSHOT.jar\" | head -n 1) && bash -c \"java $JAVA_OPTS -jar $JAR_FILE\""
   }
 }
