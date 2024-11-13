@@ -1480,3 +1480,9 @@ async fn test_config_toml_file() {
     let output = run_image(&name, None).await;
     assert!(output.contains("hey there"));
 }
+
+#[tokio::test]
+async fn test_scheme() {
+    let name = simple_build("./examples/scheme").await.unwrap();
+    assert!(run_image(&name, None).await.contains("Hello from Scheme!"));
+}
