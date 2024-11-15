@@ -1,0 +1,6 @@
+[phases.build]
+cmds = ["echo building"]
+
+[start]
+cmd = "bash start.sh"
+user = "myuser"
