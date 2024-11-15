@@ -54,6 +54,7 @@ pub struct StartPhase {
     pub cmd: Option<String>,
     pub run_image: Option<String>,
     pub only_include_files: Option<Vec<String>>,
+    pub user: Option<String>,
 }
 
 impl Phase {
