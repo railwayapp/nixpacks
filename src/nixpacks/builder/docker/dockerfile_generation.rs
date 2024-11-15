@@ -326,6 +326,14 @@ impl DockerfileGenerator for StartPhase {
             None => String::new(),
         };
 
+        let user_str = match &self.user {
+            Some(user) => formatdoc! {"
+                RUN useradd -m -s /bin/bash {user}
+                USER {user}
+            "},
+            None => String::new(),
+        };
+
         let dockerfile: String = match &self.run_image {
             Some(run_image) => {
                 let copy_cmds = utils::get_copy_from_commands(
@@ -343,20 +351,24 @@ impl DockerfileGenerator for StartPhase {
                   COPY --from=0 /etc/ssl/certs /etc/ssl/certs
                   RUN true
                   {copy_cmds}
+                  {user_str}
                   {start_cmd}
                 ",
                 run_image=run_image,
                 APP_DIR=APP_DIR,
                 copy_cmds=copy_cmds.join("\n"),
+                user_str=user_str,
                 start_cmd=start_cmd,}
             }
             None => {
                 formatdoc! {"
                   # start
                   COPY . /app
-                  {}
+                  {user_str}
+                  {start_cmd}
                 ",
-                start_cmd}
+                start_cmd=start_cmd,
+                user_str=user_str}
             }
         };
 
