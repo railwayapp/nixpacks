@@ -228,9 +228,11 @@ impl PhpProvider {
         let mut extensions = Vec::new();
         // ext-json is included by default in PHP >= 8.0 (and not available in Nix)
         // ext-zend-opcache is included by default in PHP >= 5.5
-        let ignored_extensions = vec!["ext-json", "ext-zend-opcache"];
+        let ignored_extensions = [String::from("ext-json"), String::from("ext-zend-opcache")];
         for extension in composer_json.require.keys() {
-            if extension.starts_with("ext-") && (version == "7.4" || !ignored_extensions.contains(extension)) {
+            if extension.starts_with("ext-")
+                && (version == "7.4" || !ignored_extensions.contains(extension))
+            {
                 extensions.push(
                     extension
                         .strip_prefix("ext-")
