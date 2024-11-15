@@ -1,11 +1,13 @@
 ---
 source: tests/generate_plan_tests.rs
 expression: plan
+snapshot_kind: text
 ---
 {
   "providers": [],
   "buildImage": "[build_image]",
   "variables": {
+    "ELIXIR_ERL_OPTIONS": "+fnu",
     "MIX_ENV": "prod",
     "NIXPACKS_METADATA": "elixir"
   },
@@ -34,7 +36,11 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "elixir_1_13"
+        "elixir_1_13",
+        "gcc"
+      ],
+      "nixLibs": [
+        "stdenv.cc.cc.lib"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]"
