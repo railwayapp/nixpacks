@@ -6,6 +6,7 @@ expression: plan
   "providers": [],
   "buildImage": "[build_image]",
   "variables": {
+    "ELIXIR_ERL_OPTIONS": "+fnu",
     "MIX_ENV": "prod",
     "NIXPACKS_METADATA": "elixir"
   },
@@ -34,7 +35,11 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "elixir"
+        "elixir_1_14",
+        "gcc"
+      ],
+      "nixLibs": [
+        "stdenv.cc.cc.lib"
       ],
       "nixOverlays": [],
       "nixpkgsArchive": "[archive]"
