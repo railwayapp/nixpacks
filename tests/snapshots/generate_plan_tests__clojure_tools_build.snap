@@ -17,7 +17,7 @@ snapshot_kind: text
         "setup"
       ],
       "cmds": [
-        "clojure -T:build uber; if [ -f /app/target/default+uberjar/*standalone.jar ]; then mv /app/target/default+uberjar/*standalone.jar /app/target/*standalone.jar; fi"
+        "clojure -T:build uber; if [ -d /app/target/default+uberjar ]; then find /app/target/default+uberjar -name \"*.jar\" -exec mv -t /app/target/ {} +; fi"
       ]
     },
     "setup": {
