@@ -936,7 +936,7 @@ async fn test_python_asdf_poetry() {
     let name = simple_build("./examples/python-asdf-poetry").await.unwrap();
     let output = run_image(&name, None).await;
 
-    assert!(output.contains("3.12.3"), "{}", output);
+    assert!(output.contains("3.12.7"), "{}", output);
     assert!(output.contains("Poetry (version 1.8.2)"), "{}", output);
 }
 
@@ -1030,6 +1030,13 @@ async fn test_python_poetry() {
     let name = simple_build("./examples/python-poetry").await.unwrap();
     let output = run_image(&name, None).await;
     assert!(output.contains("Hello from Python-Poetry"));
+}
+
+#[tokio::test]
+async fn test_python_uv() {
+    let name = simple_build("./examples/python-uv").await.unwrap();
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Hello from Python-Uv"));
 }
 
 #[tokio::test]

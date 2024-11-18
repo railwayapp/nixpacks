@@ -11,6 +11,8 @@ Python is detected if any of the following files are found
 - `pyproject.toml`
 - `Pipfile`
 
+A venv is created at `/opt/venv` and `PATH` is modified to use the venv python binary.
+
 ## Setup
 
 The following Python versions are available
@@ -21,12 +23,20 @@ The following Python versions are available
 - `3.10`
 - `3.11` (Default)
 - `3.12`
+- `3.13`
 
 The version can be overridden by
 
 - Setting the `NIXPACKS_PYTHON_VERSION` environment variable
 - Setting the version in a `.python-version` file
 - Setting the version in a `runtime.txt` file
+- Setting the version in a `.tool-versions` file
+
+You also specify the exact poetry, pdm, and uv versions:
+
+- The `NIXPACKS_POETRY_VERSION` environment variable or `poetry` in a `.tool-versions` file
+- The `NIXPACKS_PDM_VERSION` environment variable
+- The `NIXPACKS_UV_VERSION` environment variable or `uv` in a `.tool-versions` file
 
 ## Install
 
@@ -60,6 +70,12 @@ If `Pipfile` (w/ `Pipfile.lock`)
 PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
 ```
 
+if `uv.lock`:
+
+```
+uv sync --no-dev --frozen
+```
+
 ## Start
 
 if Django Application
@@ -85,6 +101,8 @@ python main.py
 These directories are cached between builds
 
 - Install: `~/.cache/pip`
+- Install: `~/.cache/uv`
+- Install: `~/.cache/pdm`
 
 ## Environment Variables
 
