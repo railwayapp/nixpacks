@@ -1384,6 +1384,13 @@ async fn test_clojure() {
 }
 
 #[tokio::test]
+async fn test_clojure_luminus() {
+    let name = simple_build("./examples/clojure-luminus").await.unwrap();
+    let output = run_image(&name, None).await;
+    assert!(output.contains("clojure-luminus started successfully"));
+}
+
+#[tokio::test]
 async fn test_clojure_ring_app() {
     let name = simple_build("./examples/clojure-ring-app").await.unwrap();
     let output = run_image(&name, None).await;
