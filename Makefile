@@ -40,3 +40,7 @@ debug-single:
 	cargo run -- build $(TEST_TARGET) --out $(TEST_TARGET)
 	build_debug_cmd="$(shell sed 's/docker build/BUILDX_EXPERIMENTAL=1 docker buildx debug --invoke bash build/' $(TEST_TARGET)/.nixpacks/build.sh)" && \
 		eval "$$build_debug_cmd"
+
+# for updating the various `*_NIXPKGS_ARCHIVE` constants
+latest-nixpkgs-revision:
+	@curl -s https://api.github.com/repos/NixOS/nixpkgs/commits/master | jq -r '.sha'
