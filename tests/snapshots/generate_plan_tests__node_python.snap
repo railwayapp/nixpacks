@@ -10,6 +10,12 @@ expression: plan
     "NIXPACKS_METADATA": "node,python",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PIP_NO_CACHE_DIR": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
     "PYTHONUNBUFFERED": "1"
   },
   "phases": {
@@ -27,9 +33,6 @@ expression: plan
       "dependsOn": [
         "setup"
       ],
-      "cmds": [
-        "npm i"
-      ],
       "cacheDirectories": [
         "/root/.npm"
       ],
@@ -46,7 +49,7 @@ expression: plan
     "python:setup": {
       "name": "python:setup",
       "nixPkgs": [
-        "python38",
+        "python3",
         "gcc"
       ],
       "nixLibs": [
@@ -69,6 +72,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "./start.sh"
+    "cmd": "echo Node $(node --version) && python --version"
   }
 }

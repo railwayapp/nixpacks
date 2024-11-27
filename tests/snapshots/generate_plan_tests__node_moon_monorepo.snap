@@ -28,10 +28,10 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "yarn install --frozen-lockfile"
+        "npm ci"
       ],
       "cacheDirectories": [
-        "/usr/local/share/.cache/yarn/v6"
+        "/root/.npm"
       ],
       "paths": [
         "/app/node_modules/.bin"
@@ -40,8 +40,8 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "nodejs_18",
-        "yarn-1_x"
+        "nodejs_22",
+        "npm-9_x"
       ],
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"

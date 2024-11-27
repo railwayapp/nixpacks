@@ -2,6 +2,7 @@ use crate::{
     chain,
     nixpacks::{
         app::App,
+        asdf::parse_tool_versions_content,
         environment::{Environment, EnvironmentVariables},
         plan::{
             phase::{Phase, StartPhase},
@@ -18,12 +19,19 @@ use std::{collections::HashMap, fs};
 
 use super::{Provider, ProviderMetadata};
 
-const DEFAULT_PYTHON_PKG_NAME: &str = "python38";
+const DEFAULT_PYTHON_PKG_NAME: &str = "python3";
 const POETRY_VERSION: &str = "1.3.1";
-const PDM_VERSION: &str = "2.7.4";
+const PDM_VERSION: &str = "2.13.3";
+const UV_VERSION: &str = "0.4.30";
+
+const VENV_LOCATION: &str = "/opt/venv";
+const UV_CACHE_DIR: &str = "/root/.cache/uv";
 const PIP_CACHE_DIR: &str = "/root/.cache/pip";
 const PDM_CACHE_DIR: &str = "/root/.cache/pdm";
-const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python310";
+const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python3";
+
+const PYTHON_NIXPKGS_ARCHIVE: &str = "bc8f8d1be58e8c8383e683a06e1e1e57893fff87";
+const LEGACY_PYTHON_NIXPKGS_ARCHIVE: &str = "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db";
 
 pub struct PythonProvider {}
 
@@ -67,15 +75,25 @@ impl Provider for PythonProvider {
             plan.set_start_phase(start);
         }
 
-        plan.add_variables(EnvironmentVariables::from([(
-            "PYTHONUNBUFFERED".to_owned(),
-            "1".to_owned(),
-        )]));
+        plan.add_variables(PythonProvider::default_python_environment_variables());
 
         if app.includes_file("poetry.lock") {
+            let mut version = POETRY_VERSION.to_string();
+
+            if app.includes_file(".tool-versions") {
+                let file_content = &app.read_file(".tool-versions")?;
+
+                if let Some(poetry_version) =
+                    PythonProvider::parse_tool_versions_poetry_version(file_content)?
+                {
+                    println!("Using poetry version from .tool-versions: {poetry_version}");
+                    version = poetry_version;
+                }
+            }
+
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_POETRY_VERSION".to_string(),
-                POETRY_VERSION.to_string(),
+                version,
             )]));
         }
 
@@ -84,6 +102,30 @@ impl Provider for PythonProvider {
                 "NIXPACKS_PDM_VERSION".to_string(),
                 PDM_VERSION.to_string(),
             )]));
+        }
+
+        // uv version is not, as of 0.4.30, specified in the lock file or pyproject.toml
+        if app.includes_file("uv.lock") {
+            let mut version = UV_VERSION.to_string();
+
+            if app.includes_file(".tool-versions") {
+                let file_content = &app.read_file(".tool-versions")?;
+
+                if let Some(uv_version) =
+                    PythonProvider::parse_tool_versions_uv_version(file_content)?
+                {
+                    println!("Using uv version from .tool-versions: {uv_version}");
+                    version = uv_version;
+                }
+            }
+
+            plan.add_variables(EnvironmentVariables::from([
+                ("NIXPACKS_UV_VERSION".to_string(), version),
+                (
+                    "UV_PROJECT_ENVIRONMENT".to_string(),
+                    VENV_LOCATION.to_string(),
+                ),
+            ]));
         }
 
         Ok(Some(plan))
@@ -121,13 +163,17 @@ enum EntryPoint {
 impl PythonProvider {
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
         let mut pkgs: Vec<Pkg> = vec![];
-        let python_base_package = PythonProvider::get_nix_python_package(app, env)?;
+        let (python_base_package, nix_archive) = PythonProvider::get_nix_python_package(app, env)?;
 
         pkgs.append(&mut vec![python_base_package]);
 
         if PythonProvider::is_using_postgres(app, env)? {
             // Postgres requires postgresql and gcc on top of the original python packages
-            pkgs.append(&mut vec![Pkg::new("postgresql")]);
+
+            // .dev variant is required in order for pg_config to be available, which is needed by psycopg2
+            // the .dev variant requirement is caused by this change in nix pkgs:
+            // https://github.com/NixOS/nixpkgs/blob/43eac3c9e618c4114a3441b52949609ea2104670/pkgs/servers/sql/postgresql/pg_config.sh
+            pkgs.append(&mut vec![Pkg::new("postgresql.dev")]);
         }
 
         if PythonProvider::is_django(app, env)? && PythonProvider::is_using_mysql(app, env)? {
@@ -140,6 +186,11 @@ impl PythonProvider {
         }
 
         let mut setup = Phase::setup(Some(pkgs));
+        setup.set_nix_archive(nix_archive);
+
+        if PythonProvider::uses_dep(app, "cairo")? {
+            setup.add_pkgs_libs(vec!["cairo".to_string()]);
+        }
 
         // Many Python packages need some C headers to be available
         //
@@ -157,16 +208,15 @@ impl PythonProvider {
     }
 
     fn install(&self, app: &App, _env: &Environment) -> Result<Option<Phase>> {
-        let env_loc = "/opt/venv";
-        let create_env = format!("python -m venv --copies {env_loc}");
-        let activate_env = format!(". {env_loc}/bin/activate");
+        let create_env = format!("python -m venv --copies {VENV_LOCATION}");
+        let activate_env = format!(". {VENV_LOCATION}/bin/activate");
 
         if app.includes_file("requirements.txt") {
             let mut install_phase = Phase::install(Some(format!(
                 "{create_env} && {activate_env} && pip install -r requirements.txt"
             )));
 
-            install_phase.add_path(format!("{env_loc}/bin"));
+            install_phase.add_path(format!("{VENV_LOCATION}/bin"));
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
             return Ok(Some(install_phase));
@@ -177,7 +227,7 @@ impl PythonProvider {
                     "{create_env} && {activate_env} && {install_poetry} && poetry install --no-dev --no-interaction --no-ansi"
                 )));
 
-                install_phase.add_path(format!("{env_loc}/bin"));
+                install_phase.add_path(format!("{VENV_LOCATION}/bin"));
 
                 install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
@@ -188,19 +238,37 @@ impl PythonProvider {
                     "{create_env} && {activate_env} && {install_pdm} && pdm install --prod"
                 )));
 
-                install_phase.add_path(format!("{env_loc}/bin"));
+                install_phase.add_path(format!("{VENV_LOCATION}/bin"));
 
                 install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
                 install_phase.add_cache_directory(PDM_CACHE_DIR.to_string());
 
                 return Ok(Some(install_phase));
+            } else if app.includes_file("uv.lock") {
+                let install_uv = "pip install uv==$NIXPACKS_UV_VERSION".to_string();
+
+                // Here's how we get UV to play well with the pre-existing non-standard venv location:
+                //
+                // 1. Create a venv which allows us to use pip. pip is not installed globally with nixpkgs py
+                // 2. Install uv via pip
+                // 3. UV_PROJECT_ENVIRONMENT is specified elsewhere so `uv sync` installs packages into the same venv
+
+                let mut install_phase = Phase::install(Some(format!(
+                    "{create_env} && {activate_env} && {install_uv} && uv sync --no-dev --frozen"
+                )));
+
+                install_phase.add_path(format!("{VENV_LOCATION}/bin"));
+                install_phase.add_cache_directory(UV_CACHE_DIR.to_string());
+
+                return Ok(Some(install_phase));
             }
+
             let mut install_phase = Phase::install(Some(format!(
                 "{create_env} && {activate_env} && pip install --upgrade build setuptools && pip install ."
             )));
 
             install_phase.add_file_dependency("pyproject.toml".to_string());
-            install_phase.add_path(format!("{env_loc}/bin"));
+            install_phase.add_path(format!("{VENV_LOCATION}/bin"));
 
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
@@ -218,7 +286,7 @@ impl PythonProvider {
             let cmd = format!("{create_env} && {activate_env} && {cmd}");
             let mut install_phase = Phase::install(Some(cmd));
 
-            install_phase.add_path(format!("{env_loc}/bin"));
+            install_phase.add_path(format!("{VENV_LOCATION}/bin"));
             install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
             return Ok(Some(install_phase));
@@ -236,6 +304,12 @@ impl PythonProvider {
             ))));
         }
 
+        // the python package is extracted from pyproject.toml, but this can often not be the desired entrypoint
+        // for this reason we prefer main.py to the module heuristic used in the pyproject.toml logic
+        if app.includes_file("main.py") {
+            return Ok(Some(StartPhase::new("python main.py".to_string())));
+        }
+
         if app.includes_file("pyproject.toml") {
             if let OkResult(meta) = PythonProvider::parse_pyproject(app) {
                 if let Some(entry_point) = meta.entry_point {
@@ -245,10 +319,6 @@ impl PythonProvider {
                     })));
                 }
             }
-        }
-        // falls through
-        if app.includes_file("main.py") {
-            return Ok(Some(StartPhase::new("python main.py".to_string())));
         }
 
         Ok(None)
@@ -308,7 +378,59 @@ impl PythonProvider {
             .map(|m| m.get(2).unwrap().as_str().to_string()))
     }
 
-    fn get_nix_python_package(app: &App, env: &Environment) -> Result<Pkg> {
+    fn parse_tool_versions_python_version(file_content: &str) -> Result<Option<String>> {
+        let asdf_versions = parse_tool_versions_content(file_content);
+
+        // the python version can only specify a major.minor version right now, and not a patch version
+        // however, in asdf a patch version is specified, so we need to strip it
+        Ok(asdf_versions.get("python").map(|s| {
+            let parts: Vec<&str> = s.split('.').collect();
+
+            if parts.len() == 3 {
+                // this is the expected result, but will be unexpected to users
+                println!("Patch python version detected in .tool-versions, but not supported in nixpkgs.");
+            } else if parts.len() == 2 {
+                println!("Expected a python version string in the format x.y.z from .tool-versions");
+            } else {
+                println!("Could not find a python version string in the format x.y.z or x.y from .tool-versions");
+            }
+
+            format!("{}.{}", parts[0], parts[1])
+        }))
+    }
+
+    fn parse_tool_versions_poetry_version(file_content: &str) -> Result<Option<String>> {
+        let asdf_versions = parse_tool_versions_content(file_content);
+        Ok(asdf_versions.get("poetry").cloned())
+    }
+
+    fn parse_tool_versions_uv_version(file_content: &str) -> Result<Option<String>> {
+        let asdf_versions = parse_tool_versions_content(file_content);
+        Ok(asdf_versions.get("uv").cloned())
+    }
+
+    fn default_python_environment_variables() -> EnvironmentVariables {
+        let python_variables = vec![
+            ("PYTHONFAULTHANDLER", "1"),
+            ("PYTHONUNBUFFERED", "1"),
+            ("PYTHONHASHSEED", "random"),
+            ("PYTHONDONTWRITEBYTECODE", "1"),
+            // TODO I think this would eliminate the need to include the cache version
+            ("PIP_NO_CACHE_DIR", "1"),
+            ("PIP_DISABLE_PIP_VERSION_CHECK", "1"),
+            ("PIP_DEFAULT_TIMEOUT", "100"),
+        ];
+
+        let mut env_vars = EnvironmentVariables::new();
+
+        for (key, value) in python_variables {
+            env_vars.insert(key.to_owned(), value.to_owned());
+        }
+
+        env_vars
+    }
+
+    fn get_nix_python_package(app: &App, env: &Environment) -> Result<(Pkg, String)> {
         // Fetch python versions into tuples with defaults
         fn as_default(v: Option<Match>) -> &str {
             match v {
@@ -328,14 +450,23 @@ impl PythonProvider {
         } else if app.includes_file("Pipfile") {
             let file_content = &app.read_file("Pipfile")?;
             custom_version = PythonProvider::parse_pipfile_python_version(file_content)?;
+        } else if app.includes_file(".tool-versions") {
+            let file_content = &app.read_file(".tool-versions")?;
+            custom_version = PythonProvider::parse_tool_versions_python_version(file_content)?;
         }
 
         // If it's still none, return default
         if custom_version.is_none() {
             if app.includes_file("poetry.lock") {
-                return Ok(Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME));
+                return Ok((
+                    Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME),
+                    PYTHON_NIXPKGS_ARCHIVE.into(),
+                ));
             }
-            return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
+            return Ok((
+                Pkg::new(DEFAULT_PYTHON_PKG_NAME),
+                PYTHON_NIXPKGS_ARCHIVE.into(),
+            ));
         }
         let custom_version = custom_version.unwrap();
 
@@ -349,26 +480,41 @@ impl PythonProvider {
         // If no matches, just use default
         if matches.is_none() {
             if app.includes_file("poetry.lock") {
-                return Ok(Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME));
+                return Ok((
+                    Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME),
+                    PYTHON_NIXPKGS_ARCHIVE.into(),
+                ));
             }
-            return Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME));
+            return Ok((
+                Pkg::new(DEFAULT_PYTHON_PKG_NAME),
+                PYTHON_NIXPKGS_ARCHIVE.into(),
+            ));
         }
+
         let matches = matches.unwrap();
         let python_version = (as_default(matches.get(1)), as_default(matches.get(2)));
 
         // Match major and minor versions
         match python_version {
-            ("3", "11") => Ok(Pkg::new("python311")),
-            ("3", "10") => Ok(Pkg::new("python310")),
-            ("3", "9") => Ok(Pkg::new("python39")),
-            ("3", "8") => Ok(Pkg::new("python38")),
-            ("3", "7") => Ok(Pkg::new("python37")),
-            ("2", "7" | "_") => Ok(Pkg::new("python27")),
+            ("3", "13") => Ok((Pkg::new("python313"), PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "12") => Ok((Pkg::new("python312"), PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "11") => Ok((Pkg::new("python311"), PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "10") => Ok((Pkg::new("python310"), PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "9") => Ok((Pkg::new("python39"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "8") => Ok((Pkg::new("python38"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("3", "7") => Ok((Pkg::new("python37"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())),
+            ("2", "7" | "_") => Ok((Pkg::new("python27"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())),
             _ => {
                 if app.includes_file("poetry.lock") {
-                    return Ok(Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME));
+                    return Ok((
+                        Pkg::new(DEFAULT_POETRY_PYTHON_PKG_NAME),
+                        PYTHON_NIXPKGS_ARCHIVE.into(),
+                    ));
                 }
-                Ok(Pkg::new(DEFAULT_PYTHON_PKG_NAME))
+                Ok((
+                    Pkg::new(DEFAULT_PYTHON_PKG_NAME),
+                    PYTHON_NIXPKGS_ARCHIVE.into(),
+                ))
             }
         }
     }
@@ -449,7 +595,10 @@ mod test {
                 &App::new("./examples/python")?,
                 &Environment::default()
             )?,
-            Pkg::new(DEFAULT_PYTHON_PKG_NAME)
+            (
+                Pkg::new(DEFAULT_PYTHON_PKG_NAME),
+                PYTHON_NIXPKGS_ARCHIVE.into()
+            )
         );
 
         Ok(())
@@ -457,20 +606,20 @@ mod test {
 
     #[test]
     fn test_pipfile_python_version() -> Result<()> {
-        let file_content = "\npython_version = '3.11'\n";
+        let file_content = "\npython_version = '3.12'\n";
         let custom_version = PythonProvider::parse_pipfile_python_version(file_content)?.unwrap();
 
-        assert_eq!(custom_version, "3.11");
+        assert_eq!(custom_version, "3.12");
 
         Ok(())
     }
 
     #[test]
     fn test_pipfile_python_full_version() -> Result<()> {
-        let file_content = "\npython_full_version = '3.11.0'\n";
+        let file_content = "\npython_full_version = '3.12.0'\n";
         let custom_version = PythonProvider::parse_pipfile_python_version(file_content)?.unwrap();
 
-        assert_eq!(custom_version, "3.11.0");
+        assert_eq!(custom_version, "3.12.0");
 
         Ok(())
     }
@@ -482,7 +631,7 @@ mod test {
                 &App::new("./examples/python-2")?,
                 &Environment::default()
             )?,
-            Pkg::new("python27")
+            (Pkg::new("python27"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())
         );
 
         Ok(())
@@ -495,7 +644,7 @@ mod test {
                 &App::new("./examples/python-2-runtime")?,
                 &Environment::default()
             )?,
-            Pkg::new("python27")
+            (Pkg::new("python27"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())
         );
 
         Ok(())
@@ -511,7 +660,7 @@ mod test {
                     "2.7".to_string()
                 )]))
             )?,
-            Pkg::new("python27")
+            (Pkg::new("python27"), LEGACY_PYTHON_NIXPKGS_ARCHIVE.into())
         );
 
         Ok(())

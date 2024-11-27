@@ -1,12 +1,19 @@
 ---
 source: tests/generate_plan_tests.rs
 expression: plan
+snapshot_kind: text
 ---
 {
   "providers": [],
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "python,django,postgres",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PIP_NO_CACHE_DIR": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
     "PYTHONUNBUFFERED": "1"
   },
   "phases": {
@@ -28,8 +35,8 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "python38",
-        "postgresql",
+        "python3",
+        "postgresql.dev",
         "gcc"
       ],
       "nixLibs": [
@@ -41,6 +48,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "python manage.py migrate && gunicorn mysite.wsgi"
+    "cmd": "python manage.py migrate && gunicorn python_django.wsgi"
   }
 }

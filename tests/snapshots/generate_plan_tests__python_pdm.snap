@@ -7,7 +7,13 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "NIXPACKS_METADATA": "python,pdm",
-    "NIXPACKS_PDM_VERSION": "2.7.4",
+    "NIXPACKS_PDM_VERSION": "2.13.3",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PIP_NO_CACHE_DIR": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
     "PYTHONUNBUFFERED": "1"
   },
   "phases": {
@@ -30,7 +36,7 @@ expression: plan
     "setup": {
       "name": "setup",
       "nixPkgs": [
-        "python38",
+        "python3",
         "gcc"
       ],
       "nixLibs": [

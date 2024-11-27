@@ -11,7 +11,7 @@ use crate::nixpacks::{
 use anyhow::Result;
 use regex::{Match, Regex};
 const DEFAULT_ELIXIR_PKG_NAME: &str = "elixir";
-const ELIXIR_NIXPKGS_ARCHIVE: &str = "ef99fa5c5ed624460217c31ac4271cfb5cb2502c";
+const ELIXIR_NIXPKGS_ARCHIVE: &str = "c5702bd28cbde41a191a9c2a00501f18941efbd0";
 
 pub struct ElixirProvider {}
 
@@ -25,17 +25,11 @@ impl Provider for ElixirProvider {
     }
 
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
+        let setup = self.setup(app, env)?.unwrap_or_default();
+
         let mut plan = BuildPlan::default();
-
-        plan.add_variables(EnvironmentVariables::from([(
-            "MIX_ENV".to_string(),
-            "prod".to_string(),
-        )]));
-
-        let elixir_pkg = ElixirProvider::get_nix_elixir_package(app, env)?;
-        let mut setup_phase = Phase::setup(Some(vec![elixir_pkg]));
-        setup_phase.set_nix_archive(ELIXIR_NIXPKGS_ARCHIVE.to_string());
-        plan.add_phase(setup_phase);
+        plan.add_variables(ElixirProvider::default_elixir_environment_variables());
+        plan.add_phase(setup);
 
         // Install Phase
         let mut install_phase = Phase::install(Some("mix local.hex --force".to_string()));
@@ -54,6 +48,7 @@ impl Provider for ElixirProvider {
         if mix_exs_content.contains("postgrex") && mix_exs_content.contains("ecto") {
             build_phase.add_cmd("mix ecto.setup");
         }
+
         plan.add_phase(build_phase);
 
         // Start Phase
@@ -65,6 +60,36 @@ impl Provider for ElixirProvider {
 }
 
 impl ElixirProvider {
+    fn setup(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
+        let elixir_pkg = ElixirProvider::get_nix_elixir_package(app, env)?;
+        // TODO should try to extract and optionally set the OTP version
+        let mut setup = Phase::setup(Some(vec![elixir_pkg]));
+        setup.set_nix_archive(ELIXIR_NIXPKGS_ARCHIVE.to_string());
+
+        // Many Elixir packages need some C headers to be available
+        setup.add_pkgs_libs(vec!["stdenv.cc.cc.lib".to_string()]);
+        setup.add_nix_pkgs(&[Pkg::new("gcc")]);
+
+        Ok(Some(setup))
+    }
+
+    fn default_elixir_environment_variables() -> EnvironmentVariables {
+        let var_map = vec![
+            ("MIX_ENV", "prod"),
+            // required to avoid the following error:
+            // warning: the VM is running with native name encoding of latin1 which may cause Elixir to malfunction as it expects utf8. Please ensure your locale is set to UTF-8 (which can be verified by running "locale" in your shell) or set the ELIXIR_ERL_OPTIONS="+fnu" environment variable
+            ("ELIXIR_ERL_OPTIONS", "+fnu"),
+        ];
+
+        let mut env_vars = EnvironmentVariables::new();
+
+        for (key, value) in var_map {
+            env_vars.insert(key.to_owned(), value.to_owned());
+        }
+
+        env_vars
+    }
+
     fn get_nix_elixir_package(app: &App, env: &Environment) -> Result<Pkg> {
         fn as_default(v: Option<Match>) -> &str {
             match v {
@@ -88,6 +113,8 @@ impl ElixirProvider {
                 .captures(&mix_exs_content)
                 .map(|c| c.get(2).unwrap().as_str().to_owned())
         };
+
+        // TODO next, let's try .tool-version
 
         // If it's still none, return default
         if custom_version.is_none() {
@@ -116,8 +143,10 @@ impl ElixirProvider {
             ("1", "11") => Ok(Pkg::new("elixir_1_11")),
             ("1", "12") => Ok(Pkg::new("elixir_1_12")),
             ("1", "13") => Ok(Pkg::new("elixir_1_13")),
-            ("1", "14") => Ok(Pkg::new("elixir")),
+            ("1", "14") => Ok(Pkg::new("elixir_1_14")),
             ("1", "15") => Ok(Pkg::new("elixir_1_15")),
+            ("1", "16") => Ok(Pkg::new("elixir_1_16")),
+            ("1", "17") => Ok(Pkg::new("elixir_1_17")),
             _ => Ok(Pkg::new(DEFAULT_ELIXIR_PKG_NAME)),
         }
     }

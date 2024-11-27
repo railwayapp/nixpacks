@@ -83,3 +83,9 @@ dependsOn = ["...", "lint"]
 cmds = ["yarn run test"]
 dependsOn = ["build"]
 ```
+
+## Multiple Architectures
+
+Nixpacks does not support multiple architectures in a single build.
+
+If you need to build for multiple architectures, you will need to create a separate build for each architecture and then generate your own multi-architecture build using `docker manifest`. There's a [GitHub action which does this](https://github.com/iloveitaly/github-action-nixpacks) and is a great example to pattern off if you need a multi-architecture build.

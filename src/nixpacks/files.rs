@@ -2,6 +2,21 @@ use anyhow::Result;
 use ignore::WalkBuilder;
 use std::{fs, io, path::Path};
 
+#[cfg(unix)]
+fn is_writable<P: AsRef<Path>>(path: P) -> io::Result<bool> {
+    use std::os::unix::fs::PermissionsExt;
+    let metadata = fs::metadata(path)?;
+    let permissions = metadata.permissions();
+    Ok(permissions.mode() & 0o200 != 0)
+}
+
+#[cfg(windows)]
+fn is_writable<P: AsRef<Path>>(path: P) -> io::Result<bool> {
+    use std::os::windows::fs::MetadataExt;
+    let metadata = fs::metadata(path)?;
+    Ok(!metadata.file_attributes() & 1 != 0)
+}
+
 /// Copies a directory and all its contents to the destination path, recursively.
 pub fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) -> Result<()> {
     let walker = WalkBuilder::new(&source)
@@ -30,9 +45,12 @@ pub fn recursive_copy_dir<T: AsRef<Path>, Q: AsRef<Path>>(source: T, dest: Q) ->
             // copy files
             else if file_type.is_file() {
                 fs::copy(from, &to)?;
-                // replace CRLF with LF
-                if let Ok(data) = fs::read_to_string(from) {
-                    fs::write(&to, data.replace("\r\n", "\n"))?;
+
+                if is_writable(&to)? {
+                    // replace CRLF with LF
+                    if let Ok(data) = fs::read_to_string(from) {
+                        fs::write(&to, data.replace("\r\n", "\n"))?;
+                    }
                 }
             }
         }

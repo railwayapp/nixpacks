@@ -91,8 +91,8 @@ impl ScalaProvider {
 
     fn get_jdk_run_image(&self, jdk_version: u32) -> &str {
         match jdk_version {
-            21 => "eclipse-temurim:21.0.1_12-jre-jammy",
-            20 => "eclipse-temurim:20.0.2_9-jre-jammy",
+            21 => "eclipse-temurin:21.0.1_12-jre-jammy",
+            20 => "eclipse-temurin:20.0.2_9-jre-jammy",
             19 => "eclipse-temurin:19.0.2_7-jre-jammy",
             11 => "eclipse-temurin:11.0.21_9-jre-jammy",
             8 => "eclipse-temurin:8u392-b08-jre-jammy",

@@ -42,12 +42,20 @@ impl Provider for ClojureProvider {
             "lein uberjar"
         };
 
-        // based on project config, uberjar can be created under ./target/uberjar or ./target, This ensure file will be found on the same place whatevery the project config is
-        let move_file_cmd = "if [ -f /app/target/default+uberjar/*standalone.jar ]; then mv /app/target/default+uberjar/*standalone.jar /app/target/*standalone.jar; fi";
+        /*
+          Based on project config, uberjar can be created under ./target/uberjar or ./target. This ensures we always find the jar file in the root target folder.
+        */
+        let move_file_cmd = r#"if [ -d /app/target/default+uberjar ]; then find /app/target/default+uberjar -name "*.jar" -exec mv -t /app/target/ {} +; fi"#;
+
         let mut build = Phase::build(Some(format!("{build_cmd}; {move_file_cmd}")));
         build.depends_on_phase("setup");
 
-        let start = StartPhase::new("JAR_FILE=$(find ./target -name \"*standalone.jar\"); bash -c \"java $JAVA_OPTS -jar $JAR_FILE\"");
+        /*
+          Looks for a file ending with standalone.jar or .jar but not *-SNAPSHOT.jar and starts the app
+        */
+        let start = StartPhase::new(
+            r#"JAR_FILE=$(find /app/target -name "*-standalone.jar" -o -name "*.jar" ! -name "*-SNAPSHOT.jar" | head -n 1) && bash -c "java $JAVA_OPTS -jar $JAR_FILE""#,
+        );
 
         let plan = BuildPlan::new(&vec![setup, build], Some(start));
         Ok(Some(plan))

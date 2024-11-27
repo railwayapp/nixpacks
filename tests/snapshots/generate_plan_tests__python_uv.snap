@@ -1,0 +1,54 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+snapshot_kind: text
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "python",
+    "NIXPACKS_UV_VERSION": "0.4.30",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PIP_NO_CACHE_DIR": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONUNBUFFERED": "1",
+    "UV_PROJECT_ENVIRONMENT": "/opt/venv"
+  },
+  "phases": {
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "python -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip install uv==$NIXPACKS_UV_VERSION && uv sync --no-dev --frozen"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/uv"
+      ],
+      "paths": [
+        "/opt/venv/bin"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "python312",
+        "gcc"
+      ],
+      "nixLibs": [
+        "zlib",
+        "stdenv.cc.cc.lib"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "python main.py"
+  }
+}

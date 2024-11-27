@@ -1,6 +1,7 @@
 ---
 source: tests/generate_plan_tests.rs
 expression: plan
+snapshot_kind: text
 ---
 {
   "providers": [],
@@ -16,7 +17,7 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "lein ring uberjar; if [ -f /app/target/default+uberjar/*standalone.jar ]; then mv /app/target/default+uberjar/*standalone.jar /app/target/*standalone.jar; fi"
+        "lein ring uberjar; if [ -d /app/target/default+uberjar ]; then find /app/target/default+uberjar -name \"*.jar\" -exec mv -t /app/target/ {} +; fi"
       ]
     },
     "setup": {
@@ -30,6 +31,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "JAR_FILE=$(find ./target -name \"*standalone.jar\"); bash -c \"java $JAVA_OPTS -jar $JAR_FILE\""
+    "cmd": "JAR_FILE=$(find /app/target -name \"*-standalone.jar\" -o -name \"*.jar\" ! -name \"*-SNAPSHOT.jar\" | head -n 1) && bash -c \"java $JAVA_OPTS -jar $JAR_FILE\""
   }
 }

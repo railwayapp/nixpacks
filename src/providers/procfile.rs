@@ -15,7 +15,7 @@ pub struct ProcfileProvider {}
 
 impl Provider for ProcfileProvider {
     fn name(&self) -> &str {
-        "deno"
+        "procfile"
     }
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
@@ -52,8 +52,12 @@ impl ProcfileProvider {
                 Ok(None)
             } else if let Some(cmd) = procfile.get("web") {
                 Ok(Some(cmd.to_string()))
+            } else if let Some(cmd) = procfile.get("worker") {
+                Ok(Some(cmd.to_string()))
             } else {
-                let process = procfile.values().collect::<Vec<_>>()[0].to_string();
+                let mut processes: Vec<_> = procfile.iter().collect();
+                processes.sort_by_key(|&(key, _)| key);
+                let process = processes[0].1.to_string();
                 Ok(Some(process))
             }
         } else {
