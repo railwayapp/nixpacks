@@ -658,7 +658,13 @@ fn parse_nvmrc(nvmrc_content: &str) -> Option<String> {
         return Some(version.to_string());
     }
 
-    Some(trimmed_version.strip_prefix('v').unwrap_or(trimmed_version).to_string())
+    // Only remove v if it is in the starting character, lts/ will never have that in starting
+    Some(
+        trimmed_version
+            .strip_prefix('v')
+            .unwrap_or(trimmed_version)
+            .to_string(),
+    )
 }
 
 #[cfg(test)]
@@ -952,6 +958,40 @@ mod test {
                 &Environment::default()
             )?,
             Pkg::new("nodejs_14")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_from_nvmrc_lts() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-nvmrc-lts")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs_20")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_invalid_version_from_nvmrc_lts() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-nvmrc-invalid-lts")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs_18")
         );
 
         Ok(())
