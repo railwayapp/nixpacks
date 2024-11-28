@@ -335,7 +335,7 @@ impl NodeProvider {
 
         let nvmrc_node_version = if app.includes_file(".nvmrc") {
             let nvmrc = app.read_file(".nvmrc")?;
-            Some(nvmrc.trim().replace('v', ""))
+            parse_nvmrc(&nvmrc)
         } else {
             None
         };
@@ -634,6 +634,31 @@ fn parse_node_version_into_pkg(node_version: &str) -> String {
         }
     }
     default_node_pkg_name
+}
+
+fn parse_nvmrc(nvmrc_content: &str) -> Option<String> {
+    let lts_versions: HashMap<&str, u32> = {
+        let mut nvm_map = HashMap::new();
+        nvm_map.insert("lts/*", 22);
+        nvm_map.insert("lts/jod", 22);
+        nvm_map.insert("lts/argon", 4);
+        nvm_map.insert("lts/boron", 6);
+        nvm_map.insert("lts/carbon", 8);
+        nvm_map.insert("lts/dubnium", 10);
+        nvm_map.insert("lts/erbium", 12);
+        nvm_map.insert("lts/fermium", 14);
+        nvm_map.insert("lts/gallium", 16);
+        nvm_map.insert("lts/hydrogen", 18);
+        nvm_map.insert("lts/iron", 20);
+        nvm_map
+    };
+
+    let trimmed_version = nvmrc_content.trim();
+    if let Some(&version) = lts_versions.get(trimmed_version) {
+        return Some(version.to_string());
+    }
+
+    Some(trimmed_version.strip_prefix('v').unwrap_or(trimmed_version).to_string())
 }
 
 #[cfg(test)]
