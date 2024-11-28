@@ -335,7 +335,7 @@ impl NodeProvider {
 
         let nvmrc_node_version = if app.includes_file(".nvmrc") {
             let nvmrc = app.read_file(".nvmrc")?;
-            parse_nvmrc(&nvmrc)
+            Some(parse_nvmrc(&nvmrc))
         } else {
             None
         };
@@ -636,7 +636,7 @@ fn parse_node_version_into_pkg(node_version: &str) -> String {
     default_node_pkg_name
 }
 
-fn parse_nvmrc(nvmrc_content: &str) -> Option<String> {
+fn parse_nvmrc(nvmrc_content: &str) -> String {
     let lts_versions: HashMap<&str, u32> = {
         let mut nvm_map = HashMap::new();
         nvm_map.insert("lts/*", 22);
@@ -655,16 +655,14 @@ fn parse_nvmrc(nvmrc_content: &str) -> Option<String> {
 
     let trimmed_version = nvmrc_content.trim();
     if let Some(&version) = lts_versions.get(trimmed_version) {
-        return Some(version.to_string());
+        return version.to_string();
     }
 
     // Only remove v if it is in the starting character, lts/ will never have that in starting
-    Some(
-        trimmed_version
-            .strip_prefix('v')
-            .unwrap_or(trimmed_version)
-            .to_string(),
-    )
+    trimmed_version
+        .strip_prefix('v')
+        .unwrap_or(trimmed_version)
+        .to_string()
 }
 
 #[cfg(test)]
