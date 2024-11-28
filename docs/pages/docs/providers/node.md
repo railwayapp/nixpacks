@@ -30,6 +30,7 @@ The version can be overridden by
 
 - Setting the `NIXPACKS_NODE_VERSION` environment variable
 - Specifying the `engines.node` field in `package.json`
+- Creating a `.nvmrc` file in your project and specify the version or alias (`lts/*`)
 
 Only a major version can be specified. For example, `18.x` or `20`.
 
