@@ -32,9 +32,14 @@ go get
 ```
 
 ## Build
+If your project has multiple binaries, you can specify which one to run with the `NIXPACKS_GO_BIN` environment variable.
+Otherwise, the first binary found in the project's `cmd` directory the in the project's root directory will be used.
 
 ```
+go build -o out ./cmd/{name}
+# Or
 go build -o out
+
 ```
 
 ## Start

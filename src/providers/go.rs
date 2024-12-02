@@ -72,13 +72,27 @@ impl Provider for GolangProvider {
             plan.add_phase(install);
         }
 
-        let mut build = if app.includes_file("go.mod") {
-            Phase::build(Some(format!("go build -o {BINARY_NAME}")))
+        let build_command = if let Some(name) = env.get_config_variable("GO_BIN") {
+            Some(format!("go build -o {BINARY_NAME} cmd/{}", name))
+        } else if app.includes_directory("cmd") {
+            // Try to find a command in the cmd directory
+            app.find_directories("cmd/*")
+                .ok()
+                .and_then(|dirs| dirs.into_iter().next())
+                .and_then(|path| {
+                    path.file_name()
+                        .and_then(|os_str| os_str.to_str())
+                        .map(|name| format!("go build -o {BINARY_NAME} ./cmd/{}", name))
+                })
+        } else if app.includes_file("go.mod") {
+            Some(format!("go build -o {BINARY_NAME}"))
         } else if app.includes_file("main.go") {
-            Phase::build(Some(format!("go build -o {BINARY_NAME} main.go")))
+            Some(format!("go build -o {BINARY_NAME} main.go"))
         } else {
-            Phase::build(None)
+            None
         };
+
+        let mut build = Phase::build(build_command);
         build.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
         build.depends_on_phase("setup");
         plan.add_phase(build);
