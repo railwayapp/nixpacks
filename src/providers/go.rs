@@ -73,7 +73,7 @@ impl Provider for GolangProvider {
         }
 
         let build_command = if let Some(name) = env.get_config_variable("GO_BIN") {
-            Some(format!("go build -o {BINARY_NAME} cmd/{}", name))
+            Some(format!("go build -o {BINARY_NAME} ./cmd/{name}"))
         } else if app.includes_directory("cmd") {
             // Try to find a command in the cmd directory
             app.find_directories("cmd/*")
