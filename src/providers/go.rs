@@ -82,7 +82,7 @@ impl Provider for GolangProvider {
                 .and_then(|path| {
                     path.file_name()
                         .and_then(|os_str| os_str.to_str())
-                        .map(|name| format!("go build -o {BINARY_NAME} ./cmd/{}", name))
+                        .map(|name| format!("go build -o {BINARY_NAME} ./cmd/{name}"))
                 })
         } else if app.includes_file("go.mod") {
             Some(format!("go build -o {BINARY_NAME}"))
