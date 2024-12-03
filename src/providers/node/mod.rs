@@ -333,14 +333,17 @@ impl NodeProvider {
             .clone()
             .and_then(|engines| engines.get("node").cloned());
 
-        let nvmrc_node_version = if app.includes_file(".nvmrc") {
+        let dot_node_version = if app.includes_file(".nvmrc") {
             let nvmrc = app.read_file(".nvmrc")?;
             Some(nvmrc.trim().replace('v', ""))
+        } else if app.includes_file(".node-version") {
+            let node_version = app.read_file(".node-version")?;
+            Some(node_version.trim().replace('v', ""))
         } else {
             None
         };
 
-        let node_version = env_node_version.or(pkg_node_version).or(nvmrc_node_version);
+        let node_version = env_node_version.or(pkg_node_version).or(dot_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
@@ -924,6 +927,23 @@ mod test {
                     ..Default::default()
                 },
                 &App::new("examples/node-nvmrc")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs_14")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_from_node_version_file() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-node-version")?,
                 &Environment::default()
             )?,
             Pkg::new("nodejs_14")
