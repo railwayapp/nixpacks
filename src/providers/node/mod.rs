@@ -337,8 +337,8 @@ impl NodeProvider {
             let nvmrc = app.read_file(".nvmrc")?;
             Some(nvmrc.trim().replace('v', ""))
         } else if app.includes_file(".node-version") {
-            let node_version = app.read_file(".node-version")?;
-            Some(node_version.trim().replace('v', ""))
+            let node_version_file = app.read_file(".node-version")?;
+            Some(node_version_file.trim().replace('v', ""))
         } else {
             None
         };
