@@ -353,7 +353,7 @@ impl NodeProvider {
         }
 
         let node_pkg = parse_node_version_into_pkg(&node_version);
-        return Ok(Pkg::new(node_pkg.as_str()));
+        Ok(Pkg::new(node_pkg.as_str()))
     }
 
     pub fn get_package_manager(app: &App) -> String {
