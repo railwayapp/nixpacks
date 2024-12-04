@@ -70,7 +70,10 @@ pub fn create_nix_expressions_for_phases(phases: &Phases) -> BTreeMap<String, St
     archive_to_packages
         .iter()
         .fold(BTreeMap::new(), |mut acc, g| {
-            acc.insert(nix_file_name(&g.archive), nix_expression_for_group(g));
+            acc.insert(
+                nix_file_name(g.archive.as_ref()),
+                nix_expression_for_group(g),
+            );
             acc
         })
 }
@@ -82,7 +85,7 @@ pub fn nix_file_names_for_phases(phases: &Phases) -> Vec<String> {
         .filter(|p| p.uses_nix())
         .map(|p| p.nixpkgs_archive.clone())
         .collect::<BTreeSet<_>>();
-    archives.iter().map(nix_file_name).collect()
+    archives.iter().map(|a| nix_file_name(a.as_ref())).collect()
 }
 
 /// Returns all the Nix expression files used to install Nix dependencies for each phase.
@@ -101,7 +104,7 @@ pub fn setup_files_for_phases(phases: &Phases) -> Vec<String> {
 }
 
 /// Generates the filename for each Nix expression file.
-fn nix_file_name(archive: &Option<String>) -> String {
+fn nix_file_name(archive: Option<&String>) -> String {
     match archive {
         Some(archive) => format!("nixpkgs-{archive}.nix"),
         None => "nixpkgs.nix".to_string(),
