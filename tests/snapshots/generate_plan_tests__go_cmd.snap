@@ -1,0 +1,52 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+snapshot_kind: text
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "CGO_ENABLED": "0",
+    "NIXPACKS_METADATA": "go"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install",
+        "setup"
+      ],
+      "cmds": [
+        "go build -o out ./cmd/server"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/go-build"
+      ]
+    },
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "go mod download"
+      ],
+      "cacheDirectories": [
+        "/root/.cache/go-build"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "go_1_18"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "./out",
+    "runImage": "ubuntu:jammy"
+  }
+}
