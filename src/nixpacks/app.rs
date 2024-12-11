@@ -224,7 +224,6 @@ impl App {
                 _ => cleaned_jsonc.push(current_char),
             }
         }
-        println!("{}", cleaned_jsonc);
         let value: T = serde_json::from_str(&cleaned_jsonc.as_str()).with_context(|| {
             let relative_path = self.strip_source_path(Path::new(name)).unwrap();
             format!("Error reading {} as JSONC", relative_path.to_str().unwrap())
