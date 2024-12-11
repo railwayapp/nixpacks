@@ -190,6 +190,47 @@ impl App {
         Ok(toml_file)
     }
 
+    /// Parse jsonc files as json by ignoring all kinds of comments
+    pub fn read_jsonc<T>(&self, name: &str) -> Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        let mut cleaned_jsonc = String::new();
+        let contents = self.read_file(name)?;
+        let mut chars = contents.chars().peekable();
+        while let Some(current_char) = chars.next() {
+            match current_char {
+                '/' if chars.peek() == Some(&'/') => {
+                    while let Some(&next_char) = chars.peek() {
+                        chars.next();
+                        if next_char == '\n' {
+                            break;
+                        }
+                    }
+                }
+                '/' if chars.peek() == Some(&'*') => {
+                    chars.next();
+                    loop {
+                        match chars.next() {
+                            Some('*') if chars.peek() == Some(&'/') => {
+                                chars.next();
+                                break;
+                            }
+                            None => break,
+                            _ => continue,
+                        }
+                    }
+                }
+                _ => cleaned_jsonc.push(current_char),
+            }
+        }
+        let value: T = serde_json::from_str(cleaned_jsonc.as_str()).with_context(|| {
+            let relative_path = self.strip_source_path(Path::new(name)).unwrap();
+            format!("Error reading {} as JSONC", relative_path.to_str().unwrap())
+        })?;
+        Ok(value)
+    }
+
     /// Try to yaml-parse a file.
     pub fn read_yaml<T>(&self, name: &str) -> Result<T>
     where
@@ -278,6 +319,14 @@ mod tests {
         let value: TestPackageJson = app.read_json("package.json")?;
         assert_eq!(value.name, "npm");
         assert_eq!(value.scripts.get("build").unwrap(), "tsc -p tsconfig.json");
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_jsonc_file() -> Result<()> {
+        let app = App::new("./examples/deno-jsonc")?;
+        let value: Map<String, Value> = app.read_jsonc("deno.jsonc")?;
+        assert!(value.get("tasks").is_some());
         Ok(())
     }
 
