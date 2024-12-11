@@ -31,7 +31,7 @@ pub struct NixpacksBuildPlanGenerator<'a> {
 }
 
 /// NixpacksBuildPlanGenerators produce build plans using the options and providers they contain.
-impl<'a> PlanGenerator for NixpacksBuildPlanGenerator<'a> {
+impl PlanGenerator for NixpacksBuildPlanGenerator<'_> {
     fn generate_plan(&mut self, app: &App, environment: &Environment) -> Result<(BuildPlan, App)> {
         // If the provider defines a build plan in the new format, use that
         let plan = self.get_build_plan(app, environment)?;

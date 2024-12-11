@@ -146,11 +146,11 @@ Nix packages to be made available through the `LD_LIBRARY_PATH` environment vari
 
 ### Nixpkgs archive
 
-Specific version of the Nixpkgs archive to use. By default all builds are built using the version defined [here](https://github.com/railwayapp/nixpacks/blob/6dc1e66e3d0840230def277d19890cd0da4584d3/src/nixpacks/plan/generator.rs#L16). But this value can be overridden to install Nix packages from an older archive.
+Specific version of the Nixpkgs archive to use. By default all builds are built using the version defined [here](https://github.com/railwayapp/nixpacks/blob/2d16cd938c95411db4a0c56b81bf7b558252af7b/src/nixpacks/nix/mod.rs#L11). But this value can be overridden to install Nix packages from an older or newer archive.
 
 ```toml
 [phase.name]
-  nixpkgsArchive = '21de2b973f9fee595a7a1ac4693efff791245c34'
+  nixpkgsArchive = '5148520bfab61f99fd25fb9ff7bfbb50dad3c9db'
 ```
 
 ### Apt packages
