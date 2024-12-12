@@ -335,7 +335,7 @@ impl NodeProvider {
 
         let dot_node_version = if app.includes_file(".nvmrc") {
             let nvmrc = app.read_file(".nvmrc")?;
-            Some(nvmrc.trim().replace('v', ""))
+            Some(parse_nvmrc(&nvmrc))
         } else if app.includes_file(".node-version") {
             let node_version_file = app.read_file(".node-version")?;
             Some(node_version_file.trim().replace('v', ""))
@@ -356,7 +356,7 @@ impl NodeProvider {
         }
 
         let node_pkg = parse_node_version_into_pkg(&node_version);
-        return Ok(Pkg::new(node_pkg.as_str()));
+        Ok(Pkg::new(node_pkg.as_str()))
     }
 
     pub fn get_package_manager(app: &App) -> String {
@@ -637,6 +637,35 @@ fn parse_node_version_into_pkg(node_version: &str) -> String {
         }
     }
     default_node_pkg_name
+}
+
+fn parse_nvmrc(nvmrc_content: &str) -> String {
+    let lts_versions: HashMap<&str, u32> = {
+        let mut nvm_map = HashMap::new();
+        nvm_map.insert("lts/*", 22);
+        nvm_map.insert("lts/jod", 22);
+        nvm_map.insert("lts/argon", 4);
+        nvm_map.insert("lts/boron", 6);
+        nvm_map.insert("lts/carbon", 8);
+        nvm_map.insert("lts/dubnium", 10);
+        nvm_map.insert("lts/erbium", 12);
+        nvm_map.insert("lts/fermium", 14);
+        nvm_map.insert("lts/gallium", 16);
+        nvm_map.insert("lts/hydrogen", 18);
+        nvm_map.insert("lts/iron", 20);
+        nvm_map
+    };
+
+    let trimmed_version = nvmrc_content.trim();
+    if let Some(&version) = lts_versions.get(trimmed_version) {
+        return version.to_string();
+    }
+
+    // Only remove v if it is in the starting character, lts/ will never have that in starting
+    trimmed_version
+        .strip_prefix('v')
+        .unwrap_or(trimmed_version)
+        .to_string()
 }
 
 #[cfg(test)]
@@ -947,6 +976,40 @@ mod test {
                 &Environment::default()
             )?,
             Pkg::new("nodejs_14")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_from_nvmrc_lts() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-nvmrc-lts")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs_20")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_invalid_version_from_nvmrc_lts() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-nvmrc-invalid-lts")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs_18")
         );
 
         Ok(())
