@@ -338,6 +338,7 @@ impl NodeProvider {
             Some(parse_nvmrc(&nvmrc))
         } else if app.includes_file(".node-version") {
             let node_version_file = app.read_file(".node-version")?;
+            // Using simple string transform since .node-version don't currently have a convention around the use of lts/* implemented in parse_nvmrc method
             Some(node_version_file.trim().replace('v', ""))
         } else {
             None
