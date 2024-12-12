@@ -333,10 +333,14 @@ impl NodeProvider {
             .clone()
             .and_then(|engines| engines.get("node").cloned());
 
-        let dot_node_version = if app.includes_file(".nvmrc") {
+        let nvmrc_node_version = if app.includes_file(".nvmrc") {
             let nvmrc = app.read_file(".nvmrc")?;
             Some(parse_nvmrc(&nvmrc))
-        } else if app.includes_file(".node-version") {
+        } else {
+            None
+        };
+
+        let dot_node_version = if app.includes_file(".node-version") {
             let node_version_file = app.read_file(".node-version")?;
             // Using simple string transform since .node-version don't currently have a convention around the use of lts/* implemented in parse_nvmrc method
             Some(node_version_file.trim().replace('v', ""))
@@ -344,7 +348,7 @@ impl NodeProvider {
             None
         };
 
-        let node_version = env_node_version.or(pkg_node_version).or(dot_node_version);
+        let node_version = env_node_version.or(pkg_node_version).or(nvmrc_node_version).or(dot_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
