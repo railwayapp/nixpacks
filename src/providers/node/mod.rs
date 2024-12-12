@@ -976,7 +976,7 @@ mod test {
                 &App::new("examples/node-node-version")?,
                 &Environment::default()
             )?,
-            Pkg::new("nodejs_14")
+            Pkg::new("nodejs_22")
         );
 
         Ok(())
