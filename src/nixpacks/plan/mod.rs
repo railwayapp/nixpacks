@@ -3,7 +3,7 @@ use self::{
     phase::{Phase, Phases, StartPhase},
     topological_sort::topological_sort,
 };
-use super::images::{DEBIAN_BASE_IMAGE, UBUNTU_BASE_IMAGE};
+use super::{images::{DEBIAN_BASE_IMAGE, UBUNTU_BASE_IMAGE}, nix::NIXPACKS_ARCHIVE_LEGACY_OPENSSL};
 use crate::nixpacks::{
     app::{App, StaticAssets},
     environment::{Environment, EnvironmentVariables},
@@ -45,6 +45,8 @@ pub struct BuildPlan {
     pub static_assets: Option<StaticAssets>,
 
     pub phases: Option<Phases>,
+    
+    pub pinned_archive: Option<String>,
 
     #[serde(rename = "start")]
     pub start_phase: Option<StartPhase>,
@@ -292,7 +294,7 @@ impl BuildPlan {
     }
 
     /// Store the base image and phase dependencies in this BuildPlan, for later reproducibility.
-    pub fn pin(&mut self, use_debian: bool) {
+    pub fn pin(&mut self, use_debian: bool, archive: Option<String>) {
         self.providers = Some(Vec::new());
         if self.build_image.is_none() {
             let base_image = if use_debian {
@@ -306,12 +308,14 @@ impl BuildPlan {
         self.resolve_phase_names();
         let phases = self.phases.get_or_insert(Phases::default());
         for phase in (*phases).values_mut() {
-            phase.pin(use_debian);
+            phase.pin(if archive.is_some() { archive.clone() } else if use_debian { Some(NIXPACKS_ARCHIVE_LEGACY_OPENSSL.to_string()) } else { None });
         }
 
         if let Some(start) = &mut self.start_phase {
             start.pin();
         }
+
+        self.pinned_archive = archive
     }
 
     /// Prefix each phase name with the name of the provider that generated the phase, in the case of multiple providers.
@@ -485,7 +489,7 @@ mod test {
         )
         .unwrap();
 
-        plan.pin(false);
+        plan.pin(false, None);
         assert_eq!(
             plan.get_phase("setup").unwrap().nix_pkgs,
             Some(vec!["nodejs".to_string(), "yarn".to_string()])

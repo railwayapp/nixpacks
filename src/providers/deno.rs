@@ -4,7 +4,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
-    nix::pkg::Pkg,
+    nix::{pkg::Pkg, NIXPACKS_ARCHIVE_LATEST_DENO},
     plan::{
         phase::{Phase, StartPhase},
         BuildPlan,
@@ -44,6 +44,7 @@ impl Provider for DenoProvider {
 
     fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
+        plan.pin(false, Some(NIXPACKS_ARCHIVE_LATEST_DENO.to_string()));
 
         let setup = Phase::setup(Some(vec![Pkg::new("deno")]));
         plan.add_phase(setup);

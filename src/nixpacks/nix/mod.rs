@@ -13,6 +13,9 @@ pub const NIXPKGS_ARCHIVE: &str = "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db";
 // Version of the Nix archive that uses OpenSSL 1.1
 pub const NIXPACKS_ARCHIVE_LEGACY_OPENSSL: &str = "a0b7e70db7a55088d3de0cc370a59f9fbcc906c3";
 
+// Version of the Nix archive with the latest Deno
+pub const NIXPACKS_ARCHIVE_LATEST_DENO: &str = "734af41a2b6a21fb9bf70d9f170563b6932364bb";
+
 /// Contains all the data needed to generate a Nix expression file for installing Nix dependencies.
 #[derive(Eq, PartialEq, Default, Debug, Clone)]
 struct NixGroup {
