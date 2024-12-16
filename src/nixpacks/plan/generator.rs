@@ -80,7 +80,10 @@ impl NixpacksBuildPlanGenerator<'_> {
             plan.add_variables(Environment::clone_variables(new_env));
         }
 
-        plan.pin(new_env.is_config_variable_truthy("DEBIAN"), plan.pinned_archive.clone());
+        plan.pin(
+            new_env.is_config_variable_truthy("DEBIAN"),
+            plan.pinned_archive.clone(),
+        );
         if plan.clone().phases.unwrap_or_default().is_empty() {
             // try again in a subdir
             let dir_count = app.paths.clone().iter().filter(|p| p.is_dir()).count();

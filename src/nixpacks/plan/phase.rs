@@ -1,9 +1,8 @@
 use crate::nixpacks::{
     images::{DEFAULT_BASE_IMAGE, STANDALONE_IMAGE},
-    nix::{pkg::Pkg, NIXPACKS_ARCHIVE_LEGACY_OPENSSL, NIXPKGS_ARCHIVE},
+    nix::{pkg::Pkg, NIXPKGS_ARCHIVE},
 };
 use serde::{Deserialize, Serialize};
-use core::arch;
 use std::collections::{BTreeMap, HashSet};
 use std::hash::Hash;
 
