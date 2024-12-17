@@ -119,9 +119,9 @@ impl DenoProvider {
     }
 }
 
+#[cfg(test)]
 mod tests {
-    use crate::nixpacks::nix::NIXPACKS_ARCHIVE_LATEST_DENO;
-    use crate::{App, DenoProvider, Environment, Provider};
+    use super::*;
 
     #[test]
     fn test_deno2() {
