@@ -42,11 +42,13 @@ impl Provider for DenoProvider {
             || app.find_match(&re, "**/*.{ts,tsx,js,jsx}")?)
     }
 
-    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
-        plan.pin(false, Some(NIXPACKS_ARCHIVE_LATEST_DENO.to_string()));
 
-        let setup = Phase::setup(Some(vec![Pkg::new("deno")]));
+        let mut setup = Phase::setup(Some(vec![Pkg::new("deno")]));
+        if env.is_config_variable_truthy("USE_DENO_2") {
+            setup.pin(Some(NIXPACKS_ARCHIVE_LATEST_DENO.to_string()));
+        }
         plan.add_phase(setup);
 
         if let Some(build_cmd) = DenoProvider::get_build_cmd(app)? {
