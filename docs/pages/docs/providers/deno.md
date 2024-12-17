@@ -8,6 +8,8 @@ Deno is detected if there is a `deno.{json,jsonc}` file found or if any `.{ts,ts
 
 Apps built with [Deno Fresh](https://fresh.deno.dev/) should work out of the box.
 
+Deno 2 will be installed if the `NIXPACKS_USE_DENO_2` environment variable is truthy; otherwise, Deno 1 will be used.
+
 ## Install
 
 _None_
