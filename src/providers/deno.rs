@@ -118,3 +118,29 @@ impl DenoProvider {
         Ok(Some(relative_path_to_index))
     }
 }
+
+mod tests {
+    use crate::nixpacks::nix::NIXPACKS_ARCHIVE_LATEST_DENO;
+    use crate::{App, DenoProvider, Environment, Provider};
+
+    #[test]
+    fn test_deno2() {
+        let deno = DenoProvider {};
+        assert_eq!(
+            deno.get_build_plan(
+                &App::new("examples/deno2").unwrap(),
+                &Environment::from_envs(vec!["NIXPACKS_USE_DENO_2=1"]).unwrap()
+            )
+            .unwrap()
+            .unwrap()
+            .phases
+            .unwrap()
+            .get("setup")
+            .unwrap()
+            .nixpkgs_archive
+            .as_ref()
+            .unwrap(),
+            &NIXPACKS_ARCHIVE_LATEST_DENO.to_string()
+        );
+    }
+}
