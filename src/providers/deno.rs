@@ -4,7 +4,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
-    nix::pkg::Pkg,
+    nix::{pkg::Pkg, NIXPACKS_ARCHIVE_LATEST_DENO},
     plan::{
         phase::{Phase, StartPhase},
         BuildPlan,
@@ -42,10 +42,13 @@ impl Provider for DenoProvider {
             || app.find_match(&re, "**/*.{ts,tsx,js,jsx}")?)
     }
 
-    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
 
-        let setup = Phase::setup(Some(vec![Pkg::new("deno")]));
+        let mut setup = Phase::setup(Some(vec![Pkg::new("deno")]));
+        if env.is_config_variable_truthy("USE_DENO_2") {
+            setup.pin(Some(NIXPACKS_ARCHIVE_LATEST_DENO.to_string()));
+        }
         plan.add_phase(setup);
 
         if let Some(build_cmd) = DenoProvider::get_build_cmd(app)? {
@@ -113,5 +116,31 @@ impl DenoProvider {
 
         let relative_path_to_index = app.strip_source_path(path_to_index)?;
         Ok(Some(relative_path_to_index))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deno2() {
+        let deno = DenoProvider {};
+        assert_eq!(
+            deno.get_build_plan(
+                &App::new("examples/deno2").unwrap(),
+                &Environment::from_envs(vec!["NIXPACKS_USE_DENO_2=1"]).unwrap()
+            )
+            .unwrap()
+            .unwrap()
+            .phases
+            .unwrap()
+            .get("setup")
+            .unwrap()
+            .nixpkgs_archive
+            .as_ref()
+            .unwrap(),
+            &NIXPACKS_ARCHIVE_LATEST_DENO.to_string()
+        );
     }
 }
