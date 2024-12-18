@@ -362,7 +362,7 @@ impl NodeProvider {
             pkg_manager = "pnpm";
         } else if app.includes_file("yarn.lock") {
             pkg_manager = "yarn";
-        } else if app.includes_file("bun.lockb") {
+        } else if app.includes_file("bun.lockb") || app.includes_file("bun.lock") {
             pkg_manager = "bun";
         }
         pkg_manager.to_string()
@@ -397,7 +397,7 @@ impl NodeProvider {
             }
         } else if app.includes_file("package-lock.json") {
             install_cmd = "npm ci".to_string();
-        } else if app.includes_file("bun.lockb") {
+        } else if app.includes_file("bun.lockb") || app.includes_file("bun.lock") {
             install_cmd = "bun i --no-save".to_string();
         }
 
