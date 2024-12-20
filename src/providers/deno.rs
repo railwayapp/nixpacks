@@ -4,7 +4,7 @@ use super::Provider;
 use crate::nixpacks::{
     app::App,
     environment::Environment,
-    nix::pkg::Pkg,
+    nix::{pkg::Pkg, NIXPACKS_ARCHIVE_LATEST_DENO},
     plan::{
         phase::{Phase, StartPhase},
         BuildPlan,
@@ -21,8 +21,20 @@ pub struct DenoTasks {
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]
+pub struct DenoEngines {
+    pub deno: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct DenoJson {
     pub tasks: Option<DenoTasks>,
+    pub engines: Option<DenoEngines>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct PackageJson {
+    pub engines: Option<DenoEngines>,
+    pub scripts: Option<DenoTasks>,
 }
 
 pub struct DenoProvider {}
@@ -42,10 +54,28 @@ impl Provider for DenoProvider {
             || app.find_match(&re, "**/*.{ts,tsx,js,jsx}")?)
     }
 
-    fn get_build_plan(&self, app: &App, _env: &Environment) -> Result<Option<BuildPlan>> {
+    fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         let mut plan = BuildPlan::default();
 
-        let setup = Phase::setup(Some(vec![Pkg::new("deno")]));
+        let mut setup = Phase::setup(Some(vec![Pkg::new("deno")]));
+
+        let package_json = app.read_json::<PackageJson>("package.json");
+        let deno_json = app.read_json::<DenoJson>("deno.json");
+        let v1_regex = Regex::new(r"^((>=)|\^)?v?1")?;
+        if !(env.is_config_variable_truthy("USE_DENO_1")
+            || package_json
+                .map(|p| p.engines.map(|e| e.deno.map(|d| v1_regex.is_match(&d))))
+                .unwrap_or(Some(Some(false)))
+                .unwrap_or(Some(false))
+                .unwrap_or(false)
+            || deno_json
+                .map(|p| p.engines.map(|e| e.deno.map(|d| v1_regex.is_match(&d))))
+                .unwrap_or(Some(Some(false)))
+                .unwrap_or(Some(false))
+                .unwrap_or(false))
+        {
+            setup.pin(Some(NIXPACKS_ARCHIVE_LATEST_DENO.to_string()));
+        }
         plan.add_phase(setup);
 
         if let Some(build_cmd) = DenoProvider::get_build_cmd(app)? {
@@ -113,5 +143,43 @@ impl DenoProvider {
 
         let relative_path_to_index = app.strip_source_path(path_to_index)?;
         Ok(Some(relative_path_to_index))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_deno_versions() {
+        let deno = DenoProvider {};
+        assert_eq!(
+            deno.get_build_plan(&App::new("examples/deno").unwrap(), &Environment::default())
+                .unwrap()
+                .unwrap()
+                .phases
+                .unwrap()
+                .get("setup")
+                .unwrap()
+                .nixpkgs_archive
+                .as_ref()
+                .unwrap(),
+            &NIXPACKS_ARCHIVE_LATEST_DENO.to_string()
+        );
+        assert_eq!(
+            deno.get_build_plan(
+                &App::new("examples/deno1").unwrap(),
+                &Environment::default()
+            )
+            .unwrap()
+            .unwrap()
+            .phases
+            .unwrap()
+            .get("setup")
+            .unwrap()
+            .nixpkgs_archive,
+            None
+        );
     }
 }
