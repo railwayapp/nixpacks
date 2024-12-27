@@ -45,7 +45,7 @@ impl Provider for ElixirProvider {
             build_phase.add_cmd("mix assets.deploy".to_string());
         }
 
-        if mix_exs_content.contains("postgrex") && mix_exs_content.contains("ecto") {
+        if mix_exs_content.contains("ecto_sql") && mix_exs_content.contains("ecto") {
             build_phase.add_cmd("mix ecto.setup");
         }
 
