@@ -620,7 +620,7 @@ fn version_number_to_pkg(version: u32) -> String {
 fn parse_node_version_into_pkg(node_version: &str) -> String {
     let default_node_pkg_name = version_number_to_pkg(DEFAULT_NODE_VERSION);
     let range: Range = node_version.parse().unwrap_or_else(|_| {
-        println!("Warning: node version {node_version} is not valid, using default node version {default_node_pkg_name}");
+        eprintln!("Warning: node version {node_version} is not valid, using default node version {default_node_pkg_name}");
         Range::parse(DEFAULT_NODE_VERSION.to_string()).unwrap()
     });
     let mut available_node_versions = AVAILABLE_NODE_VERSIONS.to_vec();
