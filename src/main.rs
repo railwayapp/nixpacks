@@ -77,7 +77,7 @@ struct Args {
 #[derive(Subcommand)]
 enum Commands {
     /// Generate a build plan for an app.
-    /// Generated plan will be outputted to stdin, while warnings might be outputted to stderr.
+    /// Generated plan will be outputted to stdout, while warnings might be outputted to stderr.
     Plan {
         /// App source
         path: String,
