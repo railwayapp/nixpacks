@@ -383,7 +383,7 @@ impl PythonProvider {
             // So we accept strip x.y.z -> x.y and warn that all other formats are invalid
             if parts.len() != 3 && parts.len() != 2 {
                 eprintln!("Could not find a python version string in the format x.y.z or x.y from .tool-versions. Found {}. Skipping", parts.join("."));
-            } 
+            }
 
             format!("{}.{}", parts[0], parts[1])
         }))
