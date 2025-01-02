@@ -218,15 +218,15 @@ impl Phase {
             }
         }
 
-        self.cmds = pin_option_vec(&self.cmds);
-        self.depends_on = pin_option_vec(&self.depends_on);
-        self.nix_pkgs = pin_option_vec(&self.nix_pkgs);
-        self.nix_libs = pin_option_vec(&self.nix_libs);
-        self.apt_pkgs = pin_option_vec(&self.apt_pkgs);
-        self.nix_overlays = pin_option_vec(&self.nix_overlays);
-        self.only_include_files = pin_option_vec(&self.only_include_files);
-        self.cache_directories = pin_option_vec(&self.cache_directories);
-        self.paths = pin_option_vec(&self.paths);
+        self.cmds = pin_option_vec(self.cmds.as_ref());
+        self.depends_on = pin_option_vec(self.depends_on.as_ref());
+        self.nix_pkgs = pin_option_vec(self.nix_pkgs.as_ref());
+        self.nix_libs = pin_option_vec(self.nix_libs.as_ref());
+        self.apt_pkgs = pin_option_vec(self.apt_pkgs.as_ref());
+        self.nix_overlays = pin_option_vec(self.nix_overlays.as_ref());
+        self.only_include_files = pin_option_vec(self.only_include_files.as_ref());
+        self.cache_directories = pin_option_vec(self.cache_directories.as_ref());
+        self.paths = pin_option_vec(self.paths.as_ref());
     }
 }
 
@@ -263,17 +263,13 @@ impl StartPhase {
 
     /// Store the list of files to include in this phase for later reproducibility.
     pub fn pin(&mut self) {
-        self.only_include_files = pin_option_vec(&self.only_include_files);
+        self.only_include_files = pin_option_vec(self.only_include_files.as_ref());
     }
 }
 
 /// Store the list of options for this phase for later reproducibility.
-fn pin_option_vec(vec: &Option<Vec<String>>) -> Option<Vec<String>> {
-    if let Some(vec) = vec {
-        Some(remove_autos_from_vec(vec.clone()))
-    } else {
-        vec.clone()
-    }
+fn pin_option_vec(vec: Option<&Vec<String>>) -> Option<Vec<String>> {
+    vec.map(|vec| remove_autos_from_vec(vec.clone()))
 }
 
 /// Add an option to the vector of options for the phase.

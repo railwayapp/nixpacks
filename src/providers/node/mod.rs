@@ -1,4 +1,4 @@
-use self::{moon::Moon, nx::Nx, turborepo::Turborepo};
+use self::{moon::Moon, nx::Nx, spa::SpaProvider, turborepo::Turborepo};
 use super::Provider;
 use crate::nixpacks::plan::merge::Mergeable;
 use crate::nixpacks::{
@@ -19,6 +19,7 @@ use std::collections::{HashMap, HashSet};
 
 mod moon;
 mod nx;
+mod spa;
 mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
@@ -116,7 +117,6 @@ impl Provider for NodeProvider {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
         setup.set_nix_archive(NodeProvider::get_nix_archive(app)?);
-
         if NodeProvider::uses_node_dependency(app, "prisma") {
             setup.add_nix_pkgs(&[Pkg::new("openssl")]);
         }
@@ -203,9 +203,24 @@ impl Provider for NodeProvider {
         // Start
         let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
 
-        let mut plan = BuildPlan::new(&vec![setup, install, build], start);
+        let mut phases = vec![setup, install, build];
+        if SpaProvider::is_spa(app) {
+            let caddy = SpaProvider::caddy_phase(app);
+            phases.insert(1, caddy); // insert after setup and before build
+        }
+        let mut plan = BuildPlan::new(&phases, start);
+        if SpaProvider::is_spa(app) {
+            plan.add_static_assets(static_asset_list! {
+                "Caddyfile" => include_str!("spa/Caddyfile")
+            });
+        }
         plan.add_variables(NodeProvider::get_node_environment_variables());
-
+        if SpaProvider::is_spa(app) {
+            plan.add_variables(EnvironmentVariables::from([(
+                "NIXPACKS_SPA_OUTPUT_DIR".to_string(),
+                SpaProvider::get_output_directory(app),
+            )]));
+        }
         Ok(Some(plan))
     }
 }
@@ -299,6 +314,13 @@ impl NodeProvider {
             }
         }
 
+        if SpaProvider::is_spa(app) {
+            return Ok(Some(format!(
+                "exec caddy run --config {} --adapter caddyfile 2>&1",
+                app.asset_path("Caddyfile")
+            )));
+        }
+
         let package_manager = NodeProvider::get_package_manager(app);
         if NodeProvider::has_script(app, "start")? {
             return Ok(Some(format!("{package_manager} run start")));
@@ -353,7 +375,7 @@ impl NodeProvider {
         }
 
         let node_pkg = parse_node_version_into_pkg(&node_version);
-        return Ok(Pkg::new(node_pkg.as_str()));
+        Ok(Pkg::new(node_pkg.as_str()))
     }
 
     pub fn get_package_manager(app: &App) -> String {
