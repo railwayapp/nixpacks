@@ -361,12 +361,19 @@ impl DockerfileGenerator for StartPhase {
                 start_cmd=start_cmd,}
             }
             None => {
+                // Copy over app files if provided, otherwise copy all files
+                let copy_cmds = match &self.only_include_files {
+                    Some(files) => utils::get_copy_commands(&files.clone(), APP_DIR).join("\n"),
+                    None => "COPY . /app".to_string(),
+                };
+
                 formatdoc! {"
                   # start
-                  COPY . /app
+                  {copy_cmds}
                   {user_str}
                   {start_cmd}
                 ",
+                copy_cmds=copy_cmds,
                 start_cmd=start_cmd,
                 user_str=user_str}
             }
