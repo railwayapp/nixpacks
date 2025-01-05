@@ -32,27 +32,47 @@ impl Provider for ElixirProvider {
         plan.add_phase(setup);
 
         // Install Phase
-        let mut install_phase = Phase::install(Some("mix local.hex --force".to_string()));
-        install_phase.add_cmd("mix local.rebar --force");
+        let mut install_phase =
+            Phase::install(Some("MIX_ENV=prod mix local.hex --force".to_string()));
+        install_phase.only_include_files = Some(vec![
+            "config/config.exs".to_string(),
+            "config/prod.exs".to_string(),
+            "mix.exs".to_string(),
+            "mix.lock".to_string(),
+        ]);
+        install_phase.add_cmd("MIX_ENV=prod mix local.rebar --force");
         install_phase.add_cmd("mix deps.get --only prod");
         plan.add_phase(install_phase);
 
         // Build Phase
         let mut build_phase = Phase::build(Some("mix compile".to_string()));
+        build_phase.only_include_files = Some(vec![
+            "config/runtime.exs".to_string(),
+            "assets".to_string(),
+            "priv".to_string(),
+            "config".to_string(),
+            "lib".to_string(),
+        ]);
         let mix_exs_content = app.read_file("mix.exs")?;
-
         if mix_exs_content.contains("assets.deploy") {
             build_phase.add_cmd("mix assets.deploy".to_string());
-        }
-
-        if mix_exs_content.contains("ecto_sql") && mix_exs_content.contains("ecto") {
-            build_phase.add_cmd("mix ecto.setup");
         }
 
         plan.add_phase(build_phase);
 
         // Start Phase
-        let start_phase = StartPhase::new("mix phx.server".to_string());
+
+        // If the app uses Ecto, we need to run the setup command before starting the server
+        let start_phase_cmd =
+            if mix_exs_content.contains("ecto_sql") && mix_exs_content.contains("ecto") {
+                "mix ecto.setup && mix phx.server"
+            } else {
+                "mix phx.server"
+            };
+
+        let mut start_phase = StartPhase::new(start_phase_cmd.to_string());
+        // Skip copying any additional files for the start phase
+        start_phase.only_include_files = Some(vec![]);
         plan.set_start_phase(start_phase);
 
         Ok(Some(plan))
@@ -76,6 +96,8 @@ impl ElixirProvider {
     fn default_elixir_environment_variables() -> EnvironmentVariables {
         let var_map = vec![
             ("MIX_ENV", "prod"),
+            ("LANG", "en_US.UTF-8"),
+            ("LANGUAGE", "en_US:en"),
             // required to avoid the following error:
             // warning: the VM is running with native name encoding of latin1 which may cause Elixir to malfunction as it expects utf8. Please ensure your locale is set to UTF-8 (which can be verified by running "locale" in your shell) or set the ELIXIR_ERL_OPTIONS="+fnu" environment variable
             ("ELIXIR_ERL_OPTIONS", "+fnu"),
