@@ -19,7 +19,8 @@ expression: plan
         "install"
       ],
       "cmds": [
-        "mix compile"
+        "mix compile",
+        "mix assets.deploy"
       ],
       "onlyIncludeFiles": [
         "config/runtime.exs",
@@ -35,13 +36,13 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "MIX_ENV=prod mix local.hex --force",
-        "MIX_ENV=prod mix local.rebar --force",
+        "mix local.hex --force",
+        "mix local.rebar --force",
         "mix deps.get --only prod"
       ],
       "onlyIncludeFiles": [
         "config/config.exs",
-        "config/prod.exs",
+        "config/${MIX_ENV}.exs",
         "mix.exs",
         "mix.lock"
       ]
