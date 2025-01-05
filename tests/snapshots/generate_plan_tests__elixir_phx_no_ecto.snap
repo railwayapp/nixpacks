@@ -7,6 +7,8 @@ expression: plan
   "buildImage": "[build_image]",
   "variables": {
     "ELIXIR_ERL_OPTIONS": "+fnu",
+    "LANG": "en_US.UTF-8",
+    "LANGUAGE": "en_US:en",
     "MIX_ENV": "prod",
     "NIXPACKS_METADATA": "elixir"
   },
@@ -17,8 +19,14 @@ expression: plan
         "install"
       ],
       "cmds": [
-        "mix compile",
-        "mix assets.deploy"
+        "mix compile"
+      ],
+      "onlyIncludeFiles": [
+        "config/runtime.exs",
+        "assets",
+        "priv",
+        "config",
+        "lib"
       ]
     },
     "install": {
@@ -27,9 +35,15 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "mix local.hex --force",
-        "mix local.rebar --force",
+        "MIX_ENV=prod mix local.hex --force",
+        "MIX_ENV=prod mix local.rebar --force",
         "mix deps.get --only prod"
+      ],
+      "onlyIncludeFiles": [
+        "config/config.exs",
+        "config/prod.exs",
+        "mix.exs",
+        "mix.lock"
       ]
     },
     "setup": {
@@ -46,6 +60,7 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "mix phx.server"
+    "cmd": "mix phx.server",
+    "onlyIncludeFiles": []
   }
 }

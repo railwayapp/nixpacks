@@ -8,6 +8,8 @@ snapshot_kind: text
   "buildImage": "[build_image]",
   "variables": {
     "ELIXIR_ERL_OPTIONS": "+fnu",
+    "LANG": "en_US.UTF-8",
+    "LANGUAGE": "en_US:en",
     "MIX_ENV": "prod",
     "NIXPACKS_METADATA": "elixir"
   },
@@ -18,8 +20,14 @@ snapshot_kind: text
         "install"
       ],
       "cmds": [
-        "mix compile",
-        "mix ecto.setup"
+        "mix compile"
+      ],
+      "onlyIncludeFiles": [
+        "config/runtime.exs",
+        "assets",
+        "priv",
+        "config",
+        "lib"
       ]
     },
     "install": {
@@ -28,9 +36,15 @@ snapshot_kind: text
         "setup"
       ],
       "cmds": [
-        "mix local.hex --force",
-        "mix local.rebar --force",
+        "MIX_ENV=prod mix local.hex --force",
+        "MIX_ENV=prod mix local.rebar --force",
         "mix deps.get --only prod"
+      ],
+      "onlyIncludeFiles": [
+        "config/config.exs",
+        "config/prod.exs",
+        "mix.exs",
+        "mix.lock"
       ]
     },
     "setup": {
@@ -47,6 +61,7 @@ snapshot_kind: text
     }
   },
   "start": {
-    "cmd": "mix phx.server"
+    "cmd": "mix ecto.setup && mix phx.server",
+    "onlyIncludeFiles": []
   }
 }
