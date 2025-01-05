@@ -32,15 +32,14 @@ impl Provider for ElixirProvider {
         plan.add_phase(setup);
 
         // Install Phase
-        let mut install_phase =
-            Phase::install(Some("MIX_ENV=prod mix local.hex --force".to_string()));
+        let mut install_phase = Phase::install(Some("mix local.hex --force".to_string()));
         install_phase.only_include_files = Some(vec![
             "config/config.exs".to_string(),
-            "config/prod.exs".to_string(),
+            "config/${MIX_ENV}.exs".to_string(),
             "mix.exs".to_string(),
             "mix.lock".to_string(),
         ]);
-        install_phase.add_cmd("MIX_ENV=prod mix local.rebar --force");
+        install_phase.add_cmd("mix local.rebar --force");
         install_phase.add_cmd("mix deps.get --only prod");
         plan.add_phase(install_phase);
 
