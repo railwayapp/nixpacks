@@ -1,0 +1,24 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "deno"
+  },
+  "phases": {
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "deno"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "deno start main.ts"
+  }
+}

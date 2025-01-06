@@ -86,7 +86,6 @@ impl Provider for PythonProvider {
                 if let Some(poetry_version) =
                     PythonProvider::parse_tool_versions_poetry_version(file_content)?
                 {
-                    println!("Using poetry version from .tool-versions: {poetry_version}");
                     version = poetry_version;
                 }
             }
@@ -114,7 +113,6 @@ impl Provider for PythonProvider {
                 if let Some(uv_version) =
                     PythonProvider::parse_tool_versions_uv_version(file_content)?
                 {
-                    println!("Using uv version from .tool-versions: {uv_version}");
                     version = uv_version;
                 }
             }
