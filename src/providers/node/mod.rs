@@ -348,7 +348,10 @@ impl NodeProvider {
             None
         };
 
-        let node_version = env_node_version.or(pkg_node_version).or(nvmrc_node_version).or(dot_node_version);
+        let node_version = env_node_version
+            .or(pkg_node_version)
+            .or(nvmrc_node_version)
+            .or(dot_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
