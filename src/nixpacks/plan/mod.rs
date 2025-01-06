@@ -408,6 +408,47 @@ mod test {
     }
 
     #[test]
+    fn test_to_json_and_from_json() {
+        let original_plan = BuildPlan::from_toml(
+            r#"
+            [phases.setup]
+            nixPkgs = ["nodejs", "yarn"]
+            aptPkgs = ["git"]
+
+            [phases.install]
+            cmds = ["yarn install"]
+            cacheDirectories = ["node_modules"]
+            dependsOn = ["setup"]
+
+            [phases.build]
+            cmds = ["yarn build"]
+            dependsOn = ["install"]
+
+            [start]
+            cmd = "yarn start"
+            "#,
+        )
+        .unwrap();
+
+        let json_str = original_plan.to_json().unwrap();
+        let deserialized_plan = BuildPlan::from_json(json_str).unwrap();
+
+        assert_eq!(original_plan, deserialized_plan);
+        assert_eq!(
+            deserialized_plan.get_phase("setup").unwrap().nix_pkgs,
+            Some(vec!["nodejs".to_string(), "yarn".to_string()])
+        );
+        assert_eq!(
+            deserialized_plan.get_phase("setup").unwrap().apt_pkgs,
+            Some(vec!["git".to_string()])
+        );
+        assert_eq!(
+            deserialized_plan.start_phase.unwrap().cmd.unwrap(),
+            "yarn start".to_string()
+        );
+    }
+
+    #[test]
     fn test_get_phases_with_dependencies() {
         let setup = Phase::new("setup");
 
