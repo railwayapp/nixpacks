@@ -340,7 +340,18 @@ impl NodeProvider {
             None
         };
 
-        let node_version = env_node_version.or(pkg_node_version).or(nvmrc_node_version);
+        let dot_node_version = if app.includes_file(".node-version") {
+            let node_version_file = app.read_file(".node-version")?;
+            // Using simple string transform since .node-version don't currently have a convention around the use of lts/* implemented in parse_nvmrc method
+            Some(node_version_file.trim().replace('v', ""))
+        } else {
+            None
+        };
+
+        let node_version = env_node_version
+            .or(pkg_node_version)
+            .or(nvmrc_node_version)
+            .or(dot_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
@@ -362,7 +373,7 @@ impl NodeProvider {
             pkg_manager = "pnpm";
         } else if app.includes_file("yarn.lock") {
             pkg_manager = "yarn";
-        } else if app.includes_file("bun.lockb") {
+        } else if app.includes_file("bun.lockb") || app.includes_file("bun.lock") {
             pkg_manager = "bun";
         }
         pkg_manager.to_string()
@@ -397,7 +408,7 @@ impl NodeProvider {
             }
         } else if app.includes_file("package-lock.json") {
             install_cmd = "npm ci".to_string();
-        } else if app.includes_file("bun.lockb") {
+        } else if app.includes_file("bun.lockb") || app.includes_file("bun.lock") {
             install_cmd = "bun i --no-save".to_string();
         }
 
@@ -620,7 +631,7 @@ fn version_number_to_pkg(version: u32) -> String {
 fn parse_node_version_into_pkg(node_version: &str) -> String {
     let default_node_pkg_name = version_number_to_pkg(DEFAULT_NODE_VERSION);
     let range: Range = node_version.parse().unwrap_or_else(|_| {
-        println!("Warning: node version {node_version} is not valid, using default node version {default_node_pkg_name}");
+        eprintln!("Warning: node version {node_version} is not valid, using default node version {default_node_pkg_name}");
         Range::parse(DEFAULT_NODE_VERSION.to_string()).unwrap()
     });
     let mut available_node_versions = AVAILABLE_NODE_VERSIONS.to_vec();
@@ -956,6 +967,23 @@ mod test {
                 &Environment::default()
             )?,
             Pkg::new("nodejs_14")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_from_node_version_file() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-node-version")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs_22")
         );
 
         Ok(())

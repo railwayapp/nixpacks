@@ -1,0 +1,15 @@
+// THIS FILE HAS ALL KINDS OF COMMENTS POSSIBLE TO TEST JSONC
+{
+  //some random comment
+  "tasks": {
+    // random afterline comment
+    /* :) */ "dev": "deno run --watch main.ts",
+    "start": "deno start main.ts"
+  } /*
+    This 
+    is some multiline comment
+    */,
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1"
+  }
+}
