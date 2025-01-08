@@ -65,20 +65,46 @@ impl Provider for GolangProvider {
         setup.set_nix_archive(archive);
 
         plan.add_phase(setup);
+        let is_go_module = app.includes_file("go.mod");
 
-        if app.includes_file("go.mod") {
+        if is_go_module {
             let mut install = Phase::install(Some("go mod download".to_string()));
             install.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
             plan.add_phase(install);
         }
 
-        let mut build = if app.includes_file("go.mod") {
-            Phase::build(Some(format!("go build -o {BINARY_NAME}")))
+        let has_root_go_files = app.find_files("*.go").ok().map_or(false, |files| {
+            files
+                .iter()
+                .any(|file| file.parent() == Some(app.source.as_path()))
+        });
+
+        let build_command = if let Some(name) = env.get_config_variable("GO_BIN") {
+            Some(format!("go build -o {BINARY_NAME} ./cmd/{name}"))
+        } else if is_go_module && has_root_go_files {
+            Some(format!("go build -o {BINARY_NAME}"))
+        } else if app.includes_directory("cmd") {
+            // Try to find a command in the cmd directory
+            app.find_directories("cmd/*")
+                .ok()
+                .and_then(|dirs| {
+                    dirs.into_iter()
+                        .find(|path| path.parent().map_or(false, |p| p.ends_with("cmd")))
+                })
+                .and_then(|path| {
+                    path.file_name()
+                        .and_then(|os_str| os_str.to_str())
+                        .map(|name| format!("go build -o {BINARY_NAME} ./cmd/{name}"))
+                })
+        } else if is_go_module {
+            Some(format!("go build -o {BINARY_NAME}"))
         } else if app.includes_file("main.go") {
-            Phase::build(Some(format!("go build -o {BINARY_NAME} main.go")))
+            Some(format!("go build -o {BINARY_NAME} main.go"))
         } else {
-            Phase::build(None)
+            None
         };
+
+        let mut build = Phase::build(build_command);
         build.add_cache_directory(GO_BUILD_CACHE_DIR.to_string());
         build.depends_on_phase("setup");
         plan.add_phase(build);
