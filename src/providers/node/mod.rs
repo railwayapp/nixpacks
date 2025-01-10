@@ -234,7 +234,8 @@ impl Provider for NodeProvider {
         if SpaProvider::is_spa(app) {
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_SPA_OUTPUT_DIR".to_string(),
-                env.get_config_variable("SPA_OUT_DIR").unwrap_or(SpaProvider::get_output_directory(app)),
+                env.get_config_variable("SPA_OUT_DIR")
+                    .unwrap_or(SpaProvider::get_output_directory(app)),
             )]));
         }
         Ok(Some(plan))

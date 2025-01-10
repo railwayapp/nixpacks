@@ -16,7 +16,10 @@ impl SpaProvider {
                 return None;
             }
         }
-        if Self::is_spa(app) && (vite::ViteSpaProvider::caddy_allowlist(app) || env.get_config_variable("SPA_OUT_DIR").is_some()) {
+        if Self::is_spa(app)
+            && (vite::ViteSpaProvider::caddy_allowlist(app)
+                || env.get_config_variable("SPA_OUT_DIR").is_some())
+        {
             let mut caddy = Phase::new("caddy");
             caddy.set_nix_archive(String::from("ba913eda2df8eb72147259189d55932012df6301")); // caddy 2.0.4
             caddy.add_nix_pkgs(&[Pkg::new("caddy")]);
