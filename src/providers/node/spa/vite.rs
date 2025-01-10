@@ -1,9 +1,6 @@
 use regex::Regex;
 
-use crate::{
-    nixpacks::{app::App, environment::Environment},
-    providers::node::PackageJson,
-};
+use crate::{nixpacks::app::App, providers::node::PackageJson};
 
 pub struct ViteSpaProvider {}
 

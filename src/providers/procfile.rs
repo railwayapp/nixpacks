@@ -14,7 +14,7 @@ use anyhow::{Context, Ok, Result};
 pub struct ProcfileProvider {}
 
 impl Provider for ProcfileProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "procfile"
     }
 

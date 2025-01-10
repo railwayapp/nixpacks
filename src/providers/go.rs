@@ -47,7 +47,7 @@ const DEFAULT_ARCHIVE: &str = "e89cf1c932006531f454de7d652163a9a5c86668";
 const GO_BUILD_CACHE_DIR: &str = "/root/.cache/go-build";
 
 impl Provider for GolangProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "go"
     }
 

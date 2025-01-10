@@ -34,7 +34,7 @@ const PHP_ARCHIVE_VERSIONS: &[(&str, (&str, &str))] = &[
 pub struct PhpProvider;
 
 impl Provider for PhpProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "php"
     }
 

@@ -14,7 +14,7 @@ use std::ffi::OsStr;
 pub struct ZigProvider;
 
 impl Provider for ZigProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "zig"
     }
 

@@ -18,7 +18,7 @@ const DEFAULT_GRADLE_VERSION: u32 = 8;
 const JAVA_NIXPKGS_ARCHIVE: &str = "59dc10b5a6f2a592af36375c68fda41246794b86";
 
 impl Provider for JavaProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "java"
     }
 
