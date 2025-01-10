@@ -167,9 +167,6 @@ impl PythonProvider {
 
         if PythonProvider::is_using_postgres(app, env)? {
             // Postgres requires postgresql and gcc on top of the original python packages
-            // .dev variant is required in order for pg_config to be available, which is needed by psycopg2
-            // the .dev variant requirement is caused by this change in nix pkgs:
-            // https://github.com/NixOS/nixpkgs/blob/43eac3c9e618c4114a3441b52949609ea2104670/pkgs/servers/sql/postgresql/pg_config.sh
             pkgs.append(&mut vec![Pkg::new("postgresql")]);
         }
 
