@@ -163,6 +163,10 @@ enum Commands {
         #[arg(long)]
         docker_cert_path: Option<String>,
 
+        /// Open an interactive shell if the build fails
+        #[arg(long)]
+        debug: bool,
+
         /// Enable writing cache metadata into the output image
         #[arg(long)]
         inline_cache: bool,
