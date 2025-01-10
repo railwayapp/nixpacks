@@ -101,6 +101,22 @@ pub struct PackageJson {
     pub cache_directories: Option<Vec<String>>,
 }
 
+impl PackageJson {
+    /// searches dependencies and dev_dependencies in package.json for a given dependency
+    fn has_dependency(&self, dep: &str) -> bool {
+        if let Some(deps) = &self.dependencies {
+            if deps.contains_key(dep) {
+                return true;
+            }
+        } else if let Some(deps) = &self.dev_dependencies {
+            if deps.contains_key(dep) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
 #[derive(Default, Debug)]
 pub struct NodeProvider {}
 
@@ -204,12 +220,12 @@ impl Provider for NodeProvider {
         let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
 
         let mut phases = vec![setup, install, build];
-        if SpaProvider::is_spa(app) {
-            let caddy = SpaProvider::caddy_phase(app);
+        if let Some(caddy) = SpaProvider::caddy_phase(app, env) {
             phases.insert(1, caddy); // insert after setup and before build
         }
+
         let mut plan = BuildPlan::new(&phases, start);
-        if SpaProvider::is_spa(app) {
+        if SpaProvider::caddy_phase(app, env).is_some() {
             plan.add_static_assets(static_asset_list! {
                 "Caddyfile" => include_str!("spa/Caddyfile")
             });
@@ -218,7 +234,7 @@ impl Provider for NodeProvider {
         if SpaProvider::is_spa(app) {
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_SPA_OUTPUT_DIR".to_string(),
-                SpaProvider::get_output_directory(app),
+                env.get_config_variable("SPA_OUT_DIR").unwrap_or(SpaProvider::get_output_directory(app)),
             )]));
         }
         Ok(Some(plan))
@@ -314,7 +330,7 @@ impl NodeProvider {
             }
         }
 
-        if SpaProvider::is_spa(app) {
+        if SpaProvider::caddy_phase(app, env).is_some() {
             return Ok(Some(format!(
                 "exec caddy run --config {} --adapter caddyfile 2>&1",
                 app.asset_path("Caddyfile")

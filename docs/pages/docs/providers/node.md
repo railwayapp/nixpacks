@@ -104,3 +104,23 @@ Corepack will only be used on Node 16 and above.
 ## Bun Support
 
 We support Bun, but due to Bun being in alpha, it is unstable and very experimental.
+
+## SPA Application Support
+
+If we detect your application is using [Vite](https://vite.dev) and doesn't have a server, we will automatically compile your app and run it using [Caddy](https://caddyserver.com/)
+
+If you wish to turn off Caddy, you can set the environment variable `NIXPACKS_SPA_CADDY` to `false`.
+
+If you have an application that doesn't pass the requirements for automatically using [Caddy](https://caddyserver.com/), set the `NIXPACKS_SPA_OUT_DIR` variable to the out directory of your application.
+
+### Caddy requirements
+
+If your package.json has `vite` any of the following dependencies:
+
+- `react`
+- `vue`
+- `svelte` (but not `@sveltejs/kit`)
+- `preact`
+- `lit`
+- `solid-js`
+- `@builder.io/qwik`
