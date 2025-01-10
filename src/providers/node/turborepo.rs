@@ -97,7 +97,7 @@ impl Turborepo {
                     format!("{pkg_manager} --workspace {name} run start")
                 }));
             }
-            println!("Warning: Turborepo app `{name}` not found");
+            eprintln!("Warning: Turborepo app `{name}` not found");
         }
         if let Some(start_pipeline) = Turborepo::get_start_cmd(&turbo_cfg) {
             return Ok(Some(start_pipeline));
