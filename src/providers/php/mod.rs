@@ -209,13 +209,13 @@ impl PhpProvider {
             } else if v.contains("7.4") {
                 "7.4".to_string()
             } else {
-                println!(
+                eprintln!(
                     "Warning: PHP version {v} is not available, using PHP {DEFAULT_PHP_VERSION}"
                 );
                 DEFAULT_PHP_VERSION.to_string()
             }
         } else {
-            println!("Warning: No PHP version specified, using PHP {DEFAULT_PHP_VERSION}; see https://getcomposer.org/doc/04-schema.md#package-links for how to specify a PHP version.");
+            eprintln!("Warning: No PHP version specified, using PHP {DEFAULT_PHP_VERSION}; see https://getcomposer.org/doc/04-schema.md#package-links for how to specify a PHP version.");
             DEFAULT_PHP_VERSION.to_string()
         };
 

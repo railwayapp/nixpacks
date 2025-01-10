@@ -68,6 +68,7 @@ nixpacks plan examples/node
 ```
 
 By default, the plan is output in JSON format. You can output in TOML format with the `--format toml` option.
+The generated plan will be outputted to stdout, while some providers expose recoverable errors to stderr.
 
 View all plan options with
 

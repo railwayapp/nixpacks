@@ -373,12 +373,23 @@ impl NodeProvider {
 
         let nvmrc_node_version = if app.includes_file(".nvmrc") {
             let nvmrc = app.read_file(".nvmrc")?;
-            Some(nvmrc.trim().replace('v', ""))
+            Some(parse_nvmrc(&nvmrc))
         } else {
             None
         };
 
-        let node_version = env_node_version.or(pkg_node_version).or(nvmrc_node_version);
+        let dot_node_version = if app.includes_file(".node-version") {
+            let node_version_file = app.read_file(".node-version")?;
+            // Using simple string transform since .node-version don't currently have a convention around the use of lts/* implemented in parse_nvmrc method
+            Some(node_version_file.trim().replace('v', ""))
+        } else {
+            None
+        };
+
+        let node_version = env_node_version
+            .or(pkg_node_version)
+            .or(nvmrc_node_version)
+            .or(dot_node_version);
 
         let node_version = match node_version {
             Some(node_version) => node_version,
@@ -400,7 +411,7 @@ impl NodeProvider {
             pkg_manager = "pnpm";
         } else if app.includes_file("yarn.lock") {
             pkg_manager = "yarn";
-        } else if app.includes_file("bun.lockb") {
+        } else if app.includes_file("bun.lockb") || app.includes_file("bun.lock") {
             pkg_manager = "bun";
         }
         pkg_manager.to_string()
@@ -435,7 +446,7 @@ impl NodeProvider {
             }
         } else if app.includes_file("package-lock.json") {
             install_cmd = "npm ci".to_string();
-        } else if app.includes_file("bun.lockb") {
+        } else if app.includes_file("bun.lockb") || app.includes_file("bun.lock") {
             install_cmd = "bun i --no-save".to_string();
         }
 
@@ -658,7 +669,7 @@ fn version_number_to_pkg(version: u32) -> String {
 fn parse_node_version_into_pkg(node_version: &str) -> String {
     let default_node_pkg_name = version_number_to_pkg(DEFAULT_NODE_VERSION);
     let range: Range = node_version.parse().unwrap_or_else(|_| {
-        println!("Warning: node version {node_version} is not valid, using default node version {default_node_pkg_name}");
+        eprintln!("Warning: node version {node_version} is not valid, using default node version {default_node_pkg_name}");
         Range::parse(DEFAULT_NODE_VERSION.to_string()).unwrap()
     });
     let mut available_node_versions = AVAILABLE_NODE_VERSIONS.to_vec();
@@ -672,6 +683,35 @@ fn parse_node_version_into_pkg(node_version: &str) -> String {
         }
     }
     default_node_pkg_name
+}
+
+fn parse_nvmrc(nvmrc_content: &str) -> String {
+    let lts_versions: HashMap<&str, u32> = {
+        let mut nvm_map = HashMap::new();
+        nvm_map.insert("lts/*", 22);
+        nvm_map.insert("lts/jod", 22);
+        nvm_map.insert("lts/argon", 4);
+        nvm_map.insert("lts/boron", 6);
+        nvm_map.insert("lts/carbon", 8);
+        nvm_map.insert("lts/dubnium", 10);
+        nvm_map.insert("lts/erbium", 12);
+        nvm_map.insert("lts/fermium", 14);
+        nvm_map.insert("lts/gallium", 16);
+        nvm_map.insert("lts/hydrogen", 18);
+        nvm_map.insert("lts/iron", 20);
+        nvm_map
+    };
+
+    let trimmed_version = nvmrc_content.trim();
+    if let Some(&version) = lts_versions.get(trimmed_version) {
+        return version.to_string();
+    }
+
+    // Only remove v if it is in the starting character, lts/ will never have that in starting
+    trimmed_version
+        .strip_prefix('v')
+        .unwrap_or(trimmed_version)
+        .to_string()
 }
 
 #[cfg(test)]
@@ -965,6 +1005,57 @@ mod test {
                 &Environment::default()
             )?,
             Pkg::new("nodejs_14")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_from_node_version_file() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-node-version")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs_22")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_version_from_nvmrc_lts() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-nvmrc-lts")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs_20")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_invalid_version_from_nvmrc_lts() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    ..Default::default()
+                },
+                &App::new("examples/node-nvmrc-invalid-lts")?,
+                &Environment::default()
+            )?,
+            Pkg::new("nodejs_18")
         );
 
         Ok(())

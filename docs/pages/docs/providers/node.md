@@ -8,7 +8,7 @@ The Node provider supports NPM, Yarn, Yarn 2, PNPM and Bun.
 
 ## Environment Variables
 
-The Node provider sets the following environment variables:
+The Node provider sets the following environment variables when the container is running (not during build):
 
 - `CI=true`
 - `NODE_ENV=production`
@@ -30,6 +30,7 @@ The version can be overridden by
 
 - Setting the `NIXPACKS_NODE_VERSION` environment variable
 - Specifying the `engines.node` field in `package.json`
+- Creating a `.nvmrc` file in your project and specify the version or alias (`lts/*`)
 
 Only a major version can be specified. For example, `18.x` or `20`.
 
