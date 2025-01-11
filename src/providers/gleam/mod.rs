@@ -96,8 +96,6 @@ impl GleamProvider {
     }
 
     fn get_start(&self, _app: &App, _env: &Environment) -> StartPhase {
-        let mut phase = StartPhase::new("./build/erlang-shipment/entrypoint.sh run");
-        phase.only_include_files = Some(vec!["build/erlang-shipment".into()]);
-        phase
+        StartPhase::new("./build/erlang-shipment/entrypoint.sh run")
     }
 }

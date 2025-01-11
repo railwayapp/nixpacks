@@ -49,9 +49,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "./build/erlang-shipment/entrypoint.sh run",
-    "onlyIncludeFiles": [
-      "build/erlang-shipment"
-    ]
+    "cmd": "./build/erlang-shipment/entrypoint.sh run"
   }
 }

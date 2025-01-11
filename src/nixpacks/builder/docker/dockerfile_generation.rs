@@ -148,7 +148,7 @@ impl DockerfileGenerator for BuildPlan {
                 // Pull the variables in from docker `--build-arg`
                 variables
                     .iter()
-                    .map(|var| var.0.to_string())
+                    .map(|var| format!("{}=\"{}\"", var.0.trim(), var.1.trim()))
                     .collect::<Vec<_>>()
                     .join(" "),
                 // Make the variables available at runtime
@@ -334,16 +334,15 @@ impl DockerfileGenerator for StartPhase {
             None => String::new(),
         };
 
-        let dockerfile: String = match &self.run_image {
-            Some(run_image) => {
-                let copy_cmds = utils::get_copy_from_commands(
-                    "0",
-                    &self.only_include_files.clone().unwrap_or_default(),
-                    APP_DIR,
-                );
+        let dockerfile: String = if let Some(run_image) = &self.run_image {
+            let copy_cmds = utils::get_copy_from_commands(
+                "0",
+                &self.only_include_files.clone().unwrap_or_default(),
+                APP_DIR,
+            );
 
-                // RUN true to prevent a Docker bug https://github.com/moby/moby/issues/37965#issuecomment-426853382
-                formatdoc! {"
+            // RUN true to prevent a Docker bug https://github.com/moby/moby/issues/37965#issuecomment-426853382
+            formatdoc! {"
                   # start
                   FROM {run_image}
                   ENTRYPOINT [\"/bin/bash\", \"-l\", \"-c\"]
@@ -354,22 +353,27 @@ impl DockerfileGenerator for StartPhase {
                   {user_str}
                   {start_cmd}
                 ",
-                run_image=run_image,
-                APP_DIR=APP_DIR,
-                copy_cmds=copy_cmds.join("\n"),
-                user_str=user_str,
-                start_cmd=start_cmd,}
-            }
-            None => {
-                formatdoc! {"
+            run_image=run_image,
+            APP_DIR=APP_DIR,
+            copy_cmds=copy_cmds.join("\n"),
+            user_str=user_str,
+            start_cmd=start_cmd,}
+        } else {
+            // Copy over app files if provided, otherwise copy all files
+            let copy_cmds = match &self.only_include_files {
+                Some(files) => utils::get_copy_commands(&files.clone(), APP_DIR).join("\n"),
+                None => "COPY . /app".to_string(),
+            };
+
+            formatdoc! {"
                   # start
-                  COPY . /app
+                  {copy_cmds}
                   {user_str}
                   {start_cmd}
                 ",
-                start_cmd=start_cmd,
-                user_str=user_str}
-            }
+            copy_cmds=copy_cmds,
+            start_cmd=start_cmd,
+            user_str=user_str}
         };
 
         Ok(dockerfile)
