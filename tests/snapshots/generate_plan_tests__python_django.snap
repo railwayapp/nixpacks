@@ -35,7 +35,7 @@ expression: plan
       "name": "setup",
       "nixPkgs": [
         "python3",
-        "postgresql",
+        "postgresql_16.dev",
         "gcc"
       ],
       "nixLibs": [
