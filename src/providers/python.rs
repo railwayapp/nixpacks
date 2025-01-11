@@ -160,14 +160,15 @@ enum EntryPoint {
 
 impl PythonProvider {
     fn setup(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
+        let mut setup = Phase::setup(None);
+
         let mut pkgs: Vec<Pkg> = vec![];
         let (python_base_package, nix_archive) = PythonProvider::get_nix_python_package(app, env)?;
 
         pkgs.append(&mut vec![python_base_package]);
 
         if PythonProvider::is_using_postgres(app, env)? {
-            // Postgres requires postgresql and gcc on top of the original python packages
-            pkgs.append(&mut vec![Pkg::new("postgresql")]);
+            pkgs.append(&mut vec![Pkg::new("postgresql_16.dev")]);
         }
 
         if PythonProvider::is_django(app, env)? && PythonProvider::is_using_mysql(app, env)? {
@@ -179,7 +180,7 @@ impl PythonProvider {
             pkgs.append(&mut vec![Pkg::new("pipenv")]);
         }
 
-        let mut setup = Phase::setup(Some(pkgs));
+        setup.add_nix_pkgs(&pkgs);
         setup.set_nix_archive(nix_archive);
 
         if PythonProvider::uses_dep(app, "cairo")? {
