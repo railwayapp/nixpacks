@@ -634,14 +634,18 @@ fn parse_node_version_into_pkg(node_version: &str) -> String {
         eprintln!("Warning: node version {node_version} is not valid, using default node version {default_node_pkg_name}");
         Range::parse(DEFAULT_NODE_VERSION.to_string()).unwrap()
     });
-    let mut available_node_versions = AVAILABLE_NODE_VERSIONS.to_vec();
+    let mut available_lts_node_versions = AVAILABLE_NODE_VERSIONS
+        .iter()
+        .filter(|v| *v % 2 == 0)
+        .collect::<Vec<_>>();
+
     // use newest node version first
-    available_node_versions.sort_by(|a, b| b.cmp(a));
-    for version_number in available_node_versions {
+    available_lts_node_versions.sort_by(|a, b| b.cmp(a));
+    for version_number in available_lts_node_versions {
         let version_range_string = format!("{version_number}.x.x");
         let version_range: Range = version_range_string.parse().unwrap();
         if version_range.allows_any(&range) {
-            return version_number_to_pkg(version_number);
+            return version_number_to_pkg(*version_number);
         }
     }
     default_node_pkg_name
@@ -716,6 +720,24 @@ mod test {
                 &Environment::default()
             )?,
             Pkg::new(version_number_to_pkg(DEFAULT_NODE_VERSION).as_str())
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_latest_lts_version() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_nix_node_pkg(
+                &PackageJson {
+                    name: Some(String::default()),
+                    engines: Some(engines_node(">=18")),
+                    ..Default::default()
+                },
+                &App::new("examples/node")?,
+                &Environment::default()
+            )?,
+            Pkg::new(version_number_to_pkg(22).as_str())
         );
 
         Ok(())
