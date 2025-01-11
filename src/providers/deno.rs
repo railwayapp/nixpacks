@@ -28,7 +28,7 @@ pub struct DenoJson {
 pub struct DenoProvider {}
 
 impl Provider for DenoProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "deno"
     }
 

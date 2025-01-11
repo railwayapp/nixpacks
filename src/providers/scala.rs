@@ -24,7 +24,7 @@ const DEFAULT_JDK_VERSION: u32 = 17;
  * TODO: Add support for scala-cli and mill
  */
 impl Provider for ScalaProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "scala"
     }
 
