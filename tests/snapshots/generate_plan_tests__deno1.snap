@@ -1,0 +1,35 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+snapshot_kind: text
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "NIXPACKS_METADATA": "deno"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install",
+        "setup"
+      ],
+      "cmds": [
+        "deno cache src/index.ts"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "deno"
+      ],
+      "nixOverlays": [],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "deno run --allow-all src/index.ts"
+  }
+}
