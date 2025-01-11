@@ -16,7 +16,7 @@ const DEFAULT_JDK_PKG_NAME: &str = "jdk8";
 pub struct ClojureProvider {}
 
 impl Provider for ClojureProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "clojure"
     }
 

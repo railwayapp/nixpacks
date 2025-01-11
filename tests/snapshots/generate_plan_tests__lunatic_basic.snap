@@ -30,7 +30,7 @@ expression: plan
       "nixPkgs": [
         "binutils",
         "gcc",
-        "(rust-bin.stable.latest.default.override { targets = [\"wasm32-wasi\"]; })",
+        "(rust-bin.stable.\"1.83.0\".default.override { targets = [\"wasm32-wasi\"]; })",
         "lunatic"
       ],
       "nixOverlays": [

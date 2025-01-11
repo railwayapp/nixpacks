@@ -23,7 +23,7 @@ pub struct ShardYaml {
 pub struct CrystalProvider {}
 
 impl Provider for CrystalProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "crystal"
     }
 

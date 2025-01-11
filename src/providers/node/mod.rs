@@ -104,7 +104,7 @@ pub struct PackageJson {
 pub struct NodeProvider {}
 
 impl Provider for NodeProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "node"
     }
 

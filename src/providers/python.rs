@@ -36,7 +36,7 @@ const LEGACY_PYTHON_NIXPKGS_ARCHIVE: &str = "5148520bfab61f99fd25fb9ff7bfbb50dad
 pub struct PythonProvider {}
 
 impl Provider for PythonProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "python"
     }
 

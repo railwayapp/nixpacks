@@ -30,7 +30,7 @@ pub struct RubyProvider {}
 const BUNDLE_CACHE_DIR: &str = "/root/.bundle/cache";
 
 impl Provider for RubyProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "ruby"
     }
 
