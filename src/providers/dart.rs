@@ -22,7 +22,7 @@ pub struct DartPubspec {
 pub struct DartProvider {}
 
 impl Provider for DartProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "dart"
     }
 

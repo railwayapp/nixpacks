@@ -18,11 +18,9 @@ impl Environment {
     /// Collects all variables from the calling environment.
     pub fn from_envs(envs: Vec<&str>) -> Result<Environment> {
         let mut environment = Environment::default();
+        let r = Regex::new(r"([A-Za-z0-9_-]*)(?:=?)([\s\S]*)").unwrap();
         for env in envs {
-            let matches = Regex::new(r"([A-Za-z0-9_-]*)(?:=?)([\s\S]*)")
-                .unwrap()
-                .captures(env)
-                .unwrap();
+            let matches = r.captures(env).unwrap();
             if matches.get(2).unwrap().as_str() == "" {
                 // No value, pull from the current environment
                 let name = matches.get(1).unwrap().as_str();

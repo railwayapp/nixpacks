@@ -37,7 +37,7 @@ const AVAILABLE_SWIFT_VERSIONS: &[(&str, &str)] = &[
 pub struct SwiftProvider {}
 
 impl Provider for SwiftProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "swift"
     }
 

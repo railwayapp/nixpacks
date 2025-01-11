@@ -15,7 +15,7 @@ pub struct FSharpProvider {}
 pub const ARTIFACT_DIR: &str = "out";
 
 impl Provider for FSharpProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "f#"
     }
 

@@ -20,7 +20,7 @@ const DEFAULT_COBOL_COMPILE_ARGS: &str = "-x -o";
 pub struct CobolProvider {}
 
 impl Provider for CobolProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "cobol"
     }
 

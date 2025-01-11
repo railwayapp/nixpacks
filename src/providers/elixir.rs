@@ -16,7 +16,7 @@ const ELIXIR_NIXPKGS_ARCHIVE: &str = "c5702bd28cbde41a191a9c2a00501f18941efbd0";
 pub struct ElixirProvider {}
 
 impl Provider for ElixirProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "elixir"
     }
 

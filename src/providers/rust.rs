@@ -25,7 +25,7 @@ const CARGO_TARGET_CACHE_DIR: &str = "target";
 pub struct RustProvider {}
 
 impl Provider for RustProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "rust"
     }
 

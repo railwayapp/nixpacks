@@ -25,7 +25,7 @@ pub struct Staticfile {
 pub struct StaticfileProvider {}
 
 impl Provider for StaticfileProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "staticfile"
     }
 

@@ -13,7 +13,7 @@ use anyhow::Result;
 pub struct HauntProvider {}
 
 impl Provider for HauntProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "scheme"
     }
 
