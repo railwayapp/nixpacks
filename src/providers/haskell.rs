@@ -19,7 +19,7 @@ const STACK_WORK_CACHE_DIR: &str = ".stack-work";
 pub struct HaskellStackProvider {}
 
 impl Provider for HaskellStackProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "haskell"
     }
 

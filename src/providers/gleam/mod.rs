@@ -38,7 +38,7 @@ impl GleamManifest {
 pub struct GleamProvider;
 
 impl Provider for GleamProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "gleam"
     }
 
