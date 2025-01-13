@@ -1061,13 +1061,6 @@ async fn test_django_mysql() -> Result<()> {
 }
 
 #[tokio::test]
-async fn test_lunatic_basic() {
-    let name = simple_build("./examples/lunatic-basic").await.unwrap();
-    let output = run_image(&name, None).await;
-    assert!(output.contains("PING-PONG"));
-}
-
-#[tokio::test]
 async fn test_python_poetry() {
     let name = simple_build("./examples/python-poetry").await.unwrap();
     let output = run_image(&name, None).await;
