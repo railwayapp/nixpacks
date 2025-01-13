@@ -368,15 +368,35 @@ impl NodeProvider {
     }
 
     pub fn get_package_manager(app: &App) -> String {
-        let mut pkg_manager = "npm";
-        if app.includes_file("pnpm-lock.yaml") {
-            pkg_manager = "pnpm";
-        } else if app.includes_file("yarn.lock") {
-            pkg_manager = "yarn";
-        } else if app.includes_file("bun.lockb") || app.includes_file("bun.lock") {
-            pkg_manager = "bun";
+        // Checks for the package manager in root's package.json
+        let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
+
+        // Attempt to identify the package manager from `package.json`
+        if let Some(pkg) = package_json
+            .package_manager
+            .as_deref()
+            .and_then(|p| p.split('@').next())
+        {
+            if matches!(pkg, "npm" | "pnpm" | "yarn" | "bun") {
+                return pkg.to_string();
+            }
         }
-        pkg_manager.to_string()
+
+        // Check for lockfiles to infer the package manager
+        if app.includes_file("pnpm-lock.yaml") {
+            return "pnpm".to_string();
+        }
+
+        if app.includes_file("yarn.lock") {
+            return "yarn".to_string();
+        }
+
+        if app.includes_file("bun.lockb") || app.includes_file("bun.lock") {
+            return "bun".to_string();
+        }
+
+        // fallbacks to npm
+        "npm".to_string()
     }
 
     pub fn get_package_manager_dlx_command(app: &App) -> String {
@@ -1076,6 +1096,27 @@ mod test {
                 "./examples/node-monorepo/packages/client"
             )?)?,
             vec![String::new()]
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_correct_package_manager_monorepo_root() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_package_manager(&App::new("examples/node-pnpm-monorepo")?),
+            "pnpm"
+        );
+
+        Ok(())
+    }
+
+    
+    #[test]
+    fn test_correct_package_manager_monorepo_subpkg() -> Result<()> {
+        assert_eq!(
+            NodeProvider::get_package_manager(&App::new("examples/node-pnpm-monorepo/apps/docs")?),
+            "pnpm"
         );
 
         Ok(())
