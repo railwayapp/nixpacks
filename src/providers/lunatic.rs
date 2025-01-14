@@ -14,7 +14,7 @@ use regex::Regex;
 pub struct LunaticProvider {}
 
 impl Provider for LunaticProvider {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "lunatic"
     }
 
