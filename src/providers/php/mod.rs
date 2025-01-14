@@ -206,6 +206,8 @@ impl PhpProvider {
                 "8.2".to_string()
             } else if v.contains("8.3") {
                 "8.3".to_string()
+            } else if v.contains("8.4") {
+                "8.4".to_string()
             } else if v.contains("7.4") {
                 "7.4".to_string()
             } else {
