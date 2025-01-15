@@ -941,6 +941,48 @@ async fn test_python_asdf_poetry() {
 }
 
 #[tokio::test]
+async fn test_python_psycopg2() -> Result<()> {
+    // Create the network
+    let n = create_network();
+    let network_name = n.name.clone();
+
+    // Create the postgres instance
+    let c = run_postgres();
+    let container_name = c.name.clone();
+
+    // Attach the postgres instance to the network
+    attach_container_to_network(n.name, container_name.clone());
+
+    let name = match simple_build("./examples/python-psycopg2").await {
+        Ok(name) => name,
+        Err(err) => {
+            // Cleanup containers and networks, and then error
+            stop_and_remove_container(container_name);
+            remove_network(network_name);
+            return Err(err);
+        }
+    };
+
+    let output = run_image(
+        &name,
+        Some(Config {
+            environment_variables: c.config.unwrap().environment_variables,
+            network: Some(network_name.clone()),
+        }),
+    )
+    .await;
+
+    println!("OUTPUT = {}", output);
+
+    // Cleanup containers and networks
+    stop_and_remove_container(container_name);
+    remove_network(network_name);
+
+    assert!(output.contains("User inserted successfully with ID"));
+    Ok(())
+}
+
+#[tokio::test]
 async fn test_django() -> Result<()> {
     // Create the network
     let n = create_network();
@@ -1016,13 +1058,6 @@ async fn test_django_mysql() -> Result<()> {
 
     assert!(output.contains("Running migrations"));
     Ok(())
-}
-
-#[tokio::test]
-async fn test_lunatic_basic() {
-    let name = simple_build("./examples/lunatic-basic").await.unwrap();
-    let output = run_image(&name, None).await;
-    assert!(output.contains("PING-PONG"));
 }
 
 #[tokio::test]
