@@ -9,7 +9,7 @@ snapshot_kind: text
   "variables": {
     "CI": "true",
     "NIXPACKS_METADATA": "node",
-    "NIXPACKS_SPA_OUTPUT_DIR": "dist",
+    "NIXPACKS_SPA_OUTPUT_DIR": "out",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
   },
@@ -31,6 +31,9 @@ snapshot_kind: text
     },
     "caddy": {
       "name": "caddy",
+      "dependsOn": [
+        "setup"
+      ],
       "nixPkgs": [
         "caddy"
       ],

@@ -31,6 +31,9 @@ snapshot_kind: text
     },
     "caddy": {
       "name": "caddy",
+      "dependsOn": [
+        "setup"
+      ],
       "nixPkgs": [
         "caddy"
       ],
