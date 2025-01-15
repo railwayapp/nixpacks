@@ -221,17 +221,16 @@ impl Provider for NodeProvider {
 
         let mut phases = vec![setup, install, build];
         if let Some(caddy) = SpaProvider::caddy_phase(app, env) {
-            phases.insert(1, caddy); // insert after setup and before build
+            phases.push(caddy); // insert after setup and before build
         }
+        let is_spa = SpaProvider::is_spa(app);
 
         let mut plan = BuildPlan::new(&phases, start);
         if SpaProvider::caddy_phase(app, env).is_some() {
-            plan.add_static_assets(static_asset_list! {
-                "Caddyfile" => include_str!("spa/Caddyfile")
-            });
+            plan.add_static_assets(SpaProvider::static_assets());
         }
         plan.add_variables(NodeProvider::get_node_environment_variables());
-        if SpaProvider::is_spa(app) {
+        if is_spa {
             plan.add_variables(EnvironmentVariables::from([(
                 "NIXPACKS_SPA_OUTPUT_DIR".to_string(),
                 env.get_config_variable("SPA_OUT_DIR")

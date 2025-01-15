@@ -62,3 +62,28 @@ impl ViteSpaProvider {
         String::from("dist")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_vite_no_special() {
+        // no special config
+        let app = crate::nixpacks::app::App::new("examples/node-vite-react-ts").unwrap();
+        assert_eq!(ViteSpaProvider::get_output_directory(&app), "dist");
+    }
+
+    #[test]
+    fn test_vite_outdir_in_config() {
+        // outDir specified in vite.config.js
+        let app = crate::nixpacks::app::App::new("examples/node-vite-svelte-ts").unwrap();
+        assert_eq!(ViteSpaProvider::get_output_directory(&app), "build");
+    }
+
+    #[test]
+    fn test_vite_outdir_in_build_cmd() {
+        // outDir specified in vite.config.js
+        let app = crate::nixpacks::app::App::new("examples/node-vite-solid-ts").unwrap();
+        assert_eq!(ViteSpaProvider::get_output_directory(&app), "out");
+    }
+}

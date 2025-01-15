@@ -1,4 +1,9 @@
-use crate::nixpacks::{app::App, environment::Environment, nix::pkg::Pkg, plan::phase::Phase};
+use crate::nixpacks::{
+    app::{App, StaticAssets},
+    environment::Environment,
+    nix::pkg::Pkg,
+    plan::phase::Phase,
+};
 
 pub mod vite;
 
@@ -27,9 +32,16 @@ impl SpaProvider {
                 "caddy fmt --overwrite {}",
                 app.asset_path("Caddyfile")
             ));
+            caddy.depends_on_phase("setup");
             return Some(caddy);
         }
         None
+    }
+
+    pub fn static_assets() -> StaticAssets {
+        static_asset_list! {
+            "Caddyfile" => include_str!("Caddyfile")
+        }
     }
 
     pub fn get_output_directory(app: &App) -> String {
