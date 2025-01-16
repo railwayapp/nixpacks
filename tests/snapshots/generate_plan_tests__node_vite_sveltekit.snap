@@ -1,0 +1,59 @@
+---
+source: tests/generate_plan_tests.rs
+expression: plan
+snapshot_kind: text
+---
+{
+  "providers": [],
+  "buildImage": "[build_image]",
+  "variables": {
+    "CI": "true",
+    "NIXPACKS_METADATA": "node",
+    "NIXPACKS_SPA_OUTPUT_DIR": "dist",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false"
+  },
+  "phases": {
+    "build": {
+      "name": "build",
+      "dependsOn": [
+        "install"
+      ],
+      "cmds": [
+        "npm run build"
+      ],
+      "cacheDirectories": [
+        "node_modules/.cache"
+      ]
+    },
+    "install": {
+      "name": "install",
+      "dependsOn": [
+        "setup"
+      ],
+      "cmds": [
+        "npm ci"
+      ],
+      "cacheDirectories": [
+        "/root/.npm"
+      ],
+      "paths": [
+        "/app/node_modules/.bin"
+      ]
+    },
+    "setup": {
+      "name": "setup",
+      "nixPkgs": [
+        "nodejs_22",
+        "npm-9_x"
+      ],
+      "nixOverlays": [
+        "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
+      ],
+      "nixpkgsArchive": "[archive]"
+    }
+  },
+  "start": {
+    "cmd": "npm run start"
+  }
+}
