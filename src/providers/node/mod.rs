@@ -1,4 +1,4 @@
-use self::{moon::Moon, nx::Nx, turborepo::Turborepo};
+use self::{moon::Moon, nx::Nx, spa::SpaProvider, turborepo::Turborepo};
 use super::Provider;
 use crate::nixpacks::plan::merge::Mergeable;
 use crate::nixpacks::{
@@ -19,6 +19,7 @@ use std::collections::{HashMap, HashSet};
 
 mod moon;
 mod nx;
+mod spa;
 mod turborepo;
 
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
@@ -100,6 +101,22 @@ pub struct PackageJson {
     pub cache_directories: Option<Vec<String>>,
 }
 
+impl PackageJson {
+    /// searches dependencies and dev_dependencies in package.json for a given dependency
+    fn has_dependency(&self, dep: &str) -> bool {
+        if let Some(deps) = &self.dependencies {
+            if deps.contains_key(dep) {
+                return true;
+            }
+        } else if let Some(deps) = &self.dev_dependencies {
+            if deps.contains_key(dep) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
 #[derive(Default, Debug)]
 pub struct NodeProvider {}
 
@@ -116,7 +133,6 @@ impl Provider for NodeProvider {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
         setup.set_nix_archive(NodeProvider::get_nix_archive(app)?);
-
         if NodeProvider::uses_node_dependency(app, "prisma") {
             setup.add_nix_pkgs(&[Pkg::new("openssl")]);
         }
@@ -203,9 +219,24 @@ impl Provider for NodeProvider {
         // Start
         let start = NodeProvider::get_start_cmd(app, env)?.map(StartPhase::new);
 
-        let mut plan = BuildPlan::new(&vec![setup, install, build], start);
-        plan.add_variables(NodeProvider::get_node_environment_variables());
+        let mut phases = vec![setup, install, build];
+        if let Some(caddy) = SpaProvider::caddy_phase(app, env) {
+            phases.push(caddy);
+        }
+        let is_spa = SpaProvider::is_spa(app);
 
+        let mut plan = BuildPlan::new(&phases, start);
+        if SpaProvider::caddy_phase(app, env).is_some() {
+            plan.add_static_assets(SpaProvider::static_assets());
+        }
+        plan.add_variables(NodeProvider::get_node_environment_variables());
+        if is_spa {
+            plan.add_variables(EnvironmentVariables::from([(
+                "NIXPACKS_SPA_OUTPUT_DIR".to_string(),
+                env.get_config_variable("SPA_OUT_DIR")
+                    .unwrap_or(SpaProvider::get_output_directory(app)),
+            )]));
+        }
         Ok(Some(plan))
     }
 }
@@ -297,6 +328,10 @@ impl NodeProvider {
             {
                 return Ok(Some(turbo_start_cmd));
             }
+        }
+
+        if let Some(start) = SpaProvider::start_command(app, env) {
+            return Ok(Some(start));
         }
 
         let package_manager = NodeProvider::get_package_manager(app);

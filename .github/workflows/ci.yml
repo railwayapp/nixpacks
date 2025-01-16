@@ -77,6 +77,7 @@ jobs:
   test-plan:
     name: Test Suite
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
@@ -118,6 +119,7 @@ jobs:
     name: Docker Tests
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix: ${{fromJson(needs.test-plan.outputs.matrix)}}
     if: "!contains(github.event.head_commit.message, '(cargo-release)')"
     steps:
