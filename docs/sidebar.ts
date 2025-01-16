@@ -73,6 +73,7 @@ export const sidebarItems: ISidebarSection[] = [
       { text: "Flightcontrol", href: "/docs/deploying/flightcontrol" },
       { text: "GitHub Actions", href: "/docs/deploying/github-actions" },
       { text: "PipeOps", href: "/docs/deploying/pipeops" },
+      { text: "Stacktape", href: "/docs/deploying/stacktape" },
     ],
   },
 ];

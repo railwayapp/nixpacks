@@ -269,11 +269,7 @@ impl StartPhase {
 
 /// Store the list of options for this phase for later reproducibility.
 fn pin_option_vec(vec: Option<&Vec<String>>) -> Option<Vec<String>> {
-    if let Some(vec) = vec {
-        Some(remove_autos_from_vec(vec.clone()))
-    } else {
-        vec.cloned()
-    }
+    vec.map(|vec| remove_autos_from_vec(vec.clone()))
 }
 
 /// Add an option to the vector of options for the phase.
