@@ -39,7 +39,7 @@ expression: plan
       "cmds": [
         "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx",
         "composer install --ignore-platform-reqs",
-        "npm ci"
+        "npm i"
       ]
     },
     "setup": {
