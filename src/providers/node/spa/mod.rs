@@ -7,6 +7,8 @@ use crate::nixpacks::{
 
 pub mod vite;
 
+const NIX_ARCHIVE: &str = "ba913eda2df8eb72147259189d55932012df6301";
+
 pub struct SpaProvider {}
 
 impl SpaProvider {
@@ -26,7 +28,7 @@ impl SpaProvider {
                 || env.get_config_variable("SPA_OUT_DIR").is_some())
         {
             let mut caddy = Phase::new("caddy");
-            caddy.set_nix_archive(String::from("ba913eda2df8eb72147259189d55932012df6301")); // caddy 2.0.4
+            caddy.set_nix_archive(String::from(NIX_ARCHIVE)); // caddy 2.0.4
             caddy.add_nix_pkgs(&[Pkg::new("caddy")]);
             caddy.add_cmd(format!(
                 "caddy fmt --overwrite {}",
@@ -47,5 +49,16 @@ impl SpaProvider {
     pub fn get_output_directory(app: &App) -> String {
         // other ones will be implemented here
         vite::ViteSpaProvider::get_output_directory(app)
+    }
+
+    pub fn start_command(app: &App, env: &Environment) -> Option<String> {
+        if Self::caddy_phase(app, env).is_some() {
+            Some(format!(
+                "exec caddy run --config {} --adapter caddyfile 2>&1",
+                app.asset_path("Caddyfile")
+            ))
+        } else {
+            None
+        }
     }
 }

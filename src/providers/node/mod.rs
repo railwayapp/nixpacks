@@ -221,7 +221,7 @@ impl Provider for NodeProvider {
 
         let mut phases = vec![setup, install, build];
         if let Some(caddy) = SpaProvider::caddy_phase(app, env) {
-            phases.push(caddy); // insert after setup and before build
+            phases.push(caddy);
         }
         let is_spa = SpaProvider::is_spa(app);
 
@@ -335,6 +335,10 @@ impl NodeProvider {
                 "exec caddy run --config {} --adapter caddyfile 2>&1",
                 app.asset_path("Caddyfile")
             )));
+        }
+
+        if let Some(start) = SpaProvider::start_command(app, env) {
+            return Ok(Some(start));
         }
 
         let package_manager = NodeProvider::get_package_manager(app);

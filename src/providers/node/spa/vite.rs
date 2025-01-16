@@ -86,4 +86,18 @@ mod tests {
         let app = crate::nixpacks::app::App::new("examples/node-vite-solid-ts").unwrap();
         assert_eq!(ViteSpaProvider::get_output_directory(&app), "out");
     }
+
+    #[test]
+    fn test_not_match() {
+        // should not match
+        let app = crate::nixpacks::app::App::new("examples/node-bun-web-server").unwrap();
+        assert!(!ViteSpaProvider::is_vite(&app));
+    }
+
+    #[test]
+    fn test_not_match_2() {
+        // should not match
+        let app = crate::nixpacks::app::App::new("examples/node").unwrap();
+        assert!(!ViteSpaProvider::is_vite(&app));
+    }
 }
