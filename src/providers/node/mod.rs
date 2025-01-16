@@ -330,13 +330,6 @@ impl NodeProvider {
             }
         }
 
-        if SpaProvider::caddy_phase(app, env).is_some() {
-            return Ok(Some(format!(
-                "exec caddy run --config {} --adapter caddyfile 2>&1",
-                app.asset_path("Caddyfile")
-            )));
-        }
-
         if let Some(start) = SpaProvider::start_command(app, env) {
             return Ok(Some(start));
         }
