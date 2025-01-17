@@ -40,7 +40,7 @@ If [node-canvas](https://www.npmjs.com/package/canvas) is found in the `package.
 
 ## Install
 
-All dependencies found in `package.json` are installed with either NPM, Yarn, PNPM, or Bun (depending on the lockfile detected).
+All dependencies found in `package.json` are installed with either NPM, Yarn, PNPM, or Bun (depending on `packageManager` field in package.json if present, or the detected lockfile).
 
 ## Build
 
