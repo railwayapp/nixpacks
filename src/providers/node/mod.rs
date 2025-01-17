@@ -1146,7 +1146,6 @@ mod test {
         Ok(())
     }
 
-    
     #[test]
     fn test_correct_package_manager_monorepo_subpkg() -> Result<()> {
         assert_eq!(
