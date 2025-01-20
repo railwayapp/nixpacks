@@ -25,6 +25,7 @@ The following major versions are available
 - `18` (Default)
 - `20`
 - `22`
+- `23`
 
 The version can be overridden by
 
