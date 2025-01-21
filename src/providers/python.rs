@@ -191,9 +191,9 @@ impl PythonProvider {
         if PythonProvider::uses_dep(app, "pydub")? || PythonProvider::uses_dep(app, "pymovie")? {
             setup.add_nix_pkgs(&[Pkg::new("ffmpeg-headless")]);
         }
-        
+
         // shells out to the pdfinfo binary
-        if PythonProvider::uses_dep(app, "pdf2image")?  {
+        if PythonProvider::uses_dep(app, "pdf2image")? {
             setup.add_nix_pkgs(&[Pkg::new("poppler_utils")]);
         }
 
