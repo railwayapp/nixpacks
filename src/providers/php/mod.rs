@@ -17,7 +17,7 @@ use anyhow::Result;
 
 const LEGACY_ARCHIVE_VERSION: &str = "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db";
 
-const DEFAULT_ARCHIVE_VERSION: &str = "dbc4f15b899ac77a8d408d8e0f89fa9c0c5f2b78";
+const DEFAULT_ARCHIVE_VERSION: &str = "e24b4c09e963677b1beea49d411cd315a024ad3a";
 
 const DEFAULT_PHP_VERSION: &str = "8.3";
 
@@ -206,6 +206,8 @@ impl PhpProvider {
                 "8.2".to_string()
             } else if v.contains("8.3") {
                 "8.3".to_string()
+            } else if v.contains("8.4") {
+                "8.4".to_string()
             } else if v.contains("7.4") {
                 "7.4".to_string()
             } else {
