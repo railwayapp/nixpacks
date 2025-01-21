@@ -40,6 +40,11 @@ provider (e.g. Node, Cargo, Python) will also installed.
 
 It is recommended to install packages from Nix rather than Apt if they are available. You can search for Nix packages [here](https://search.nixos.org/packages?channel=unstable).
 
+It's common for these to be many packages with a similar name and it can be hard to determine which one to pick. Here are some tips:
+
+* If your application is shelling out to a command (i.e. your application expects a specific binary to be available on `$PATH`) look for a package that the binary you need in the `Programs provided` and add it as a `nixPkgs` entry.
+* If your application needs a shared library, look for a package that contains a `dev` output. You can target just that `dev` (shared library) output by adding the suffix `.dev` to the `nixLibs` definition.
+
 ## Custom build command
 
 You can override the build command with
