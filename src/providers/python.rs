@@ -187,6 +187,16 @@ impl PythonProvider {
             setup.add_pkgs_libs(vec!["cairo".to_string()]);
         }
 
+        // both of these packages shell out to the ffmpeg binary
+        if PythonProvider::uses_dep(app, "pydub")? || PythonProvider::uses_dep(app, "pymovie")? {
+            setup.add_nix_pkgs(&[Pkg::new("ffmpeg-headless")]);
+        }
+        
+        // shells out to the pdfinfo binary
+        if PythonProvider::uses_dep(app, "pdf2image")?  {
+            setup.add_nix_pkgs(&[Pkg::new("poppler_utils")]);
+        }
+
         // Many Python packages need some C headers to be available
         // stdenv.cc.cc.lib -> https://discourse.nixos.org/t/nixos-with-poetry-installed-pandas-libstdc-so-6-cannot-open-shared-object-file/8442/3
         setup.add_pkgs_libs(vec!["zlib".to_string(), "stdenv.cc.cc.lib".to_string()]);
@@ -551,6 +561,7 @@ impl PythonProvider {
         ))
     }
 
+    // TODO contains on the contents of a toml is not great, could trigger based on comments, etc
     fn uses_dep(app: &App, dep: &str) -> Result<bool> {
         let is_used = ["requirements.txt", "pyproject.toml", "Pipfile"]
             .iter()
