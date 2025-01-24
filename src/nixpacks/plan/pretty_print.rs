@@ -29,6 +29,15 @@ impl BuildPlan {
             .cmd
             .unwrap_or_default();
 
+        let env_contents = self
+            .variables
+            .clone()
+            .unwrap_or_default()
+            .iter()
+            .map(|(key, value)| format!("{}={}", key, value))
+            .collect::<Vec<String>>()
+            .join("\n");
+
         let max_right_content = phase_contents
             .iter()
             .flat_map(|(_, content)| {
@@ -132,8 +141,20 @@ impl BuildPlan {
             false,
         );
 
+        let env_row = print_row(
+            "variables",
+            env_contents.as_str(),
+            edge.as_str(),
+            middle_padding.as_str(),
+            first_column_width,
+            second_column_width,
+            false,
+        );
+
         Ok(formatdoc! {"
 
+          {}
+          {}
           {}
           {}
           {}
@@ -144,6 +165,8 @@ impl BuildPlan {
           phase_rows,
           hor_sep,
           start_row,
+					hor_sep,
+					env_row,
           bottom_box
         })
     }
