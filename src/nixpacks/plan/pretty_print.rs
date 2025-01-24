@@ -34,7 +34,7 @@ impl BuildPlan {
             .clone()
             .unwrap_or_default()
             .iter()
-            .map(|(key, value)| format!("{}={}", key, value))
+            .map(|(key, value)| format!("{key}={value}"))
             .collect::<Vec<String>>()
             .join("\n");
 
@@ -165,8 +165,8 @@ impl BuildPlan {
           phase_rows,
           hor_sep,
           start_row,
-					hor_sep,
-					env_row,
+                    hor_sep,
+                    env_row,
           bottom_box
         })
     }
