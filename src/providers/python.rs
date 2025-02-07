@@ -188,7 +188,7 @@ impl PythonProvider {
         }
 
         // both of these packages shell out to the ffmpeg binary
-        if PythonProvider::uses_dep(app, "pydub")? || PythonProvider::uses_dep(app, "pymovie")? {
+        if PythonProvider::uses_dep(app, "pydub")? {
             setup.add_nix_pkgs(&[Pkg::new("ffmpeg-headless")]);
         }
 
