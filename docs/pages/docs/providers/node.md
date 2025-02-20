@@ -8,7 +8,7 @@ The Node provider supports NPM, Yarn, Yarn 2, PNPM and Bun.
 
 ## Environment Variables
 
-The Node provider sets the following environment variables when the container is running (not during build):
+The Node provider sets the following environment variables:
 
 - `CI=true`
 - `NODE_ENV=production`
