@@ -13,7 +13,10 @@ use super::{NodeProvider, PackageJson};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TurboJson {
+    #[serde(default)]
     pub pipeline: HashMap<String, Value>,
+    #[serde(default)]
+    pub tasks: HashMap<String, Value>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -39,7 +42,7 @@ impl Turborepo {
     }
 
     fn get_pipeline_cmd(cfg: &TurboJson, name: &str) -> Option<String> {
-        if cfg.pipeline.contains_key(name) {
+        if cfg.pipeline.contains_key(name) || cfg.tasks.contains_key(name) {
             Some(format!("npx turbo run {name}"))
         } else {
             None

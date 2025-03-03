@@ -1074,6 +1074,14 @@ async fn test_python_uv() {
     assert!(output.contains("Hello from Python-Uv"));
 }
 
+// test dependencies which we special case to make it easier for users
+#[tokio::test]
+async fn test_python_deps() {
+    let name = simple_build("./examples/python-deps").await.unwrap();
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Hello from python-deps"));
+}
+
 #[tokio::test]
 async fn test_python_pdm() {
     let name = simple_build("./examples/python-pdm").await.unwrap();

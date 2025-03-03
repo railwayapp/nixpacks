@@ -22,9 +22,11 @@ mod nx;
 mod spa;
 mod turborepo;
 
+// allows package manager versions to be updated without cutting a new nixpacks binary
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
-const NODE_NIXPKGS_ARCHIVE: &str = "5624e1334b26ddc18da37e132b6fa8e93b481468";
+// unlike package managers, {node,bun} versions are pinned to a particular nixpacks release
+const NODE_NIXPKGS_ARCHIVE: &str = "ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7";
 
 // We need to use a specific commit hash for Node versions <16 since it is EOL in the latest Nix packages
 const NODE_LT_16_ARCHIVE: &str = "bf744fe90419885eefced41b3e5ae442d732712d";
