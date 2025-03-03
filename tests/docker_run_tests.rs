@@ -1230,7 +1230,7 @@ async fn test_docker_host() {
     let env_name = Uuid::new_v4().to_string();
     let arg_name = Uuid::new_v4().to_string();
     let default_name = Uuid::new_v4().to_string();
-    
+
     // Case 1: Invalid Docker host in environment should fail
     std::env::set_var("DOCKER_HOST", "tcp://0.0.0.0:2375");
     let result = create_docker_image(
