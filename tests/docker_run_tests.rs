@@ -1225,16 +1225,38 @@ async fn test_cowsay() {
     assert!(output.contains("Hello World"));
 }
 
-// This test is intentionally written to fail
 #[tokio::test]
 async fn test_docker_host() {
-    let name = Uuid::new_v4().to_string();
+    let env_name = Uuid::new_v4().to_string();
+    let arg_name = Uuid::new_v4().to_string();
+    let default_name = Uuid::new_v4().to_string();
+
+    // Case 1: Invalid Docker host in environment should fail
+    std::env::set_var("DOCKER_HOST", "tcp://0.0.0.0:2375");
     let result = create_docker_image(
         "./examples/shell-hello",
         Vec::new(),
         &GeneratePlanOptions::default(),
         &DockerBuilderOptions {
-            name: Some(name.clone()),
+            name: Some(env_name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+    .await;
+
+    assert!(result.is_err());
+    let output = run_image(&env_name, None).await;
+    assert!(!output.contains("Hello World"));
+
+    // Case 2: Invalid Docker host in command arg should fail
+    std::env::remove_var("DOCKER_HOST");
+    let result = create_docker_image(
+        "./examples/shell-hello",
+        Vec::new(),
+        &GeneratePlanOptions::default(),
+        &DockerBuilderOptions {
+            name: Some(arg_name.clone()),
             quiet: true,
             docker_host: Some("tcp://0.0.0.0:2375".to_string()),
             docker_tls_verify: Some("0".to_string()),
@@ -1243,11 +1265,26 @@ async fn test_docker_host() {
     )
     .await;
 
-    // Expect the creation of the Docker image to fail
     assert!(result.is_err());
-
-    let output = run_image(&name, None).await;
+    let output = run_image(&arg_name, None).await;
     assert!(!output.contains("Hello World"));
+
+    // Case 3: No Docker host set should use default and succeed
+    let result = create_docker_image(
+        "./examples/shell-hello",
+        Vec::new(),
+        &GeneratePlanOptions::default(),
+        &DockerBuilderOptions {
+            name: Some(default_name.clone()),
+            quiet: true,
+            ..Default::default()
+        },
+    )
+    .await;
+
+    assert!(result.is_ok());
+    let output = run_image(&default_name, None).await;
+    assert!(output.contains("Hello World"));
 }
 
 #[tokio::test]
