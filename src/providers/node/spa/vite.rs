@@ -26,7 +26,7 @@ impl ViteSpaProvider {
 
     pub fn caddy_allowlist(app: &App) -> bool {
         let pkg: PackageJson = app.read_json("package.json").unwrap();
-        pkg.has_dependency("react")
+        (pkg.has_dependency("react") && !pkg.has_dependency("@remix-run/react"))
             || pkg.has_dependency("vue")
             || (pkg.has_dependency("svelte") && !pkg.has_dependency("@sveltejs/kit"))
             || pkg.has_dependency("preact")
