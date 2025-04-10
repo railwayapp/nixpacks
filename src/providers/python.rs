@@ -67,6 +67,32 @@ impl PackageManager {
             })
             .unwrap_or(Self::Auto)
     }
+
+    fn resolve(&self, app: &App) -> Self {
+        match self {
+            // Auto-detect package manager if not explicitly specified
+            Self::Auto => {
+                if app.includes_file("requirements.txt") {
+                    Self::PipReqs
+                } else if app.includes_file("pyproject.toml") {
+                    if app.includes_file("poetry.lock") {
+                        Self::Poetry
+                    } else if app.includes_file("pdm.lock") {
+                        Self::Pdm
+                    } else if app.includes_file("uv.lock") {
+                        Self::Uv
+                    } else {
+                        Self::PipSetuptools // Default for pyproject.toml without lock files
+                    }
+                } else if app.includes_file("Pipfile") {
+                    Self::Pipenv
+                } else {
+                    Self::Skip // Default fallback
+                }
+            }
+            explicit => *explicit, // Return any non-Auto package manager as is
+        }
+    }
 }
 
 pub struct PythonProvider {}
@@ -249,28 +275,7 @@ impl PythonProvider {
         let package_manager = PackageManager::from_env(env);
 
         // Auto-detect package manager if not explicitly specified
-        let effective_manager = match package_manager {
-            PackageManager::Auto => {
-                if app.includes_file("requirements.txt") {
-                    PackageManager::PipReqs
-                } else if app.includes_file("pyproject.toml") {
-                    if app.includes_file("poetry.lock") {
-                        PackageManager::Poetry
-                    } else if app.includes_file("pdm.lock") {
-                        PackageManager::Pdm
-                    } else if app.includes_file("uv.lock") {
-                        PackageManager::Uv
-                    } else {
-                        PackageManager::PipSetuptools // Default for pyproject.toml without lock files
-                    }
-                } else if app.includes_file("Pipfile") {
-                    PackageManager::Pipenv
-                } else {
-                    PackageManager::Skip // Default fallback
-                }
-            }
-            explicit => explicit,
-        };
+        let effective_manager = package_manager.resolve(app);
 
         // Create the installation phase based on the determined package manager
         match effective_manager {
