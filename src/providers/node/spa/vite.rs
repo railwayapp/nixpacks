@@ -26,7 +26,9 @@ impl ViteSpaProvider {
 
     pub fn caddy_allowlist(app: &App) -> bool {
         let pkg: PackageJson = app.read_json("package.json").unwrap();
-        (pkg.has_dependency("react") && !pkg.has_dependency("@remix-run/react"))
+        (pkg.has_dependency("react")
+            && !pkg.has_dependency("@remix-run/react")
+            && !pkg.has_dependency("@react-router/node"))
             || pkg.has_dependency("vue")
             || (pkg.has_dependency("svelte") && !pkg.has_dependency("@sveltejs/kit"))
             || pkg.has_dependency("preact")
@@ -99,5 +101,24 @@ mod tests {
         // should not match
         let app = crate::nixpacks::app::App::new("examples/node").unwrap();
         assert!(!ViteSpaProvider::is_vite(&app));
+    }
+
+    #[test]
+    fn test_remix_not_allowed() {
+        let app = crate::nixpacks::app::App::new("examples/node-remix").unwrap();
+        assert!(!ViteSpaProvider::caddy_allowlist(&app));
+    }
+
+    #[test]
+    fn test_react_router_framework_not_allowed() {
+        let app =
+            crate::nixpacks::app::App::new("examples/node-react-router-v7-framework").unwrap();
+        assert!(!ViteSpaProvider::caddy_allowlist(&app));
+    }
+
+    #[test]
+    fn test_react_router_spa_allowed() {
+        let app = crate::nixpacks::app::App::new("examples/node-react-router-v7-spa").unwrap();
+        assert!(ViteSpaProvider::caddy_allowlist(&app));
     }
 }
