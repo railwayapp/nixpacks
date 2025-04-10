@@ -275,7 +275,8 @@ impl PythonProvider {
         // Create the installation phase based on the determined package manager
         match effective_manager {
             PackageManager::PipReqs => {
-                let install_cmd = format!("{create_env} && {activate_env} && pip install -r requirements.txt");
+                let install_cmd =
+                    format!("{create_env} && {activate_env} && pip install -r requirements.txt");
                 let mut install_phase = Phase::install(Some(install_cmd));
 
                 install_phase.add_path(format!("{VENV_LOCATION}/bin"));
@@ -359,9 +360,7 @@ impl PythonProvider {
                 Ok(Some(install_phase))
             }
 
-            PackageManager::Skip => {
-                Ok(Some(Phase::install(None)))
-            }
+            PackageManager::Skip => Ok(Some(Phase::install(None))),
         }
     }
 
@@ -779,6 +778,81 @@ mod test {
             &Environment::new(BTreeMap::new())
         )
         .unwrap());
+        Ok(())
+    }
+
+    #[test]
+    fn test_package_manager_from_env() -> Result<()> {
+        assert_eq!(
+            PackageManager::from_env(&Environment::default()),
+            PackageManager::Auto
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "poetry".to_string()
+            )]))),
+            PackageManager::Poetry
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "requirements".to_string()
+            )]))),
+            PackageManager::PipReqs
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "setuptools".to_string()
+            )]))),
+            PackageManager::PipSetuptools
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "pdm".to_string()
+            )]))),
+            PackageManager::Pdm
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "uv".to_string()
+            )]))),
+            PackageManager::Uv
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "pipenv".to_string()
+            )]))),
+            PackageManager::Pipenv
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "skip".to_string()
+            )]))),
+            PackageManager::Skip
+        );
+
+        // Test unknown package manager falls back to Auto
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "unknown".to_string()
+            )]))),
+            PackageManager::Auto
+        );
+
         Ok(())
     }
 }
