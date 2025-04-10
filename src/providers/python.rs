@@ -58,7 +58,7 @@ enum PackageManager {
 
 impl PackageManager {
     fn from_env(env: &Environment) -> Self {
-        env.get_config_variable("NIXPACKS_PYTHON_PACKAGE_MANAGER")
+        env.get_config_variable("PYTHON_PACKAGE_MANAGER")
             .map(|s| match s.to_lowercase().as_str() {
                 "auto" => Self::Auto,
                 "requirements" => Self::Specified(PackageManagerType::PipReqs),
