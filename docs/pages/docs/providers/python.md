@@ -38,41 +38,59 @@ You also specify the exact poetry, pdm, and uv versions:
 - The `NIXPACKS_PDM_VERSION` environment variable
 - The `NIXPACKS_UV_VERSION` environment variable or `uv` in a `.tool-versions` file
 
+You can specify a particular package manager, to override the lockfile-based choice, by setting the
+`NIXPACKS_PYTHON_PACKAGE_MANAGER` environment variable to one of the following:
+
+- `auto` to choose based on the available lockfiles (default)
+- `requirements` to install using `pip` from `requirements.txt`
+- `setuptools` to install using `pip` with `build` and `setuptools`
+- `poetry` to install using `poetry` from `poetry.lock`
+- `pdm` to install using `pdm` from `pdm.lock`
+- `uv` to install using `uv` from `uv.lock`
+- `pipenv` to install with `pipenv` from `Pipfile` (if a `Pipfile.lock` is present it will be used)
+- `skip` to not install a package
+
 ## Install
 
 If `requirements.txt`
 
-```
+```shell
 pip install -r requirements.txt
 ```
 
 If `pyproject.toml`
 
-```
+```shell
 pip install --upgrade build setuptools && pip install .
 ```
 
 If `pyproject.toml` (w/ `poetry.lock`)
 
-```
+```shell
 poetry install --no-dev --no-interactive --no-ansi
 ```
 
 If `pyproject.toml` (w/ `pdm.lock`)
 
-```
+```shell
 pdm install --prod
 ```
 
 If `Pipfile` (w/ `Pipfile.lock`)
 
-```
+```shell
 PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
+```
+
+If `Pipfile` (without `Pipfile.lock`)
+
+```shell
+PIPENV_VENV_IN_PROJECT=1 pipenv install --skip-lock
 ```
 
 if `uv.lock`:
 
-```
+```shell
 uv sync --no-dev --frozen
 ```
 
@@ -80,19 +98,19 @@ uv sync --no-dev --frozen
 
 if Django Application
 
-```
+```shell
 python manage.py migrate && gunicorn {app_name}.wsgi
 ```
 
 if `pyproject.toml`
 
-```
+```shell
 python -m {module}
 ```
 
 Otherwise
 
-```
+```shell
 python main.py
 ```
 
