@@ -52,7 +52,7 @@ impl Provider for DenoProvider {
             let mut build = Phase::build(Some(build_cmd));
             build.depends_on_phase("setup");
             plan.add_phase(build);
-        };
+        }
 
         if let Some(start_cmd) = DenoProvider::get_start_cmd(app)? {
             let start = StartPhase::new(start_cmd);
