@@ -120,6 +120,7 @@ If you have an application that doesn't pass the requirements for automatically 
 If your package.json has `vite` any of the following dependencies:
 
 - `react`
+- `react-router` (but not in framework mode)
 - `vue`
 - `svelte` (but not `@sveltejs/kit`)
 - `preact`
