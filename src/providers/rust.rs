@@ -75,7 +75,8 @@ impl RustProvider {
         }
 
         if RustProvider::should_use_musl(app, env)? {
-            setup.add_nix_pkgs(&[Pkg::new("musl"), Pkg::new("musl.dev")]);
+            setup.add_nix_pkgs(&[Pkg::new("musl")]);
+            setup.add_apt_pkgs(vec![String::from("musl-tools")]);
         }
 
         setup.set_nix_archive(NIX_ARCHIVE.to_string());
