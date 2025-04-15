@@ -30,7 +30,7 @@ impl Provider for ProcfileProvider {
             ]);
             release.cmds = Some(vec!["...".to_string(), release_cmd]);
             plan.add_phase(release);
-        };
+        }
 
         if let Some(start_cmd) = ProcfileProvider::get_start_cmd(app)? {
             let start_phase = StartPhase::new(start_cmd);

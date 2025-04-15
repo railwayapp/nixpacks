@@ -550,7 +550,7 @@ impl NodeProvider {
                 // npm v9 uses lockfile v3 as default
                 pm_pkg = Pkg::new("npm-9_x");
             }
-        };
+        }
         pkgs.push(pm_pkg.from_overlay(NODE_OVERLAY));
 
         Ok(pkgs)
@@ -673,7 +673,7 @@ impl NodeProvider {
                     }
                 }
             }
-        };
+        }
     }
 }
 

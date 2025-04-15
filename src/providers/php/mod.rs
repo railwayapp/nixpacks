@@ -111,7 +111,7 @@ impl PhpProvider {
         ));
         if app.includes_file("composer.json") {
             install.add_cmd("composer install --ignore-platform-reqs".to_string());
-        };
+        }
         if app.includes_file("package.json") {
             if let Some(install_cmd) = NodeProvider::get_install_command(app) {
                 install.add_cmd(install_cmd);
