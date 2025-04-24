@@ -47,7 +47,7 @@ impl Mergeable for BuildPlan {
                         phase.depends_on_phase("setup");
                     } else if name == "build" {
                         phase.depends_on_phase("install");
-                    };
+                    }
 
                     phase
                 });
