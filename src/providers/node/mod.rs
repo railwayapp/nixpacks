@@ -27,6 +27,7 @@ pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/ar
 
 // unlike package managers, {node,bun} versions are pinned to a particular nixpacks release
 const NODE_NIXPKGS_ARCHIVE: &str = "ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7";
+const BUN_NIXPKGS_ARCHIVE: &str = "f69ae4816bc1b501460ad2c0c63ed0cc4a9b876e";
 
 // We need to use a specific commit hash for Node versions <16 since it is EOL in the latest Nix packages
 const NODE_LT_16_ARCHIVE: &str = "bf744fe90419885eefced41b3e5ae442d732712d";
@@ -498,11 +499,14 @@ impl NodeProvider {
     /// Returns the Nix archive to use for the Node and related packages
     pub fn get_nix_archive(app: &App) -> Result<String> {
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
+        let package_manager = NodeProvider::get_package_manager(app);
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, &Environment::default())?;
         let uses_le_16 = node_pkg.name.contains("14") || node_pkg.name.contains("16");
 
         if uses_le_16 {
             Ok(NODE_LT_16_ARCHIVE.to_string())
+        } else if package_manager == "bun" {
+            Ok(BUN_NIXPKGS_ARCHIVE.to_string())
         } else {
             Ok(NODE_NIXPKGS_ARCHIVE.to_string())
         }
