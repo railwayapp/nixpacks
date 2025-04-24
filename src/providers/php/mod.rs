@@ -59,10 +59,6 @@ impl Provider for PhpProvider {
         plan.add_static_assets(PhpProvider::static_assets());
         plan.add_variables(PhpProvider::environment_variables(app));
 
-        if let Some(build) = build {
-            plan.add_phase(build)
-        }
-
         Ok(Some(plan))
     }
 }
@@ -115,7 +111,7 @@ impl PhpProvider {
         ));
         if app.includes_file("composer.json") {
             install.add_cmd("composer install --ignore-platform-reqs".to_string());
-        };
+        }
         if app.includes_file("package.json") {
             if let Some(install_cmd) = NodeProvider::get_install_command(app) {
                 install.add_cmd(install_cmd);
