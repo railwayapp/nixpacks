@@ -46,6 +46,6 @@ expression: plan
   },
   "start": {
     "cmd": "./out",
-    "runImage": "ubuntu:jammy"
+    "runImage": "ubuntu:noble"
   }
 }

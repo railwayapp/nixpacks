@@ -47,7 +47,7 @@ jobs:
         run: echo "::set-output name=date::$(date +%s)"
 
       - name: Build and push [Ubuntu]
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: base/ubuntu
           platforms: linux/arm64, linux/amd64
@@ -55,7 +55,7 @@ jobs:
           tags: ghcr.io/railwayapp/nixpacks:ubuntu, ghcr.io/railwayapp/nixpacks:latest, ghcr.io/railwayapp/nixpacks:ubuntu-${{ steps.date.outputs.date }}
 
       - name: Build and push [Debian]
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: base/debian
           platforms: linux/arm64, linux/amd64, linux/386

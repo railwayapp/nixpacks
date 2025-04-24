@@ -1,7 +1,6 @@
 ---
 source: tests/generate_plan_tests.rs
 expression: plan
-snapshot_kind: text
 ---
 {
   "providers": [],
@@ -47,6 +46,6 @@ snapshot_kind: text
   },
   "start": {
     "cmd": "./out",
-    "runImage": "ubuntu:jammy"
+    "runImage": "ubuntu:noble"
   }
 }
