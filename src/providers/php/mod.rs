@@ -59,10 +59,6 @@ impl Provider for PhpProvider {
         plan.add_static_assets(PhpProvider::static_assets());
         plan.add_variables(PhpProvider::environment_variables(app));
 
-        if let Some(build) = build {
-            plan.add_phase(build)
-        }
-
         Ok(Some(plan))
     }
 }
