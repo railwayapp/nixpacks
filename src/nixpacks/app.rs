@@ -217,7 +217,7 @@ impl App {
                                 break;
                             }
                             None => break,
-                            _ => continue,
+                            _ => {}
                         }
                     }
                 }

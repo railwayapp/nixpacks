@@ -63,7 +63,8 @@ impl Turborepo {
             return Ok(Some(build_cmd));
         } else if let Some(app_name) = Turborepo::get_app_name(env) {
             return Ok(Some(format!("{dlx} turbo run {app_name}:build")));
-        };
+        }
+
         Ok(None)
     }
 

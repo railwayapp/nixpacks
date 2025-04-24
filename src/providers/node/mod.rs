@@ -673,7 +673,7 @@ impl NodeProvider {
                     }
                 }
             }
-        };
+        }
     }
 }
 
