@@ -152,12 +152,13 @@ impl Provider for NodeProvider {
                 "libatk-bridge2.0-0".to_string(),
                 "libcups2".to_string(),
                 "libgbm1".to_string(),
-                "libasound2".to_string(),
+                "libasound2t64".to_string(),
                 "libpangocairo-1.0-0".to_string(),
                 "libxss1".to_string(),
                 "libgtk-3-0".to_string(),
                 "libxshmfence1".to_string(),
                 "libglu1".to_string(),
+                "chromium".to_string(),
             ]);
         }
 

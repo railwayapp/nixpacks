@@ -52,12 +52,13 @@ expression: plan
         "libatk-bridge2.0-0",
         "libcups2",
         "libgbm1",
-        "libasound2",
+        "libasound2t64",
         "libpangocairo-1.0-0",
         "libxss1",
         "libgtk-3-0",
         "libxshmfence1",
-        "libglu1"
+        "libglu1",
+        "chromium"
       ]
     }
   },
