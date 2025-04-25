@@ -69,9 +69,7 @@ impl PackageManager {
                 "pipenv" => Self::Specified(PackageManagerType::Pipenv),
                 "skip" => Self::Skip,
                 _ => {
-                    eprintln!(
-                        "Warning: Unknown package manager '{s}'. Using auto-detection.",
-                    );
+                    eprintln!("Warning: Unknown package manager '{s}'. Using auto-detection.",);
                     Self::Auto
                 }
             })
