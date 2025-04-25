@@ -31,4 +31,7 @@ ENV \
   NIXPKGS_ALLOW_BROKEN=1 \
   NIXPKGS_ALLOW_UNFREE=1 \
   NIXPKGS_ALLOW_INSECURE=1 \
-  LD_LIBRARY_PATH=/usr/lib
+  LD_LIBRARY_PATH=/usr/lib \
+  CPATH=~/.nix-profile/include:$CPATH \
+  LIBRARY_PATH=~/.nix-profile/lib:$LIBRARY_PATH \
+  QTDIR=~/.nix-profile:$QTDIR
