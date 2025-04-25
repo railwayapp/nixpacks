@@ -59,7 +59,7 @@ enum PackageManager {
 impl PackageManager {
     fn from_env(env: &Environment) -> Self {
         env.get_config_variable("PYTHON_PACKAGE_MANAGER")
-            .map(|s| match s.to_lowercase().as_str() {
+            .map_or(Self::Auto, |s| match s.to_lowercase().as_str() {
                 "auto" => Self::Auto,
                 "requirements" => Self::Specified(PackageManagerType::PipReqs),
                 "setuptools" => Self::Specified(PackageManagerType::PipSetuptools),
@@ -70,16 +70,14 @@ impl PackageManager {
                 "skip" => Self::Skip,
                 _ => {
                     eprintln!(
-                        "Warning: Unknown package manager '{}'. Using auto-detection.",
-                        s
+                        "Warning: Unknown package manager '{s}'. Using auto-detection.",
                     );
                     Self::Auto
                 }
             })
-            .unwrap_or(Self::Auto)
     }
 
-    fn resolve(&self, app: &App) -> Action {
+    fn resolve(self, app: &App) -> Action {
         match self {
             // Auto-detect package manager if not explicitly specified
             Self::Auto => {
@@ -101,7 +99,7 @@ impl PackageManager {
                     Action::NoInstallation // Default fallback
                 }
             }
-            Self::Specified(manager) => Action::InstallWith(*manager),
+            Self::Specified(manager) => Action::InstallWith(manager),
             Self::Skip => Action::NoInstallation,
         }
     }
