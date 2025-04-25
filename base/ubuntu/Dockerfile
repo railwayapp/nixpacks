@@ -17,9 +17,8 @@ RUN set -o pipefail && curl --proto '=https' --tlsv1.2 -sSf -L https://install.d
     && /nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-old
 
 # Set up the shell profile to source Nix
-RUN echo 'if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then' >> /root/.profile && \
-    echo '  . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' >> /root/.profile && \
-    echo 'fi' >> /root/.profile
+RUN printf 'if [ -d $HOME/.nix-profile/etc/profile.d ]; then\n for i in $HOME/.nix-profile/etc/profile.d/*.sh; do\n if [ -r $i ]; then\n . $i\n fi\n done\n fi\n' >> /root/.profile \
+    && printf 'PATH=$NIXPACKS_PATH:$PATH' >> /root/.profile
 
 ENV \
   ENV=/etc/profile \
