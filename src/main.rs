@@ -154,10 +154,10 @@ enum Commands {
         #[arg(long)]
         docker_tls_verify: Option<String>,
 
-        /// Specify output destination for Docker build.
+        /// Specify output destinations for Docker build.
         /// https://docs.docker.com/reference/cli/docker/buildx/build/#output
         #[arg(long)]
-        docker_output: Option<String>,
+        docker_output: Vec<String>,
 
         /// Specify the path to the Docker client certificates
         #[arg(long)]
