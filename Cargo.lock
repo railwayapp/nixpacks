@@ -1075,7 +1075,7 @@ dependencies = [
 
 [[package]]
 name = "nixpacks"
-version = "1.37.0"
+version = "1.38.0"
 dependencies = [
  "actix-web",
  "anyhow",
