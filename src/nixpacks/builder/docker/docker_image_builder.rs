@@ -36,11 +36,14 @@ fn get_output_dir(app_src: &str, options: &DockerBuilderOptions) -> Result<Outpu
     }
 }
 
+// TODO need to quote the output here otherwise the build command will fail with special char ENV vars
+
 fn command_to_string(command: &Command) -> String {
     let args = command
         .get_args()
         .map(|arg| arg.to_string_lossy())
         .collect::<Vec<_>>();
+    
     format!(
         "{} {}",
         command.get_program().to_string_lossy(),
@@ -145,8 +148,16 @@ impl DockerImageBuilder {
 
         // Enable BuildKit for all builds
         docker_build_cmd.env("DOCKER_BUILDKIT", "1");
+        
+        if self.options.debug {
+            docker_build_cmd.env("BUILDX_EXPERIMENTAL", "1");
+        }
 
         docker_build_cmd
+            .arg("buildx")
+            .arg("debug")
+            .arg("--invoke")
+            .arg("bash")
             .arg("build")
             .arg(&output.root)
             .arg("-f")
