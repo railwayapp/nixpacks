@@ -1,6 +1,7 @@
 // Code relating to NX Monorepos
 
 use std::path::PathBuf;
+use std::process::Command;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -45,6 +46,16 @@ pub struct Configuration {
     pub production: Option<Value>,
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq, Deserialize)]
+pub struct PackageJsonNx {
+    pub nx: Option<PackageJsonNxTargets>,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq, Deserialize)]
+pub struct PackageJsonNxTargets {
+    pub targets: Option<Targets>,
+}
+
 pub struct Nx {}
 
 const NX_APP_NAME_ENV_VAR: &str = "NX_APP_NAME";
@@ -52,6 +63,7 @@ const NX_APP_NAME_ENV_VAR: &str = "NX_APP_NAME";
 impl Nx {
     pub fn is_nx_monorepo(app: &App, env: &Environment) -> bool {
         // Only consider an Nx app if an nx app name and project path can be found
+        
         if let Some(nx_app_name) = Nx::get_nx_app_name(app, env) {
             return app.includes_file("nx.json")
                 && Nx::get_nx_project_json_for_app(app, &nx_app_name).is_ok();
@@ -73,8 +85,50 @@ impl Nx {
     }
 
     pub fn get_nx_project_json_for_app(app: &App, nx_app_name: &String) -> Result<ProjectJson> {
+        // Try project.json (old style)
         let project_path = format!("./apps/{nx_app_name}/project.json");
-        app.read_json::<ProjectJson>(&project_path)
+        if let Ok(project_json) = app.read_json::<ProjectJson>(&project_path) {
+            return Ok(project_json);
+        }
+
+        // Try package.json (new style)
+        let package_path = format!("./apps/{nx_app_name}/package.json");
+        if let Ok(pkg_json) = app.read_json::<serde_json::Value>(&package_path) {
+            if let Some(nx) = pkg_json.get("nx") {
+                // If targets exist, use them
+                if let Some(targets) = nx.get("targets") {
+                    let targets: Targets = serde_json::from_value(targets.clone())?;
+                    return Ok(ProjectJson { targets });
+                }
+                
+            }
+        }
+
+        // Fallback: run npx nx show project <app_name> --json
+        let output = Command::new(format!("{}", NodeProvider::get_package_manager_dlx_command(app)))
+            .args(["nx","show", "project", nx_app_name, "--json", "--no-verbose"])
+            .current_dir(&app.source)
+            .output();
+            
+        match output {
+            Ok(output) if output.status.success() => {
+                let json: serde_json::Value = serde_json::from_slice(&output.stdout)?;
+                if let Some(targets) = json.get("targets") {
+                    let targets: Targets = serde_json::from_value(targets.clone())?;
+                    return Ok(ProjectJson { targets });
+                } else {
+                    Err(anyhow::anyhow!("No targets found in '{} nx show project': {}", NodeProvider::get_package_manager_dlx_command(app), nx_app_name))
+                }
+            }
+            Ok(output) => {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(anyhow::anyhow!("Failed to run '{} nx show project': {}", NodeProvider::get_package_manager_dlx_command(app), stderr))
+            }
+            Err(e) => {
+                Err(anyhow::anyhow!("Error running '{} nx show project': {}", NodeProvider::get_package_manager_dlx_command(app), e))
+            }
+        }
+
     }
 
     pub fn get_nx_output_path(app: &App, nx_app_name: &String) -> Result<String> {
