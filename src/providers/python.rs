@@ -33,6 +33,76 @@ const DEFAULT_POETRY_PYTHON_PKG_NAME: &str = "python3";
 const PYTHON_NIXPKGS_ARCHIVE: &str = "bc8f8d1be58e8c8383e683a06e1e1e57893fff87";
 const LEGACY_PYTHON_NIXPKGS_ARCHIVE: &str = "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db";
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum PackageManagerType {
+    PipReqs,
+    PipSetuptools,
+    Poetry,
+    Pdm,
+    Uv,
+    Pipenv,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Action {
+    InstallWith(PackageManagerType),
+    NoInstallation,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum PackageManager {
+    Auto, // No preference, use auto-detection
+    Specified(PackageManagerType),
+    Skip, // Skip package installation entirely
+}
+
+impl PackageManager {
+    fn from_env(env: &Environment) -> Self {
+        env.get_config_variable("PYTHON_PACKAGE_MANAGER")
+            .map_or(Self::Auto, |s| match s.to_lowercase().as_str() {
+                "auto" => Self::Auto,
+                "requirements" => Self::Specified(PackageManagerType::PipReqs),
+                "setuptools" => Self::Specified(PackageManagerType::PipSetuptools),
+                "poetry" => Self::Specified(PackageManagerType::Poetry),
+                "pdm" => Self::Specified(PackageManagerType::Pdm),
+                "uv" => Self::Specified(PackageManagerType::Uv),
+                "pipenv" => Self::Specified(PackageManagerType::Pipenv),
+                "skip" => Self::Skip,
+                _ => {
+                    eprintln!("Warning: Unknown package manager '{s}'. Using auto-detection.",);
+                    Self::Auto
+                }
+            })
+    }
+
+    fn resolve(self, app: &App) -> Action {
+        match self {
+            // Auto-detect package manager if not explicitly specified
+            Self::Auto => {
+                if app.includes_file("requirements.txt") {
+                    Action::InstallWith(PackageManagerType::PipReqs)
+                } else if app.includes_file("pyproject.toml") {
+                    if app.includes_file("poetry.lock") {
+                        Action::InstallWith(PackageManagerType::Poetry)
+                    } else if app.includes_file("pdm.lock") {
+                        Action::InstallWith(PackageManagerType::Pdm)
+                    } else if app.includes_file("uv.lock") {
+                        Action::InstallWith(PackageManagerType::Uv)
+                    } else {
+                        Action::InstallWith(PackageManagerType::PipSetuptools) // Default for pyproject.toml without lock files
+                    }
+                } else if app.includes_file("Pipfile") {
+                    Action::InstallWith(PackageManagerType::Pipenv)
+                } else {
+                    Action::NoInstallation // Default fallback
+                }
+            }
+            Self::Specified(manager) => Action::InstallWith(manager),
+            Self::Skip => Action::NoInstallation,
+        }
+    }
+}
+
 pub struct PythonProvider {}
 
 impl Provider for PythonProvider {
@@ -205,92 +275,111 @@ impl PythonProvider {
         Ok(Some(setup))
     }
 
-    fn install(&self, app: &App, _env: &Environment) -> Result<Option<Phase>> {
+    fn install(&self, app: &App, env: &Environment) -> Result<Option<Phase>> {
         let create_env = format!("python -m venv --copies {VENV_LOCATION}");
         let activate_env = format!(". {VENV_LOCATION}/bin/activate");
 
-        if app.includes_file("requirements.txt") {
-            let mut install_phase = Phase::install(Some(format!(
-                "{create_env} && {activate_env} && pip install -r requirements.txt"
-            )));
+        // Determine package manager preference
+        let package_manager = PackageManager::from_env(env);
 
-            install_phase.add_path(format!("{VENV_LOCATION}/bin"));
-            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+        // Auto-detect package manager if not explicitly specified
+        let action = package_manager.resolve(app);
 
-            return Ok(Some(install_phase));
-        } else if app.includes_file("pyproject.toml") {
-            if app.includes_file("poetry.lock") {
-                let install_poetry = "pip install poetry==$NIXPACKS_POETRY_VERSION".to_string();
-                let mut install_phase = Phase::install(Some(format!(
-                    "{create_env} && {activate_env} && {install_poetry} && poetry install --no-dev --no-interaction --no-ansi"
-                )));
+        // Create the installation phase based on the determined package manager
+        match action {
+            Action::InstallWith(manager_type) => {
+                match manager_type {
+                    PackageManagerType::PipReqs => {
+                        let install_cmd = format!(
+                            "{create_env} && {activate_env} && pip install -r requirements.txt"
+                        );
+                        let mut install_phase = Phase::install(Some(install_cmd));
 
-                install_phase.add_path(format!("{VENV_LOCATION}/bin"));
+                        install_phase.add_path(format!("{VENV_LOCATION}/bin"));
+                        install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
-                install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+                        Ok(Some(install_phase))
+                    }
 
-                return Ok(Some(install_phase));
-            } else if app.includes_file("pdm.lock") {
-                let install_pdm = "pip install pdm==$NIXPACKS_PDM_VERSION".to_string();
-                let mut install_phase = Phase::install(Some(format!(
-                    "{create_env} && {activate_env} && {install_pdm} && pdm install --prod"
-                )));
+                    PackageManagerType::Poetry => {
+                        let install_poetry =
+                            "pip install poetry==$NIXPACKS_POETRY_VERSION".to_string();
+                        let install_cmd = format!(
+                            "{create_env} && {activate_env} && {install_poetry} && poetry install --no-dev --no-interaction --no-ansi"
+                        );
+                        let mut install_phase = Phase::install(Some(install_cmd));
 
-                install_phase.add_path(format!("{VENV_LOCATION}/bin"));
+                        install_phase.add_path(format!("{VENV_LOCATION}/bin"));
+                        install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
 
-                install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
-                install_phase.add_cache_directory(PDM_CACHE_DIR.to_string());
+                        Ok(Some(install_phase))
+                    }
 
-                return Ok(Some(install_phase));
-            } else if app.includes_file("uv.lock") {
-                let install_uv = "pip install uv==$NIXPACKS_UV_VERSION".to_string();
+                    PackageManagerType::Pdm => {
+                        let install_pdm = "pip install pdm==$NIXPACKS_PDM_VERSION".to_string();
+                        let install_cmd = format!(
+                            "{create_env} && {activate_env} && {install_pdm} && pdm install --prod"
+                        );
+                        let mut install_phase = Phase::install(Some(install_cmd));
 
-                // Here's how we get UV to play well with the pre-existing non-standard venv location:
-                //
-                // 1. Create a venv which allows us to use pip. pip is not installed globally with nixpkgs py
-                // 2. Install uv via pip
-                // 3. UV_PROJECT_ENVIRONMENT is specified elsewhere so `uv sync` installs packages into the same venv
+                        install_phase.add_path(format!("{VENV_LOCATION}/bin"));
+                        install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+                        install_phase.add_cache_directory(PDM_CACHE_DIR.to_string());
 
-                let mut install_phase = Phase::install(Some(format!(
-                    "{create_env} && {activate_env} && {install_uv} && uv sync --no-dev --frozen"
-                )));
+                        Ok(Some(install_phase))
+                    }
 
-                install_phase.add_path(format!("{VENV_LOCATION}/bin"));
-                install_phase.add_cache_directory(UV_CACHE_DIR.to_string());
+                    PackageManagerType::Uv => {
+                        // Here's how we get UV to play well with the pre-existing non-standard venv location:
+                        //
+                        // 1. Create a venv which allows us to use pip. pip is not installed globally with nixpkgs py
+                        // 2. Install uv via pip
+                        // 3. UV_PROJECT_ENVIRONMENT is specified elsewhere so `uv sync` installs packages into the same venv
+                        let install_uv = "pip install uv==$NIXPACKS_UV_VERSION".to_string();
+                        let install_cmd = format!(
+                            "{create_env} && {activate_env} && {install_uv} && uv sync --no-dev --frozen"
+                        );
+                        let mut install_phase = Phase::install(Some(install_cmd));
 
-                return Ok(Some(install_phase));
+                        install_phase.add_path(format!("{VENV_LOCATION}/bin"));
+                        install_phase.add_cache_directory(UV_CACHE_DIR.to_string());
+
+                        Ok(Some(install_phase))
+                    }
+
+                    PackageManagerType::PipSetuptools => {
+                        let install_cmd = format!("{create_env} && {activate_env} && pip install --upgrade build setuptools && pip install .");
+                        let mut install_phase = Phase::install(Some(install_cmd));
+
+                        install_phase.add_file_dependency("pyproject.toml".to_string());
+                        install_phase.add_path(format!("{VENV_LOCATION}/bin"));
+                        install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+
+                        Ok(Some(install_phase))
+                    }
+
+                    PackageManagerType::Pipenv => {
+                        // By default Pipenv creates an environment directory in some random location
+                        // (for example `/root/.local/share/virtualenvs/app-4PlAip0Q`).
+                        // `PIPENV_VENV_IN_PROJECT` tells it that there is an already activated `venv` environment,
+                        // so Pipenv will use the same directory instead of creating new one (in our case it's `/app/.venv`)
+                        let pipenv_cmd = if app.includes_file("Pipfile.lock") {
+                            "PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy"
+                        } else {
+                            "PIPENV_VENV_IN_PROJECT=1 pipenv install --skip-lock"
+                        };
+                        let install_cmd = format!("{create_env} && {activate_env} && {pipenv_cmd}");
+                        let mut install_phase = Phase::install(Some(install_cmd));
+
+                        install_phase.add_path(format!("{VENV_LOCATION}/bin"));
+                        install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
+
+                        Ok(Some(install_phase))
+                    }
+                }
             }
-
-            let mut install_phase = Phase::install(Some(format!(
-                "{create_env} && {activate_env} && pip install --upgrade build setuptools && pip install ."
-            )));
-
-            install_phase.add_file_dependency("pyproject.toml".to_string());
-            install_phase.add_path(format!("{VENV_LOCATION}/bin"));
-
-            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
-
-            return Ok(Some(install_phase));
-        } else if app.includes_file("Pipfile") {
-            // By default Pipenv creates an environment directory in some random location (for example `/root/.local/share/virtualenvs/app-4PlAip0Q`).
-            // `PIPENV_VENV_IN_PROJECT` tells it that there is an already activated `venv` environment, So Pipenv will use the same directory instead of creating new one (in our case it's `/app/.venv`)
-
-            let cmd = if app.includes_file("Pipfile.lock") {
-                "PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy"
-            } else {
-                "PIPENV_VENV_IN_PROJECT=1 pipenv install --skip-lock"
-            };
-
-            let cmd = format!("{create_env} && {activate_env} && {cmd}");
-            let mut install_phase = Phase::install(Some(cmd));
-
-            install_phase.add_path(format!("{VENV_LOCATION}/bin"));
-            install_phase.add_cache_directory(PIP_CACHE_DIR.to_string());
-
-            return Ok(Some(install_phase));
+            Action::NoInstallation => Ok(Some(Phase::install(None))),
         }
-
-        Ok(Some(Phase::install(None)))
     }
 
     fn start(&self, app: &App, env: &Environment) -> Result<Option<StartPhase>> {
@@ -707,6 +796,81 @@ mod test {
             &Environment::new(BTreeMap::new())
         )
         .unwrap());
+        Ok(())
+    }
+
+    #[test]
+    fn test_package_manager_from_env() -> Result<()> {
+        assert_eq!(
+            PackageManager::from_env(&Environment::default()),
+            PackageManager::Auto
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "poetry".to_string()
+            )]))),
+            PackageManager::Specified(PackageManagerType::Poetry)
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "requirements".to_string()
+            )]))),
+            PackageManager::Specified(PackageManagerType::PipReqs)
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "setuptools".to_string()
+            )]))),
+            PackageManager::Specified(PackageManagerType::PipSetuptools)
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "pdm".to_string()
+            )]))),
+            PackageManager::Specified(PackageManagerType::Pdm)
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "uv".to_string()
+            )]))),
+            PackageManager::Specified(PackageManagerType::Uv)
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "pipenv".to_string()
+            )]))),
+            PackageManager::Specified(PackageManagerType::Pipenv)
+        );
+
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "skip".to_string()
+            )]))),
+            PackageManager::Skip
+        );
+
+        // Test unknown package manager falls back to Auto
+        assert_eq!(
+            PackageManager::from_env(&Environment::new(BTreeMap::from([(
+                "NIXPACKS_PYTHON_PACKAGE_MANAGER".to_string(),
+                "unknown".to_string()
+            )]))),
+            PackageManager::Auto
+        );
+
         Ok(())
     }
 }
