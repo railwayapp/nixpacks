@@ -13,6 +13,8 @@ at Java. Scala is detected by `build.sbt` in project root.
 
 The following major JDK versions are available
 
+- `24`
+- `23`
 - `21`
 - `20`
 - `19`
