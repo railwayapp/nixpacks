@@ -118,7 +118,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         # generate list of tests in json format for test-docker
         run: |
-          echo "::set-output name=matrix::{\"tests\":[\"$(cargo test -q --package nixpacks --test docker_run_tests -- --list --format=terse | sed -z 's/: test\n/\", \"/g' | sed 's/...$//')]}"
+          echo "matrix={\"tests\":[\"$(cargo test -q --package nixpacks --test docker_run_tests -- --list --format=terse | sed -z 's/: test\n/\", \"/g' | sed 's/...$//')]}" >> $GITHUB_OUTPUT
 
   test-docker:
     needs: test-plan

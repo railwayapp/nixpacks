@@ -203,7 +203,7 @@ jobs:
       if: matrix.config.os == 'macos-latest'
       id: shasum
       run: |
-        echo ::set-output name=sha::"$(shasum -a 256 ./release/gitui-mac.tar.gz | awk '{printf $1}')"
+        echo "sha=\"$(shasum -a 256 ./release/gitui-mac.tar.gz | awk '{printf $1}')\"" >> $GITHUB_OUTPUT
 
     - name: Update homebrew tap
       uses: mislav/bump-homebrew-formula-action@v3
