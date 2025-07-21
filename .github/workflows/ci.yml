@@ -23,6 +23,8 @@ jobs:
 
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -50,6 +52,8 @@ jobs:
 
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -92,6 +96,8 @@ jobs:
 
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -130,6 +136,8 @@ jobs:
 
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -169,6 +177,8 @@ jobs:
 
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install 1.60 rust toolchain
         uses: actions-rs/toolchain@v1
@@ -197,6 +207,8 @@ jobs:
 
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main

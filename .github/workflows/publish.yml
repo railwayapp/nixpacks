@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -65,8 +67,10 @@ jobs:
       - name: Bump base image
         if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         run: |
-          sed -i 's/nixpacks:debian-.*/nixpacks:debian-${{ steps.date.outputs.date }}";/g' src/nixpacks/images.rs
-          sed -i 's/nixpacks:ubuntu-.*/nixpacks:ubuntu-${{ steps.date.outputs.date }}";/g' src/nixpacks/images.rs
+          sed -i 's/nixpacks:debian-.*/nixpacks:debian-${STEPS_DATE_OUTPUTS_DATE}";/g' src/nixpacks/images.rs
+          sed -i 's/nixpacks:ubuntu-.*/nixpacks:ubuntu-${STEPS_DATE_OUTPUTS_DATE}";/g' src/nixpacks/images.rs
+        env:
+          STEPS_DATE_OUTPUTS_DATE: ${{ steps.date.outputs.date }}
 
       - name: Create Pull Request
         if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
