@@ -387,7 +387,7 @@ impl PythonProvider {
             let app_name = PythonProvider::get_django_app_name(app, env)?;
 
             return Ok(Some(StartPhase::new(format!(
-                "python manage.py migrate && gunicorn {app_name}"
+                "python manage.py collectstatic --no-input && python manage.py migrate && gunicorn {app_name}"
             ))));
         }
 
