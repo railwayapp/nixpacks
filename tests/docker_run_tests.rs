@@ -127,7 +127,7 @@ async fn run_image(name: &str, cfg: Option<Config>) -> String {
 async fn build_with_hosts(path: &str, add_hosts: &[String], nginx_host: String) -> String {
     let name = Uuid::new_v4().to_string();
     let mut env: Vec<&str> = Vec::new();
-    let env_var = format!("REMOTE_URL=http://{}", nginx_host);
+    let env_var = format!("REMOTE_URL=http://{nginx_host}");
     env.push(&*env_var);
 
     create_docker_image(
@@ -665,7 +665,7 @@ async fn test_pnpm_network_call_should_not_work_without_hosts() {
     }
 
     let mut env: Vec<&str> = Vec::new();
-    let env_var = format!("REMOTE_URL=http://{}", container_name);
+    let env_var = format!("REMOTE_URL=http://{container_name}");
     env.push(&*env_var);
 
     // Build the basic example, a function that calls the database
@@ -972,7 +972,7 @@ async fn test_python_psycopg2() -> Result<()> {
     )
     .await;
 
-    println!("OUTPUT = {}", output);
+    println!("OUTPUT = {output}");
 
     // Cleanup containers and networks
     stop_and_remove_container(container_name);
