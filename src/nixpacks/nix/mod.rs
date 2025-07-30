@@ -6,9 +6,9 @@ use crate::nixpacks::plan::phase::{Phase, Phases};
 pub mod pkg;
 
 // This line is automatically updated.
-// Last Modified: 2023-09-17 17:13:39 UTC+0000
-// https://github.com/NixOS/nixpkgs/commit/5148520bfab61f99fd25fb9ff7bfbb50dad3c9db
-pub const NIXPKGS_ARCHIVE: &str = "5148520bfab61f99fd25fb9ff7bfbb50dad3c9db";
+// Last Modified: 2025-07-29 19:55:00 UTC+0000
+// https://github.com/NixOS/nixpkgs/commit/11cb3517b3af6af300dd6c055aeda73c9bf52c48
+pub const NIXPKGS_ARCHIVE: &str = "11cb3517b3af6af300dd6c055aeda73c9bf52c48";
 
 // Version of the Nix archive that uses OpenSSL 1.1
 pub const NIXPACKS_ARCHIVE_LEGACY_OPENSSL: &str = "a0b7e70db7a55088d3de0cc370a59f9fbcc906c3";

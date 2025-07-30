@@ -150,7 +150,7 @@ Specific version of the Nixpkgs archive to use. By default all builds are built 
 
 ```toml
 [phase.name]
-  nixpkgsArchive = '5148520bfab61f99fd25fb9ff7bfbb50dad3c9db'
+  nixpkgsArchive = '11cb3517b3af6af300dd6c055aeda73c9bf52c48'
 ```
 
 ### Apt packages
