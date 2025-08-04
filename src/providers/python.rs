@@ -422,8 +422,9 @@ impl PythonProvider {
         // Check for the engine database type in settings.py
         let re = Regex::new(r"django.db.backends.postgresql").unwrap();
 
-        let uses_pg =
-            app.find_match(&re, "/**/*.py")? || PythonProvider::uses_dep(app, "psycopg2")?;
+        let uses_pg = app.find_match(&re, "/**/*.py")?
+            || PythonProvider::uses_dep(app, "psycopg2")?
+            || PythonProvider::uses_dep(app, "psycopg")?;
         Ok(uses_pg)
     }
 
@@ -768,6 +769,11 @@ mod test {
     fn test_postgres_detection() -> Result<()> {
         assert!(PythonProvider::is_using_postgres(
             &App::new("./examples/python-postgres",)?,
+            &Environment::new(BTreeMap::new())
+        )
+        .unwrap());
+        assert!(PythonProvider::is_using_postgres(
+            &App::new("./examples/python-psycopg",)?,
             &Environment::new(BTreeMap::new())
         )
         .unwrap());
