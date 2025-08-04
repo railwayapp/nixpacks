@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install jq
         run: sudo apt-get install -y jq
@@ -36,8 +38,8 @@ jobs:
           sed -i "/\/\/ https:\/\/github.com\/NixOS\/nixpkgs\/commit/c\/\/ $URL" src/nixpacks/nix/mod.rs
           sed -i "/const NIXPKGS_ARCHIVE: &str/c\pub const NIXPKGS_ARCHIVE: &str = \"$SHA\";" src/nixpacks/nix/mod.rs
 
-          echo "::set-output name=sha::$SHA"
-          echo "::set-output name=url::$URL"
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "url=$URL" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7

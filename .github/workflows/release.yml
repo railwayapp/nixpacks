@@ -24,12 +24,15 @@ jobs:
           #
           # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
           echo "NIXPACKS_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          echo "version is: ${{ env.NIXPACKS_VERSION }}"
+          echo "version is: ${NIXPACKS_VERSION}"
+        env:
+          NIXPACKS_VERSION: ${{ env.NIXPACKS_VERSION }}
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Build Changelog
         id: build_changelog
@@ -103,6 +106,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 1
+        persist-credentials: false
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
@@ -124,16 +128,20 @@ jobs:
       run: |
         cd target/${{ matrix.target }}/release
         strip nixpacks.exe
-        7z a ../../../nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.zip nixpacks.exe
+        7z a ../../../nixpacks-${NEEDS_CREATE_RELEASE_OUTPUTS_NIXPACKS_VERSION}-${{ matrix.target }}.zip nixpacks.exe
         cd -
+      env:
+        NEEDS_CREATE_RELEASE_OUTPUTS_NIXPACKS_VERSION: ${{ needs.create-release.outputs.nixpacks_version }}
 
     - name: Prepare binaries [-linux]
       if: matrix.os != 'windows-latest'
       run: |
         cd target/${{ matrix.target }}/release
         strip nixpacks || true
-        tar czvf ../../../nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.tar.gz nixpacks
+        tar czvf ../../../nixpacks-${NEEDS_CREATE_RELEASE_OUTPUTS_NIXPACKS_VERSION}-${{ matrix.target }}.tar.gz nixpacks
         cd -
+      env:
+        NEEDS_CREATE_RELEASE_OUTPUTS_NIXPACKS_VERSION: ${{ needs.create-release.outputs.nixpacks_version }}
 
     # - name: Add Checksums
     #   run: for file in nixpacks-*/nixpacks-*; do openssl dgst -sha256 -r "$file" | awk '{print $1}' > "${file}.sha256"; done
@@ -152,7 +160,9 @@ jobs:
 
     - name: Generate .deb package file
       if: matrix.target == 'x86_64-unknown-linux-gnu'
-      run: cargo deb --target ${{ matrix.target }} --output nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-amd64.deb
+      run: cargo deb --target ${{ matrix.target }} --output nixpacks-${NEEDS_CREATE_RELEASE_OUTPUTS_NIXPACKS_VERSION}-amd64.deb
+      env:
+        NEEDS_CREATE_RELEASE_OUTPUTS_NIXPACKS_VERSION: ${{ needs.create-release.outputs.nixpacks_version }}
 
     - name: Upload .deb package file
       if: matrix.target == 'x86_64-unknown-linux-gnu'
@@ -177,7 +187,9 @@ jobs:
       run: >
         cargo wix -v --no-build --nocapture
         --target ${{ matrix.target }}
-        --output nixpacks-${{ needs.create-release.outputs.nixpacks_version }}-${{ matrix.target }}.msi
+        --output nixpacks-${NEEDS_CREATE_RELEASE_OUTPUTS_NIXPACKS_VERSION}-${{ matrix.target }}.msi
+      env:
+        NEEDS_CREATE_RELEASE_OUTPUTS_NIXPACKS_VERSION: ${{ needs.create-release.outputs.nixpacks_version }}
 
     - name: Upload windows installers
       continue-on-error: true
@@ -191,7 +203,7 @@ jobs:
       if: matrix.config.os == 'macos-latest'
       id: shasum
       run: |
-        echo ::set-output name=sha::"$(shasum -a 256 ./release/gitui-mac.tar.gz | awk '{printf $1}')"
+        echo "sha=\"$(shasum -a 256 ./release/gitui-mac.tar.gz | awk '{printf $1}')\"" >> $GITHUB_OUTPUT
 
     - name: Update homebrew tap
       uses: mislav/bump-homebrew-formula-action@v3
