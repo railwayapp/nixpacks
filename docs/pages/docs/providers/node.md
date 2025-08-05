@@ -105,7 +105,7 @@ Corepack will only be used on Node 16 and above.
 
 ## Bun Support
 
-We support Bun, but due to Bun being in alpha, it is unstable and very experimental.
+We support Bun as a stable package manager and runtime.
 
 ## SPA Application Support
 
