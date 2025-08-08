@@ -15,7 +15,7 @@ pub struct JavaProvider {}
 
 const DEFAULT_JDK_VERSION: u32 = 17;
 const DEFAULT_GRADLE_VERSION: u32 = 8;
-const JAVA_NIXPKGS_ARCHIVE: &str = "59dc10b5a6f2a592af36375c68fda41246794b86";
+const JAVA_NIXPKGS_ARCHIVE: &str = "210a4a2e3d3853be3a6017e68d2897771fdace35";
 
 impl Provider for JavaProvider {
     fn name(&self) -> &'static str {
@@ -170,9 +170,9 @@ impl JavaProvider {
 
     fn get_jdk_pkg(&self, jdk_version: u32) -> Result<Pkg> {
         let pkg = match jdk_version {
-            21 => Pkg::new("jdk21"),
-            20 => Pkg::new("jdk20"),
-            19 => Pkg::new("jdk"),
+            24 => Pkg::new("jdk24"),
+            23 => Pkg::new("jdk23"),
+            21 => Pkg::new("jdk"),
             17 => Pkg::new("jdk17"),
             11 => Pkg::new("jdk11"),
             8 => Pkg::new("jdk8"),
@@ -359,11 +359,11 @@ mod tests {
         );
 
         assert_eq!(
-            Pkg::new("jdk21"),
+            Pkg::new("jdk23"),
             java.get_jdk_pkg(
                 java.get_jdk_version(
                     &App::new("examples/java-gradle-hello-world").unwrap(),
-                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=21"]).unwrap(),
+                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=23"]).unwrap(),
                 )
                 .unwrap()
             )
@@ -371,11 +371,11 @@ mod tests {
         );
 
         assert_eq!(
-            Pkg::new("jdk20"),
+            Pkg::new("jdk24"),
             java.get_jdk_pkg(
                 java.get_jdk_version(
                     &App::new("examples/java-gradle-hello-world").unwrap(),
-                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=20"]).unwrap(),
+                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=24"]).unwrap(),
                 )
                 .unwrap()
             )
@@ -387,7 +387,7 @@ mod tests {
             java.get_jdk_pkg(
                 java.get_jdk_version(
                     &App::new("examples/java-gradle-hello-world").unwrap(),
-                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=19"]).unwrap(),
+                    &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=21"]).unwrap(),
                 )
                 .unwrap()
             )

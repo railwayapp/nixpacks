@@ -78,6 +78,8 @@ impl ScalaProvider {
 
     fn get_jdk_pkg_name(&self, jdk_version: u32) -> &str {
         match jdk_version {
+            24 => "jdk24",
+            23 => "jdk23",
             21 => "jdk21",
             20 => "jdk20",
             19 => "jdk",
@@ -91,6 +93,8 @@ impl ScalaProvider {
 
     fn get_jdk_run_image(&self, jdk_version: u32) -> &str {
         match jdk_version {
+            24 => "eclipse-temurin:24.0.1_9-jre-noble",
+            23 => "eclipse-temurin:23.0.2_7-jre-noble",
             21 => "eclipse-temurin:21.0.1_12-jre-jammy",
             20 => "eclipse-temurin:20.0.2_9-jre-jammy",
             19 => "eclipse-temurin:19.0.2_7-jre-jammy",
@@ -151,6 +155,22 @@ mod tests {
             "jdk21",
             scala.get_jdk_pkg_name(scala.get_jdk_version(
                 &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=21"]).unwrap(),
+            ))
+        );
+
+        // Supports Java 23
+        assert_eq!(
+            "jdk23",
+            scala.get_jdk_pkg_name(scala.get_jdk_version(
+                &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=23"]).unwrap(),
+            ))
+        );
+
+        // Supports Java 24
+        assert_eq!(
+            "jdk24",
+            scala.get_jdk_pkg_name(scala.get_jdk_version(
+                &Environment::from_envs(vec!["NIXPACKS_JDK_VERSION=24"]).unwrap(),
             ))
         );
     }
