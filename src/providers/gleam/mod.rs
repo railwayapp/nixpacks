@@ -10,6 +10,8 @@ use crate::nixpacks::{
     },
 };
 
+const PKGS_ARCHIVE: &str = "bcc20cad1608fbbe08641e5106c0755cfd0154ad";
+
 use super::Provider;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -77,7 +79,10 @@ impl GleamProvider {
             "rebar3".into(),
         ];
 
-        Phase::setup(Some(pkgs))
+        let mut phase = Phase::setup(Some(pkgs));
+        phase.set_nix_archive(PKGS_ARCHIVE.to_string());
+
+        phase
     }
 
     fn get_install(&self, app: &App, _env: &Environment) -> Result<Phase> {
