@@ -35,6 +35,11 @@ impl GleamManifest {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct GleamToml {
+    pub gleam: Option<String>,
+}
+
 pub struct GleamProvider;
 
 impl Provider for GleamProvider {
@@ -77,13 +82,15 @@ impl GleamProvider {
 
     fn get_install(&self, app: &App, _env: &Environment) -> Result<Phase> {
         let manifest: GleamManifest = app.read_toml("manifest.toml")?;
+        let gleam_toml: GleamToml = app.read_toml("gleam.toml")?;
 
-        let gleam_version = manifest.get_package_version("gleam_stdlib"); // steal the gleam version from the stdlib version
+        let fallback_version = manifest.get_package_version("gleam_stdlib"); // steal the gleam version from the stdlib version
+        let gleam_version = gleam_toml.gleam.clone();
 
         let mut phase = Phase::install(Some(format!(
             "sh {} {}",
             app.asset_path("get-gleam.sh"),
-            gleam_version.unwrap_or_else(|| "main".into())
+            gleam_version.unwrap_or_else(|| fallback_version.unwrap_or_else(|| "main".into()))
         )));
         phase.only_include_files = Some(vec!["gleam.toml".into(), "manifest.toml".into()]);
         phase.add_cmd("gleam deps download");
