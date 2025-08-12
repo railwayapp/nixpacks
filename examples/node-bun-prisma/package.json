@@ -6,6 +6,9 @@
     "build": "bun run prisma generate",
     "start": "bunx prisma migrate deploy"
   },
+  "engines": {
+    "node": "22.x"
+  },
   "devDependencies": {
     "bun-types": "latest",
     "prisma": "5.3.1"

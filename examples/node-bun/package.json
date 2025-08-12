@@ -5,6 +5,9 @@
   "scripts": {
     "start": "bun index.ts"
   },
+  "engines": {
+    "node": "22.x"
+  },
   "devDependencies": {
     "@types/figlet": "^1.5.6",
     "bun-types": "latest"

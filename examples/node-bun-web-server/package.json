@@ -5,6 +5,9 @@
   "scripts": {
     "start": "bun index.ts"
   },
+  "engines": {
+    "node": "22.x"
+  },
   "devDependencies": {
     "bun-types": "latest"
   },

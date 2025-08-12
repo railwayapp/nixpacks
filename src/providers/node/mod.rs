@@ -27,7 +27,7 @@ pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/ar
 
 // unlike package managers, {node,bun} versions are pinned to a particular nixpacks release
 const NODE_NIXPKGS_ARCHIVE: &str = "ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7";
-const BUN_NIXPKGS_ARCHIVE: &str = "f69ae4816bc1b501460ad2c0c63ed0cc4a9b876e";
+const BUN_NIXPKGS_ARCHIVE: &str = "5a0711127cd8b916c3d3128f473388c8c79df0da";
 
 // We need to use a specific commit hash for Node versions <16 since it is EOL in the latest Nix packages
 const NODE_LT_16_ARCHIVE: &str = "bf744fe90419885eefced41b3e5ae442d732712d";
