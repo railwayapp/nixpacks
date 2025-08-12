@@ -1,7 +1,6 @@
 // Code relating to NX Monorepos
 
 use std::path::PathBuf;
-use std::process::Command;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -73,25 +72,61 @@ impl Nx {
     }
 
     pub fn get_nx_app_name(app: &App, env: &Environment) -> Option<String> {
+        // First, check if explicitly set via environment variable
         if let Some(app_name) = env.get_config_variable(NX_APP_NAME_ENV_VAR) {
             return Some(app_name);
         }
 
+        // Second, check nx.json for default project
         if let Ok(nx_json) = app.read_json::<NxJson>("nx.json") {
-            return nx_json.default_project;
+            if let Some(default_project) = nx_json.default_project {
+                return Some(default_project);
+            }
+        }
+
+        // Third, try to auto-detect by looking for apps with valid configurations
+        if app.includes_directory("apps") {
+            // Look for directories in apps/ that have either project.json or package.json with nx config
+            if let Ok(entries) = std::fs::read_dir(app.source.join("apps")) {
+                for entry in entries.flatten() {
+                    if let Ok(file_type) = entry.file_type() {
+                        if file_type.is_dir() {
+                            if let Some(app_name) = entry.file_name().to_str() {
+                                let app_path = format!("apps/{}", app_name);
+                                
+                                // Check if this app has a valid project.json
+                                let project_json_path = format!("{}/project.json", app_path);
+                                if app.includes_file(&project_json_path) {
+                                    return Some(app_name.to_string());
+                                }
+                                
+                                // Check if this app has a package.json with nx targets
+                                let package_json_path = format!("{}/package.json", app_path);
+                                if app.includes_file(&package_json_path) {
+                                    if let Ok(pkg_json) = app.read_json::<serde_json::Value>(&package_json_path) {
+                                        if pkg_json.get("nx").and_then(|nx| nx.get("targets")).is_some() {
+                                            return Some(app_name.to_string());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         None
     }
 
     pub fn get_nx_project_json_for_app(app: &App, nx_app_name: &String) -> Result<ProjectJson> {
-        // Try project.json (old style)
+        // Try project.json (old style NX configuration)
         let project_path = format!("./apps/{nx_app_name}/project.json");
         if let Ok(project_json) = app.read_json::<ProjectJson>(&project_path) {
             return Ok(project_json);
         }
 
-        // Try package.json (new style)
+        // Try package.json (new NX 20+ style configuration)
         let package_path = format!("./apps/{nx_app_name}/package.json");
         if let Ok(pkg_json) = app.read_json::<serde_json::Value>(&package_path) {
             if let Some(nx) = pkg_json.get("nx") {
@@ -100,35 +135,14 @@ impl Nx {
                     let targets: Targets = serde_json::from_value(targets.clone())?;
                     return Ok(ProjectJson { targets });
                 }
-                
             }
         }
 
-        // Fallback: run npx nx show project <app_name> --json
-        let output = Command::new(format!("{}", NodeProvider::get_package_manager_dlx_command(app)))
-            .args(["nx","show", "project", nx_app_name, "--json", "--no-verbose"])
-            .current_dir(&app.source)
-            .output();
-            
-        match output {
-            Ok(output) if output.status.success() => {
-                let json: serde_json::Value = serde_json::from_slice(&output.stdout)?;
-                if let Some(targets) = json.get("targets") {
-                    let targets: Targets = serde_json::from_value(targets.clone())?;
-                    return Ok(ProjectJson { targets });
-                } else {
-                    Err(anyhow::anyhow!("No targets found in '{} nx show project': {}", NodeProvider::get_package_manager_dlx_command(app), nx_app_name))
-                }
-            }
-            Ok(output) => {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                Err(anyhow::anyhow!("Failed to run '{} nx show project': {}", NodeProvider::get_package_manager_dlx_command(app), stderr))
-            }
-            Err(e) => {
-                Err(anyhow::anyhow!("Error running '{} nx show project': {}", NodeProvider::get_package_manager_dlx_command(app), e))
-            }
-        }
-
+        Err(anyhow::anyhow!(
+            "No build/start targets found for NX app '{}'. For NX 20+, ensure your app's package.json contains an 'nx.targets' section with 'build' and 'start' targets. For older NX versions, ensure your app has a project.json file with target definitions. You can also set the {} environment variable to specify the app name explicitly.",
+            nx_app_name,
+            NX_APP_NAME_ENV_VAR
+        ))
     }
 
     pub fn get_nx_output_path(app: &App, nx_app_name: &String) -> Result<String> {
