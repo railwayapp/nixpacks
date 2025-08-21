@@ -62,7 +62,6 @@ const NX_APP_NAME_ENV_VAR: &str = "NX_APP_NAME";
 impl Nx {
     pub fn is_nx_monorepo(app: &App, env: &Environment) -> bool {
         // Only consider an Nx app if an nx app name and project path can be found
-        
         if let Some(nx_app_name) = Nx::get_nx_app_name(app, env) {
             return app.includes_file("nx.json")
                 && Nx::get_nx_project_json_for_app(app, &nx_app_name).is_ok();
@@ -93,18 +92,22 @@ impl Nx {
                         if file_type.is_dir() {
                             if let Some(app_name) = entry.file_name().to_str() {
                                 let app_path = format!("apps/{}", app_name);
-                                
                                 // Check if this app has a valid project.json
                                 let project_json_path = format!("{}/project.json", app_path);
                                 if app.includes_file(&project_json_path) {
                                     return Some(app_name.to_string());
                                 }
-                                
                                 // Check if this app has a package.json with nx targets
                                 let package_json_path = format!("{}/package.json", app_path);
                                 if app.includes_file(&package_json_path) {
-                                    if let Ok(pkg_json) = app.read_json::<serde_json::Value>(&package_json_path) {
-                                        if pkg_json.get("nx").and_then(|nx| nx.get("targets")).is_some() {
+                                    if let Ok(pkg_json) =
+                                        app.read_json::<serde_json::Value>(&package_json_path)
+                                    {
+                                        if pkg_json
+                                            .get("nx")
+                                            .and_then(|nx| nx.get("targets"))
+                                            .is_some()
+                                        {
                                             return Some(app_name.to_string());
                                         }
                                     }
