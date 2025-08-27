@@ -86,31 +86,27 @@ impl Nx {
         // Third, try to auto-detect by looking for apps with valid configurations
         if app.includes_directory("apps") {
             // Look for directories in apps/ that have either project.json or package.json with nx config
-            if let Ok(entries) = std::fs::read_dir(app.source.join("apps")) {
-                for entry in entries.flatten() {
-                    if let Ok(file_type) = entry.file_type() {
-                        if file_type.is_dir() {
-                            if let Some(app_name) = entry.file_name().to_str() {
-                                let app_path = format!("apps/{}", app_name);
-                                // Check if this app has a valid project.json
-                                let project_json_path = format!("{}/project.json", app_path);
-                                if app.includes_file(&project_json_path) {
+            if let Ok(app_dirs) = app.find_directories("apps/*") {
+                for app_dir in app_dirs {
+                    if let Some(app_name) = app_dir.file_name().and_then(|n| n.to_str()) {
+                        let app_path = format!("apps/{app_name}");
+                        // Check if this app has a valid project.json
+                        let project_json_path = format!("{app_path}/project.json");
+                        if app.includes_file(&project_json_path) {
+                            return Some(app_name.to_string());
+                        }
+                        // Check if this app has a package.json with nx targets
+                        let package_json_path = format!("{app_path}/package.json");
+                        if app.includes_file(&package_json_path) {
+                            if let Ok(pkg_json) =
+                                app.read_json::<serde_json::Value>(&package_json_path)
+                            {
+                                if pkg_json
+                                    .get("nx")
+                                    .and_then(|nx| nx.get("targets"))
+                                    .is_some()
+                                {
                                     return Some(app_name.to_string());
-                                }
-                                // Check if this app has a package.json with nx targets
-                                let package_json_path = format!("{}/package.json", app_path);
-                                if app.includes_file(&package_json_path) {
-                                    if let Ok(pkg_json) =
-                                        app.read_json::<serde_json::Value>(&package_json_path)
-                                    {
-                                        if pkg_json
-                                            .get("nx")
-                                            .and_then(|nx| nx.get("targets"))
-                                            .is_some()
-                                        {
-                                            return Some(app_name.to_string());
-                                        }
-                                    }
                                 }
                             }
                         }
