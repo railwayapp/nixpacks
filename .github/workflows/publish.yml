@@ -1,40 +1,46 @@
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - "base/publish/*"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "base/publish/*"
-  schedule:
-    - cron: "0 0 * * 2"
-  workflow_dispatch:
+# LuminaCode Deployment
 
-name: Publish Debian & Ubuntu Base Images
+This repository contains deployment configurations for the LuminaCode API and Vector Database services. It supports one-click deployment to both Railway and Render platforms.
 
-jobs:
-  images:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      packages: write
-      id-token: write
+## 🚀 Quick Deploy
 
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+Choose your preferred platform:
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+### Railway
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/wolater13-art/luminacode-deployment&plugins=postgresql)
 
-      - name: Set up Docker Buildx
-        id: buildx
+### Render
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+## 📋 Services
+
+This deployment includes:
+1. LuminaCode API - A FastAPI-based service
+2. Vector Database - Qdrant vector database for efficient similarity search
+
+## 🛠️ Configuration Files
+
+- `railway.json` - Configuration for Railway deployment
+- `render.yaml` - Configuration for Render deployment
+- `Dockerfile` - Container configuration (required for both platforms)
+
+## 📦 Requirements
+
+- Docker support
+- Python 3.8+
+- FastAPI
+- Qdrant
+
+## 🔧 Environment Variables
+
+- `WORKERS`: 4 (default)
+- `PORT`: Automatically set by the platform
+
+## 📚 Documentation
+
+For more detailed information about deploying and configuring these services, please refer to:
+- [Railway Documentation](https://docs.railway.app/)
+- [Render Documentation](https://render.com/docs)        id: buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GitHub Container Registry
