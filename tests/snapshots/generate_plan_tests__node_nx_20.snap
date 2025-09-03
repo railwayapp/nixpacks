@@ -17,6 +17,9 @@ expression: plan
       "dependsOn": [
         "install"
       ],
+      "cmds": [
+        "npx nx run next-js:build:production"
+      ],
       "cacheDirectories": [
         ".next/cache",
         "apps/next-js/.next/cache",
@@ -52,5 +55,8 @@ expression: plan
       ],
       "nixpkgsArchive": "[archive]"
     }
+  },
+  "start": {
+    "cmd": "npx nx run next-js:start:production"
   }
 }
