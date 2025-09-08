@@ -4,6 +4,8 @@ title: Introduction
 
 # {% $markdoc.frontmatter.title %}
 
+> **Note:** Nixpacks is currently in maintenance mode and is not under active development.
+
 Nixpacks takes a source directory and produces an OCI compliant image that can be deployed anywhere. The project was started by [Railway](https://railway.app) and is open source on [GitHub](https://github.com/railwayapp/nixpacks).
 
 The core principles of Nixpacks are
