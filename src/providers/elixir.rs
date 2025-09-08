@@ -91,7 +91,7 @@ impl ElixirProvider {
     }
 
     fn get_nix_elixir_package(app: &App, env: &Environment) -> Result<Pkg> {
-        fn as_default(v: Option<Match>) -> &str {
+        fn as_default(v: Option<Match<'_>>) -> &str {
             match v {
                 Some(m) => m.as_str(),
                 None => "_",

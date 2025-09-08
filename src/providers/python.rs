@@ -517,7 +517,7 @@ impl PythonProvider {
 
     fn get_nix_python_package(app: &App, env: &Environment) -> Result<(Pkg, String)> {
         // Fetch python versions into tuples with defaults
-        fn as_default(v: Option<Match>) -> &str {
+        fn as_default(v: Option<Match<'_>>) -> &str {
             match v {
                 Some(m) => m.as_str(),
                 None => "_",
