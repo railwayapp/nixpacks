@@ -1,0 +1,16 @@
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+
+# dependencies
+node_modules
+
+.nx/cache
+.nx/workspace-data
+
+# Next.js
+.next
+out
