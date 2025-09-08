@@ -141,8 +141,8 @@ impl GolangProvider {
     }
 
     pub fn get_nix_golang_pkg(go_mod_contents: Option<&String>) -> Result<(String, String)> {
-        if go_mod_contents.is_some() {
-            let mut lines = go_mod_contents.as_ref().unwrap().lines();
+        if let Some(contents) = go_mod_contents {
+            let mut lines = contents.lines();
             let go_version_line = lines.find(|line| line.trim().starts_with("go"));
 
             if let Some(go_version_line) = go_version_line {
