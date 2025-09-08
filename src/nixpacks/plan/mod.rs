@@ -264,7 +264,9 @@ impl BuildPlan {
             let mut install = Phase::install(Some(cmd_string));
 
             if let Some(cache_dirs) = env.get_config_variable("INSTALL_CACHE_DIRS") {
-                for dir in &split_env_string(cache_dirs.as_str()) { install.add_cache_directory(dir); }
+                for dir in &split_env_string(cache_dirs.as_str()) {
+                    install.add_cache_directory(dir);
+                }
             }
 
             phases.push(install);
@@ -275,7 +277,9 @@ impl BuildPlan {
             let mut build = Phase::build(Some(cmd_string));
 
             if let Some(cache_dirs) = env.get_config_variable("BUILD_CACHE_DIRS") {
-                for dir in &split_env_string(cache_dirs.as_str()) { build.add_cache_directory(dir); }
+                for dir in &split_env_string(cache_dirs.as_str()) {
+                    build.add_cache_directory(dir);
+                }
             }
 
             phases.push(build);
