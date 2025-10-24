@@ -26,14 +26,20 @@ mod turborepo;
 pub const NODE_OVERLAY: &str = "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz";
 
 // unlike package managers, {node,bun} versions are pinned to a particular nixpacks release
-const NODE_NIXPKGS_ARCHIVE: &str = "ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7";
-const BUN_NIXPKGS_ARCHIVE: &str = "5a0711127cd8b916c3d3128f473388c8c79df0da";
-
-// We need to use a specific commit hash for Node versions <16 since it is EOL in the latest Nix packages
-const NODE_LT_16_ARCHIVE: &str = "bf744fe90419885eefced41b3e5ae442d732712d";
+const BUN_NIXPKGS_ARCHIVE: &str = "31fb21469e34b6b5c7be77b9a35bae43d0c598e9";
 
 const DEFAULT_NODE_VERSION: u32 = 18;
-const AVAILABLE_NODE_VERSIONS: &[u32] = &[14, 16, 18, 20, 22, 23];
+
+// From: https://lazamar.co.uk/nix-versions/?channel=nixpkgs-unstable&package=nodejs
+// Maps Node version to nixpkgs archive hash
+const AVAILABLE_NODE_VERSIONS: &[(u32, &str)] = &[
+    (14, "bf744fe90419885eefced41b3e5ae442d732712d"), // EOL version, older nixpkgs
+    (16, "bf744fe90419885eefced41b3e5ae442d732712d"), // EOL version, older nixpkgs
+    (18, "ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7"),
+    (20, "ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7"),
+    (22, "e6f23dc08d3624daab7094b701aa3954923c6bbb"),
+    (24, "23f9169c4ccce521379e602cc82ed873a1f1b52b"),
+];
 
 const YARN_CACHE_DIR: &str = "/usr/local/share/.cache/yarn/v6";
 const PNPM_CACHE_DIR: &str = "/root/.local/share/pnpm/store/v3";
@@ -502,15 +508,27 @@ impl NodeProvider {
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         let package_manager = NodeProvider::get_package_manager(app);
         let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, &Environment::default())?;
-        let uses_le_16 = node_pkg.name.contains("14") || node_pkg.name.contains("16");
 
-        if uses_le_16 {
-            Ok(NODE_LT_16_ARCHIVE.to_string())
-        } else if package_manager == "bun" {
-            Ok(BUN_NIXPKGS_ARCHIVE.to_string())
-        } else {
-            Ok(NODE_NIXPKGS_ARCHIVE.to_string())
+        // Bun uses a separate archive
+        if package_manager == "bun" {
+            return Ok(BUN_NIXPKGS_ARCHIVE.to_string());
         }
+
+        // Extract version number from package name (e.g., "nodejs_18" -> 18)
+        let version = node_pkg.name
+            .strip_prefix("nodejs_")
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or(DEFAULT_NODE_VERSION);
+
+        // Look up the archive for this version
+        let archive = version_number_to_archive(version)
+            .unwrap_or_else(|| {
+                // Fallback to default version's archive
+                version_number_to_archive(DEFAULT_NODE_VERSION)
+                    .expect("Default node version must exist in AVAILABLE_NODE_VERSIONS")
+            });
+
+        Ok(archive.to_string())
     }
 
     /// Returns the nodejs nix package and the appropriate package manager nix image.
@@ -536,6 +554,8 @@ impl NodeProvider {
                 pm_pkg = Pkg::new("pnpm-7_x");
             } else if lockfile.starts_with("lockfileVersion: '6.0'") {
                 pm_pkg = Pkg::new("pnpm-8_x");
+            } else if lockfile.starts_with("lockfileVersion: '9.0'") {
+                pm_pkg = Pkg::new("pnpm-10_x");
             } else {
                 // Default to pnpm 9
                 pm_pkg = Pkg::new("pnpm-9_x");
@@ -682,8 +702,19 @@ impl NodeProvider {
     }
 }
 
+fn version_number_to_archive(version: u32) -> Option<&'static str> {
+    AVAILABLE_NODE_VERSIONS
+        .iter()
+        .find(|(ver, _archive)| *ver == version)
+        .map(|(_ver, archive)| *archive)
+}
+
 fn version_number_to_pkg(version: u32) -> String {
-    if AVAILABLE_NODE_VERSIONS.contains(&version) {
+    let version_exists = AVAILABLE_NODE_VERSIONS
+        .iter()
+        .any(|(ver, _archive)| *ver == version);
+
+    if version_exists {
         format!("nodejs_{version}")
     } else {
         format!("nodejs_{DEFAULT_NODE_VERSION}")
@@ -698,8 +729,9 @@ fn parse_node_version_into_pkg(node_version: &str) -> String {
     });
     let mut available_lts_node_versions = AVAILABLE_NODE_VERSIONS
         .iter()
-        .filter(|v| *v % 2 == 0)
-        .collect::<Vec<_>>();
+        .map(|(ver, _archive)| *ver)
+        .filter(|v| v % 2 == 0)
+        .collect::<Vec<u32>>();
 
     // use newest node version first
     available_lts_node_versions.sort_by(|a, b| b.cmp(a));
@@ -707,7 +739,7 @@ fn parse_node_version_into_pkg(node_version: &str) -> String {
         let version_range_string = format!("{version_number}.x.x");
         let version_range: Range = version_range_string.parse().unwrap();
         if version_range.allows_any(&range) {
-            return version_number_to_pkg(*version_number);
+            return version_number_to_pkg(version_number);
         }
     }
     default_node_pkg_name
