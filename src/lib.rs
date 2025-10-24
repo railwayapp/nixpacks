@@ -50,7 +50,7 @@ pub mod nixpacks;
 pub mod providers;
 
 /// Supplies all currently-defined providers to build plan generators and image builders.
-pub fn get_providers() -> &'static [&'static (dyn Provider)] {
+pub fn get_providers() -> &'static [&'static dyn Provider] {
     &[
         &CrystalProvider {},
         &CSharpProvider {},

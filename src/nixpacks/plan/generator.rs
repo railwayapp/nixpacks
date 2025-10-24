@@ -26,7 +26,7 @@ pub struct GeneratePlanOptions {
 
 /// Holds plan options and providers for a build.
 pub struct NixpacksBuildPlanGenerator<'a> {
-    providers: &'a [&'a (dyn Provider)],
+    providers: &'a [&'a dyn Provider],
     config: GeneratePlanOptions,
 }
 
@@ -50,7 +50,7 @@ impl PlanGenerator for NixpacksBuildPlanGenerator<'_> {
 
 impl NixpacksBuildPlanGenerator<'_> {
     pub fn new<'a>(
-        providers: &'a [&'a (dyn Provider)],
+        providers: &'a [&'a dyn Provider],
         config: GeneratePlanOptions,
     ) -> NixpacksBuildPlanGenerator<'a> {
         NixpacksBuildPlanGenerator { providers, config }
