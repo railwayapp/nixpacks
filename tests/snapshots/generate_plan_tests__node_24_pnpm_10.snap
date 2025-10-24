@@ -8,7 +8,6 @@ expression: plan
   "variables": {
     "CI": "true",
     "NIXPACKS_METADATA": "node",
-    "NIXPACKS_SPA_OUTPUT_DIR": "dist",
     "NODE_ENV": "production",
     "NPM_CONFIG_PRODUCTION": "false"
   },
@@ -17,9 +16,6 @@ expression: plan
       "name": "build",
       "dependsOn": [
         "install"
-      ],
-      "cmds": [
-        "npm run build"
       ],
       "cacheDirectories": [
         "node_modules/.cache"
@@ -31,10 +27,11 @@ expression: plan
         "setup"
       ],
       "cmds": [
-        "npm ci"
+        "npm install -g corepack@0.24.1 && corepack enable",
+        "pnpm i --frozen-lockfile"
       ],
       "cacheDirectories": [
-        "/root/.npm"
+        "/root/.local/share/pnpm/store/v3"
       ],
       "paths": [
         "/app/node_modules/.bin"
@@ -44,7 +41,7 @@ expression: plan
       "name": "setup",
       "nixPkgs": [
         "nodejs_24",
-        "npm-9_x"
+        "pnpm-10_x"
       ],
       "nixOverlays": [
         "https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"
@@ -53,6 +50,6 @@ expression: plan
     }
   },
   "start": {
-    "cmd": "npm run start"
+    "cmd": "pnpm run start"
   }
 }

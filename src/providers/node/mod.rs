@@ -515,18 +515,18 @@ impl NodeProvider {
         }
 
         // Extract version number from package name (e.g., "nodejs_18" -> 18)
-        let version = node_pkg.name
+        let version = node_pkg
+            .name
             .strip_prefix("nodejs_")
             .and_then(|v| v.parse::<u32>().ok())
             .unwrap_or(DEFAULT_NODE_VERSION);
 
         // Look up the archive for this version
-        let archive = version_number_to_archive(version)
-            .unwrap_or_else(|| {
-                // Fallback to default version's archive
-                version_number_to_archive(DEFAULT_NODE_VERSION)
-                    .expect("Default node version must exist in AVAILABLE_NODE_VERSIONS")
-            });
+        let archive = version_number_to_archive(version).unwrap_or_else(|| {
+            // Fallback to default version's archive
+            version_number_to_archive(DEFAULT_NODE_VERSION)
+                .expect("Default node version must exist in AVAILABLE_NODE_VERSIONS")
+        });
 
         Ok(archive.to_string())
     }
@@ -547,18 +547,35 @@ impl NodeProvider {
         pkgs.push(node_pkg);
 
         if package_manager == "pnpm" {
-            let lockfile = app.read_file("pnpm-lock.yaml").unwrap_or_default();
-            if lockfile.starts_with("lockfileVersion: 5.3") {
-                pm_pkg = Pkg::new("pnpm-6_x");
-            } else if lockfile.starts_with("lockfileVersion: 5.4") {
-                pm_pkg = Pkg::new("pnpm-7_x");
-            } else if lockfile.starts_with("lockfileVersion: '6.0'") {
-                pm_pkg = Pkg::new("pnpm-8_x");
-            } else if lockfile.starts_with("lockfileVersion: '9.0'") {
-                pm_pkg = Pkg::new("pnpm-10_x");
+            // First, try to determine version from packageManager field (for corepack)
+            if let Some(ref pkg_manager_field) = package_json.package_manager {
+                if let Some(version_str) = pkg_manager_field.strip_prefix("pnpm@") {
+                    // Parse major version from "pnpm@9.0.3" -> 9
+                    if let Some(major_version) = version_str.split('.').next() {
+                        if let Ok(major) = major_version.parse::<u32>() {
+                            pm_pkg = match major {
+                                6 => Pkg::new("pnpm-6_x"),
+                                7 => Pkg::new("pnpm-7_x"),
+                                8 => Pkg::new("pnpm-8_x"),
+                                9 => Pkg::new("pnpm-9_x"),
+                                10 => Pkg::new("pnpm-10_x"),
+                                _ => {
+                                    // For unknown versions, try lockfile detection
+                                    NodeProvider::get_pnpm_package_from_lockfile(app)
+                                }
+                            };
+                        } else {
+                            pm_pkg = NodeProvider::get_pnpm_package_from_lockfile(app);
+                        }
+                    } else {
+                        pm_pkg = NodeProvider::get_pnpm_package_from_lockfile(app);
+                    }
+                } else {
+                    pm_pkg = NodeProvider::get_pnpm_package_from_lockfile(app);
+                }
             } else {
-                // Default to pnpm 9
-                pm_pkg = Pkg::new("pnpm-9_x");
+                // Fall back to lockfile-based detection
+                pm_pkg = NodeProvider::get_pnpm_package_from_lockfile(app);
             }
         } else if package_manager == "yarn" {
             pm_pkg = Pkg::new("yarn-1_x");
@@ -665,6 +682,21 @@ impl NodeProvider {
         all_deps.extend(dev_deps);
 
         all_deps
+    }
+
+    fn get_pnpm_package_from_lockfile(app: &App) -> Pkg {
+        let lockfile = app.read_file("pnpm-lock.yaml").unwrap_or_default();
+        if lockfile.starts_with("lockfileVersion: 5.3") {
+            Pkg::new("pnpm-6_x")
+        } else if lockfile.starts_with("lockfileVersion: 5.4") {
+            Pkg::new("pnpm-7_x")
+        } else if lockfile.starts_with("lockfileVersion: '6.0'") {
+            Pkg::new("pnpm-8_x")
+        } else if lockfile.starts_with("lockfileVersion: '9.0'") {
+            Pkg::new("pnpm-9_x")
+        } else {
+            Pkg::new("pnpm-9_x")
+        }
     }
 
     pub fn cache_tsbuildinfo_file(app: &App, build: &mut Phase) {
@@ -831,7 +863,7 @@ mod test {
                 &App::new("examples/node")?,
                 &Environment::default()
             )?,
-            Pkg::new(version_number_to_pkg(22).as_str())
+            Pkg::new(version_number_to_pkg(24).as_str())
         );
 
         Ok(())
