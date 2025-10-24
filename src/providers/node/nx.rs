@@ -45,16 +45,6 @@ pub struct Configuration {
     pub production: Option<Value>,
 }
 
-#[derive(Debug, Serialize, PartialEq, Eq, Deserialize)]
-pub struct PackageJsonNx {
-    pub nx: Option<PackageJsonNxTargets>,
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq, Deserialize)]
-pub struct PackageJsonNxTargets {
-    pub targets: Option<Targets>,
-}
-
 pub struct Nx {}
 
 const NX_APP_NAME_ENV_VAR: &str = "NX_APP_NAME";

@@ -692,9 +692,8 @@ impl NodeProvider {
             Pkg::new("pnpm-7_x")
         } else if lockfile.starts_with("lockfileVersion: '6.0'") {
             Pkg::new("pnpm-8_x")
-        } else if lockfile.starts_with("lockfileVersion: '9.0'") {
-            Pkg::new("pnpm-9_x")
         } else {
+            // lockfileVersion '9.0' and unknown versions default to pnpm 9
             Pkg::new("pnpm-9_x")
         }
     }
