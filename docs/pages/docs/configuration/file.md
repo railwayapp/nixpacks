@@ -108,6 +108,28 @@ However, there is no restriction on the names of phases or what they are named.
 # ...
 ```
 
+### Multiple Providers
+
+When using multiple providers, phases for the first specified provider can be referenced by their normal names. To configure phases for additional providers, prefix the phase name with the provider name and a colon using the `"provider:phase"` syntax (quotes are required for valid TOML).
+
+For example, with both Python and Node providers:
+
+```toml
+providers = ["python", "node"]
+
+# Targets the first provider's (python) install phase
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+# Targets the node provider's install phase
+[phases."node:install"]
+cmds = ["npm ci"]
+
+# Targets the node provider's build phase
+[phases."node:build"]
+cmds = ["npm run build"]
+```
+
 ### Commands
 
 Array of commands to run.
