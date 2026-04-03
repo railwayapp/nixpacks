@@ -141,7 +141,7 @@ impl Provider for NodeProvider {
     fn get_build_plan(&self, app: &App, env: &Environment) -> Result<Option<BuildPlan>> {
         // Setup
         let mut setup = Phase::setup(Some(NodeProvider::get_nix_packages(app, env)?));
-        setup.set_nix_archive(NodeProvider::get_nix_archive(app)?);
+        setup.set_nix_archive(NodeProvider::get_nix_archive(app, env)?);
         if NodeProvider::uses_node_dependency(app, "prisma") {
             setup.add_nix_pkgs(&[Pkg::new("openssl")]);
         }
@@ -504,10 +504,10 @@ impl NodeProvider {
     }
 
     /// Returns the Nix archive to use for the Node and related packages
-    pub fn get_nix_archive(app: &App) -> Result<String> {
+    pub fn get_nix_archive(app: &App, env: &Environment) -> Result<String> {
         let package_json: PackageJson = app.read_json("package.json").unwrap_or_default();
         let package_manager = NodeProvider::get_package_manager(app);
-        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, &Environment::default())?;
+        let node_pkg = NodeProvider::get_nix_node_pkg(&package_json, app, env)?;
 
         // Bun uses a separate archive
         if package_manager == "bun" {
