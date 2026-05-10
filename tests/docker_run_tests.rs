@@ -867,6 +867,13 @@ async fn test_pnpm_corepack() {
 }
 
 #[tokio::test]
+async fn test_pnpm_v11() {
+    let name = simple_build("./examples/node-pnpm-v11").await.unwrap();
+    let output = run_image(&name, None).await;
+    assert!(output.contains("Hello from PNPM 11"));
+}
+
+#[tokio::test]
 async fn test_bun() {
     let name = simple_build("./examples/node-bun").await.unwrap();
     let output = run_image(&name, None).await;
