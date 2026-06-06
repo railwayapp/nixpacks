@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::{arg, Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
 use nixpacks::{
     create_docker_image, generate_build_plan, get_plan_providers,
     nixpacks::{
