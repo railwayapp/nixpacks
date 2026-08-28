@@ -559,6 +559,7 @@ impl NodeProvider {
                                 8 => Pkg::new("pnpm-8_x"),
                                 9 => Pkg::new("pnpm-9_x"),
                                 10 => Pkg::new("pnpm-10_x"),
+                                11 => Pkg::new("pnpm-11_x"),
                                 _ => {
                                     // For unknown versions, try lockfile detection
                                     NodeProvider::get_pnpm_package_from_lockfile(app)
@@ -1221,6 +1222,35 @@ mod test {
         assert_eq!(
             NodeProvider::get_package_manager(&App::new("examples/node-pnpm-monorepo/apps/docs")?),
             "pnpm"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_pnpm_11_from_package_manager_field() -> Result<()> {
+        let tmp = tempdir::TempDir::new("nixpacks-pnpm-11")?;
+        std::fs::write(
+            tmp.path().join("package.json"),
+            r#"{
+              "name": "node",
+              "packageManager": "pnpm@11.0.0"
+            }"#,
+        )?;
+        std::fs::write(
+            tmp.path().join("pnpm-lock.yaml"),
+            "lockfileVersion: '9.0'\n",
+        )?;
+
+        let pkgs = NodeProvider::get_nix_packages(
+            &App::new(tmp.path().to_str().unwrap())?,
+            &Environment::default(),
+        )?;
+
+        assert!(
+            pkgs.iter().any(|p| p.name == "pnpm-11_x"),
+            "expected pnpm-11_x for packageManager pnpm@11.0.0, got {:?}",
+            pkgs.iter().map(|p| &p.name).collect::<Vec<_>>()
         );
 
         Ok(())
