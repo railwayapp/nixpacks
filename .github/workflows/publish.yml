@@ -91,7 +91,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push to Docker Hub [Ubuntu]
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: base/ubuntu
           platforms: linux/arm64, linux/amd64
@@ -99,7 +99,7 @@ jobs:
           tags: railwayapp/nixpacks:ubuntu, railwayapp/nixpacks:ubuntu-${{ steps.date.outputs.date }}
 
       - name: Build and push to Docker Hub [Debian]
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: base/debian
           platforms: linux/arm64, linux/amd64, linux/386
