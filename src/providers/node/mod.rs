@@ -559,6 +559,7 @@ impl NodeProvider {
                                 8 => Pkg::new("pnpm-8_x"),
                                 9 => Pkg::new("pnpm-9_x"),
                                 10 => Pkg::new("pnpm-10_x"),
+                                11 => Pkg::new("pnpm-11_x"),
                                 _ => {
                                     // For unknown versions, try lockfile detection
                                     NodeProvider::get_pnpm_package_from_lockfile(app)
